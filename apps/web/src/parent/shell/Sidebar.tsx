@@ -1,39 +1,57 @@
 /**
- * The parent app's sidebar (decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-
- * lesson-workspac, dl-xo0q; handoff §2.1 and §3, docs/worklog/dl-uukj.47):
+ * The parent app's sidebar on the adult kit (dl-uukj.47.67 §8, D8, S10, S12; decision dl-xo0q as
+ * amended by dl-hz9ks):
  *
- *   logo row      56 px with a 1 px line under it, level with the top bar's, and the fold button
- *   menu          Lekcje, Historia: SideMenu with no border or fill of its own; no "Nowa lekcja"
- *                 item, since a new lesson lives under Lekcje and the breadcrumb says so
+ *   logo row      56 px with a 1 px line under it, level with the top bar's
+ *   menu          rows 34, radius 6, 14/500 on the stone sidebar, the current one on the active
+ *                 stone: Lekcje with a trailing ghost "+" (Nowa lekcja, key N; D8), Historia
  *   empty line    what will appear here, until there is a first lesson
- *   Dzieci        a small heading with a dashed "+" beside it, never a row; a row per child: the
- *                 disc, the name, the class at the end
+ *   Dzieci        a 12/500 muted label with a ghost "+" beside it, never a row; a row per child:
+ *                 the disc in the child's tone (D7) and the name
  *   foot          the fold button, named "Zwiń menu", and nothing else
  *
- * The account (the language and signing out) sits in the top bar's right corner (ParentShell).
- * Folded, it is a 60 px rail: the crown, the menu as icons, a disc per child and the unfold button
- * at its foot. Each icon-only control is named from copy.
+ * The account (the page's language and signing out) is a menu in the top bar's right corner, and
+ * at the phone drawer's foot. Folded, the sidebar is a 60 px rail: the crown, the menu as icons, a
+ * disc per child and the unfold button at its foot. Each icon-only control is named from copy.
  */
 
 import type { Learner, LearnerId } from "@jadwigo/contracts";
-import { copy, type Language } from "@jadwigo/copy";
+import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import {
-  Button,
   cn,
   Disc,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
   Logo,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  SideMenu,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@jadwigo/ui";
-import { BookOpenIcon, HistoryIcon, PanelLeftIcon, PlusIcon, UserRoundIcon } from "lucide-react";
-import type { MouseEvent, ReactElement, ReactNode } from "react";
-import { navigate } from "../../nav/location.ts";
+import {
+  BookOpenIcon,
+  ChevronDownIcon,
+  GlobeIcon,
+  HistoryIcon,
+  LogOutIcon,
+  PanelLeftIcon,
+  PlusIcon,
+} from "lucide-react";
+import type { ReactElement, ReactNode } from "react";
+import { pickLanguage } from "../../nav/language.ts";
+import { LANGUAGES } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
-import { LanguagePick } from "../LanguagePick.tsx";
+import { LANGUAGE_NAME } from "../LanguagePick.tsx";
 import { childPath, historyPath, lessonsPath, parentPath } from "../route.ts";
+import { learnerTone } from "../tone.ts";
 
 /** Where in the app the page is, for the menu's and the children's current mark. */
 export type Place =
@@ -51,112 +69,142 @@ export interface SidebarProps {
   onAddChild: () => void;
 }
 
-const SECTION =
-  "text-jw-page-small leading-tight font-bold tracking-wider text-jw-ink-soft uppercase";
+/** The key that opens a new lesson from anywhere outside a field (ParentShell listens for it). */
+export const NEW_LESSON_KEY = "N";
 
-/** The account in the top bar's right corner: a button that opens the language and signing out. */
+const FOCUS = "focus-visible:outline-3 focus-visible:outline-jw-focus";
+/** A sidebar row: 34, radius 6, 14/500. */
+const ROW = cn(
+  "flex min-h-jw-control items-center gap-2 rounded-jw-small px-2 text-jw-page-body font-medium text-jw-ink",
+  FOCUS,
+);
+const fill = (current: boolean): string =>
+  current ? "bg-jw-side-active" : "hover:bg-jw-side-active";
+/** The 24 ghost "+" a row or a group label carries. */
+const PLUS = cn(
+  "grid size-6 shrink-0 place-items-center rounded-jw-small text-jw-ink-soft hover:bg-jw-act-quiet hover:text-jw-ink",
+  FOCUS,
+);
+
+const say =
+  (language: Language) =>
+  (key: CopyKey): string =>
+    copy(language, key, {}, CATEGORY);
+
+/**
+ * The account in the top bar's right corner (§6.6): the parent's disc and a chevron, opening the
+ * page's language (Polski, English; D14) and signing out.
+ */
 export function Account({
   language,
   onSignOut,
-  folded = false,
 }: {
   language: Language;
   onSignOut: () => void;
-  folded?: boolean;
 }): ReactElement {
-  const label = copy(language, "parent_account", {}, CATEGORY);
+  const t = say(language);
   return (
-    <Popover>
-      <PopoverTrigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label={folded ? label : undefined}
+          aria-label={t("parent_account")}
           className={cn(
-            "flex min-h-jw-control max-w-64 items-center gap-2 rounded-jw-small px-2 text-left text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus",
-            folded && "justify-center px-0",
+            "flex h-8 items-center gap-1 rounded-jw-small px-1 text-jw-ink-soft hover:bg-jw-act-quiet",
+            FOCUS,
           )}
           data-account
         >
-          <UserRoundIcon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" />
-          {!folded && <span className="truncate">{label}</span>}
+          <Disc kind="parent" size={24} />
+          <ChevronDownIcon aria-hidden className="size-4" />
         </button>
-      </PopoverTrigger>
-      <PopoverContent side="bottom" align="end" className="w-64 gap-3 p-3" data-account-menu>
-        <LanguagePick language={language} />
-        <Button type="button" variant="outline" size="control" onClick={onSignOut} data-sign-out>
-          {copy(language, "parent_sign_out", {}, CATEGORY)}
-        </Button>
-      </PopoverContent>
-    </Popover>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-jw-shell-side" data-account-menu>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <GlobeIcon aria-hidden />
+            {t("parent_page_language")}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuRadioGroup
+              value={language}
+              onValueChange={(value) => {
+                const picked = LANGUAGES.find((l) => l === value);
+                if (picked !== undefined) pickLanguage(picked);
+              }}
+            >
+              {LANGUAGES.map((l) => (
+                <DropdownMenuRadioItem key={l} value={l} lang={l}>
+                  {t(LANGUAGE_NAME[l])}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={onSignOut} data-sign-out>
+          <LogOutIcon aria-hidden />
+          {t("parent_sign_out")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
-/** The class a child is in, when the pod knows it. */
-const gradeOf = (language: Language, learner: Learner): string | null =>
-  learner.school_grade === null
-    ? null
-    : copy(language, "parent_child_grade", { grade: learner.school_grade }, CATEGORY);
+/** Lekcje's "+": a link to the first screen, its tooltip naming it and its key. */
+function NewLessonPlus({ language }: { language: Language }): ReactElement {
+  const label = say(language)("parent_new_lesson");
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <NavLink
+          href={parentPath({ lang: pageLang() })}
+          aria-label={label}
+          aria-keyshortcuts={NEW_LESSON_KEY}
+          className={PLUS}
+          data-new-lesson
+        >
+          <PlusIcon aria-hidden className="size-4" />
+        </NavLink>
+      </TooltipTrigger>
+      <TooltipContent shortcut={NEW_LESSON_KEY}>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
-/** One child: the disc, the name and the class, the whole row opening the child's page. */
+/** One child: the disc in the child's tone and the name, the whole row opening the child's page. */
 function ChildRow({
-  language,
+  learners,
   learner,
   current,
 }: {
-  language: Language;
+  learners: readonly Learner[];
   learner: Learner;
   current: boolean;
 }): ReactElement {
-  const grade = gradeOf(language, learner);
+  // shortcut: no short state ("2 czekają") on the right yet, the shell has no per-child counts.
   return (
     <li>
       <NavLink
         href={childPath({ learner: learner.id, lang: pageLang() })}
         aria-current={current ? "page" : undefined}
-        className={cn(
-          "flex min-h-jw-control items-center gap-2 rounded-jw-small border-jw px-2 focus-visible:outline-3 focus-visible:outline-jw-focus",
-          current
-            ? "border-jw-pick-edge bg-jw-pick font-bold text-jw-pick-ink"
-            : "border-transparent text-jw-ink hover:bg-jw-act-quiet",
-        )}
+        className={cn(ROW, fill(current))}
         data-child-row={learner.id}
       >
-        <Disc name={learner.first_name} />
+        <Disc name={learner.first_name} tone={learnerTone(learners, learner.id)} size={20} />
         <span className="min-w-0 flex-1 truncate">{learner.first_name}</span>
-        {grade !== null && (
-          <span className="shrink-0 text-jw-page-small text-jw-ink-soft">{grade}</span>
-        )}
       </NavLink>
     </li>
   );
 }
 
-/** The "+" beside a section's heading: dashed, 28 square, never a row of the list. */
-function AddButton({ label, onAdd }: { label: string; onAdd: () => void }): ReactElement {
+/** The "+" beside Dzieci: ghost, 24 square, never a row of the list. */
+function AddChild({ label, onAdd }: { label: string; onAdd: () => void }): ReactElement {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onAdd}
-      className="grid size-7 shrink-0 place-items-center rounded-jw-small border-jw border-dashed border-jw-line-strong text-jw-ink-soft hover:border-jw-ink-soft hover:text-jw-ink focus-visible:outline-3 focus-visible:outline-jw-focus"
-      data-add-child-button
-    >
+    <button type="button" aria-label={label} onClick={onAdd} className={PLUS} data-add-child-button>
       <PlusIcon aria-hidden className="size-4" />
     </button>
   );
-}
-
-/**
- * SideMenu draws real links; a plain click on one moves inside the app, as NavLink does, so the
- * page and its state stay. A click with a modifier, or one already handled, is the browser's.
- */
-function inApp(event: MouseEvent<HTMLElement>): void {
-  if (event.defaultPrevented || event.button !== 0) return;
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-  const href = (event.target as Element).closest("a[href]")?.getAttribute("href");
-  if (!href?.startsWith("/")) return;
-  event.preventDefault();
-  navigate(href);
 }
 
 /** The sidebar's open face: its body, under the logo row the shell draws. */
@@ -168,57 +216,62 @@ export function SidebarBody({
   onAddChild,
   foot,
 }: SidebarProps & { foot?: ReactNode }): ReactElement {
-  const t = (key: Parameters<typeof copy>[1]): string => copy(language, key, {}, CATEGORY);
+  const t = say(language);
   const lang = pageLang();
-  const current = place.kind === "lessons" || place.kind === "history" ? place.kind : "";
+  const onLessons = place.kind === "lessons";
+  const onHistory = place.kind === "history";
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex min-h-0 flex-1 flex-col gap-5.5 overflow-y-auto px-3 py-5.5">
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: the links inside take the keys; this only routes their clicks */}
-        {/* biome-ignore lint/a11y/useKeyWithClickEvents: the same: a link's Enter is a click */}
-        <div className="flex flex-col gap-1.5" onClick={inApp}>
-          <SideMenu
-            label={t("parent_nav_label")}
-            framed={false}
-            current={current}
-            items={[
-              {
-                id: "lessons",
-                label: t("parent_nav_lessons"),
-                icon: <BookOpenIcon aria-hidden className="size-4" />,
-                href: lessonsPath({ lang }),
-              },
-              {
-                id: "history",
-                label: t("parent_nav_history"),
-                icon: <HistoryIcon aria-hidden className="size-4" />,
-                href: historyPath({ lang }),
-              },
-            ]}
-          />
+        <div className="flex flex-col gap-1.5">
+          <nav aria-label={t("parent_nav_label")}>
+            <ul className="flex flex-col gap-0.5">
+              <li className={cn("flex items-center rounded-jw-small pr-1.5", fill(onLessons))}>
+                <NavLink
+                  href={lessonsPath({ lang })}
+                  aria-current={onLessons ? "page" : undefined}
+                  className={cn(ROW, "min-w-0 flex-1")}
+                >
+                  <BookOpenIcon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" />
+                  {t("parent_nav_lessons")}
+                </NavLink>
+                <NewLessonPlus language={language} />
+              </li>
+              <li>
+                <NavLink
+                  href={historyPath({ lang })}
+                  aria-current={onHistory ? "page" : undefined}
+                  className={cn(ROW, fill(onHistory))}
+                >
+                  <HistoryIcon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" />
+                  {t("parent_nav_history")}
+                </NavLink>
+              </li>
+            </ul>
+          </nav>
           {!hasLessons && (
-            <p className="px-3 text-jw-page-small text-jw-ink-soft" data-menu-empty>
+            <p className="px-2 text-jw-page-small text-jw-ink-soft" data-menu-empty>
               {t("parent_menu_empty")}
             </p>
           )}
         </div>
-        <section aria-labelledby="parent-children" className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-2 px-2">
-            <h2 id="parent-children" className={SECTION}>
+        <section aria-labelledby="parent-children" className="flex flex-col gap-0.5">
+          <div className="flex items-center justify-between gap-2 pr-1.5 pl-2">
+            <h2 id="parent-children" className="text-jw-page-small font-medium text-jw-ink-soft">
               {t("parent_nav_children")}
             </h2>
-            <AddButton label={t("parent_add_child")} onAdd={onAddChild} />
+            <AddChild label={t("parent_add_child")} onAdd={onAddChild} />
           </div>
           {learners.length === 0 ? (
             <p className="px-2 text-jw-page-small text-jw-ink-soft" data-children-hint>
               {t("parent_children_hint")}
             </p>
           ) : (
-            <ul className="flex flex-col gap-1.5" data-children>
+            <ul className="flex flex-col gap-0.5" data-children>
               {learners.map((learner) => (
                 <ChildRow
                   key={learner.id}
-                  language={language}
+                  learners={learners}
                   learner={learner}
                   current={place.kind === "child" && place.learner === learner.id}
                 />
@@ -251,10 +304,9 @@ function RailLink({
       title={label}
       aria-current={current ? "page" : undefined}
       className={cn(
-        "grid min-h-jw-control min-w-jw-control place-items-center rounded-jw-small border-jw focus-visible:outline-3 focus-visible:outline-jw-focus",
-        current
-          ? "border-jw-pick-edge bg-jw-pick text-jw-pick-ink"
-          : "border-transparent text-jw-ink-soft hover:bg-jw-act-quiet hover:text-jw-ink",
+        "grid min-h-jw-control min-w-jw-control place-items-center rounded-jw-small text-jw-ink-soft hover:text-jw-ink",
+        FOCUS,
+        fill(current),
       )}
     >
       {children}
@@ -270,7 +322,7 @@ export function SidebarRail({
   onAddChild,
   unfold,
 }: SidebarProps & { unfold: ReactNode }): ReactElement {
-  const t = (key: Parameters<typeof copy>[1]): string => copy(language, key, {}, CATEGORY);
+  const t = say(language);
   const lang = pageLang();
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center">
@@ -300,10 +352,10 @@ export function SidebarRail({
             label={learner.first_name}
             current={place.kind === "child" && place.learner === learner.id}
           >
-            <Disc name={learner.first_name} />
+            <Disc name={learner.first_name} tone={learnerTone(learners, learner.id)} size={20} />
           </RailLink>
         ))}
-        <AddButton label={t("parent_add_child")} onAdd={onAddChild} />
+        <AddChild label={t("parent_add_child")} onAdd={onAddChild} />
       </nav>
       <div className="flex w-full justify-center border-t-jw border-jw-line px-2 py-2">
         {unfold}
@@ -328,7 +380,7 @@ export function FoldButton({
       aria-expanded
       aria-controls={controls}
       onClick={onFold}
-      className="flex min-h-jw-control w-full items-center gap-2 rounded-jw-small px-2 text-left text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+      className={cn(ROW, "w-full text-left hover:bg-jw-side-active")}
       data-fold-sidebar
     >
       <PanelLeftIcon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" />
@@ -354,11 +406,11 @@ export function LogoRow({
     >
       <NavLink
         href={parentPath({ lang: pageLang() })}
-        className="rounded-jw-small focus-visible:outline-3 focus-visible:outline-jw-focus"
+        className={cn("rounded-jw-small", FOCUS)}
         data-logo-link
       >
         {folded ? (
-          <Logo mark label={copy(language, "parent_new_lesson", {}, CATEGORY)} className="h-5" />
+          <Logo mark label={say(language)("parent_new_lesson")} className="h-5" />
         ) : (
           <Logo className="h-10" />
         )}

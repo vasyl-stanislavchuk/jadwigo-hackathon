@@ -299,6 +299,7 @@
   "parent_language": true,
   "parent_language_pl": true,
   "parent_language_en": true,
+  "parent_page_language": false,
   "home_title": true,
   "home_empty": true,
   "review_title": true,

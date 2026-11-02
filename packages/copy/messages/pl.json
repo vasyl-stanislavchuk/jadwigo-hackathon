@@ -500,6 +500,7 @@
   "parent_language": "Język",
   "parent_language_pl": "Polski",
   "parent_language_en": "English",
+  "parent_page_language": "Język strony",
   "home_title": "Wybierz lekcję",
   "home_empty": "Na razie nie ma tu lekcji.",
   "review_title": "Pytanie {n} z {total}",

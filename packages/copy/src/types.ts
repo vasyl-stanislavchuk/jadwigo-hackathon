@@ -491,6 +491,7 @@ export const COPY_KEYS = [
   "parent_language",
   "parent_language_pl",
   "parent_language_en",
+  "parent_page_language",
   // end parent login
   // the home page's featured lessons (dl-5ssh.3.6)
   "home_title",

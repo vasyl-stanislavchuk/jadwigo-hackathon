@@ -65,8 +65,9 @@ test("one 56 px line runs across the logo row and the top bar: the breadcrumb, t
   expect(Math.round(logoRow.height)).toBe(56);
   expect(Math.round(logoRow.y + logoRow.height)).toBe(Math.round(bar.y + bar.height));
   const buttons = page.locator("[data-top-bar]").getByRole("button");
-  // A role query skips the phone's menu, hidden at this width: the account is the one button.
-  await expect(buttons).toHaveText(["Konto i ustawienia"]);
+  // A role query skips the phone's menu, hidden at this width: the account menu is the one button.
+  await expect(buttons).toHaveCount(1);
+  await expect(buttons.first()).toHaveAccessibleName("Konto i ustawienia");
   await expect(page.getByRole("navigation", { name: "Gdzie jesteś" })).toContainText(
     "Lekcje/Nowa lekcja",
   );
