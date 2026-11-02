@@ -628,7 +628,7 @@ describe("the context chip and the footnote (dl-uukj.47.32)", () => {
     turnOf("happy-turn", (view) => {
       const message = view.chat[0];
       if (message?.kind === "message" && context !== undefined)
-        message.context = context as typeof message.context;
+        message.context = context as NonNullable<typeof message.context>;
     }),
   ];
 
