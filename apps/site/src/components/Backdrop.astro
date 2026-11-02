@@ -83,17 +83,58 @@ const pieces = [
 <script>
   import { trueSum } from "../lib/sums.ts";
 
-  const backdrop = document.querySelector<HTMLElement>(".backdrop");
-  if (backdrop) {
+  // Once the font is in, so the words are measured at their real size before the pieces avoid them.
+  const start = (backdrop: HTMLElement) => {
     // Every visit deals new sums and new places (dl-5ssh.4.38). Only this decorative layer changes, so no
-    // content shifts; under reduced motion the pieces land and stay.
+    // content shifts; under reduced motion the pieces land and stay. How many show follows the page's
+    // length, and none lands on the words, a field or a picture: a short page such as the sign-in stays
+    // calm (owner, 2026-11-02: "a bit too much on a screen with few elements").
     const lang = backdrop.dataset["lang"] === "en" ? "en" : "pl";
     const between = (lo: number, hi: number): number => lo + Math.random() * (hi - lo);
+    const layer = backdrop.getBoundingClientRect();
+    const W = layer.width;
+    const H = layer.height;
+    // About 6 sums and 7 stars for each screen-height of page.
+    const screens = Math.max(1, H / Math.max(innerHeight, 600));
+    const room = { sum: Math.round(6 * screens), star: Math.round(7 * screens) };
+    // What a piece must keep clear of, in the layer's own coordinates, with a little air around it.
+    const AIR = 14;
+    const taken = [
+      ...document.querySelectorAll(
+        "header, footer, main :is(h1, h2, h3, p, li, label, input, button, a, img, video, table, form, blockquote, .paper, .card, .pic, .tile)",
+      ),
+    ]
+      .map((e) => e.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0)
+      .map((r) => ({
+        left: r.left - layer.left - AIR,
+        top: r.top - layer.top - AIR,
+        right: r.right - layer.left + AIR,
+        bottom: r.bottom - layer.top + AIR,
+      }));
+    const clear = (l: number, t: number, w: number, h: number): boolean =>
+      taken.every((r) => l + w < r.left || l > r.right || t + h < r.top || t > r.bottom);
+    const placed = { sum: 0, star: 0 };
     for (const piece of backdrop.querySelectorAll<HTMLElement>(".piece")) {
+      const kind = piece.classList.contains("sum") ? "sum" : "star";
       const drift = piece.querySelector(".drift");
-      if (drift && piece.classList.contains("sum")) drift.textContent = trueSum(Math.random, lang);
-      piece.style.left = `${between(0, 96).toFixed(2)}%`;
-      piece.style.top = `${between(0, 100).toFixed(2)}%`;
+      if (drift && kind === "sum") drift.textContent = trueSum(Math.random, lang);
+      const w = piece.offsetWidth;
+      const h = piece.offsetHeight;
+      let spot: [number, number] | undefined;
+      for (let tries = 0; tries < 12 && placed[kind] < room[kind] && !spot; tries++) {
+        const l = between(0, Math.max(0, W - w));
+        const t = between(0, Math.max(0, H - h));
+        if (clear(l, t, w, h)) spot = [l, t];
+      }
+      if (!spot) {
+        piece.hidden = true;
+        continue;
+      }
+      placed[kind]++;
+      piece.hidden = false;
+      piece.style.left = `${((spot[0] / W) * 100).toFixed(2)}%`;
+      piece.style.top = `${((spot[1] / H) * 100).toFixed(2)}%`;
       piece.style.setProperty("--drift-x", `${between(-1.5, 1.5).toFixed(2)}rem`);
       piece.style.setProperty("--drift-y", `${between(-1.5, 1.5).toFixed(2)}rem`);
       piece.style.setProperty("--turn", `${Math.round(between(-12, 12))}deg`);
@@ -105,7 +146,7 @@ const pieces = [
     const fine = matchMedia("(pointer: fine)").matches;
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (fine && !still) {
-      const pieces = [...backdrop.querySelectorAll<HTMLElement>(".piece")];
+      const pieces = [...backdrop.querySelectorAll<HTMLElement>(".piece:not([hidden])")];
       // Livelier than dl-5ssh.4.35's calm lean (owner, 2026-11-02: "move a bit more actively").
       const REACH = 170; // px
       const PUSH = 22; // px at the cursor itself
@@ -152,6 +193,8 @@ const pieces = [
       document.documentElement.addEventListener("pointerleave", () => backdrop.classList.remove("lit"));
     }
   }
+  const backdrop = document.querySelector<HTMLElement>(".backdrop");
+  if (backdrop) void document.fonts.ready.then(() => start(backdrop));
 </script>
 
 <style>
@@ -165,6 +208,7 @@ const pieces = [
     opacity: 0; transition: opacity 1.2s ease;
   }
   .lit .glow { opacity: 1; }
+  .piece[hidden] { display: none; }
   .piece {
     position: absolute; line-height: 1; white-space: nowrap; user-select: none;
     transform: translate(var(--away-x, 0), var(--away-y, 0));
