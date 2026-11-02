@@ -29,7 +29,7 @@ import {
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import { cn } from "@jadwigo/ui";
-import { ArrowUpIcon } from "lucide-react";
+import { ArrowUpIcon, CheckIcon, LoaderCircleIcon } from "lucide-react";
 import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { Button } from "./button.tsx";
 import "./chat.css";
@@ -37,8 +37,8 @@ import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
 import { elapsedSeconds, phaseAnnouncement, type RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
-import { TOOL_KEY } from "./tools.ts";
-import { toolResult } from "./widgets/Widgets.tsx";
+import { type LineContext, sentenceOf, TOOL_ICON } from "./toolLine.ts";
+import { ToolDetails, toolResult } from "./widgets/Widgets.tsx";
 
 const STATUS_KEY: Record<RunStatus, CopyKey> = {
   queued: "chat_status_queued",
@@ -67,36 +67,121 @@ function rowsOf(chat: readonly ChatItem[]): Row[] {
   return rows;
 }
 
-function ToolLine({ tool, language }: { tool: ToolItem; language: Language }): ReactElement {
-  const what = copy(language, TOOL_KEY[tool.verb], {}, "adult");
-  const how =
-    tool.state === "failed"
-      ? copy(language, "chat_tool_stuck", { message: tool.error?.message ?? "" }, "adult")
-      : tool.state === "running"
-        ? copy(language, "chat_tool_running", {}, "adult")
-        : tool.state === "pending"
-          ? copy(language, "chat_tool_pending", {}, "adult")
-          : tool.state === "rejected"
-            ? copy(language, "chat_tool_rejected", {}, "adult")
-            : null;
+/** A line's state in words: the state mark beside it is decorative. */
+function stateWords(tool: ToolItem, language: Language): string {
+  const say = (key: CopyKey, vars: Record<string, string> = {}) =>
+    copy(language, key, vars, "adult");
+  switch (tool.state) {
+    case "failed":
+      return say("chat_tool_stuck", { message: tool.error?.message ?? "" });
+    case "running":
+      return say("chat_tool_running");
+    case "pending":
+      return say("chat_tool_pending");
+    case "rejected":
+      return say("chat_tool_rejected");
+    case "done":
+      return say("chat_tool_done");
+  }
+}
+
+/** The state mark: a spinner while it runs (turning only under motion-safe), a check, a red dot. */
+function StateMark({ state }: { state: ToolItem["state"] }): ReactElement | null {
+  if (state === "running")
+    return (
+      <LoaderCircleIcon
+        aria-hidden
+        className="size-3.5 shrink-0 text-jw-ink-soft motion-safe:animate-spin"
+        data-mark="running"
+      />
+    );
+  if (state === "done")
+    return (
+      <CheckIcon aria-hidden className="size-3.5 shrink-0 text-jw-right-ink" data-mark="done" />
+    );
+  if (state === "failed")
+    return (
+      <span
+        aria-hidden
+        className="size-2 shrink-0 rounded-full bg-jw-miss-edge"
+        data-mark="failed"
+      />
+    );
+  return null;
+}
+
+/**
+ * One tool line (dl-uukj.47.30): its icon, its sentence from the call's input, and a state mark
+ * with the state in text. Opening it shows "Co zostało zrobione" (the typed widget, or the line in
+ * plain words), and the raw input and output one more tap away under "Szczegóły". A failed line
+ * says its reason in view.
+ */
+function ToolLine({
+  tool,
+  language,
+  context,
+}: {
+  tool: ToolItem;
+  language: Language;
+  context: LineContext;
+}): ReactElement {
+  const say = (key: CopyKey) => copy(language, key, {}, "adult");
+  const sentence = sentenceOf(tool.verb, tool.input, context);
+  const words = copy(language, sentence.key, sentence.vars, "adult");
+  const Icon = TOOL_ICON[tool.verb];
   const result = toolResult(tool, language);
+  const failed = tool.state === "failed";
   return (
     <li data-tool={tool.verb} data-state={tool.state}>
-      {what}
-      {how === null ? null : `: ${how}`}
-      {result !== null && (result.kind === "plain" || !result.keepVisible) && result.element}
+      <details data-tool-line>
+        <summary className="flex cursor-pointer items-center gap-2">
+          <Icon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" data-tool-icon />
+          <span className="min-w-0 text-jw-ink" data-sentence>
+            {words}
+          </span>
+          <StateMark state={tool.state} />
+          <span className={failed ? "text-jw-ink" : "sr-only"} data-state-words>
+            {` · ${stateWords(tool, language)}`}
+          </span>
+        </summary>
+        <div className="ml-6 flex flex-col gap-2 py-1">
+          <p className="text-jw-page-small font-bold text-jw-ink-soft">
+            {say("chat_tool_what_done")}
+          </p>
+          {result?.kind === "widget" && !result.keepVisible ? (
+            result.element
+          ) : (
+            <p data-what-done>{stateWords(tool, language)}</p>
+          )}
+          {result !== null && <ToolDetails tool={tool} language={language} />}
+        </div>
+      </details>
     </li>
   );
 }
 
 /**
- * Tool lines folded under one line; a stuck one stays in view under the fold, and so does each
- * widget its registry entry keeps visible (dl-z5ja.24). The plain card stays inside the fold.
+ * Tool lines folded under one summary, "{n} kroków · ostatni: {sentence}"; a failed line stays in
+ * view under the fold, and so does each widget its registry entry keeps visible (dl-z5ja.24).
  */
-function ToolGroup({ tools, language }: { tools: ToolItem[]; language: Language }): ReactElement {
+function ToolGroup({
+  tools,
+  language,
+  context,
+}: {
+  tools: ToolItem[];
+  language: Language;
+  context: LineContext;
+}): ReactElement {
   const stuck = tools.filter((t) => t.state === "failed");
   const latest = tools.at(-1);
-  const head = latest === undefined ? "" : copy(language, TOOL_KEY[latest.verb], {}, "adult");
+  const last = latest === undefined ? null : sentenceOf(latest.verb, latest.input, context);
+  const head = copy(
+    language,
+    "chat_tool_summary",
+    { n: tools.length, last: last === null ? "" : copy(language, last.key, last.vars, "adult") },
+    "adult",
+  );
   const shown = tools.flatMap((t) => {
     const result = toolResult(t, language);
     return result?.kind === "widget" && result.keepVisible
@@ -104,24 +189,25 @@ function ToolGroup({ tools, language }: { tools: ToolItem[]; language: Language 
       : [];
   });
   return (
-    <div className="flex flex-col gap-1 text-sm">
-      <details className="text-muted-foreground">
-        <summary>
-          {head} · {copy(language, "chat_tool_count", { n: tools.length }, "adult")}
-        </summary>
-        <ul aria-label={copy(language, "chat_tool_lines", {}, "adult")} className="ml-4 list-disc">
+    <div className="flex flex-col gap-1 text-sm" data-tools>
+      <details className="text-jw-ink-soft" data-tool-group>
+        <summary className="cursor-pointer">{head}</summary>
+        <ul
+          aria-label={copy(language, "chat_tool_lines", {}, "adult")}
+          className="mt-1 flex flex-col gap-1"
+        >
           {tools.map((t) => (
-            <ToolLine key={t.call_id} tool={t} language={language} />
+            <ToolLine key={t.call_id} tool={t} language={language} context={context} />
           ))}
         </ul>
       </details>
       {stuck.length > 0 && (
         <ul
           aria-label={copy(language, "chat_tool_lines_stuck", {}, "adult")}
-          className="font-medium"
+          className="flex flex-col gap-1"
         >
           {stuck.map((t) => (
-            <ToolLine key={t.call_id} tool={t} language={language} />
+            <ToolLine key={t.call_id} tool={t} language={language} context={context} />
           ))}
         </ul>
       )}
@@ -184,7 +270,17 @@ function ErrorRow({
   );
 }
 
-function RowView({ row, run, language }: { row: Row; run: RunId; language: Language }) {
+function RowView({
+  row,
+  run,
+  language,
+  context,
+}: {
+  row: Row;
+  run: RunId;
+  language: Language;
+  context: LineContext;
+}) {
   switch (row.kind) {
     case "message": {
       const steer =
@@ -223,7 +319,7 @@ function RowView({ row, run, language }: { row: Row; run: RunId; language: Langu
       );
     }
     case "tools":
-      return <ToolGroup tools={row.tools} language={language} />;
+      return <ToolGroup tools={row.tools} language={language} context={context} />;
     case "steer":
       return (
         <p data-row="steer" data-level={row.level} className="text-sm">
@@ -422,6 +518,8 @@ export interface ChatPaneProps {
   pending?: string | null;
   /** Spróbuj ponownie on a stalled turn. */
   onRetry?: (() => void) | undefined;
+  /** A learner's first name by id, for a tool line about a child (toolLine.ts). */
+  nameOf?: ((learner: string) => string | null) | undefined;
 }
 
 export function ChatPane({
@@ -440,7 +538,9 @@ export function ChatPane({
   now = Date.now(),
   pending = null,
   onRetry,
+  nameOf,
 }: ChatPaneProps): ReactElement {
+  const lineContext: LineContext = nameOf === undefined ? {} : { nameOf };
   const parent = variant === "parent";
   const [draft, setDraft] = useState("");
   /** The last words sent, so a send that did not reach the server can go again. */
@@ -508,7 +608,7 @@ export function ChatPane({
               {...(still ? {} : { "data-enter": "" })}
             >
               {header && <AiHeader language={language} />}
-              <RowView row={row} run={turn.run.id} language={language} />
+              <RowView row={row} run={turn.run.id} language={language} context={lineContext} />
             </li>
           )),
           ...(onRate !== undefined && completed(turn)

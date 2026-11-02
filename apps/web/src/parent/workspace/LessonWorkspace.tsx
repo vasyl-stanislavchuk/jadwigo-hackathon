@@ -133,6 +133,7 @@ export function LessonWorkspace({
       now={now}
       pending={state.pending?.text ?? null}
       onRetry={retry}
+      nameOf={(id) => learners.find((l) => l.id === id)?.first_name ?? null}
     />
   );
 

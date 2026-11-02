@@ -99,7 +99,7 @@ describe("the chat pane, one state per golden log", () => {
       within(messages).getByText("A short lesson on equal groups for grade 2, please."),
     ).toBeTruthy();
     expect(within(messages).getByText("Your lesson is ready on the right.")).toBeTruthy();
-    expect(screen.getByText(/Sprawdzanie lekcji · 2 kroki/)).toBeTruthy();
+    expect(screen.getByText("2 kroki · ostatni: Sprawdzanie lekcji")).toBeTruthy();
     expect(status().textContent).toBe("Gotowe");
     expect(stopButton()).toBeNull();
   });
@@ -117,7 +117,9 @@ describe("the chat pane, one state per golden log", () => {
       ],
     });
     const stuck = screen.getByRole("list", { name: "Kroki, które się zacięły" });
-    expect(stuck.textContent).toBe("Sprawdzanie lekcji: nie udało się: step s03 has no key");
+    expect(stuck.querySelector("summary")?.textContent).toBe(
+      "Sprawdzanie lekcji · nie udało się: step s03 has no key",
+    );
     expect(stuck.closest("details")).toBeNull();
   });
 
@@ -444,5 +446,110 @@ describe("the two sides apart (dl-uukj.47.28)", () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+});
+
+describe("tool calls explained (dl-uukj.47.30)", () => {
+  const line = (verb: string) => document.querySelector(`[data-tools] [data-tool='${verb}']`);
+
+  it("gives each line its icon, its sentence from the call's input, and its state in text", () => {
+    pane({ turns: [turnOf("happy-turn")] });
+    const draft = line("lesson_draft") as HTMLElement;
+    const icon = draft.querySelector("summary [data-tool-icon]");
+    expect(icon?.tagName.toLowerCase()).toBe("svg");
+    expect(icon?.getAttribute("aria-hidden")).toBe("true");
+    expect(draft.querySelector("[data-sentence]")?.textContent).toBe(
+      "Układanie lekcji o: equal groups",
+    );
+    expect(draft.querySelector("[data-mark='done']")?.getAttribute("aria-hidden")).toBe("true");
+    const state = draft.querySelector("[data-state-words]") as HTMLElement;
+    expect(state.textContent).toBe(" · gotowe");
+    expect(state.className).toContain("sr-only");
+    // No input to say more with: the verb's plain sentence.
+    expect(line("lesson_check")?.querySelector("[data-sentence]")?.textContent).toBe(
+      "Sprawdzanie lekcji",
+    );
+    expect(document.querySelector("[data-tools] [role='status']")).toBeNull();
+  });
+
+  it("sums the folded group up as the count and the last line's sentence", () => {
+    pane({ turns: [turnOf("happy-turn")] });
+    const group = document.querySelector("[data-tool-group]") as HTMLDetailsElement;
+    expect(group.open).toBe(false);
+    expect(group.querySelector("summary")?.textContent).toBe(
+      "2 kroki · ostatni: Sprawdzanie lekcji",
+    );
+    cleanup();
+    pane({ turns: [turnOf("cancel-during-a-verb")] });
+    expect(document.querySelector("[data-tool-group] summary")?.textContent).toBe(
+      "1 krok · ostatni: Układanie lekcji o: clock",
+    );
+  });
+
+  it("keeps a failed line in view, with a red dot and its reason, while the group stays folded", () => {
+    pane({
+      turns: [
+        turnOf("happy-turn", (view) => {
+          const check = view.chat.find((c) => c.kind === "tool" && c.verb === "lesson_check");
+          if (check?.kind === "tool") {
+            check.state = "failed";
+            check.error = { type: "CheckFailed", message: "step s03 has no key" };
+          }
+        }),
+      ],
+    });
+    expect((document.querySelector("[data-tool-group]") as HTMLDetailsElement).open).toBe(false);
+    const stuck = screen.getByRole("list", { name: "Kroki, które się zacięły" });
+    expect(stuck.closest("details")).toBeNull();
+    expect(stuck.querySelector("[data-mark='failed']")?.getAttribute("aria-hidden")).toBe("true");
+    const reason = stuck.querySelector("[data-state-words]") as HTMLElement;
+    expect(reason.className).not.toContain("sr-only");
+    expect(reason.textContent).toBe(" · nie udało się: step s03 has no key");
+  });
+
+  it("opens a line on what was done, and the raw input and output one more tap under Szczegóły", () => {
+    pane({ turns: [turnOf("happy-turn")] });
+    const draft = line("lesson_draft") as HTMLElement;
+    const opened = draft.querySelector("[data-tool-line]") as HTMLDetailsElement;
+    expect(opened.textContent).toContain("Co zostało zrobione");
+    const raw = draft.querySelector("[data-card='plain']") as HTMLDetailsElement;
+    expect(raw.parentElement?.closest("[data-tool-line]")).toBe(opened);
+    expect(raw.querySelector("summary")?.textContent).toBe("Szczegóły");
+    expect(raw.querySelector("[data-card-input]")?.textContent).toContain(
+      '"topic": "equal groups"',
+    );
+  });
+
+  it("spins a running line's mark only under motion-safe", () => {
+    pane({
+      turns: [
+        turnOf("happy-turn", (view) => {
+          const check = view.chat.find((c) => c.kind === "tool" && c.verb === "lesson_check");
+          if (check?.kind === "tool") check.state = "running";
+        }),
+      ],
+    });
+    const mark = line("lesson_check")?.querySelector("[data-mark='running']");
+    expect(mark?.getAttribute("class")).toContain("motion-safe:animate-spin");
+    expect(mark?.getAttribute("class")).not.toMatch(/(^|\s)animate-spin/);
+  });
+
+  it("names the child a learner verb read, when the family has them", () => {
+    pane({
+      nameOf: (id) => (id === "lrn_1" ? "Ola" : null),
+      turns: [
+        turnOf("happy-turn", (view) => {
+          const check = view.chat.find((c) => c.kind === "tool" && c.verb === "lesson_check");
+          if (check?.kind === "tool") {
+            check.verb = "learner_week";
+            check.input = { learner_id: "lrn_1" };
+            delete check.view;
+          }
+        }),
+      ],
+    });
+    expect(line("learner_week")?.querySelector("[data-sentence]")?.textContent).toBe(
+      "Czytanie tygodnia · Ola",
+    );
   });
 });
