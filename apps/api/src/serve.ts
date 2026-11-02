@@ -7,7 +7,7 @@ import { createPostgresStore, InMemoryStore } from "@jadwigo/store";
 import { createApp } from "./app.ts";
 import { jwksUrlAuth } from "./auth.ts";
 import { authIssuer, authJwksUrl, databaseUrl, port } from "./config.ts";
-import { localPoke } from "./poke.ts";
+import { localPoke, type PokeStepHost } from "./poke.ts";
 
 const url = databaseUrl();
 // The token routes verify against AUTH_JWKS_URL (the dev project's JWKS) and AUTH_ISSUER; with
@@ -17,10 +17,20 @@ const authenticate = jwksUrlAuth(authJwksUrl(), authIssuer());
 // nobody reads: this server runs no step. With LOCAL_RUNNER_URL set (make dev-all), each committed
 // step pokes the local step host, as the Lambda pokes the runner's alias (dl-uukj.47.14.1).
 const queue = new InMemoryRunQueue(() => new Date());
+// A LOCAL_RUNNER_URL in no form poke.ts takes is said once, and this server pokes nothing: the
+// steps wait in the queue for the step host's own drain.
+let poke: PokeStepHost | undefined;
+try {
+  poke = localPoke();
+} catch (error) {
+  process.stderr.write(
+    `api: ${error instanceof Error ? error.message : String(error)}; no step host is poked\n`,
+  );
+}
 const app = createApp(url === undefined ? new InMemoryStore() : createPostgresStore(url), {
   authenticate,
   queue,
-  poke: localPoke(),
+  poke,
 });
 const context = {} as Parameters<typeof app.resolve>[1];
 

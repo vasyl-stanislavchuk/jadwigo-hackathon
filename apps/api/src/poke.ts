@@ -41,52 +41,71 @@ export type PokeTarget =
   | { socketPath: string; path: string }
   | { host: string; port: number; path: string };
 
-/** The path the local step host answers a poke on (apps/runner/src/dev.ts). */
+/** The path the local step host answers a poke on (apps/runner/src/dev.ts), when the URL names none. */
 const LOCAL_POKE_PATH = "/poke";
+
+/** The hosts a local poke may go to: this machine only, never the network. */
+const LOOPBACK = new Set(["127.0.0.1", "localhost", "::1"]);
+
+/**
+ * How long a poke may take. The route awaits its pokes before it replies, so a step host that
+ * takes the connection and never answers must not hold the parent's request: past this the poke
+ * fails, `pokeAll` logs it, and the step waits in the queue for the host's next drain.
+ */
+const POKE_TIMEOUT_MS = 2000;
 
 /**
  * Where `LOCAL_RUNNER_URL` points: `unix:<absolute path>` (what `make dev-all` sets, so the host
- * needs no port of its own) or `http://host:port`. Anything else throws, naming the form.
+ * needs no port of its own) or `http://<loopback host>:<port>[/path]`, where `[::1]` is IPv6's.
+ * A URL's path is kept as given, `/poke` when it names none. Anything else throws, naming the form.
  */
 export function pokeTarget(url: string): PokeTarget {
+  const form =
+    "LOCAL_RUNNER_URL is neither unix:<absolute path> nor http://<127.0.0.1, localhost or [::1]>:<port>";
   if (url.startsWith("unix:")) {
     const socketPath = url.slice("unix:".length);
-    if (!socketPath.startsWith("/"))
-      throw new Error("LOCAL_RUNNER_URL: unix:<absolute path to the step host's socket>");
+    if (!socketPath.startsWith("/")) throw new Error(form);
     return { socketPath, path: LOCAL_POKE_PATH };
   }
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw new Error("LOCAL_RUNNER_URL is neither unix:<path> nor an http:// URL");
-  }
-  if (parsed.protocol !== "http:")
-    throw new Error("LOCAL_RUNNER_URL is neither unix:<path> nor an http:// URL");
-  return { host: parsed.hostname, port: Number(parsed.port || 80), path: LOCAL_POKE_PATH };
+  const parsed = URL.canParse(url) ? new URL(url) : undefined;
+  // URL keeps an IPv6 host in its brackets; node:http wants it bare.
+  const host = parsed?.hostname.replace(/^\[(.*)\]$/, "$1");
+  if (parsed?.protocol !== "http:" || host === undefined || !LOOPBACK.has(host))
+    throw new Error(form);
+  const path = parsed.pathname === "/" ? LOCAL_POKE_PATH : `${parsed.pathname}${parsed.search}`;
+  return { host, port: Number(parsed.port || 80), path };
 }
 
 /** Posts one JSON body to a target and resolves on a 2xx answer; the default speaks node:http. */
 export type PostJson = (target: PokeTarget, body: string) => Promise<void>;
 
-const httpPost: PostJson = (target, body) =>
-  new Promise((resolve, reject) => {
-    const req = request(
-      {
-        ...target,
-        method: "POST",
-        headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body) },
-      },
-      (res) => {
-        res.resume();
-        const status = res.statusCode ?? 0;
-        if (status >= 200 && status < 300) resolve();
-        else reject(new Error(`the local step host answered ${status}`));
-      },
-    );
-    req.on("error", reject);
-    req.end(body);
-  });
+/** node:http's POST, failed once `timeout_ms` passes with no answer (POKE_TIMEOUT_MS). */
+export function httpPost(timeout_ms = POKE_TIMEOUT_MS): PostJson {
+  return (target, body) =>
+    new Promise((resolve, reject) => {
+      const req = request(
+        {
+          ...target,
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "content-length": Buffer.byteLength(body),
+          },
+        },
+        (res) => {
+          res.resume();
+          const status = res.statusCode ?? 0;
+          if (status >= 200 && status < 300) resolve();
+          else reject(new Error(`the local step host answered ${status}`));
+        },
+      );
+      req.setTimeout(timeout_ms, () =>
+        req.destroy(new Error(`the local step host did not answer in ${timeout_ms} ms`)),
+      );
+      req.on("error", reject);
+      req.end(body);
+    });
+}
 
 /**
  * The poke on this machine (dl-uukj.47.14.1): `make dev-all`'s step host (apps/runner/src/dev.ts)
@@ -95,7 +114,7 @@ const httpPost: PostJson = (target, body) =>
  */
 export function localPoke(
   url = localRunnerUrl(),
-  post: PostJson = httpPost,
+  post: PostJson = httpPost(),
 ): PokeStepHost | undefined {
   if (url === undefined) return undefined;
   const target = pokeTarget(url);

@@ -18,9 +18,10 @@ procs:
   # The step host, as the runner Lambda: drains agent_step as jadwigo_runner when the api pokes
   # LOCAL_RUNNER_URL after a commit, through HttpMuse on prod's model settings (apps/runner/src/dev.ts,
   # dl-uukj.47.14.2). Every turn is a paid Muse call: it starts only with JADWIGO_MUSE_CAP_USD set
-  # and META_API_KEY in MUSE_ENV (make dev-all JADWIGO_MUSE_CAP_USD=0.50).
+  # and META_API_KEY in MUSE_ENV (make dev-all JADWIGO_MUSE_CAP_USD=0.50). The local database is
+  # pinned again after MUSE_ENV is sourced, as engine-smoke does, so nothing in it can move the drain.
   runner:
-    shell: "if [ -f \"$MUSE_ENV\" ]; then set -a; . \"$MUSE_ENV\"; set +a; fi; exec bun run --cwd apps/runner dev --listen \"$LOCAL_RUNNER_URL\""
+    shell: "db=\"$DATABASE_URL\"; if [ -f \"$MUSE_ENV\" ]; then set -a; . \"$MUSE_ENV\"; set +a; fi; export DATABASE_URL=\"$db\" LOCAL_DATABASE_URL=\"$db\"; exec bun run --cwd apps/runner dev --listen \"$LOCAL_RUNNER_URL\""
   # ASTRO_DEV_BACKGROUND set keeps astro dev in its pane: unset, Astro detaches when an agent started
   # it (dev/index.js isRunByAgent), and the server outlives mprocs.
   site:

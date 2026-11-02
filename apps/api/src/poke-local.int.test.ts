@@ -3,8 +3,8 @@ import { createServer, type Server } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { RunId } from "@jadwigo/contracts";
-import { afterEach, describe, expect, it } from "vitest";
-import { localPoke } from "./poke.ts";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { httpPost, localPoke, pokeAll } from "./poke.ts";
 
 const STEP = { run_id: RunId.parse("run_7qre3atahx8cpak6xbjtz73var"), attempt: 1 };
 
@@ -15,9 +15,12 @@ afterEach(async () => {
   if (dir) rmSync(dir, { recursive: true, force: true });
 });
 
-/** A step host stand-in on a unix socket, answering `status` and keeping what it was posted. */
+/**
+ * A step host stand-in on a unix socket, answering `status` and keeping what it was posted; with
+ * "never" it takes the request and never answers, as a paused runner would.
+ */
 async function host(
-  status: number,
+  status: number | "never",
 ): Promise<{ url: string; got: { path: string; body: string }[] }> {
   dir = mkdtempSync(join(tmpdir(), "jw-poke-"));
   const socket = join(dir, "runner.sock");
@@ -26,7 +29,7 @@ async function host(
     const chunks: Buffer[] = [];
     for await (const chunk of req) chunks.push(chunk as Buffer);
     got.push({ path: req.url ?? "", body: Buffer.concat(chunks).toString("utf8") });
-    res.writeHead(status).end();
+    if (status !== "never") res.writeHead(status).end();
   });
   await new Promise<void>((done) => server?.listen(socket, done));
   return { url: `unix:${socket}`, got };
@@ -42,5 +45,18 @@ describe("localPoke over a real socket (dl-uukj.47.14.1)", () => {
   it("rejects on an answer that is not 2xx, which pokeAll logs and swallows", async () => {
     const { url } = await host(500);
     await expect(localPoke(url)?.(STEP)).rejects.toThrow(/answered 500/);
+  });
+
+  it("gives up on a step host that takes the poke and never answers, so the route replies", async () => {
+    const { url, got } = await host("never");
+    const started = performance.now();
+    await expect(localPoke(url, httpPost(200))?.(STEP)).rejects.toThrow(/did not answer in 200 ms/);
+    // pokeAll, as the route awaits it after the commit: it logs the failure and returns.
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    await pokeAll(localPoke(url, httpPost(200)), [STEP]);
+    expect(performance.now() - started).toBeLessThan(2000);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(got).toHaveLength(2);
+    error.mockRestore();
   });
 });

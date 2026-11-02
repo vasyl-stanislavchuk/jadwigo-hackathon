@@ -154,6 +154,9 @@ function encodeMessage(message: PhoenixMessage, vsn: Vsn): string {
 /** supabase-js names a channel `realtime:<topic>`; the database's topic is the part after it. */
 const CHANNEL_PREFIX = "realtime:";
 
+/** The database's topic for a run's channel, `run:<run id>` (the run_event trigger). */
+const RUN_TOPIC_PREFIX = "run:";
+
 /**
  * Whether a token may join a private topic: null when it may, else the reason the join is refused
  * with. The server checks the token and Realtime's select policy on realtime.messages.
@@ -217,10 +220,19 @@ export class RealtimeHub {
       case "phx_join": {
         if (token !== null) state.token = token;
         const config = message.payload["config"] as { private?: unknown } | undefined;
+        const topic = message.topic.startsWith(CHANNEL_PREFIX)
+          ? message.topic.slice(CHANNEL_PREFIX.length)
+          : message.topic;
+        // A run's topic is private on Supabase: the database sends its broadcasts with private
+        // true, which a public channel never receives. Here a public join on it is refused.
+        if (config?.private !== true && topic.startsWith(RUN_TOPIC_PREFIX))
+          return reply({
+            status: "error",
+            response: {
+              reason: `Unauthorized: ${topic} is a private channel: join it with private: true`,
+            },
+          });
         if (config?.private === true) {
-          const topic = message.topic.startsWith(CHANNEL_PREFIX)
-            ? message.topic.slice(CHANNEL_PREFIX.length)
-            : message.topic;
           const refused = await this.check(topic, state.token);
           if (refused !== null) return reply({ status: "error", response: { reason: refused } });
         }

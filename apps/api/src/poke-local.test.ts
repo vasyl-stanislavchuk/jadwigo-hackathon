@@ -20,18 +20,31 @@ describe("localPoke (dl-uukj.47.14.1)", () => {
     expect(JSON.parse(sent[0]?.body ?? "")).toEqual(STEP);
   });
 
-  it("takes an http:// URL too", () => {
+  it("takes a loopback http:// URL too, IPv6's included, keeping a path it names", () => {
     expect(pokeTarget("http://127.0.0.1:4999")).toEqual({
       host: "127.0.0.1",
       port: 4999,
       path: "/poke",
     });
+    expect(pokeTarget("http://[::1]:4999/runner/poke?v=1")).toEqual({
+      host: "::1",
+      port: 4999,
+      path: "/runner/poke?v=1",
+    });
+    expect(pokeTarget("http://localhost:4999/").path).toBe("/poke");
   });
 
-  it("refuses a relative socket path and any other scheme, naming the form", () => {
-    expect(() => pokeTarget("unix:runner.sock")).toThrow(/absolute path/);
-    expect(() => pokeTarget("https://runner.example")).toThrow(/unix:<path>/);
-    expect(() => pokeTarget("runner")).toThrow(/unix:<path>/);
+  it("refuses a relative socket path, another scheme and any host off this machine", () => {
+    for (const url of [
+      "unix:runner.sock",
+      "https://127.0.0.1:4999",
+      "runner",
+      "http://10.0.0.5:4999",
+      "http://runner.example:4999",
+      "http://[::2]:4999",
+    ]) {
+      expect(() => pokeTarget(url), url).toThrow(/LOCAL_RUNNER_URL is neither/);
+    }
   });
 
   it("pokes nothing when LOCAL_RUNNER_URL names no host", () => {

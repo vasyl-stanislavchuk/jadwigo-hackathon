@@ -152,4 +152,20 @@ describe("the Phoenix channel (dl-uukj.47.14.1)", () => {
     hub.close(v1);
     expect(hub.broadcast("run:run_7qre3atahx8cpak6xbjtz73var", "run_event", poke)).toBe(0);
   });
+
+  it("refuses a public join on a run's topic without asking the check", async () => {
+    let asked = 0;
+    const hub = new RealtimeHub(async () => {
+      asked += 1;
+      return null;
+    });
+    const s = socket();
+    hub.open(s);
+    await hub.receive(
+      s,
+      JSON.stringify(["1", "1", TOPIC, "phx_join", { config: { private: false } }]),
+    );
+    expect(s.sent.at(-1)).toMatchObject(["1", "1", TOPIC, "phx_reply", { status: "error" }]);
+    expect([asked, hub.listeners(TOPIC)]).toEqual([0, 0]);
+  });
 });
