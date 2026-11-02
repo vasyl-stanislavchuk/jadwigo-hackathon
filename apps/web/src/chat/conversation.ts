@@ -98,6 +98,8 @@ export type ConversationAction =
   | { type: "restore_failed"; notFound?: boolean }
   | { type: "pending"; pending: Pending }
   | { type: "sent"; event_id: string; run_id: RunId }
+  /** The words never went (a route refused them before any turn): their echo goes. */
+  | { type: "unsent"; event_id: string }
   | { type: "queued"; text: string }
   | { type: "stop" }
   | { type: "send_failed"; failed: boolean; limit?: SendLimit | null }
@@ -256,6 +258,8 @@ export function conversationReducer(
       const next = { ...state, pending: { ...state.pending, run: action.run_id } };
       return { ...next, pending: stillPending(next) };
     }
+    case "unsent":
+      return state.pending?.event_id === action.event_id ? { ...state, pending: null } : state;
     case "send_failed":
       // A send that failed takes its echo away: the failure row offers it again.
       return {

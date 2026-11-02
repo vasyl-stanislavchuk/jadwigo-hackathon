@@ -557,6 +557,12 @@ export interface ChatPaneProps {
   onRetry?: (() => void) | undefined;
   /** A learner's first name by id, for a tool line about a child (toolLine.ts). */
   nameOf?: ((learner: string) => string | null) | undefined;
+  /** The "Następne" queue (queue.ts): what waits to go once the turn ends. */
+  next?: readonly string[];
+  /** "Wyślij teraz" on one waiting row. */
+  onSendNow?: ((index: number) => void) | undefined;
+  /** Takes one waiting row out, answering its words ("Zmień" puts them back in the composer). */
+  onTakeNext?: ((index: number) => string | null) | undefined;
 }
 
 export function ChatPane({
@@ -576,6 +582,9 @@ export function ChatPane({
   pending = null,
   onRetry,
   nameOf,
+  next = [],
+  onSendNow,
+  onTakeNext,
 }: ChatPaneProps): ReactElement {
   const lineContext: LineContext = nameOf === undefined ? {} : { nameOf };
   const context = contextLine(turns, nameOf, language);
@@ -838,6 +847,53 @@ export function ChatPane({
           </Button>
         )}
       </form>
+      {next.length > 0 && (
+        <section aria-label={say("chat_queue_next")} className="flex flex-col gap-1" data-next>
+          <h3 className="text-jw-page-small font-bold text-jw-ink-soft">
+            {say("chat_queue_next")}
+          </h3>
+          <ol className="flex flex-col gap-1">
+            {next.map((text, i) => (
+              // A waiting row may repeat; its place in the queue does not.
+              <li
+                key={`${i}-${text}`}
+                className="flex items-center gap-2 rounded-jw-small border-jw border-jw-line bg-jw-card px-2 py-1 text-sm"
+                data-next-row
+              >
+                <span className="min-w-0 flex-1 truncate text-jw-ink">{text}</span>
+                {onSendNow !== undefined && (
+                  <Button variant="outline" size="xs" onClick={() => onSendNow(i)} data-send-now>
+                    {say("chat_queue_send_now")}
+                  </Button>
+                )}
+                {onTakeNext !== undefined && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => {
+                        const words = onTakeNext(i);
+                        if (words !== null) setDraft(words);
+                      }}
+                      data-next-edit
+                    >
+                      {say("chat_queue_edit")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      onClick={() => onTakeNext(i)}
+                      data-next-remove
+                    >
+                      {say("chat_queue_remove")}
+                    </Button>
+                  </>
+                )}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
       <p className="text-jw-page-small text-jw-ink-soft" data-footnote>
         {say("chat_footnote")}
       </p>

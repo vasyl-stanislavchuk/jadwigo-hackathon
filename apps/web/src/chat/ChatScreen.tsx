@@ -66,6 +66,9 @@ function ChatView({
   onRate,
   onRefetch,
   onRetry,
+  next,
+  onSendNow,
+  onTakeNext,
 }: {
   language: Language;
   state: ConversationState;
@@ -75,6 +78,10 @@ function ChatView({
   onRefetch?: () => void;
   /** Spróbuj ponownie on a stalled turn. */
   onRetry?: () => void;
+  /** The "Następne" queue and its rows' actions (queue.ts). */
+  next?: readonly string[];
+  onSendNow?: (index: number) => void;
+  onTakeNext?: (index: number) => string | null;
   onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
   onNew?: () => void;
   /** Rates a completed turn by its run (dl-z5ja.63). */
@@ -103,6 +110,9 @@ function ChatView({
           now={now}
           pending={state.pending?.text ?? null}
           onRetry={onRetry}
+          {...(next === undefined ? {} : { next })}
+          onSendNow={onSendNow}
+          onTakeNext={onTakeNext}
         />
       }
       lesson={
@@ -230,10 +240,19 @@ function LiveChat({
   language: Language;
   onNew(): void;
 }): ReactElement {
-  const { state, send, stop, edit, consentMissing, consented, refetch, retry } = useConversation(
-    transport,
-    conversation,
-  );
+  const {
+    state,
+    send,
+    stop,
+    edit,
+    consentMissing,
+    consented,
+    refetch,
+    retry,
+    next,
+    sendNow,
+    takeNext,
+  } = useConversation(transport, conversation);
   if (consentMissing)
     return (
       <main className="mx-auto flex max-w-xl flex-col p-4">
@@ -258,6 +277,9 @@ function LiveChat({
       onRate={ratings === null ? undefined : (run, body) => ratings.rateRun(run, body)}
       onRefetch={refetch}
       onRetry={retry}
+      next={next}
+      onSendNow={sendNow}
+      onTakeNext={takeNext}
     />
   );
 }

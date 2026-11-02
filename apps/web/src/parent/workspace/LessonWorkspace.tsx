@@ -79,10 +79,19 @@ export function LessonWorkspace({
     copy(language, key, vars, CATEGORY);
   // The route's id is the server's: it stands for itself in the transport, before the first read.
   holdServer(conversation);
-  const { state, send, stop, edit, consentMissing, consented, refetch, retry } = useConversation(
-    engine.transport,
-    conversation,
-  );
+  const {
+    state,
+    send,
+    stop,
+    edit,
+    consentMissing,
+    consented,
+    refetch,
+    retry,
+    next,
+    sendNow,
+    takeNext,
+  } = useConversation(engine.transport, conversation);
   const lesson = useLessonWiring(state, edit);
   const { turns } = lesson;
   const restoring = state.connection === "restoring";
@@ -152,6 +161,9 @@ export function LessonWorkspace({
       pending={state.pending?.text ?? null}
       onRetry={retry}
       nameOf={(id) => learners.find((l) => l.id === id)?.first_name ?? null}
+      next={next}
+      onSendNow={sendNow}
+      onTakeNext={takeNext}
     />
   );
 
