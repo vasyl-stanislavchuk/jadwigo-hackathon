@@ -153,7 +153,13 @@ function ToolLine({
           {result?.kind === "widget" && !result.keepVisible ? (
             result.element
           ) : (
-            <p data-what-done>{stateWords(tool, language)}</p>
+            // No widget here (none, or one kept in view under the fold, drawn once there): the line
+            // in plain words, its sentence and where it stands, never only the state word
+            // (dl-uukj.47.50).
+            <p className="flex flex-wrap gap-x-2" data-what-done>
+              <span>{words}</span>
+              <span className="text-jw-ink-soft">{stateWords(tool, language)}</span>
+            </p>
           )}
           {result !== null && <ToolDetails tool={tool} language={language} />}
         </div>
@@ -559,6 +565,11 @@ export interface ChatPaneProps {
   nameOf?: ((learner: string) => string | null) | undefined;
   /** The "Następne" queue (queue.ts): what waits to go once the turn ends. */
   next?: readonly string[];
+  /**
+   * "Spróbuj ponownie" after a failed send, from the conversation: the exact words that failed,
+   * a queued row's included. Without it the pane sends its own last words again.
+   */
+  onResend?: (() => void) | undefined;
   /** "Wyślij teraz" on one waiting row. */
   onSendNow?: ((index: number) => void) | undefined;
   /** Takes one waiting row out, answering its words ("Zmień" puts them back in the composer). */
@@ -587,6 +598,7 @@ export function ChatPane({
   onRetry,
   nameOf,
   next = [],
+  onResend,
   onSendNow,
   onTakeNext,
   contextClosed = false,
@@ -655,7 +667,15 @@ export function ChatPane({
         {turns.map((turn) => [
           ...turnRows(turn).map((entry) =>
             entry.kind === "plan" ? (
-              <li key={`${turn.run.id}-plan`} className="flex flex-col" data-chat-row>
+              // A direct child of the scrolling list, so it pins while the turn runs and the
+              // turn's tool lines scroll beneath it (dl-uukj.47.50); a sticky card inside a row as
+              // tall as itself never pinned. Jadwigo AI's header pins with it.
+              <li
+                key={`${turn.run.id}-plan`}
+                className={cn("flex flex-col", isOpen(turn) && "sticky top-0 z-10 bg-jw-card")}
+                data-chat-row
+                data-plan-row
+              >
                 {entry.header && <AiHeader language={language} />}
                 <PlanCard plan={turn.view.plan ?? []} open={isOpen(turn)} language={language} />
               </li>
@@ -786,8 +806,14 @@ export function ChatPane({
       {sendFailed && sendLimit === null && (
         <div role="alert" data-row="send-failed" className="flex items-center gap-2 text-sm">
           <p>{say("chat_send_again")}</p>
-          {lastSent !== null && (
-            <Button variant="outline" size="sm" onClick={() => resend(lastSent)}>
+          {(onResend !== undefined || lastSent !== null) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                onResend !== undefined ? onResend() : lastSent !== null && resend(lastSent)
+              }
+            >
               {say("chat_retry_turn")}
             </Button>
           )}
