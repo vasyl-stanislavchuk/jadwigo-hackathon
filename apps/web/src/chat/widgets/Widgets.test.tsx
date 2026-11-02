@@ -92,13 +92,15 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     expect(widget.textContent).not.toMatch(/\berror\b|\bwarn\b/);
   });
 
-  it("says a clean check passed", () => {
+  it("says a clean check passed, inside the fold", () => {
     draw(
       [tool(1, { view: { kind: "lesson_check", data: { publishable: true, findings: [] } } })],
       "en",
     );
     const widget = screen.getByRole("region", { name: "Checking the lesson" });
     expect(widget.textContent).toContain("The lesson passed its checks.");
+    // A clean pass is no news: it folds in with the other steps (design review 2026-11-02).
+    expect(widget.closest("details")).not.toBeNull();
   });
 
   it("draws a verb with no widget as the plain card, inside the fold", () => {

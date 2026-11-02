@@ -8,13 +8,15 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-export type Panel = "sidebar" | "chat" | "details";
+export type Panel = "sidebar" | "chat" | "details" | "lesson";
 
 /** Each panel's state before the parent has chosen. */
 export const OPEN_AT_FIRST: Readonly<Record<Panel, boolean>> = {
   sidebar: true,
   chat: true,
   details: false,
+  // The chat is the main view; the lesson opens from the top bar (design review 2026-11-02).
+  lesson: false,
 };
 
 const key = (panel: Panel): string => `jw.parent.fold.${panel}`;

@@ -158,7 +158,7 @@ export function NewLessonBox({
   };
 
   return (
-    <div className="flex min-h-full flex-col items-center justify-center gap-6 px-4 py-10 lg:px-6">
+    <div className="flex min-h-full flex-col items-center justify-center gap-6 px-4 pt-10 pb-40 lg:px-6">
       <h1 className="text-center text-jw-page-question leading-tight font-bold">
         {t("parent_question")}
       </h1>
@@ -169,13 +169,13 @@ export function NewLessonBox({
         data-new-lesson
         data-ready={ready ? "" : undefined}
         className={cn(
-          "flex w-full max-w-jw-shell-box flex-col gap-3 rounded-jw-box border-2 bg-jw-card p-4 transition-colors duration-jw-fast",
+          "flex w-full max-w-4xl flex-col gap-3 rounded-jw-box border-2 bg-jw-card p-4 transition-colors duration-jw-fast",
           ready ? "border-jw-focus" : "border-jw-ink-soft",
         )}
       >
         <textarea
           ref={box}
-          rows={3}
+          rows={4}
           value={text}
           onChange={(event) => setText(event.target.value)}
           onKeyDown={keys}

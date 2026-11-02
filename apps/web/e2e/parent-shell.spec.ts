@@ -83,21 +83,16 @@ test("the sidebar is 232 px, folds to a 60 px rail, and stays folded after a rel
   await expect.poll(async () => Math.round((await box(page, "#parent-sidebar")).width)).toBe(232);
 });
 
-// The lesson workspace (dl-uukj.47.5): chat 360 | lesson | details folded to its 52 px strip, and
-// one 68 px band under the chat and the lesson.
-test("the workspace: chat 360, details folded to 52, one 68 px band under the chat and the lesson", async ({
-  page,
-}) => {
+// The lesson workspace (dl-uukj.47.5; design review 2026-11-02): the chat alone at first, no
+// details and no footer; "Pokaż lekcję" in the top bar opens the lesson beside a 360 px chat.
+test("the workspace: the chat alone, then the lesson beside a 360 px chat", async ({ page }) => {
   await signIn(page);
   await page.goto(`/parent/lessons/${await ownConversation(page)}`);
   await expect(page.locator("[data-workspace]")).toBeVisible();
-  expect(Math.round((await box(page, "#parent-chat")).width)).toBe(360);
-  expect(Math.round((await box(page, "#parent-details")).width)).toBe(52);
-  const band = await box(page, "[data-chat-band]");
-  const footer = await box(page, "[data-lesson-footer]");
-  expect(Math.round(band.height)).toBe(68);
-  expect(Math.round(footer.height)).toBe(68);
-  expect(Math.round(band.y + band.height)).toBe(Math.round(footer.y + footer.height));
-  await page.getByRole("button", { name: "Rozwiń szczegóły" }).click();
-  await expect.poll(async () => Math.round((await box(page, "#parent-details")).width)).toBe(290);
+  await expect(page.locator("#parent-lesson")).toBeHidden();
+  await expect(page.locator("#parent-details")).toHaveCount(0);
+  await expect(page.locator("[data-lesson-footer]")).toHaveCount(0);
+  await page.getByRole("button", { name: "Pokaż lekcję" }).click();
+  await expect(page.locator("#parent-lesson")).toBeVisible();
+  await expect.poll(async () => Math.round((await box(page, "#parent-chat")).width)).toBe(360);
 });

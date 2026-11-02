@@ -16,6 +16,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineTransport } from "../../chat/useConversation.ts";
 import type { SendBody } from "../../chat/wire.ts";
+import { folds } from "../shell/fold.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { LessonWorkspace } from "./LessonWorkspace.tsx";
 
@@ -76,8 +77,8 @@ async function workspace(engine: LessonEngine, forLearner: LearnerId | null = nu
         engine={engine}
         learners={[]}
         forLearner={forLearner}
+        onForChange={() => {}}
         onAddChild={() => {}}
-        changeMenu={(trigger) => trigger}
       />,
     );
   });
@@ -238,8 +239,6 @@ function quietEngine() {
 
 const band = () => document.querySelector("[data-chat-band] [data-status]")?.textContent ?? "";
 const live = () => document.querySelector("[data-chat-band] [data-live]")?.textContent ?? "";
-const footer = () =>
-  document.querySelector("[data-lesson-footer] [data-status]")?.textContent ?? "";
 const placeholder = () => document.querySelector("[data-lesson-waiting]")?.textContent ?? "";
 const activity = () => document.querySelector("[data-activity]")?.getAttribute("data-phase");
 const tick = async (ms: number) => {
@@ -334,7 +333,7 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     expect(last?.kind === "message" && last.text).toBe("Odejmowanie przez 10");
   });
 
-  it("says one state in the band, the footer, the placeholder, the live region and the strip", async () => {
+  it("says one state in the band, the placeholder, the live region and the strip", async () => {
     const q = quietEngine();
     firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
     await workspace(q.engine);
@@ -346,14 +345,16 @@ describe("one honest run state (dl-uukj.47.29)", () => {
       await tick(wait);
       expect(band().startsWith(words)).toBe(true);
       expect(placeholder()).toBe(words);
-      // Before the lesson has steps the footer has no "0 z 0": the state, then the reason.
-      expect(footer()).toBe(`${words} · „Daj lekcję” zadziała, gdy lekcja przejdzie sprawdzenie`);
       expect(
         document.querySelector("[data-activity] [data-shimmer], [data-activity] span")?.textContent,
       ).toBe(words);
     }
     expect(live()).toBe("Utknęło");
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zwiń rozmowę" })));
+    // The chat folds only beside the open lesson, from the shell's top bar (ChatFoldToggle).
+    await act(async () => {
+      folds.set("lesson", true);
+      folds.set("chat", false);
+    });
     expect(document.querySelector("[data-strip-fact]")?.textContent).toBe("Utknęło");
   });
 });

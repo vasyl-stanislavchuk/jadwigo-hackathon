@@ -8,10 +8,11 @@
  *   empty line    what will appear here, until there is a first lesson
  *   Dzieci        a small heading with a dashed "+" beside it, never a row; a row per child: the
  *                 disc, the name, the class at the end
- *   account       at the foot: the language and signing out
+ *   foot          the fold button, named "Zwiń menu", and nothing else
  *
- * Folded, it is a 60 px rail: the crown, the unfold button, the menu as icons, a disc per child and
- * the account. Each icon-only control is named from copy.
+ * The account (the language and signing out) sits in the top bar's right corner (ParentShell).
+ * Folded, it is a 60 px rail: the crown, the menu as icons, a disc per child and the unfold button
+ * at its foot. Each icon-only control is named from copy.
  */
 
 import type { Learner, LearnerId } from "@jadwigo/contracts";
@@ -26,7 +27,7 @@ import {
   PopoverTrigger,
   SideMenu,
 } from "@jadwigo/ui";
-import { BookOpenIcon, HistoryIcon, PlusIcon, UserRoundIcon } from "lucide-react";
+import { BookOpenIcon, HistoryIcon, PanelLeftIcon, PlusIcon, UserRoundIcon } from "lucide-react";
 import type { MouseEvent, ReactElement, ReactNode } from "react";
 import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
@@ -48,21 +49,20 @@ export interface SidebarProps {
   /** Whether the family has made a lesson yet: before it, the empty line shows under the menu. */
   hasLessons: boolean;
   onAddChild: () => void;
-  onSignOut: () => void;
 }
 
 const SECTION =
   "text-jw-page-small leading-tight font-bold tracking-wider text-jw-ink-soft uppercase";
 
-/** The account at the sidebar's foot: a button that opens the language and signing out. */
-function Account({
+/** The account in the top bar's right corner: a button that opens the language and signing out. */
+export function Account({
   language,
   onSignOut,
-  folded,
+  folded = false,
 }: {
   language: Language;
   onSignOut: () => void;
-  folded: boolean;
+  folded?: boolean;
 }): ReactElement {
   const label = copy(language, "parent_account", {}, CATEGORY);
   return (
@@ -72,7 +72,7 @@ function Account({
           type="button"
           aria-label={folded ? label : undefined}
           className={cn(
-            "flex min-h-jw-control w-full items-center gap-2 rounded-jw-small px-2 text-left text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus",
+            "flex min-h-jw-control max-w-64 items-center gap-2 rounded-jw-small px-2 text-left text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus",
             folded && "justify-center px-0",
           )}
           data-account
@@ -81,7 +81,7 @@ function Account({
           {!folded && <span className="truncate">{label}</span>}
         </button>
       </PopoverTrigger>
-      <PopoverContent side="top" align="start" className="w-64 gap-3 p-3" data-account-menu>
+      <PopoverContent side="bottom" align="end" className="w-64 gap-3 p-3" data-account-menu>
         <LanguagePick language={language} />
         <Button type="button" variant="outline" size="control" onClick={onSignOut} data-sign-out>
           {copy(language, "parent_sign_out", {}, CATEGORY)}
@@ -166,8 +166,8 @@ export function SidebarBody({
   place,
   hasLessons,
   onAddChild,
-  onSignOut,
-}: SidebarProps): ReactElement {
+  foot,
+}: SidebarProps & { foot?: ReactNode }): ReactElement {
   const t = (key: Parameters<typeof copy>[1]): string => copy(language, key, {}, CATEGORY);
   const lang = pageLang();
   const current = place.kind === "lessons" || place.kind === "history" ? place.kind : "";
@@ -227,9 +227,7 @@ export function SidebarBody({
           )}
         </section>
       </div>
-      <div className="border-t-jw border-jw-line px-3 py-2">
-        <Account language={language} onSignOut={onSignOut} folded={false} />
-      </div>
+      {foot !== undefined && <div className="border-t-jw border-jw-line px-3 py-2">{foot}</div>}
     </div>
   );
 }
@@ -270,7 +268,6 @@ export function SidebarRail({
   learners,
   place,
   onAddChild,
-  onSignOut,
   unfold,
 }: SidebarProps & { unfold: ReactNode }): ReactElement {
   const t = (key: Parameters<typeof copy>[1]): string => copy(language, key, {}, CATEGORY);
@@ -281,7 +278,6 @@ export function SidebarRail({
         aria-label={t("parent_nav_label")}
         className="flex min-h-0 flex-1 flex-col items-center gap-1.5 overflow-y-auto py-3"
       >
-        {unfold}
         <RailLink
           href={lessonsPath({ lang })}
           label={t("parent_nav_lessons")}
@@ -309,10 +305,35 @@ export function SidebarRail({
         ))}
         <AddButton label={t("parent_add_child")} onAdd={onAddChild} />
       </nav>
-      <div className="w-full border-t-jw border-jw-line px-2 py-2">
-        <Account language={language} onSignOut={onSignOut} folded />
+      <div className="flex w-full justify-center border-t-jw border-jw-line px-2 py-2">
+        {unfold}
       </div>
     </div>
+  );
+}
+
+/** The open sidebar's fold button at its foot: the panel icon and its name, a whole row. */
+export function FoldButton({
+  label,
+  controls,
+  onFold,
+}: {
+  label: string;
+  controls: string;
+  onFold: () => void;
+}): ReactElement {
+  return (
+    <button
+      type="button"
+      aria-expanded
+      aria-controls={controls}
+      onClick={onFold}
+      className="flex min-h-jw-control w-full items-center gap-2 rounded-jw-small px-2 text-left text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+      data-fold-sidebar
+    >
+      <PanelLeftIcon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" />
+      <span className="truncate">{label}</span>
+    </button>
   );
 }
 
@@ -320,17 +341,15 @@ export function SidebarRail({
 export function LogoRow({
   language,
   folded,
-  toggle,
 }: {
   language: Language;
   folded: boolean;
-  toggle?: ReactNode;
 }): ReactElement {
   return (
     <div
       className={cn(
         "flex h-jw-shell-bar shrink-0 items-center border-b-jw border-jw-line",
-        folded ? "justify-center" : "justify-between pr-2 pl-4",
+        folded ? "justify-center" : "pr-2 pl-4",
       )}
     >
       <NavLink
@@ -344,7 +363,6 @@ export function LogoRow({
           <Logo className="h-10" />
         )}
       </NavLink>
-      {toggle}
     </div>
   );
 }

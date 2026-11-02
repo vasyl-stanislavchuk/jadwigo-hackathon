@@ -715,6 +715,8 @@
   "parent_workspace_tabs": false,
   "parent_chat_fold": false,
   "parent_chat_unfold": false,
+  "parent_lesson_show": false,
+  "parent_lesson_hide": false,
   "parent_details_fold": false,
   "parent_details_unfold": false,
   "parent_save": false,
