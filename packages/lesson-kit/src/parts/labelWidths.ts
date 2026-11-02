@@ -1,0 +1,45 @@
+/**
+ * How wide each label over a drawing may be (dl-uukj.48). Labels that share a row (the same y and
+ * the same vertical alignment, like a graph's category names under its x-axis) each get a max-width
+ * of the distance to their nearest neighbour on that row, in percent of the drawing's width, so a
+ * long name wraps under its own column instead of running into the next one. A label alone on its
+ * row gets null and keeps one line.
+ */
+
+export interface LabelSpot {
+  coordinates: readonly [number, number];
+  alignment: string;
+}
+
+const vertical = (alignment: string): string => {
+  const words = alignment.split(/\s+/);
+  return words.includes("above") ? "above" : words.includes("below") ? "below" : "middle";
+};
+
+export function labelWidths(
+  items: readonly LabelSpot[],
+  range: readonly [readonly [number, number], readonly [number, number]],
+): (number | null)[] {
+  const [x0, x1] = range[0];
+  const xs = items.map((l) => (100 * (l.coordinates[0] - x0)) / (x1 - x0));
+  const row = (l: LabelSpot): string => `${l.coordinates[1].toFixed(6)} ${vertical(l.alignment)}`;
+  return items.map((l, i) => {
+    const x = xs[i] ?? 0;
+    const gaps = items.flatMap((m, j) => {
+      const gap = Math.abs((xs[j] ?? 0) - x);
+      return j !== i && row(m) === row(l) && gap > 0 ? [gap] : [];
+    });
+    return gaps.length > 0 ? Math.min(...gaps) : null;
+  });
+}
+
+/**
+ * The words of a TeX label that is only `\text{…}`, such as a graph's "\text{Fancy Farm}", or null.
+ * Khan's graphs write a category as `\text{Fancy Farm}\hphantom{Fancy Farm}`, the phantom an empty
+ * copy that only pushes the words left of their column; it is dropped, so the words sit centred.
+ * KaTeX sets such text with non-breaking spaces on one line, so a label that must wrap is drawn as
+ * these plain words instead (dl-uukj.48).
+ */
+export function textOnly(tex: string): string | null {
+  return tex.trim().match(/^\\text\s*\{([^{}\\$]*)\}(?:\\hphantom\{[^{}]*\})?$/)?.[1] ?? null;
+}

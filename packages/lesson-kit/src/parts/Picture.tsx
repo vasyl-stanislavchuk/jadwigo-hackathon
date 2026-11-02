@@ -8,11 +8,15 @@
  * Its width also keeps it within --picture-max-h when a picture sheet's frame sets one (PictureSheet.tsx,
  * rule 16), so the labels stay on the drawing at any height.
  *
+ * Labels that share a row, like a graph's category names, wrap centred within the gap to their
+ * nearest neighbour, so a long name never runs into the next column (dl-uukj.48, labelWidths.ts).
+ *
  * Plain props only: this part knows nothing of a family or of Khan. A label is TeX unless `math`
  * is false, and RichText draws it inline, so a coloured number over a drawing reads as it does in
  * the text.
  */
 
+import { labelWidths, textOnly } from "./labelWidths.ts";
 import { RichText } from "./RichText.tsx";
 
 interface PictureLabelProps {
@@ -43,6 +47,7 @@ export function Picture({ src, alt, width, height, labels }: PictureProps): JSX.
     [0, 1],
     [0, 1],
   ];
+  const widths = labels ? labelWidths(labels.items, labels.range) : [];
   return (
     <span
       className="relative inline-block align-top"
@@ -55,14 +60,27 @@ export function Picture({ src, alt, width, height, labels }: PictureProps): JSX.
       {labels?.items.map((l, i) => {
         const left = (100 * (l.coordinates[0] - x0)) / (x1 - x0);
         const top = 100 - (100 * (l.coordinates[1] - y0)) / (y1 - y0);
+        const wrap = widths[i] ?? null;
+        // A wrapping label that is only \text{…} is drawn as plain words: KaTeX keeps it on one line.
+        const plain = l.math === false ? l.content : wrap === null ? null : textOnly(l.content);
         return (
           <span
             key={i}
             aria-hidden
-            className="absolute whitespace-nowrap text-sm leading-none text-foreground"
-            style={{ left: `${left}%`, top: `${top}%`, transform: shift(l.alignment) }}
+            className={
+              wrap === null
+                ? "absolute whitespace-nowrap text-sm leading-none text-foreground"
+                : "absolute hyphens-auto break-words whitespace-normal text-center text-sm leading-tight text-foreground"
+            }
+            style={{
+              left: `${left}%`,
+              top: `${top}%`,
+              transform: shift(l.alignment),
+              // max-content, so the width is the label's own and not what is left to the right edge.
+              ...(wrap === null ? {} : { width: "max-content", maxWidth: `${wrap}%` }),
+            }}
           >
-            {l.math === false ? l.content : <RichText inline text={`$${l.content}$`} />}
+            {plain ?? <RichText inline text={`$${l.content}$`} />}
           </span>
         );
       })}
