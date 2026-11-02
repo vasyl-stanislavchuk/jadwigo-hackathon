@@ -67,6 +67,42 @@ const q = (await landingWords(lang)).hero.question;
     // sheet over. The invitation takes the focus so a keyboard lands on its button.
     let turned = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    // The still Queen in the illustration slot. The clip takes her place (owner, 2026-11-02,
+    // dl-5ssh.4.31): she fades out, the clip plays in full on her spot, and she lands back as it ends.
+    const pic = sheet.querySelector<HTMLElement>(".hero-pic");
+    const picImg = pic?.querySelector("img");
+    // Where the Queen stands in each: the still's figure in hero.webp, and the clip's standing Queen
+    // in its 1282x1000 frame, both as shares of their own picture.
+    const stillFigure = { left: 0.1956, top: 0.0285, right: 0.8044, bottom: 0.9715 };
+    const clipFigure = { left: 602 / 1282, top: 204 / 1000, right: 999 / 1282, bottom: 953 / 1000 };
+    const clipRatio = 1282 / 1000;
+    // Places the clip so its standing Queen covers the still's figure, at the same height.
+    const place = (v: HTMLVideoElement): boolean => {
+      if (!picImg || picImg.naturalWidth === 0) return false;
+      const box = picImg.getBoundingClientRect();
+      const at = sheet.getBoundingClientRect();
+      // The picture inside its box, as object-fit: contain draws it.
+      const scale = Math.min(box.width / picImg.naturalWidth, box.height / picImg.naturalHeight);
+      const w = picImg.naturalWidth * scale;
+      const h = picImg.naturalHeight * scale;
+      const x = box.left + (box.width - w) / 2;
+      const y = box.top + (box.height - h) / 2;
+      const figH = (stillFigure.bottom - stillFigure.top) * h;
+      const figCx = x + ((stillFigure.left + stillFigure.right) / 2) * w;
+      const figBottom = y + stillFigure.bottom * h;
+      const vh = figH / (clipFigure.bottom - clipFigure.top);
+      const vw = vh * clipRatio;
+      Object.assign(v.style, {
+        left: `${figCx - ((clipFigure.left + clipFigure.right) / 2) * vw - at.left}px`,
+        top: `${figBottom - clipFigure.bottom * vh - at.top}px`,
+        width: `${vw}px`,
+        right: "auto",
+        bottom: "auto",
+      });
+      return true;
+    };
+    const land = () => pic?.classList.remove("away");
+
     const turn = () => {
       if (turned || !join) return;
       turned = true;
@@ -76,6 +112,7 @@ const q = (await landingWords(lang)).hero.question;
         video.pause();
         video.hidden = true;
       }
+      land();
       join.hidden = false;
       join.getBoundingClientRect(); // a layout first, so the fade starts from the hidden face
       sheet.classList.add("turned");
@@ -88,17 +125,32 @@ const q = (await landingWords(lang)).hero.question;
         return;
       }
       video.currentTime = 0;
+      if (place(video)) pic?.classList.add("away");
       video.hidden = false;
-      video.addEventListener("ended", turn, { once: true });
+      // She lands back in her place as the clip's sparkles fade, and the sheet turns a moment later.
+      video.addEventListener(
+        "ended",
+        () => {
+          land();
+          video.hidden = true;
+          // The 6.5 s fallback goes first: a stale one would turn a sheet played again.
+          clearTimeout(timer);
+          timer = setTimeout(turn, 700);
+        },
+        { once: true },
+      );
       video.addEventListener("error", turn, { once: true });
       video.play().catch(turn);
-      timer = setTimeout(turn, 6000);
+      timer = setTimeout(turn, 6500);
       // The tap that answered has already passed, so the next one turns the sheet.
       setTimeout(() => document.addEventListener("pointerdown", turn), 0);
     };
 
     // "Play the question again": the question as it was, the focus on its first tile.
     const reset = () => {
+      // Nothing left from the last answer turns the sheet played again: its timer, its tap.
+      clearTimeout(timer);
+      document.removeEventListener("pointerdown", turn);
       turned = false;
       sheet.classList.remove("turned", "done");
       if (join) join.hidden = true;
@@ -193,6 +245,9 @@ const q = (await landingWords(lang)).hero.question;
   /* Jadwiga stands on the sheet's bottom edge at its right, as she stands on the footer in the app. */
   .queen { position: absolute; right: -1.5rem; bottom: 0; width: min(75%, 22rem); pointer-events: none; z-index: 1; }
   .queen[hidden] { display: none; }
+  /* The still Queen steps out while the clip plays on her spot, and steps back as it ends. */
+  .q :global(.hero-pic) { transition: opacity 0.25s ease; }
+  .q :global(.hero-pic.away) { opacity: 0; }
 
   @media (prefers-reduced-motion: reduce) {
     .tile, .ask, .join { transition: none; }
