@@ -13,8 +13,8 @@ export type AuthEmailAction = z.infer<typeof AuthEmailAction>;
 /**
  * Supabase Auth's Send Email Hook (dl-liwi.33, decision dl-h25k5): Supabase POSTs this, signed with
  * Standard Webhooks, to `AUTH_EMAIL_HOOK_PATH` (routes.ts) instead of sending the mail itself, and
- * apps/api renders it in the parent's language and sends it through SES.
- * https://supabase.com/docs/guides/auth/auth-hooks/send-email-hook
+ * apps/api renders it in the parent's language and sends it through SES. Supabase's Send Email Hook
+ * guide names every field; apps/api/src/mail/hook.ts links it.
  *
  * The hook's body, only the fields the hook reads; Supabase's others pass through unread.
  * `email_action_type` is a plain string here, so a kind outside `AuthEmailAction` is refused by the
