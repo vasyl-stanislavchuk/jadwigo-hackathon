@@ -1,25 +1,51 @@
 /**
  * The chat's lesson pane (dl-z5ja.17): the latest `lesson_revision`, read with `readDraft` and
  * built with `lessonFileToSpecs` (the lesson builder's two, which live in `lesson/` beside the
- * chat), each question step drawn as the child would see it, in preview.
- * A step the kit cannot draw is a line saying so; the rest of the lesson still shows.
+ * chat). A step the kit cannot draw is a line saying so; the rest of the lesson still shows.
+ *
+ * The lesson column (dl-z5ja.108.1; handoff §3 "Collapsed list" and "Ghost rows", §5.4–5.5): one
+ * row per step, collapsed by default (chevron · number · title · tag · kind), a button with
+ * `aria-expanded`; "Rozwiń wszystkie" opens or closes them all; the rows this revision changed carry
+ * a tag in words; dashed ghost rows say how many steps are still coming. An opened step shows the
+ * child's view on the left, and on the right the right answer, the help, the skill (only with a
+ * child), where it came from, and Zmień ten krok · Przenieś · Usuń. A row slides in with Zeszyt's
+ * `jw-step-in` only when the system allows motion.
  */
 
-import { type Category, copy, type Language } from "@jadwigo/copy";
+import type { Family } from "@jadwigo/contracts";
+import { type Category, type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { RunView } from "@jadwigo/core";
+import type { QuestionStep } from "@jadwigo/lesson-import/file";
 import {
   type Clock,
+  type FamilySpec,
   FamilyView,
   type Instant,
   LessonTheme,
   pageSpec,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import { type FormEvent, type ReactElement, useEffect, useState } from "react";
+import { Button } from "@jadwigo/ui";
+import { ChevronRight } from "lucide-react";
+import {
+  type FormEvent,
+  type ReactElement,
+  type ReactNode,
+  useEffect,
+  useId,
+  useState,
+} from "react";
 import { lessonFileToSpecs } from "./lesson/adapter.ts";
 import { readDraft } from "./lesson/readDraft.ts";
-import { type LessonChange, type PatchOutcome, wordsOf, wordsPatch } from "./patches.ts";
-import { editSteer, wordsSteer } from "./steerText.ts";
+import {
+  dropPatch,
+  type LessonChange,
+  movePatch,
+  type PatchOutcome,
+  wordsOf,
+  wordsPatch,
+} from "./patches.ts";
+import { dropSteer, editSteer, moveSteer, wordsSteer } from "./steerText.ts";
 
 const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-11-01T00:00:00.000Z" }) };
 
@@ -28,6 +54,46 @@ type EditAnswer = unknown;
 
 /** A parent's edit of one step: their words for the AI, and their own change when they made one. */
 type OnEdit = (text: string, question_ids: string[], change?: LessonChange) => EditAnswer;
+
+type Say = (key: CopyKey, vars?: Record<string, string | number>) => string;
+
+/** A step row's kind, in words, by its family. */
+const KIND: Record<Family, CopyKey> = {
+  choose: "parent_step_kind_choose",
+  enter: "parent_step_kind_enter",
+  slots: "parent_step_kind_slots",
+  sequence: "parent_step_kind_sequence",
+  group: "parent_step_kind_group",
+  place: "parent_step_kind_place",
+  explain: "parent_step_kind_explain",
+};
+
+/** The help rungs a step can have written; the twin counts when it is there. */
+const RUNGS = ["look", "boost", "almost", "worked", "twin"] as const;
+
+/** Whether `value` holds a line with words in it, at any depth. */
+function hasWords(value: unknown): boolean {
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return value.some(hasWords);
+  if (value !== null && typeof value === "object") return Object.values(value).some(hasWords);
+  return false;
+}
+
+/** How many of the step's help rungs are written. */
+function rungsWritten(spec: FamilySpec): number {
+  const help = (spec.help ?? {}) as Record<string, unknown>;
+  return RUNGS.filter((r) => (r === "twin" ? help["twin"] !== undefined : hasWords(help[r])))
+    .length;
+}
+
+/** Where a step came from, in words: its credit's source, else the bank or Jadwigo AI. */
+function sourceOf(step: QuestionStep, say: Say): string | null {
+  if (step.credit !== undefined) return step.credit.source;
+  const from = step.based_on?.question.split(":")[0];
+  if (from === "authored") return say("parent_source_authored");
+  if (from === "bank" || from === "khan") return say("parent_source_bank");
+  return null;
+}
 
 export function LessonPane({
   language,
@@ -38,11 +104,13 @@ export function LessonPane({
   undoPending = false,
   onEdit,
   outcomeOf,
+  ghosts = 0,
+  withChild = false,
 }: {
   /** The parent's language, for the pane's own words. */
   language: Language;
   lesson: RunView["lesson"];
-  /** The steps the last AI revision changed (`revisions.ts`), highlighted (dl-z5ja.30). */
+  /** The steps the last AI revision changed (`revisions.ts`), tagged in their rows (dl-z5ja.30). */
   changed?: ReadonlySet<string>;
   /** Takes back the last AI revision; "Cofnij" shows only when it is given. */
   onUndo?: (() => void) | undefined;
@@ -55,22 +123,31 @@ export function LessonPane({
   undoPending?: boolean;
   /**
    * Sends a parent's edit of one step, in the lesson's own language: their why for the AI, and
-   * their own words for the step as a patch on the revision shown, which the runner applies with
-   * no model call (dl-z5ja.111). Answers the steer's `event_id` when a patch went.
+   * their own change (words, a move, a removal) as a patch on the revision shown, which the runner
+   * applies with no model call (dl-z5ja.111). Answers the steer's `event_id` when a patch went.
    */
   onEdit?: OnEdit | undefined;
   /** What became of a patch steer (`patchOutcome`); pending throughout when not given. */
   outcomeOf?: ((event_id: string) => PatchOutcome) | undefined;
+  /** How many steps are still being written (`ghostsOf`), each a dashed row (dl-z5ja.108.1). */
+  ghosts?: number;
+  /** The lesson is for a child, so an opened step shows its skill (handoff §5.5). */
+  withChild?: boolean;
 }): ReactElement {
-  const say = (key: Parameters<typeof copy>[1], vars: Record<string, string | number> = {}) =>
-    copy(language, key, vars, "adult");
+  const say: Say = (key, vars = {}) => copy(language, key, vars, "adult");
   return (
     <section aria-label={say("chat_lesson_title")} className="flex min-h-0 flex-col gap-4">
       <h2 className="text-base font-medium">{say("chat_lesson_title")}</h2>
       {lesson === null ? (
-        <p data-row="lesson-empty" className="text-muted-foreground">
-          {say("chat_lesson_empty")}
-        </p>
+        ghosts > 0 ? (
+          <ol className="flex flex-col gap-2" data-steps>
+            <Ghosts count={ghosts} from={1} say={say} />
+          </ol>
+        ) : (
+          <p data-row="lesson-empty" className="text-muted-foreground">
+            {say("chat_lesson_empty")}
+          </p>
+        )
       ) : (
         <Revision
           lesson={lesson}
@@ -81,11 +158,38 @@ export function LessonPane({
           undoPending={undoPending}
           onEdit={onEdit}
           outcomeOf={outcomeOf ?? (() => "pending")}
+          ghosts={ghosts}
+          withChild={withChild}
         />
       )}
     </section>
   );
 }
+
+/** A row slides in only when the system allows motion (decision 8 of wave dl-uukj.47-1). */
+const ENTER = "motion-safe:animate-[jw-step-in_var(--jw-dur-step)_var(--jw-ease-out)_backwards]";
+
+/** The dashed rows for steps still coming: they say how many, never what. */
+function Ghosts({ count, from, say }: { count: number; from: number; say: Say }): ReactElement {
+  return (
+    <>
+      {Array.from({ length: count }, (_, i) => (
+        <li
+          // A ghost has no id of its own: it is a place, numbered after the last real row.
+          key={`ghost-${from + i}`}
+          data-ghost
+          className="flex min-h-11 items-center gap-3 rounded-md border border-dashed border-jw-line px-3 text-jw-page-small text-jw-ink-soft"
+        >
+          <span aria-hidden className="w-4" />
+          <span className="tabular-nums">{from + i}</span>
+          <span className="min-w-0 flex-1 truncate">{say("parent_step_coming")}</span>
+        </li>
+      ))}
+    </>
+  );
+}
+
+type Built = ReturnType<typeof lessonFileToSpecs>[number]["steps"][number];
 
 function Revision({
   lesson,
@@ -96,16 +200,21 @@ function Revision({
   undoPending,
   onEdit,
   outcomeOf,
+  ghosts,
+  withChild,
 }: {
   lesson: NonNullable<RunView["lesson"]>;
-  say: (key: Parameters<typeof copy>[1], vars?: Record<string, string | number>) => string;
+  say: Say;
   changed: ReadonlySet<string>;
   onUndo: (() => void) | undefined;
   undoRefused: boolean;
   undoPending: boolean;
   onEdit: OnEdit | undefined;
   outcomeOf: (event_id: string) => PatchOutcome;
+  ghosts: number;
+  withChild: boolean;
 }): ReactElement {
+  const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const read = readDraft(lesson.lesson_file);
   if ("error" in read)
     return (
@@ -117,6 +226,20 @@ function Revision({
   const lessonLanguage: Language = file.language === "en" ? "en" : "pl";
   const category: Category = file.category === "adult" ? "adult" : "child";
   const steps = lessonFileToSpecs(file, undefined, skipped).flatMap((p) => p.steps);
+  const openable = steps.filter((s) => s.kind === "question").map((s) => s.step_id);
+  const allOpen = openable.length > 0 && openable.every((id) => open.has(id));
+  const toggle = (id: string) =>
+    setOpen((was) => {
+      const next = new Set(was);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  /** A parent's own move or removal: a patch on the revision shown, with its steer. */
+  const change = (id: string, text: string, patch: LessonChange["patch"] | null) => {
+    if (onEdit === undefined || patch === null) return;
+    onEdit(text, [id], { patch, base_revision: lesson.revision });
+  };
   return (
     <div data-revision={lesson.revision} className="flex flex-col gap-4 overflow-y-auto">
       <div className="flex items-baseline gap-2">
@@ -124,95 +247,282 @@ function Revision({
         <span className="text-muted-foreground text-xs">
           {say("chat_lesson_revision", { n: lesson.revision })}
         </span>
-        {changed.size > 0 && onUndo && (
-          <button
-            type="button"
-            data-undo
-            disabled={undoPending}
-            onClick={onUndo}
-            className="ml-auto rounded-md border px-2 py-0.5 text-sm"
-          >
-            {say("chat_undo")}
-          </button>
-        )}
+        <div className="ml-auto flex items-baseline gap-2">
+          {changed.size > 0 && onUndo && (
+            <button
+              type="button"
+              data-undo
+              disabled={undoPending}
+              onClick={onUndo}
+              className="rounded-md border px-2 py-0.5 text-sm"
+            >
+              {say("chat_undo")}
+            </button>
+          )}
+          {openable.length > 0 && (
+            <button
+              type="button"
+              data-expand-all={allOpen ? "close" : "open"}
+              onClick={() => setOpen(allOpen ? new Set() : new Set(openable))}
+              className="rounded-md px-2 py-0.5 text-sm underline-offset-4 hover:underline"
+            >
+              {say(allOpen ? "parent_collapse_all" : "parent_expand_all")}
+            </button>
+          )}
+        </div>
       </div>
       {undoRefused && (
         <p role="alert" data-undo-refused className="text-sm">
           {say("chat_edit_not_applied")}
         </p>
       )}
-      <ol className="flex flex-col gap-4">
-        {steps.map((step) =>
-          step.kind === "question" ? (
-            <li
-              key={step.step_id}
-              aria-label={say("chat_lesson_step", { step: step.step_id })}
-              data-step={step.step_id}
-              data-changed={changed.has(step.step_id) || undefined}
-              className={
-                changed.has(step.step_id)
-                  ? "rounded-md border-2 border-primary p-3"
-                  : "rounded-md border p-3"
-              }
-            >
-              {changed.has(step.step_id) && <Changed say={say} />}
-              <LessonTheme>
-                <FamilyView
-                  spec={pageSpec(step.spec) as never}
-                  language={lessonLanguage}
-                  category={category}
-                  clock={clock}
-                  mode={ViewMode.Preview}
-                  answerKey={step.spec.key as never}
-                  showKey={false}
-                />
-              </LessonTheme>
-              {onEdit && (
-                <StepEdit
-                  step={step.step_id}
-                  say={say}
-                  words={wordsOf(lesson.lesson_file, step.step_id, lessonLanguage)}
-                  outcomeOf={outcomeOf}
-                  steer={(why, words) => {
-                    const id = step.step_id;
-                    const patch = wordsPatch(lesson.lesson_file, id, lessonLanguage, words);
-                    if (patch === null) {
-                      onEdit(editSteer(lessonLanguage, id, why), [id]);
-                      return null;
-                    }
-                    const text =
-                      why === ""
-                        ? wordsSteer(lessonLanguage, id)
-                        : editSteer(lessonLanguage, id, why);
-                    const sent = onEdit(text, [id], { patch, base_revision: lesson.revision });
-                    return typeof sent === "string" ? sent : "";
-                  }}
-                />
-              )}
-            </li>
-          ) : (
-            <li
-              key={step.step_id}
-              data-step={step.step_id}
-              data-changed={changed.has(step.step_id) || undefined}
-              className="text-muted-foreground text-sm"
-            >
-              {changed.has(step.step_id) && <Changed say={say} />}
-              {say("chat_lesson_step_hidden", { step: step.step_id })}
-            </li>
-          ),
-        )}
+      <ol className="flex flex-col gap-2" data-steps>
+        {steps.map((step, i) => (
+          <StepRow
+            key={step.step_id}
+            step={step}
+            number={i + 1}
+            first={i === 0}
+            last={i === steps.length - 1}
+            open={open.has(step.step_id)}
+            onToggle={() => toggle(step.step_id)}
+            changed={changed.has(step.step_id)}
+            say={say}
+            lessonLanguage={lessonLanguage}
+            category={category}
+            withChild={withChild}
+            edit={
+              onEdit === undefined
+                ? null
+                : {
+                    words: wordsOf(lesson.lesson_file, step.step_id, lessonLanguage),
+                    outcomeOf,
+                    steer: (why, words) => {
+                      const id = step.step_id;
+                      const patch = wordsPatch(lesson.lesson_file, id, lessonLanguage, words);
+                      if (patch === null) {
+                        onEdit(editSteer(lessonLanguage, id, why), [id]);
+                        return null;
+                      }
+                      const text =
+                        why === ""
+                          ? wordsSteer(lessonLanguage, id)
+                          : editSteer(lessonLanguage, id, why);
+                      const sent = onEdit(text, [id], { patch, base_revision: lesson.revision });
+                      return typeof sent === "string" ? sent : "";
+                    },
+                    move: (by) =>
+                      change(
+                        step.step_id,
+                        moveSteer(lessonLanguage, step.step_id, by),
+                        movePatch(lesson.lesson_file, step.step_id, by),
+                      ),
+                    drop:
+                      steps.length > 1
+                        ? () =>
+                            change(
+                              step.step_id,
+                              dropSteer(lessonLanguage, step.step_id),
+                              dropPatch(lesson.lesson_file, step.step_id),
+                            )
+                        : null,
+                  }
+            }
+          />
+        ))}
+        <Ghosts count={ghosts} from={steps.length + 1} say={say} />
       </ol>
     </div>
   );
 }
 
-/** The mark on a step the last AI revision changed: words, not only a coloured edge. */
-function Changed({ say }: { say: (key: Parameters<typeof copy>[1]) => string }): ReactElement {
+/** What an opened step can do when the pane has an edit handler. */
+interface StepActions {
+  words: string;
+  outcomeOf: (event_id: string) => PatchOutcome;
+  steer(why: string, words: string): string | null;
+  move(by: -1 | 1): void;
+  /** Null for the lesson's last step: a lesson keeps one. */
+  drop: (() => void) | null;
+}
+
+function StepRow({
+  step,
+  number,
+  first,
+  last,
+  open,
+  onToggle,
+  changed,
+  say,
+  lessonLanguage,
+  category,
+  withChild,
+  edit,
+}: {
+  step: Built;
+  number: number;
+  first: boolean;
+  last: boolean;
+  open: boolean;
+  onToggle: () => void;
+  changed: boolean;
+  say: Say;
+  lessonLanguage: Language;
+  category: Category;
+  withChild: boolean;
+  edit: StepActions | null;
+}): ReactElement {
+  const bodyId = useId();
+  const edge = changed ? "border-2 border-primary" : "border border-jw-line";
+  if (step.kind !== "question")
+    return (
+      <li
+        data-step={step.step_id}
+        data-changed={changed || undefined}
+        className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground ${edge} ${ENTER}`}
+      >
+        <span aria-hidden className="w-4" />
+        <span className="tabular-nums">{number}</span>
+        <span className="min-w-[140px] flex-1 truncate">
+          {say("chat_lesson_step_hidden", { step: step.step_id })}
+        </span>
+      </li>
+    );
+  const title =
+    step.spec.say.trim() === "" ? say("chat_lesson_step", { step: step.step_id }) : step.spec.say;
+  const source = sourceOf(step.source, say);
+  const view = (showKey: boolean) => (
+    <LessonTheme>
+      <FamilyView
+        spec={pageSpec(step.spec) as never}
+        language={lessonLanguage}
+        category={category}
+        clock={clock}
+        mode={ViewMode.Preview}
+        answerKey={step.spec.key as never}
+        showKey={showKey}
+      />
+    </LessonTheme>
+  );
   return (
-    <p data-changed-mark className="text-primary mb-2 text-xs font-medium">
-      {say("chat_revision_by_ai")}
-    </p>
+    <li
+      aria-label={say("chat_lesson_step", { step: step.step_id })}
+      data-step={step.step_id}
+      data-changed={changed || undefined}
+      data-open={open || undefined}
+      className={`rounded-md ${edge} ${ENTER}`}
+    >
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={onToggle}
+        className="flex min-h-11 w-full items-center gap-3 px-3 text-left"
+      >
+        <ChevronRight
+          aria-hidden
+          className={`size-4 shrink-0 text-jw-ink-soft ${open ? "rotate-90" : ""}`}
+        />
+        <span className="tabular-nums">{number}</span>
+        <span className="min-w-[140px] flex-1 truncate" data-step-title>
+          {title}
+        </span>
+        {changed && (
+          <span data-changed-mark className="shrink-0 text-xs font-medium text-primary">
+            {say("chat_revision_by_ai")}
+          </span>
+        )}
+        <span className="shrink-0 text-jw-page-small text-jw-ink-soft" data-step-kind>
+          {say(KIND[step.spec.family])}
+        </span>
+      </button>
+      {open && (
+        <div
+          id={bodyId}
+          data-step-body
+          className={`grid gap-4 border-t border-jw-line p-3 md:grid-cols-2 ${ENTER}`}
+        >
+          <div data-child-view>{view(false)}</div>
+          <div className="flex flex-col gap-3" data-step-facts>
+            <Fact title={say("parent_step_answer")}>
+              <div data-answer>{view(true)}</div>
+            </Fact>
+            <p className="text-jw-page-small text-jw-ink-soft" data-help>
+              {say("parent_step_help", { n: rungsWritten(step.spec) })}
+            </p>
+            {withChild && step.skill_ids.length > 0 && (
+              <Fact title={say("parent_step_skill")}>
+                <p className="text-jw-page-small" data-skill>
+                  {step.skill_ids.join(", ")}
+                </p>
+              </Fact>
+            )}
+            {source !== null && (
+              <Fact title={say("parent_step_source")}>
+                <p className="text-jw-page-small" data-source>
+                  {source}
+                </p>
+              </Fact>
+            )}
+            {edit !== null && (
+              <div className="flex flex-wrap items-start gap-2" data-step-actions>
+                <StepEdit
+                  step={step.step_id}
+                  say={say}
+                  words={edit.words}
+                  outcomeOf={edit.outcomeOf}
+                  steer={edit.steer}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="control"
+                  data-move="up"
+                  disabled={first}
+                  onClick={() => edit.move(-1)}
+                >
+                  {say("parent_step_move_up")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="control"
+                  data-move="down"
+                  disabled={last}
+                  onClick={() => edit.move(1)}
+                >
+                  {say("parent_step_move_down")}
+                </Button>
+                {edit.drop !== null && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="control"
+                    data-drop
+                    onClick={edit.drop}
+                  >
+                    {say("parent_step_drop")}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </li>
+  );
+}
+
+/** One fact about an opened step under a small heading. */
+function Fact({ title, children }: { title: string; children: ReactNode }): ReactElement {
+  return (
+    <section className="flex flex-col gap-1">
+      <h4 className="text-jw-page-small leading-tight font-bold tracking-wider text-jw-ink-soft uppercase">
+        {title}
+      </h4>
+      {children}
+    </section>
   );
 }
 
@@ -239,7 +549,7 @@ function StepEdit({
   steer,
 }: {
   step: string;
-  say: (key: Parameters<typeof copy>[1]) => string;
+  say: Say;
   /** What the step says to the child now, in the lesson's language. */
   words: string;
   outcomeOf: (event_id: string) => PatchOutcome;
