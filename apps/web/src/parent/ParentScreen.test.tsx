@@ -232,6 +232,33 @@ describe("ParentScreen", () => {
     expect(api.createAccount).toHaveBeenCalledWith({ language: "en" });
   });
 
+  it("takes the code in the 6-cell field, typed digit by digit or pasted whole (dl-uukj.47.67.11)", async () => {
+    const auth = signedOutAuth();
+    const api = client({ getMe: vi.fn(async () => me([])) });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+
+    const email = await screen.findByRole("textbox", { name: "Twój e-mail" });
+    expect(
+      screen.getByText("Wyślemy na ten adres kod z 6 cyfr. Hasło nie jest potrzebne."),
+    ).toBeTruthy();
+    fireEvent.change(email, { target: { value: "rodzic@example.com" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyślij kod" })));
+
+    const code = screen.getByRole("textbox", { name: "Kod z e-maila, 6 cyfr" }) as HTMLInputElement;
+    const cells = () =>
+      [...document.querySelectorAll('[data-slot="input-otp"] > span')].map((c) => c.textContent);
+    // Typed: each digit takes the next cell.
+    fireEvent.change(code, { target: { value: "1" } });
+    fireEvent.change(code, { target: { value: "12" } });
+    expect(cells()).toEqual(["1", "2", "", "", "", ""]);
+    // Pasted, with the spaces an email puts in: the 6 digits, and nothing else.
+    fireEvent.change(code, { target: { value: "123 456" } });
+    expect(code.value).toBe("123456");
+    expect(cells()).toEqual(["1", "2", "3", "4", "5", "6"]);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zaloguj się" })));
+    expect(auth.verifyCode).toHaveBeenCalledWith("rodzic@example.com", "123456");
+  });
+
   it("speaks the pod's language once /me says it, unless the parent picked another", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;

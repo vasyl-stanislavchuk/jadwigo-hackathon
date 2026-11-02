@@ -183,6 +183,32 @@ describe("AttemptReview", () => {
     expect(document.querySelector("[data-review-header]")?.textContent).not.toContain("%");
   });
 
+  it("puts the result bar on top: right at once, with help, not yet (dl-uukj.47.67 §12.7)", async () => {
+    await draw(client({}));
+    const bar = document.querySelector("[data-review-header] [data-slot=result-bar]");
+    expect(bar?.textContent).toBe("1 z 3 dobrze");
+    const segments = [...(bar?.querySelectorAll<HTMLElement>("[data-segment]") ?? [])];
+    expect(segments.map((s) => [s.dataset["segment"], s.style.flexGrow])).toEqual([
+      ["right", "1"],
+      ["miss", "2"],
+    ]);
+  });
+
+  it("keeps every try view the child's and the page frame the adult's (dl-uukj.47.67 S1)", async () => {
+    await draw(client({}));
+    const kid = '[data-audience="kid"]';
+    expect(document.querySelector("[data-attempt-review]")?.closest(kid)).toBeNull();
+    await press('[data-tile="2"]');
+    const views = [...document.querySelectorAll("[data-try-view]")];
+    expect(views).toHaveLength(2);
+    for (const view of views) {
+      // LessonTheme writes the kid audience on its root, inside the try view; nothing above it is kid.
+      expect(view.querySelector(`[data-lesson-theme]${kid}`)).not.toBeNull();
+      expect(view.closest(kid)).toBeNull();
+    }
+    expect(document.querySelector("[data-review-step]")?.closest(kid)).toBeNull();
+  });
+
   it("draws a tile per question with its seq and say, coloured by how it ended", async () => {
     await draw(client({}));
     expect(tiles().map((t) => t.dataset["ended"])).toEqual(["correct", "missed", "skipped"]);
