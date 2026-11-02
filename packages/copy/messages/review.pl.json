@@ -542,6 +542,8 @@
   "chat_lesson_card_open_named": false,
   "chat_lesson_card_first": false,
   "chat_lesson_card_steps": false,
+  "chat_citations_why": false,
+  "chat_citation_nth": false,
   "chat_tool_count": false,
   "chat_tool_lesson_draft_about": false,
   "chat_tool_question_search_about": false,

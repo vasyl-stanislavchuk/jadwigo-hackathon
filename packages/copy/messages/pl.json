@@ -772,6 +772,8 @@
       }
     }
   ],
+  "chat_citations_why": "Dlaczego?",
+  "chat_citation_nth": "{title} {n}",
   "chat_tool_count": [
     {
       "declarations": ["input n", "local steps_noun = n: plural"],
