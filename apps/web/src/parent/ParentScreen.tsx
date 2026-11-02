@@ -158,6 +158,11 @@ export function ParentScreen({
   const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [returned, setReturned] = useState<CopyKey | null>(null);
+  // Signed out, however the session ended (this tab, another tab, an expired or revoked token): the
+  // first screen's draft goes, so the next parent on this tab never finds it (dl-uukj.47.24).
+  useEffect(() => {
+    if (signedIn === false) newLessonDraft.clear();
+  }, [signedIn]);
   // The URL the page opened at. completeRedirect takes the return off the address bar, so a second
   // run of the effect (dev StrictMode) reads it here, gets the first exchange's outcome, and still
   // shows its line.
@@ -522,6 +527,14 @@ function SignedIn({
   const [notice, setNotice] = useState<CopyKey | null>(null);
   /** "Nie teraz" on the consent screen: asked again on the next visit, not on this one. */
   const [later, setLater] = useState(false);
+  // False once this signed-in page is gone (a sign-out): a send still in flight keeps nothing then.
+  const here = useRef(true);
+  useEffect(() => {
+    here.current = true;
+    return () => {
+      here.current = false;
+    };
+  }, []);
   // The family's lessons, read again as the page moves, so a lesson just made or saved is listed.
   const family = useLessons(
     conversations,
@@ -603,8 +616,9 @@ function SignedIn({
 
   const start = async (ask: LessonAsk): Promise<void> => {
     // The send cleared the tab's draft; a send that does not start keeps the words again.
-    const keepDraft = (): void =>
-      newLessonDraft.put({ owner, text: ask.text, learner: ask.learner });
+    const keepDraft = (): void => {
+      if (here.current) newLessonDraft.put({ owner, text: ask.text, learner: ask.learner });
+    };
     if (engine === null) {
       keepDraft();
       setSoon(true);

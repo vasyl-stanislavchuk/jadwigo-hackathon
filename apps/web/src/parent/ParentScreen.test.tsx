@@ -813,6 +813,63 @@ describe("ParentScreen", () => {
     expect((box as HTMLTextAreaElement).value).toBe("");
   });
 
+  it("forgets the draft when the tab opens signed out, as after an expired session, so the next parent's box is empty", async () => {
+    window.sessionStorage.setItem(
+      "jw.parent.draft",
+      JSON.stringify({ owner: ACCOUNT, text: "Ola myli odejmowanie przez 10", learner: null }),
+    );
+    const auth = signedOutAuth();
+    const other = AccountId.parse("acc_2h4m8gyw0fb1cvz2nkqw0px8fq");
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({
+          getMe: async () => ({ ...me([]), account: { ...account, id: other } }) as unknown as Me,
+        })}
+      />,
+    );
+    await screen.findByText("Wyślij kod");
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
+    type("[data-email]", "drugi@example.com");
+    await press("[data-send-code]");
+    type("[data-code]", "123456");
+    await press("[data-sign-in]");
+    const box = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect((box as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("keeps nothing when a send fails after the parent signed out", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let fail: (error: Error) => void = () => {};
+    const engine = lessonEngine(
+      () =>
+        new Promise((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+        engine={engine}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    const account1 = await screen.findByRole("button", { name: "Konto i ustawienia" });
+    await act(async () => fireEvent.click(account1));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await screen.findByText("Wyślij kod");
+    await act(async () => fail(new TypeError("Failed to fetch")));
+    expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
+  });
+
   it("starts Dla at the child ?for names", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
