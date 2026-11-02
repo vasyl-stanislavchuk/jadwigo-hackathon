@@ -69,24 +69,41 @@ export function pokeTarget(url: string): PokeTarget {
 /** Posts one JSON body to a target and resolves on a 2xx answer; the default speaks node:http. */
 export type PostJson = (target: PokeTarget, body: string) => Promise<void>;
 
-const httpPost: PostJson = (target, body) =>
-  new Promise((resolve, reject) => {
-    const req = request(
-      {
-        ...target,
-        method: "POST",
-        headers: { "content-type": "application/json", "content-length": Buffer.byteLength(body) },
-      },
-      (res) => {
-        res.resume();
-        const status = res.statusCode ?? 0;
-        if (status >= 200 && status < 300) resolve();
-        else reject(new Error(`the local step host answered ${status}`));
-      },
-    );
-    req.on("error", reject);
-    req.end(body);
-  });
+/**
+ * How long a poke waits for the step host's answer. A host that takes the connection and never
+ * answers (paused, its event loop blocked) is let go, so the route's reply never waits on it.
+ */
+export const POKE_TIMEOUT_MS = 2000;
+
+/** `node:http`'s POST, given up after `timeoutMs` with no answer. */
+export const httpPostWithin =
+  (timeoutMs: number): PostJson =>
+  (target, body) =>
+    new Promise((resolve, reject) => {
+      const req = request(
+        {
+          ...target,
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "content-length": Buffer.byteLength(body),
+          },
+        },
+        (res) => {
+          res.resume();
+          const status = res.statusCode ?? 0;
+          if (status >= 200 && status < 300) resolve();
+          else reject(new Error(`the local step host answered ${status}`));
+        },
+      );
+      req.setTimeout(timeoutMs, () =>
+        req.destroy(new Error(`the local step host did not answer in ${timeoutMs} ms`)),
+      );
+      req.on("error", reject);
+      req.end(body);
+    });
+
+const httpPost: PostJson = httpPostWithin(POKE_TIMEOUT_MS);
 
 /**
  * The poke on this machine (dl-uukj.47.14.1): `make dev-all`'s step host (apps/runner/src/dev.ts)

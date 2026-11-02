@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { RunId } from "@jadwigo/contracts";
 import { afterEach, describe, expect, it } from "vitest";
-import { localPoke } from "./poke.ts";
+import { httpPostWithin, localPoke, pokeTarget } from "./poke.ts";
 
 const STEP = { run_id: RunId.parse("run_7qre3atahx8cpak6xbjtz73var"), attempt: 1 };
 
@@ -37,6 +37,20 @@ describe("localPoke over a real socket (dl-uukj.47.14.1)", () => {
     const { url, got } = await host(202);
     await localPoke(url)?.(STEP);
     expect(got).toEqual([{ path: "/poke", body: JSON.stringify(STEP) }]);
+  });
+
+  it("gives up on a step host that takes the poke and never answers (#645's review)", async () => {
+    dir = mkdtempSync(join(tmpdir(), "jw-poke-"));
+    const socket = join(dir, "runner.sock");
+    // Reads the request, never writes a reply: a paused or blocked host.
+    server = createServer(() => {});
+    await new Promise<void>((done) => server?.listen(socket, done));
+    const started = Date.now();
+    await expect(httpPostWithin(100)(pokeTarget(`unix:${socket}`), "{}")).rejects.toThrow(
+      /did not answer in 100 ms/,
+    );
+    expect(Date.now() - started).toBeLessThan(2000);
+    server.closeAllConnections();
   });
 
   it("rejects on an answer that is not 2xx, which pokeAll logs and swallows", async () => {
