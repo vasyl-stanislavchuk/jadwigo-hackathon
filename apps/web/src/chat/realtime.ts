@@ -8,7 +8,7 @@ import { type Client, createClient } from "@jadwigo/api-client";
 import { createClient as createSupabase, type SupabaseClient } from "@supabase/supabase-js";
 import { type Auth, browserAuth } from "../parent/auth.ts";
 import { type RunLive, routesTransport } from "./routesTransport.ts";
-import type { EngineTransport } from "./useConversation.ts";
+import type { EngineTransport, Link } from "./useConversation.ts";
 
 /** What the run channel needs of a Supabase client, so a test can stand in for it. */
 type LiveClient = Pick<SupabaseClient, "channel" | "removeChannel"> & {
@@ -27,12 +27,12 @@ export function supabaseLive(
   token: () => Promise<string | null>,
   refresh: () => Promise<unknown> = () => Promise.resolve(),
 ): RunLive {
-  const listeners = new Set<(up: boolean) => void>();
-  let down = false;
-  const say = (up: boolean) => {
-    if (up === !down) return;
-    down = !up;
-    for (const on of listeners) on(up);
+  const listeners = new Set<(link: Link) => void>();
+  let now: Link = "up";
+  const say = (link: Link) => {
+    if (link === now) return;
+    now = link;
+    for (const on of listeners) on(link);
   };
   let refreshed: Promise<void> | null = null;
   const firstRefresh = () =>
@@ -57,12 +57,15 @@ export function supabaseLive(
         joined.on("broadcast", { event: "run_event" }, () => {
           if (!closed) onPoke();
         });
+        // A timeout is the channel down, and it may come back; a refusal after the one retry is an
+        // error the page says as stalled (dl-uukj.47.29).
         joined.subscribe((status) => {
-          if (status === "SUBSCRIBED") say(true);
+          if (status === "SUBSCRIBED") say("up");
           else if (status === "CHANNEL_ERROR" && !retried && !closed) {
             void client.removeChannel(joined);
             void join(true);
-          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") say(false);
+          } else if (status === "CHANNEL_ERROR") say("error");
+          else if (status === "TIMED_OUT") say("down");
         });
       };
       void join(false);
@@ -81,6 +84,29 @@ export function supabaseLive(
 declare const __JW_AUTH__: { url: string; key: string } | null | undefined;
 
 /**
+ * The page's one Realtime client (dl-uukj.47.33). Its GoTrueClient keeps no session of its own, under
+ * a storage key of its own, beside the sign-in's (parent/auth.ts): 2 clients, never 2 on one key,
+ * which is what supabase-js warns about ("Multiple GoTrueClient instances"). Made once per page,
+ * however many times a screen asks for the transport.
+ */
+let made: { url: string; client: SupabaseClient } | null = null;
+function realtimeClient(config: { url: string; key: string }): SupabaseClient {
+  if (made?.url !== config.url)
+    made = {
+      url: config.url,
+      client: createSupabase(config.url, config.key, {
+        auth: {
+          storageKey: "jw.chat.realtime",
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      }),
+    };
+  return made.client;
+}
+
+/**
  * The routes transport for the build's Supabase project: the API on the page's own origin with the
  * parent's token, and a Realtime client that keeps no session of its own (the sign-in's is the one
  * `browserAuth` holds). Null when the build has no Supabase project.
@@ -94,14 +120,7 @@ export function apiTransport(): {
   const config = typeof __JW_AUTH__ === "undefined" ? null : __JW_AUTH__;
   const auth = browserAuth();
   if (config === null || auth === null) return null;
-  const realtime = createSupabase(config.url, config.key, {
-    auth: {
-      storageKey: "jw.chat.realtime",
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  });
+  const realtime = realtimeClient(config);
   const token = () => auth.token();
   const client = createClient({ base: "", token });
   return {

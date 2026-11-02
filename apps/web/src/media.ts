@@ -3,7 +3,9 @@
  * of its bytes, and served at `<media url>/<sha>.<ext>` from a CloudFront path over the private
  * content bucket's `khan/media/` (decision 2026-10-29-khan-pictures-are-served-from-a-cloudfront-
  * path-over-the-bucket). The media URL is `VITE_MEDIA_URL` (apps/web/.env.example), read here and
- * nowhere else; with none set, a ref stays a same-origin path.
+ * nowhere else; with none set, a ref stays a same-origin path. An Alfik picture is stored the same way
+ * under the bucket's `alfik/media/` and served at `<media url>/alfik/media/<sha>.<ext>`
+ * (dl-e8ov.2.98); its body names it `/media/alfik/<sha>.<ext>`.
  *
  * The player turns refs into addresses before the kit sees a step (`withMedia`), so lesson-kit's
  * parts keep taking a plain `src` and know nothing of where pictures live.
@@ -33,15 +35,24 @@ export const NO_MEDIA_URL =
 const REF = /^[0-9a-f]{40,64}\.[a-z0-9]{2,5}$/;
 /** The prototype's address for the same file (david-learns' /media/khan/ proxy, to_family.py). */
 const KHAN_PATH = "/media/khan/";
+/** An Alfik body's address for its picture (jadwigo-bank's Alfik import), and where the media URL
+ * serves that prefix: the URL path is the bucket key (infra/terraform/modules/content). */
+const ALFIK_PATH = "/media/alfik/";
+const ALFIK_MEDIA = "alfik/media/";
 const SCHEME = "media:";
 
 /**
  * The `src` for a picture: a bare ref (`<sha>.<ext>`), a `media:<ref>` or a `/media/khan/<ref>`
- * becomes `<media url>/<ref>`; anything else (an absolute http(s) address, a `data:` URL, a path
+ * becomes `<media url>/<ref>`, and an Alfik `/media/alfik/<ref>` becomes
+ * `<media url>/alfik/media/<ref>`; anything else (an absolute http(s) address, a `data:` URL, a path
  * the app serves itself) is returned as it is.
  */
 export function mediaSrc(src: string, base: string = mediaUrl()): string {
   const root = base.replace(/\/+$/, "");
+  if (src.startsWith(ALFIK_PATH)) {
+    const alfik = src.slice(ALFIK_PATH.length);
+    return REF.test(alfik) ? `${root}/${ALFIK_MEDIA}${alfik}` : src;
+  }
   const ref = src.startsWith(SCHEME)
     ? src.slice(SCHEME.length)
     : src.startsWith(KHAN_PATH)

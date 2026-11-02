@@ -1,14 +1,21 @@
 /**
  * The workspace's details (decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-
- * lesson-workspac, dl-xo0q; handoff §5.5): Dla kogo ("Bez dziecka" with "Dodaj dziecko", or the
- * child with "Zmień"); Co ćwiczy ta lekcja, only with a child; O lekcji. Their content fills as the
+ * lesson-workspac, dl-xo0q; handoff §5.5): Dla kogo ("Bez dziecka", or the child, each with
+ * "Zmień", the menu that lists the family's children and ends with "Dodaj dziecko…"; with no
+ * children yet, "Bez dziecka" with "Dodaj dziecko", dl-uukj.47.17); Co ćwiczy ta lekcja, only with
+ * a child; O lekcji. Their content fills as the
  * engine writes the lesson (dl-z5ja.108); here is their place.
  */
 
 import type { Learner } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { Button, Disc } from "@jadwigo/ui";
-import type { ReactElement, ReactNode } from "react";
+import { Button, buttonVariants, cn, Disc, useRegister } from "@jadwigo/ui";
+import {
+  type ComponentPropsWithoutRef,
+  forwardRef,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import { CATEGORY } from "../adult.ts";
 
 function Section({ title, children }: { title: string; children: ReactNode }): ReactElement {
@@ -22,13 +29,39 @@ function Section({ title, children }: { title: string; children: ReactNode }): R
   );
 }
 
+/**
+ * "Zmień", the trigger of the Dla menu: the outline control, as a button that takes a ref, so the
+ * menu's popover can anchor to it (ui's Button takes none on React 18, and the menu then never
+ * places itself on screen).
+ */
+const ChangeButton = forwardRef<HTMLButtonElement, ComponentPropsWithoutRef<"button">>(
+  function ChangeButton({ className, ...props }, ref) {
+    const register = useRegister();
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={cn(buttonVariants({ variant: "outline", size: "control", register, className }))}
+        data-slot="button"
+        data-variant="outline"
+        data-size="control"
+        data-change-child
+        {...props}
+      />
+    );
+  },
+);
+
 export function DetailsPanel({
   language,
+  learners,
   child,
   onAddChild,
   changeMenu,
 }: {
   language: Language;
+  /** The family's children: with any, "Bez dziecka" opens the same menu as "Zmień". */
+  learners: readonly Learner[];
   child: Learner | null;
   onAddChild: () => void;
   /** Wraps "Zmień" in the menu that picks another child or none (DlaSelect with a trigger). */
@@ -41,19 +74,19 @@ export function DetailsPanel({
         {child === null ? (
           <div className="flex items-center justify-between gap-2">
             <span>{t("parent_no_child")}</span>
-            <Button type="button" variant="outline" size="control" onClick={onAddChild}>
-              {t("parent_add_child")}
-            </Button>
+            {learners.length === 0 ? (
+              <Button type="button" variant="outline" size="control" onClick={onAddChild}>
+                {t("parent_add_child")}
+              </Button>
+            ) : (
+              changeMenu(<ChangeButton>{t("parent_change")}</ChangeButton>)
+            )}
           </div>
         ) : (
           <div className="flex items-center gap-2" data-for-child={child.id}>
             <Disc name={child.first_name} />
             <span className="min-w-0 flex-1 truncate font-bold">{child.first_name}</span>
-            {changeMenu(
-              <Button type="button" variant="outline" size="control" data-change-child>
-                {t("parent_change")}
-              </Button>,
-            )}
+            {changeMenu(<ChangeButton>{t("parent_change")}</ChangeButton>)}
           </div>
         )}
       </Section>

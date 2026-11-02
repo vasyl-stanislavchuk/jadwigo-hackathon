@@ -12,6 +12,9 @@
  * Under the text: "Dodaj zdjęcie", then "Dla: Bez dziecka ▾", then the reason and the button.
  * Photos (picked, pasted with Ctrl+V or dropped) show as 64 × 80 thumbnails, each with ×. They wait
  * on the upload route (dl-z5ja.11), so `photos` keeps them off until it exists.
+ *
+ * The unsent words and Dla are kept in the tab as they change (draft.ts, dl-uukj.47.24): leaving for
+ * a child's page or reloading brings them back, and a send clears them.
  */
 
 import type { Learner, LearnerId } from "@jadwigo/contracts";
@@ -32,6 +35,7 @@ import {
 import { CATEGORY } from "../adult.ts";
 import { AboutJadwigoAi } from "./AboutJadwigoAi.tsx";
 import { DlaSelect } from "./DlaSelect.tsx";
+import { newLessonDraft } from "./draft.ts";
 
 /** What the parent sends: the words, the photos, and the child the lesson is for (or none). */
 export interface LessonAsk {
@@ -59,6 +63,7 @@ export function NewLessonBox({
   busy = false,
   problem = null,
   initialText = "",
+  owner = null,
 }: {
   language: Language;
   learners: readonly Learner[];
@@ -76,9 +81,11 @@ export function NewLessonBox({
   problem?: string | null;
   /** The words the box opens with: the parent's own, back after the consent screen. */
   initialText?: string;
+  /** The signed-in account, whose draft alone the box reads back (draft.ts). */
+  owner?: string | null;
 }): ReactElement {
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
-  const [text, setText] = useState(initialText);
+  const [text, setText] = useState(() => initialText || (newLessonDraft.get(owner)?.text ?? ""));
   const [photos, setPhotos] = useState<Photo[]>([]);
   const box = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
@@ -87,6 +94,20 @@ export function NewLessonBox({
 
   // The caret is in the box on load.
   useEffect(() => box.current?.focus(), []);
+
+  // Dla as the tab left it, unless the page came with a child of its own (?for). Read once, before
+  // the keeping below writes this render's value.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, on the screen's first render
+  useEffect(() => {
+    const kept = newLessonDraft.get(owner)?.learner ?? null;
+    if (forLearner === null && kept !== null && learners.some((l) => l.id === kept))
+      onForChange(kept);
+  }, []);
+  // The words and Dla, kept in the tab as they change.
+  useEffect(
+    () => newLessonDraft.put({ owner, text, learner: forLearner }),
+    [owner, text, forLearner],
+  );
 
   // Each thumbnail's URL goes when its photo does, and all of them when the screen does.
   const urls = useRef<Photo[]>([]);
@@ -112,6 +133,7 @@ export function NewLessonBox({
 
   const send = (): void => {
     if (!ready || busy) return;
+    newLessonDraft.clear();
     onSend({ text: text.trim(), photos: photos.map((p) => p.file), learner: forLearner });
   };
   const submit = (event: FormEvent): void => {
