@@ -16,7 +16,7 @@ hero:
     right: Brawo! 3 razy 12 to 36, a 36 − 9 = 27.
     hint: Prawie. Najpierw policz wszystkie kredki, 3 razy 12. Potem odejmij te 9, które dała. Spróbuj jeszcze raz.
     signUp:
-      text: Tak wygląda każda lekcja. Konto rodzica jest bezpłatne, a Jadwigo z każdej lekcji układa następną.
+      text: Tak wygląda każda lekcja. Załóż konto rodzica, a Jadwigo z każdej lekcji ułoży następną.
       button: Załóż konto
       again: Spróbuj tego pytania jeszcze raz
 # Under the lessons, one line for the parent.
@@ -107,7 +107,7 @@ partner:
   nextLabel: "Następna lekcja:"
   next: reszta z groszami i rz po spółgłoskach, w jednej lekcji.
 end:
-  text: Konto zakłada rodzic. Jest bezpłatne.
+  text: Konto zakłada rodzic.
   button: Załóż konto
 lessons:
   title: Lekcje na start · Jadwigo
