@@ -55,6 +55,8 @@ import { type ChooseAnswers, ChooseForm, recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
+import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
+import type { ObjectRef } from "./objects/ref.ts";
 import { PLAN_MIN, PlanCard } from "./PlanCard.tsx";
 import { elapsedSeconds, phaseAnnouncement, type RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
@@ -639,6 +641,13 @@ export interface ChatPaneProps {
   onChoose?: ((call_id: string, answers: ChooseAnswers) => void) | undefined;
   /** The parent composer's bottom-left control, such as Dla, the child the lesson is for. */
   composerLead?: ReactNode;
+  /**
+   * The conversation's lesson as a thing to open (dl-uukj.47.58): with `onOpen`, a turn that wrote
+   * the lesson ends in its card, and a click opens the lesson beside the chat.
+   */
+  lessonObject?: ObjectRef | undefined;
+  /** Opens a thing beside the chat: the lesson card's click, and a widget's (WidgetActions). */
+  onOpen?: ((object: ObjectRef) => void) | undefined;
 }
 
 export function ChatPane({
@@ -666,6 +675,8 @@ export function ChatPane({
   onCloseContext,
   onChoose,
   composerLead,
+  lessonObject,
+  onOpen,
 }: ChatPaneProps): ReactElement {
   /** The choose forms answered on this page, by call: their recap shows until the log has one. */
   const [chosen, setChosen] = useState<Readonly<Record<string, ChooseAnswers>>>({});
@@ -673,6 +684,7 @@ export function ChatPane({
   const lineContext: LineContext = {
     ...(nameOf === undefined ? {} : { nameOf }),
     onAsk: (text: string) => onSend(text),
+    ...(onOpen === undefined ? {} : { onOpen }),
     chosen: (call_id: string) => chosen[call_id],
   };
   const asking = openChoose(turns, chosen);
@@ -798,6 +810,23 @@ export function ChatPane({
               </li>
             ),
           ),
+          // The lesson this turn wrote, as one card under its words (handoff moment 6).
+          ...(lessonObject !== undefined &&
+          onOpen !== undefined &&
+          !isOpen(turn) &&
+          turn.view.lesson !== null &&
+          wroteLesson(turn.view)
+            ? [
+                <li key={`${turn.run.id}-lesson`} className="flex flex-col" data-chat-row>
+                  <LessonCard
+                    lesson={turn.view.lesson}
+                    object={lessonObject}
+                    language={language}
+                    onOpen={onOpen}
+                  />
+                </li>,
+              ]
+            : []),
           ...(onRate !== undefined && completed(turn)
             ? [
                 <li key={`${turn.run.id}-rating`} className="flex flex-col">

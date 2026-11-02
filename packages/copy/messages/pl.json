@@ -749,6 +749,29 @@
   "chat_lesson_revision": "Wersja {n}",
   "chat_lesson_unreadable": "Tej wersji lekcji nie da się jeszcze pokazać.",
   "chat_lesson_step_hidden": "Kroku {step} nie da się jeszcze pokazać.",
+  "chat_object_lesson": "Lekcja",
+  "chat_object_learner": "Dziecko",
+  "chat_object_skill": "Umiejętność",
+  "chat_object_assignment": "Dana lekcja",
+  "chat_object_attempt": "Rozegrana lekcja",
+  "chat_object_open_page": "Otwórz na osobnej stronie",
+  "chat_object_not_here": "Tego nie da się jeszcze tu pokazać.",
+  "chat_lesson_card": "Lekcja gotowa",
+  "chat_lesson_card_open": "Otwórz",
+  "chat_lesson_card_open_named": "Otwórz lekcję: {title}",
+  "chat_lesson_card_first": "Na początek: {say}",
+  "chat_lesson_card_steps": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
   "chat_tool_count": [
     {
       "declarations": ["input n", "local steps_noun = n: plural"],

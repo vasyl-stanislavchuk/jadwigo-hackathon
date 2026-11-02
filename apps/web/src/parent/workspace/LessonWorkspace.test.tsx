@@ -392,3 +392,49 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     expect(document.querySelector("[data-strip-fact]")?.textContent).toBe("Utknęło");
   });
 });
+
+describe("opening things from the chat (dl-uukj.47.58)", () => {
+  beforeEach(() => {
+    folds.set("lesson", false);
+    window.history.replaceState(null, "", `/parent/lessons/${CONVERSATION}`);
+  });
+
+  /** Whether the lesson column is shut on a laptop (its own `lg:hidden`, not the phone's). */
+  const shut = () =>
+    (document.querySelector("[data-lesson-column]") as HTMLElement).classList.contains("lg:hidden");
+
+  it("the lesson card under the turn opens the lesson beside the chat", async () => {
+    const { engine } = engineWith();
+    firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    await workspace(engine);
+    await screen.findByText("Your lesson is ready on the right.");
+    // The chat alone: the lesson column is shut on a laptop.
+    expect(shut()).toBe(true);
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /^Otwórz lekcję: / }));
+    });
+    expect(shut()).toBe(false);
+    expect(window.location.search).toBe(`?open=lesson%3A${CONVERSATION}`);
+    // On a phone the Lekcja pane comes to the front.
+    expect(document.querySelector("[data-tab='lesson']")?.getAttribute("aria-selected")).toBe(
+      "true",
+    );
+  });
+
+  it("a link that opens another thing draws its fallback: its name and its own page", async () => {
+    const learner = "lrn_00000000000000000000000001";
+    window.history.replaceState(
+      null,
+      "",
+      `/parent/lessons/${CONVERSATION}?open=learner:${learner}`,
+    );
+    const { engine } = engineWith();
+    await workspace(engine);
+    expect(shut()).toBe(false);
+    const fallback = document.querySelector("[data-object-fallback='learner']");
+    expect(fallback).not.toBeNull();
+    expect(
+      screen.getByRole("link", { name: "Otwórz na osobnej stronie" }).getAttribute("href"),
+    ).toBe(`/parent/children/${learner}`);
+  });
+});

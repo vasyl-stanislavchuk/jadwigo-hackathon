@@ -33,6 +33,7 @@ import { BookOpenIcon } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import { CATEGORY } from "../adult.ts";
 import { usePanel } from "../shell/fold.ts";
+import { INSPECT, useInspector } from "./inspector.ts";
 
 const CHAT_ID = "parent-chat";
 const LESSON_ID = "parent-lesson";
@@ -140,7 +141,7 @@ function SidePanel({
  */
 export function ChatFoldToggle({ language }: { language: Language }): ReactElement | null {
   const [open, setOpen] = usePanel("chat");
-  const [lessonOpen] = usePanel("lesson");
+  const { isOpen: lessonOpen } = useInspector();
   // Alone, the chat is the page: nothing to fold it beside.
   if (!lessonOpen) return null;
   return (
@@ -158,17 +159,19 @@ export function ChatFoldToggle({ language }: { language: Language }): ReactEleme
 /**
  * "Pokaż lekcję" / "Ukryj lekcję" in the top bar (design review 2026-11-02): the chat is the main
  * view, and the lesson opens beside it here for a parent who wants to look. Desktop only; the phone
- * has its Rozmowa / Lekcja switch.
+ * has its Rozmowa / Lekcja switch. It goes through the inspector, as the chat's lesson card does, so
+ * shutting it also forgets a thing the URL had open (dl-uukj.47.58).
  */
 export function LessonToggle({ language }: { language: Language }): ReactElement {
-  const [open, setOpen] = usePanel("lesson");
+  const inspector = useInspector();
+  const open = inspector.isOpen;
   const label = copy(language, open ? "parent_lesson_hide" : "parent_lesson_show", {}, CATEGORY);
   return (
     <button
       type="button"
       aria-expanded={open}
       aria-controls={LESSON_ID}
-      onClick={() => setOpen(!open)}
+      onClick={() => (open ? inspector.close() : inspector.open(null))}
       className={cn(
         "flex min-h-jw-control shrink-0 items-center gap-1.5 rounded-jw-small border-jw px-2.5 text-jw-page-small font-bold focus-visible:outline-3 focus-visible:outline-jw-focus max-lg:hidden",
         open
@@ -208,8 +211,9 @@ export function Workspace({
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
   const [chatOpen, setChatOpen] = usePanel("chat");
   // The chat is the main view (design review 2026-11-02): the lesson opens beside it only when the
-  // parent asks, from the top bar (LessonToggle). With the lesson shut the chat can't fold.
-  const [lessonOpen] = usePanel("lesson");
+  // parent asks, from the top bar (LessonToggle) or a card in the chat (the inspector). With the
+  // lesson shut the chat can't fold.
+  const { isOpen: lessonOpen } = useInspector();
 
   // The phone's one column: which pane is in front, and a mark when the lesson changed behind.
   const [front, setFront] = useState<"chat" | "lesson">("chat");
@@ -224,6 +228,15 @@ export function Workspace({
     setFront(pane);
     if (pane === "lesson") setChanged(false);
   };
+  // A card in the chat opened something: on a phone, the Lekcja pane comes to the front.
+  useEffect(() => {
+    const on = (): void => {
+      setFront("lesson");
+      setChanged(false);
+    };
+    window.addEventListener(INSPECT, on);
+    return () => window.removeEventListener(INSPECT, on);
+  }, []);
 
   return (
     <div className="flex h-full min-h-0 flex-col" data-workspace>

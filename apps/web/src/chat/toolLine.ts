@@ -21,6 +21,7 @@ import {
   Search,
   Target,
 } from "lucide-react";
+import type { ObjectRef } from "./objects/ref.ts";
 import { TOOL_KEY } from "./tools.ts";
 
 export const TOOL_ICON: Readonly<Record<VerbName, LucideIcon>> = {
@@ -43,6 +44,8 @@ export interface LineContext {
   nameOf?: (learner: string) => string | null;
   /** Sends words as the parent's message: a widget's "Ułóż tę lekcję" (dl-z5ja.129). */
   onAsk?: (text: string) => void;
+  /** Opens a thing beside the chat (objects/ref.ts, dl-uukj.47.58). */
+  onOpen?: (object: ObjectRef) => void;
   /** The answers given in this page to an approval's choose form, by its call (dl-uukj.47.35). */
   chosen?: (call_id: string) => readonly (string | null)[] | undefined;
 }
