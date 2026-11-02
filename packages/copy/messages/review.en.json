@@ -258,7 +258,7 @@
   "play_congrats": true,
   "play_results_title": true,
   "play_results_none": true,
-  "play_summary_all": true,
+  "play_summary_all": false,
   "play_summary_some": true,
   "play_review_walk": true,
   "play_ended_correct": true,
