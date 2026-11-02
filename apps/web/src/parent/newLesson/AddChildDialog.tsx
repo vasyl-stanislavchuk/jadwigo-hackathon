@@ -6,6 +6,7 @@
  * The class is asked but not stored yet: LearnerCreate takes no school_grade (dl-e8ov.2.90).
  */
 
+import { track } from "@jadwigo/analytics";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import {
   Button,
@@ -59,7 +60,10 @@ export function AddChildDialog({
     setFailed(false);
     onAdd({ firstName, grade: grade === "" ? null : Number(grade) })
       .then(
-        () => onOpenChange(false),
+        () => {
+          track("learner_created", { has_school_grade: grade !== "" });
+          onOpenChange(false);
+        },
         () => setFailed(true),
       )
       .finally(() => setBusy(false));

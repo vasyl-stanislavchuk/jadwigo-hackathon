@@ -13,6 +13,7 @@
  * and the app stays login-free.
  */
 
+import { track } from "@jadwigo/analytics";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Provider } from "../config.ts";
 
@@ -162,7 +163,9 @@ export function supabaseAuth(
     },
     async verifyCode(email, code) {
       const { data, error } = await supabase.auth.verifyOtp({ email, token: code, type: "email" });
-      return error === null && data.session !== null;
+      const signedIn = error === null && data.session !== null;
+      if (signedIn) track("parent_signed_in", { sign_in_method: "email_code" });
+      return signedIn;
     },
     providers: () => providers,
     enabledProviders: () => read().then((read) => enabledIn(read, providers)),
@@ -187,7 +190,11 @@ export function supabaseAuth(
         exchange = supabase.auth
           .exchangeCodeForSession(back.code)
           .then<RedirectOutcome, RedirectOutcome>(
-            ({ error }) => (error === null ? "signed-in" : "failed"),
+            ({ error }) => {
+              if (error !== null) return "failed";
+              track("parent_signed_in", { sign_in_method: "oauth" });
+              return "signed-in";
+            },
             () => "failed",
           );
         exchanges.set(back.code, exchange);

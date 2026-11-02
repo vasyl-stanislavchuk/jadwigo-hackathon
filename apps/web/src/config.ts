@@ -67,3 +67,11 @@ export function draftsDir(env: Record<string, string | undefined> = process.env)
 export function builderSession(env: Record<string, string | undefined> = process.env): string {
   return (env["JADWIGO_BUILDER_SESSION"] ?? "").trim();
 }
+
+/** The PostHog project's public key (decision dl-376c8), or null for none: with none the app loads
+ * no analytics at all (packages/analytics startAnalytics). A browser holds it by design, as it does
+ * the Supabase publishable key. The build bakes it in (vite.config.ts, __JW_ANALYTICS__). */
+export function analyticsKey(env: Record<string, string | undefined> = process.env): string | null {
+  const key = (env["JW_POSTHOG_KEY"] ?? "").trim();
+  return key === "" ? null : key;
+}

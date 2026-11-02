@@ -667,6 +667,11 @@ export const COPY_KEYS = [
   "parent_col_result",
   "parent_list_no_match",
   "parent_lesson_untitled",
+  // the analytics consent banner on the parent screens (dl-uukj.56, decision dl-376c8)
+  "parent_analytics_ask",
+  "parent_analytics_accept",
+  "parent_analytics_reject",
+  "parent_analytics_privacy",
   // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",

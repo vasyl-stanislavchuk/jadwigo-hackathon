@@ -988,5 +988,9 @@
   "parent_col_day": "Day",
   "parent_col_result": "Result",
   "parent_list_no_match": "Nothing here matches.",
-  "parent_lesson_untitled": "Untitled lesson"
+  "parent_lesson_untitled": "Untitled lesson",
+  "parent_analytics_ask": "Jadwigo records how the app is used, including screen recordings without what you type, so we can make it better. Do you agree?",
+  "parent_analytics_accept": "I agree",
+  "parent_analytics_reject": "No, thanks",
+  "parent_analytics_privacy": "Privacy"
 }

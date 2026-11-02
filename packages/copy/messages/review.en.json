@@ -749,5 +749,9 @@
   "parent_col_day": false,
   "parent_col_result": false,
   "parent_list_no_match": false,
-  "parent_lesson_untitled": false
+  "parent_lesson_untitled": false,
+  "parent_analytics_ask": false,
+  "parent_analytics_accept": false,
+  "parent_analytics_reject": false,
+  "parent_analytics_privacy": false
 }

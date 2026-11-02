@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { authConfig } from "./config.ts";
+import { analyticsKey, authConfig } from "./config.ts";
 
 const project = { JW_SUPABASE_URL: "https://ref.supabase.co", JW_SUPABASE_KEY: "sb_publishable_x" };
 
@@ -17,5 +17,13 @@ describe("authConfig", () => {
     expect(
       authConfig({ ...project, JW_SUPABASE_PROVIDERS: " facebook, apple ,google" })?.providers,
     ).toEqual(["google", "facebook"]);
+  });
+});
+
+describe("analyticsKey", () => {
+  it("is the PostHog key, or null when unset or blank", () => {
+    expect(analyticsKey({ JW_POSTHOG_KEY: " phc_abc " })).toBe("phc_abc");
+    expect(analyticsKey({ JW_POSTHOG_KEY: "" })).toBeNull();
+    expect(analyticsKey({})).toBeNull();
   });
 });

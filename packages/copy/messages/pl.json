@@ -1012,5 +1012,9 @@
   "parent_col_day": "Dzień",
   "parent_col_result": "Wynik",
   "parent_list_no_match": "Nic tu nie pasuje do wyboru.",
-  "parent_lesson_untitled": "Lekcja bez tytułu"
+  "parent_lesson_untitled": "Lekcja bez tytułu",
+  "parent_analytics_ask": "Jadwigo zapisuje, jak używasz aplikacji, także nagrania ekranu bez tego, co wpisujesz. Dzięki temu ją ulepszamy. Zgadzasz się?",
+  "parent_analytics_accept": "Zgadzam się",
+  "parent_analytics_reject": "Nie, dziękuję",
+  "parent_analytics_privacy": "Prywatność"
 }
