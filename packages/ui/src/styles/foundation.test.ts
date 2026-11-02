@@ -738,3 +738,75 @@ describe("a typed field's states", () => {
     expect(native["background-color"]).toBe("var(--jw-pick)");
   });
 });
+
+/** oklch(L C h) as the sRGB hex a browser draws it in, each channel clipped to the gamut. */
+function oklchHex(l: number, cr: number, h: number): string {
+  const a = cr * Math.cos((h * Math.PI) / 180);
+  const b = cr * Math.sin((h * Math.PI) / 180);
+  const L = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const M = (l - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const S = (l - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const linear = [
+    4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S,
+    -1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S,
+    -0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S,
+  ];
+  const encode = (v: number) => (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
+  return `#${linear
+    .map((v) =>
+      Math.round(Math.min(1, Math.max(0, encode(v))) * 255)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+}
+
+// A child's tone (dl-uukj.47.67 D7, S19, handoff §4): fill oklch(0.92 0.055 h), initial
+// oklch(0.40 0.11 h), the stone tone at chroma 0.018 / 0.03, in the order they are assigned.
+describe("a child's tone", () => {
+  const STONE = 7;
+  const HUES = [348, 200, 55, 288, 170, 258, 110, 70, 228, 318];
+  const tones = HUES.map((h, i) => ({
+    i,
+    h,
+    stone: i === STONE,
+    fill: c(light, `jw-tone-${i}-fill`),
+    ink: c(light, `jw-tone-${i}-ink`),
+  }));
+  const circle = (a: number, b: number) => Math.min(Math.abs(a - b), 360 - Math.abs(a - b));
+
+  it("writes each primitive as the sRGB of its oklch", () => {
+    for (const t of tones) {
+      const [fc, ic] = t.stone ? [0.018, 0.03] : [0.055, 0.11];
+      expect(t.fill, `tone ${t.i} fill`).toBe(oklchHex(0.92, fc, t.h));
+      expect(t.ink, `tone ${t.i} ink`).toBe(oklchHex(0.4, ic, t.h));
+    }
+  });
+
+  it.each(tones.map((t) => [t.i, t] as const))(
+    "holds tone %i's initial on its fill to 4.5:1",
+    (_, t) => {
+      expect(contrast(t.ink, t.fill), `${t.ink} on ${t.fill}`).toBeGreaterThanOrEqual(4.5);
+    },
+  );
+
+  it("keeps the hued tones at least 28° apart", () => {
+    const hued = tones.filter((t) => !t.stone).map((t) => t.h);
+    for (const a of hued)
+      for (const b of hued)
+        if (a !== b) expect(circle(a, b), `${a} and ${b}`).toBeGreaterThanOrEqual(28);
+  });
+
+  it("puts no hued tone on red, green or help's yellow", () => {
+    for (const t of tones.filter((x) => !x.stone))
+      for (const verdict of [25, 145, 90])
+        expect(circle(t.h, verdict), `hue ${t.h} near ${verdict}`).toBeGreaterThan(15);
+  });
+
+  it("draws the parent's avatar in pale ink, readable, and in no child's tone", () => {
+    const fill = c(light, "jw-avatar");
+    const ink = c(light, "jw-avatar-ink");
+    expect(contrast(ink, fill)).toBeGreaterThanOrEqual(4.5);
+    expect(tones.map((t) => t.fill)).not.toContain(fill);
+  });
+});

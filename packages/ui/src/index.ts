@@ -11,6 +11,7 @@ export {
   useRegister,
 } from "./lib/register.tsx";
 export { followSystemTheme, heldTheme, holdTheme, setAudience, type Theme } from "./lib/theme.ts";
+export { TONE_COUNT, toneClasses } from "./lib/tone.ts";
 export { cn } from "./lib/utils.ts";
 export { Field } from "./parts/field.tsx";
 export { Heading } from "./parts/heading.tsx";
@@ -32,6 +33,7 @@ export {
   CardHeader,
   CardTitle,
 } from "./primitives/card.tsx";
+export { Chip } from "./primitives/chip.tsx";
 export type { Choice, ControlSize } from "./primitives/choice.ts";
 export {
   Dialog,
@@ -40,12 +42,15 @@ export {
   DialogFooter,
   DialogTrigger,
 } from "./primitives/dialog.tsx";
-export { Disc } from "./primitives/disc.tsx";
+export { Disc, DiscStack } from "./primitives/disc.tsx";
+export { Empty } from "./primitives/empty.tsx";
 export { Input } from "./primitives/input.tsx";
+export { Pagination } from "./primitives/pagination.tsx";
 export { PanelToggle } from "./primitives/panel-toggle.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./primitives/popover.tsx";
 export { Progress } from "./primitives/progress.tsx";
 export { RadioGroup } from "./primitives/radio-group.tsx";
+export { ResultBar } from "./primitives/result-bar.tsx";
 export { SegmentedControl } from "./primitives/segmented-control.tsx";
 export {
   Sheet,
@@ -58,8 +63,10 @@ export {
   SheetTrigger,
 } from "./primitives/sheet.tsx";
 export { type MenuEntry, type MenuItem, SideMenu } from "./primitives/side-menu.tsx";
+export { Skeleton } from "./primitives/skeleton.tsx";
 export { Slider } from "./primitives/slider.tsx";
 export { Spinner } from "./primitives/spinner.tsx";
+export { type LessonStatus, Status } from "./primitives/status.tsx";
 export { Switch } from "./primitives/switch.tsx";
 export {
   Table,

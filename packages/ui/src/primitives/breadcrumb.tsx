@@ -1,6 +1,6 @@
 // The breadcrumb (decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-lesson-
 // workspac, dl-xo0q): "Section / Page" in the parent's top bar. Each step before the last is a link;
-// the last is the current page, bold, with aria-current="page". A link is a real <a href>; the app
+// the last is the current page, in ink, with aria-current="page". A link is a real <a href>; the app
 // moves client-side through onNavigate (it calls preventDefault for a plain click itself).
 import type { MouseEvent, ReactElement, ReactNode } from "react";
 import { cn } from "../lib/utils.ts";
@@ -27,7 +27,7 @@ function Breadcrumb({
   const last = trail.length - 1;
   return (
     <nav aria-label={label} data-slot="breadcrumb" className={cn("min-w-0", className)}>
-      <ol className="flex min-w-0 items-center gap-2 text-jw-page-body text-jw-ink-soft">
+      <ol className="flex min-w-0 items-center gap-2 text-jw-page-body font-medium text-muted-foreground">
         {trail.map((step, i) => (
           // A trail never repeats a step at the same place, so the index is its key.
           <li key={i} className="flex min-w-0 items-center gap-2">
@@ -35,14 +35,17 @@ function Breadcrumb({
             {i === last || step.href === undefined ? (
               <span
                 aria-current={i === last ? "page" : undefined}
-                className={cn("truncate", i === last && "font-bold text-jw-ink")}
+                className={cn("truncate", i === last && "text-foreground")}
               >
                 {step.label}
               </span>
             ) : (
               <a
                 href={step.href}
-                className={cn("truncate rounded-jw-small hover:text-jw-ink hover:underline", FOCUS)}
+                className={cn(
+                  "truncate rounded-jw-small hover:text-foreground hover:underline",
+                  FOCUS,
+                )}
                 onClick={(e) => {
                   if (!onNavigate || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
                   e.preventDefault();

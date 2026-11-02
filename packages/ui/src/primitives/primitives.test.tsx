@@ -235,24 +235,30 @@ describe("primitive sources", () => {
         "breadcrumb.tsx",
         "button.tsx",
         "card.tsx",
+        "chip.tsx",
         "dialog.tsx",
         "disc.tsx",
+        "empty.tsx",
         "input.tsx",
+        "pagination.tsx",
         "panel-toggle.tsx",
         "popover.tsx",
         "progress.tsx",
         "radio-group.tsx",
+        "result-bar.tsx",
         "segmented-control.tsx",
         "sheet.tsx",
         "side-menu.tsx",
+        "skeleton.tsx",
         "slider.tsx",
         "spinner.tsx",
+        "status.tsx",
         "switch.tsx",
         "table.tsx",
         "tabs.tsx",
         "toggle-group.tsx",
         "toggle.tsx",
-      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1)
+      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1); chip, empty, pagination, result-bar, skeleton and status: the adult kit's display parts (dl-uukj.47.67.4)
     );
   });
 
@@ -271,7 +277,17 @@ describe("primitive sources", () => {
   // A literal height or width on a control would undercut --kid-tap-min. Icon sizes inside a
   // control ([&_svg…]:size-7) are not targets. The slider's track and thumb face are drawn
   // inside a row that is itself tap-min high; each is listed with its reason.
-  const LABELS = new Set(["badge.tsx", "progress.tsx", "card.tsx", "spinner.tsx", "disc.tsx"]);
+  const LABELS = new Set([
+    "badge.tsx",
+    "progress.tsx",
+    "card.tsx",
+    "spinner.tsx",
+    "disc.tsx",
+    "status.tsx",
+    "skeleton.tsx",
+    "empty.tsx",
+    "result-bar.tsx",
+  ]);
   const DRAWN: Record<string, string[]> = {
     "radio-group.tsx": [
       "min-w-0", // lets the wrapper of legend and rows shrink in a flex row; the rows are the targets
@@ -280,6 +296,11 @@ describe("primitive sources", () => {
     ],
     "segmented-control.tsx": [
       "min-w-0", // lets the wrapper of legend and track shrink in a flex row; the track is the target
+    ],
+    "chip.tsx": [
+      "h-5.5", // the chip, a label; the × inside it is a mouse target in the adult app
+      "size-4.5", // the × around its icon
+      "size-3", // the × icon
     ],
     "breadcrumb.tsx": [
       "min-w-0", // lets a long page name truncate in the top bar's flex row

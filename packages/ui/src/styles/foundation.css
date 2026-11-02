@@ -121,6 +121,30 @@
   --jw-p-red-850: #682b23;
   --jw-p-red-900: #5c231b;
   --jw-p-red-950: #4a130b;
+  /* A child's tone (dl-uukj.47.67 D7, S19, handoff §4): a disc's fill and its initial in one hue,
+     * kept for life, assigned in this order (0-9). Fill oklch(0.92 0.055 h), initial oklch(0.40 0.11 h),
+     * written as the sRGB they clip to (apps/docs reads every primitive as hex); tone 7 is the stone
+     * tone, chroma 0.018 / 0.03. foundation.test.ts converts the oklch and checks these. */
+  --jw-p-tone-0-fill: #ffd6eb; /* rose, hue 348 */
+  --jw-p-tone-0-ink: #702a52;
+  --jw-p-tone-1-fill: #baf0f3; /* cyan, hue 200 */
+  --jw-p-tone-1-ink: #00585f;
+  --jw-p-tone-2-fill: #ffdcc2; /* apricot, hue 55 */
+  --jw-p-tone-2-ink: #733300;
+  --jw-p-tone-3-fill: #e2e0ff; /* violet, hue 288 */
+  --jw-p-tone-3-ink: #463b7f;
+  --jw-p-tone-4-fill: #c1f1df; /* teal, hue 170 */
+  --jw-p-tone-4-ink: #00593e;
+  --jw-p-tone-5-fill: #cee6ff; /* indigo, hue 258 */
+  --jw-p-tone-5-ink: #1d4682;
+  --jw-p-tone-6-fill: #e6e8bf; /* olive, hue 110 */
+  --jw-p-tone-6-ink: #4c4b00;
+  --jw-p-tone-7-fill: #ede3d8; /* stone, hue 70 */
+  --jw-p-tone-7-ink: #524536;
+  --jw-p-tone-8-fill: #bfedff; /* sky, hue 228 */
+  --jw-p-tone-8-ink: #005176;
+  --jw-p-tone-9-fill: #f4dafd; /* orchid, hue 318 */
+  --jw-p-tone-9-ink: #60316d;
 }
 
 /* ---- 2. Roles, by day ------------------------------------------------------------------------- */
@@ -193,6 +217,30 @@
   --jw-act-hover: var(--jw-p-ink-625);
   --jw-pick-row: var(--jw-p-ink-75);
   --jw-pick-soft-edge: var(--jw-p-ink-300);
+  /* A child's disc in its tone, and the parent's own avatar in the app's pale ink, never a child's
+     * tone (D7). Day only: the adult audience is light only (D10). */
+  --jw-tone-0-fill: var(--jw-p-tone-0-fill);
+  --jw-tone-0-ink: var(--jw-p-tone-0-ink);
+  --jw-tone-1-fill: var(--jw-p-tone-1-fill);
+  --jw-tone-1-ink: var(--jw-p-tone-1-ink);
+  --jw-tone-2-fill: var(--jw-p-tone-2-fill);
+  --jw-tone-2-ink: var(--jw-p-tone-2-ink);
+  --jw-tone-3-fill: var(--jw-p-tone-3-fill);
+  --jw-tone-3-ink: var(--jw-p-tone-3-ink);
+  --jw-tone-4-fill: var(--jw-p-tone-4-fill);
+  --jw-tone-4-ink: var(--jw-p-tone-4-ink);
+  --jw-tone-5-fill: var(--jw-p-tone-5-fill);
+  --jw-tone-5-ink: var(--jw-p-tone-5-ink);
+  --jw-tone-6-fill: var(--jw-p-tone-6-fill);
+  --jw-tone-6-ink: var(--jw-p-tone-6-ink);
+  --jw-tone-7-fill: var(--jw-p-tone-7-fill);
+  --jw-tone-7-ink: var(--jw-p-tone-7-ink);
+  --jw-tone-8-fill: var(--jw-p-tone-8-fill);
+  --jw-tone-8-ink: var(--jw-p-tone-8-ink);
+  --jw-tone-9-fill: var(--jw-p-tone-9-fill);
+  --jw-tone-9-ink: var(--jw-p-tone-9-ink);
+  --jw-avatar: var(--jw-p-ink-50);
+  --jw-avatar-ink: var(--jw-p-ink-750);
 }
 
 /* ---- 2. Roles, by night ----------------------------------------------------------------------- */
@@ -296,6 +344,8 @@
   --jw-control-height-lg: 2.5rem; /* 40px */
   /* A small line on an app page: a row's second fact, a muted note. The parent's density sets 12.5. */
   --jw-page-small: 0.9375rem; /* 15px */
+  /* The adult's smallest words: a count, a badge in the sidebar, a small disc's initial (handoff §3). */
+  --jw-page-micro: 0.71875rem; /* 11.5px */
   /* The one question a screen asks ("Jaką lekcję przygotować?"), above its one box. */
   --jw-page-question: 2rem; /* 32px */
 

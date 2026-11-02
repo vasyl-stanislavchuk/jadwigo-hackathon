@@ -143,6 +143,30 @@
   --color-jw-act-hover: var(--jw-act-hover);
   --color-jw-pick-row: var(--jw-pick-row);
   --color-jw-pick-soft-edge: var(--jw-pick-soft-edge);
+  /* A child's tone and the parent's avatar (foundation.css §2, dl-uukj.47.67 D7): bg-jw-tone-3-fill,
+     * text-jw-tone-3-ink, bg-jw-avatar. lib/tone.ts names them for the Disc. */
+  --color-jw-tone-0-fill: var(--jw-tone-0-fill);
+  --color-jw-tone-0-ink: var(--jw-tone-0-ink);
+  --color-jw-tone-1-fill: var(--jw-tone-1-fill);
+  --color-jw-tone-1-ink: var(--jw-tone-1-ink);
+  --color-jw-tone-2-fill: var(--jw-tone-2-fill);
+  --color-jw-tone-2-ink: var(--jw-tone-2-ink);
+  --color-jw-tone-3-fill: var(--jw-tone-3-fill);
+  --color-jw-tone-3-ink: var(--jw-tone-3-ink);
+  --color-jw-tone-4-fill: var(--jw-tone-4-fill);
+  --color-jw-tone-4-ink: var(--jw-tone-4-ink);
+  --color-jw-tone-5-fill: var(--jw-tone-5-fill);
+  --color-jw-tone-5-ink: var(--jw-tone-5-ink);
+  --color-jw-tone-6-fill: var(--jw-tone-6-fill);
+  --color-jw-tone-6-ink: var(--jw-tone-6-ink);
+  --color-jw-tone-7-fill: var(--jw-tone-7-fill);
+  --color-jw-tone-7-ink: var(--jw-tone-7-ink);
+  --color-jw-tone-8-fill: var(--jw-tone-8-fill);
+  --color-jw-tone-8-ink: var(--jw-tone-8-ink);
+  --color-jw-tone-9-fill: var(--jw-tone-9-fill);
+  --color-jw-tone-9-ink: var(--jw-tone-9-ink);
+  --color-jw-avatar: var(--jw-avatar);
+  --color-jw-avatar-ink: var(--jw-avatar-ink);
   --color-kid-selected: var(--kid-selected);
   --color-kid-selected-soft: var(--kid-selected-soft);
   --color-kid-selected-ink: var(--kid-selected-ink);
@@ -163,6 +187,7 @@
   --text-jw-page-h2: var(--jw-page-h2);
   --text-jw-page-body: var(--jw-page-body);
   --text-jw-page-small: var(--jw-page-small);
+  --text-jw-page-micro: var(--jw-page-micro);
   --text-jw-page-question: var(--jw-page-question);
   --leading-jw-page: var(--jw-page-leading);
 
