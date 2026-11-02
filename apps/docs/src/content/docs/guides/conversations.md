@@ -59,7 +59,10 @@ The reply is the run that holds the message, `queued` while the AI has not start
 sent while a turn is open joins that turn. Otherwise it starts a new run.
 
 - A resend with the same `event_id` and text returns the same run.
-- The same `event_id` with other text is `409` `EventIdMismatch`.
+- The same `event_id` with other text, or another page in `context` (or none where it had one),
+  is `409` `EventIdMismatch`.
+- A `context` names the page the message was sent from, `{"learner_id": …}` or
+  `{"lesson_id": …}`. One the family does not hold is `404` `NotFound`, and nothing is stored.
 - A parent may send 10 messages a minute, and a family's runs may spend 10 USD a day in all. Past
   the minute the reply is `429` `MessageLimitMinute`, past the day `429` `MessageLimitDay`, and
   nothing is stored. A message that joins a running turn is never refused by the day.
