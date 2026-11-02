@@ -157,6 +157,21 @@ resource "aws_cloudfront_distribution" "app" {
     response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security.id
   }
 
+  # The remote MCP's protected-resource metadata (RFC 9728, dl-1u6fn.8): an MCP client reads it at
+  # the root, /.well-known/oauth-protected-resource and its /api/mcp suffix, so it goes to the api
+  # as /api/* does.
+  ordered_cache_behavior {
+    path_pattern               = "/.well-known/oauth-protected-resource*"
+    target_origin_id           = "api"
+    viewer_protocol_policy     = "https-only"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
+    cached_methods             = ["GET", "HEAD"]
+    compress                   = true
+    cache_policy_id            = data.aws_cloudfront_cache_policy.disabled.id
+    origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_but_host.id
+    response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security.id
+  }
+
   restrictions {
     geo_restriction {
       restriction_type = "none"

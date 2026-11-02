@@ -40,6 +40,12 @@ variable "token_routes" {
   }
 }
 
+variable "mcp_routes" {
+  description = "The remote MCP's route keys (dl-1u6fn.8), outside ROUTES: no JWT authorizer, since the Lambda verifies the parent's token itself and its 401 names the metadata"
+  type        = list(string)
+  default     = []
+}
+
 variable "jwt_issuer" {
   description = "The Supabase project's Auth issuer, https://<ref>.supabase.co/auth/v1, signing with RS256"
   type        = string
