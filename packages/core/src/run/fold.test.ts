@@ -1,3 +1,4 @@
+import { ID_PREFIXES, idOf } from "@jadwigo/contracts";
 import { RunEvent, type RunStatus } from "@jadwigo/contracts/run";
 import { RUN_LOGS } from "@jadwigo/testing";
 import fc from "fast-check";
@@ -200,6 +201,23 @@ describe("foldRun, the UX seams (dl-z5ja.50)", () => {
     );
     expect(chat[0]).toMatchObject({ kind: "message", citations });
     expect(chat[1]).not.toHaveProperty("citations");
+  });
+
+  it("carries a parent message's context, and none on a message without it (dl-uukj.47.11)", () => {
+    const learner = {
+      learner_id: idOf(ID_PREFIXES.learner, "00000000-0000-4000-8000-000000000001"),
+    };
+    const lesson = { lesson_id: idOf(ID_PREFIXES.lesson, "00000000-0000-4000-8000-000000000002") };
+    const { chat } = foldRun(
+      logOf([
+        { type: "message", payload: { from: "parent", text: "For her.", context: learner } },
+        { type: "message", payload: { from: "parent", text: "This one.", context: lesson } },
+        { type: "message", payload: { from: "parent", text: "Anything." } },
+      ]),
+    );
+    expect(chat[0]).toMatchObject({ kind: "message", context: learner });
+    expect(chat[1]).toMatchObject({ kind: "message", context: lesson });
+    expect(chat[2]).not.toHaveProperty("context");
   });
 
   it("keeps the approval's choose form", () => {

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "What the assistant sent" |
+* | "What was sent" |
 *
 * @param {Chat_Card_InputInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

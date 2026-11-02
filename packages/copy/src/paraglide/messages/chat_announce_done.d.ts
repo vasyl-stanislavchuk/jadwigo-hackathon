@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The assistant is done." |
+* | "Jadwigo AI: done" |
 *
 * @param {Chat_Announce_DoneInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -7,7 +7,7 @@
 
 import { type Finding, type FindingLevel, worstLevel } from "@jadwigo/lesson-import/file";
 import type { FamilySpec } from "@jadwigo/lesson-kit";
-import { type PartSpecs, twinRow } from "../adapter.ts";
+import { type PartSpecs, twinRow } from "../../../chat/lesson/adapter.ts";
 import { rungsOf } from "../rungs.ts";
 
 export interface StepRow {

@@ -7,7 +7,7 @@
 import { cn } from "@jadwigo/ui";
 import { PanelRight } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
-import { Button } from "../tool/button.tsx";
+import { Button } from "../../chat/button.tsx";
 import { Separator } from "../tool/separator.tsx";
 import {
   Sidebar,

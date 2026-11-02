@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Skip" |
+* | "Skip the question" |
 *
 * @param {Chat_Choose_SkipInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

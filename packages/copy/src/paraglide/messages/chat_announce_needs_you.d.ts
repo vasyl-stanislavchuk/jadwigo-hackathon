@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The assistant is waiting for your answer." |
+* | "Jadwigo AI: waiting for your answer" |
 *
 * @param {Chat_Announce_Needs_YouInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

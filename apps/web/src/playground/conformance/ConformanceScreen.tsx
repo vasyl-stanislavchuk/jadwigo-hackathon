@@ -25,8 +25,8 @@ import {
   ViewMode,
 } from "@jadwigo/lesson-kit";
 import { type ReactElement, useEffect, useRef, useState } from "react";
+import { lessonFileToSpecs } from "../../chat/lesson/adapter.ts";
 import { mediaUrl, NO_MEDIA_URL } from "../../media.ts";
-import { lessonFileToSpecs } from "../lesson/adapter.ts";
 import { checkBatch, unplayable } from "./batch.ts";
 import { ItemBoundary } from "./ItemBoundary.tsx";
 import {

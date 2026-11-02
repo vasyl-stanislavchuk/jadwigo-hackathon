@@ -20,5 +20,5 @@ export const chat_edit_saving = /** @type {((inputs?: Chat_Edit_SavingInputs, op
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Saving your change to the lesson…")
-	return /** @type {LocalizedString} */ ("Zapisuję Twoją zmianę w lekcji…")
+	return /** @type {LocalizedString} */ ("Zapisywanie Twojej zmiany w lekcji…")
 });

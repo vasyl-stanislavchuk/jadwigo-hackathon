@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 /**
  * A child's page (dl-uukj.47.3, decision dl-xo0q): the header with the disc, the name, the class
- * and "Nowa lekcja dla" as the page's own action; the four agreed tabs; Przegląd holding the child's
+ * and "Nowa lekcja · {name}" as the page's own action; the four agreed tabs; Przegląd holding the child's
  * lessons as the old home's card did; the other tabs a muted line until their content is decided.
  */
 
@@ -45,7 +45,7 @@ describe("ChildPage", () => {
     const header = document.querySelector("[data-child-header]") as HTMLElement;
     expect(within(header).getByRole("heading", { name: "Ola" })).toBeDefined();
     expect(header.textContent).toContain("2 kl.");
-    const action = within(header).getByRole("link", { name: "Nowa lekcja dla: Ola" });
+    const action = within(header).getByRole("link", { name: "Nowa lekcja · Ola" });
     expect(action.getAttribute("href")).toBe(`/parent?for=${OLA}`);
   });
 

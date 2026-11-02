@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The assistant's steps" |
+* | "Jadwigo AI's steps" |
 *
 * @param {Chat_Tool_LinesInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

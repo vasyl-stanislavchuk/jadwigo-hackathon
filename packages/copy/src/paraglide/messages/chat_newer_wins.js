@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Your version is newer, so it stays. The assistant knows." |
+* | "Your version is newer, so it stays. Jadwigo AI knows." |
 *
 * @param {Chat_Newer_WinsInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_newer_wins = /** @type {((inputs?: Chat_Newer_WinsInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Newer_WinsInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Your version is newer, so it stays. The assistant knows.")
-	return /** @type {LocalizedString} */ ("Twoja wersja jest nowsza, więc zostaje. Asystent o tym wie.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Your version is newer, so it stays. Jadwigo AI knows.")
+	return /** @type {LocalizedString} */ ("Twoja wersja jest nowsza, więc zostaje. Jadwigo AI o tym wie.")
 });

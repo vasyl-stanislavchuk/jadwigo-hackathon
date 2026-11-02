@@ -20,5 +20,5 @@ export const chat_problem_retrying = /** @type {((inputs?: Chat_Problem_Retrying
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Trying again.")
-	return /** @type {LocalizedString} */ ("Próbuję jeszcze raz.")
+	return /** @type {LocalizedString} */ ("Ponowna próba.")
 });

@@ -147,7 +147,7 @@ export function Workspace({
   chat: ReactNode;
   /** The chat's 68 px band: the run state in words, then the rating. */
   chatBand: ReactNode;
-  /** What the folded chat's strip says, such as "Jadwigo pisze lekcję". */
+  /** What the folded chat's strip says, such as "Układanie lekcji". */
   chatFact?: string;
   lessonTitle: ReactNode;
   /** The steps, scrolling between the title and the footer. */

@@ -7,8 +7,8 @@
 import { cn } from "@jadwigo/ui";
 import { type FormEvent, type ReactElement, useState } from "react";
 import type { Ask } from "../../../../../../tools/builder/drafts.ts";
+import { Button } from "../../../chat/button.tsx";
 import { Badge } from "../../tool/badge.tsx";
-import { Button } from "../../tool/button.tsx";
 import { WorkFold } from "../activity/WorkFold.tsx";
 import { useAsks } from "./source.ts";
 import {

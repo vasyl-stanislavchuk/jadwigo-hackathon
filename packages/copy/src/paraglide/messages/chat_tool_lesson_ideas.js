@@ -20,5 +20,5 @@ export const chat_tool_lesson_ideas = /** @type {((inputs?: Chat_Tool_Lesson_Ide
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Finding ideas for the next lesson")
-	return /** @type {LocalizedString} */ ("Szukam pomysłów na następną lekcję")
+	return /** @type {LocalizedString} */ ("Szukanie pomysłów na następną lekcję")
 });

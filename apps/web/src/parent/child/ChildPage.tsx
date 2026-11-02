@@ -1,7 +1,7 @@
 /**
  * One child's page, /parent/children/<learner> (dl-uukj.47.3; decision 2026-11-01-the-parent-app-is-
  * a-sidebar-shell-and-a-3-column-lesson-workspac, dl-xo0q; handoff §6, docs/worklog/dl-uukj.47):
- * a header with the disc, the name, the class and "Nowa lekcja dla" as the page's own action (never
+ * a header with the disc, the name, the class and "Nowa lekcja · {name}" as the page's own action (never
  * in the top bar's corner), then the design system's Tabs: Przegląd · Umiejętności · Lekcje ·
  * Historia. The tab set is agreed; what each holds is open. Przegląd holds what the old home's card
  * held: the child's goals, weeks and report (LearnerKnowledge), and their lessons as tiles. The
@@ -57,7 +57,7 @@ export function ChildPage({
             href={parentPath({ forLearner: learner.id, lang: pageLang() })}
             data-new-lesson-for
           >
-            {t("parent_new_lesson_for", { name: learner.first_name })}
+            {t("parent_new_lesson_child", { name: learner.first_name })}
           </NavLink>
         </Button>
       </header>

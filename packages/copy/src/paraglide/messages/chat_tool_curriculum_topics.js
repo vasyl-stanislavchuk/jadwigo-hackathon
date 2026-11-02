@@ -20,5 +20,5 @@ export const chat_tool_curriculum_topics = /** @type {((inputs?: Chat_Tool_Curri
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Reading the school curriculum")
-	return /** @type {LocalizedString} */ ("Czytam podstawę programową")
+	return /** @type {LocalizedString} */ ("Czytanie podstawy programowej")
 });

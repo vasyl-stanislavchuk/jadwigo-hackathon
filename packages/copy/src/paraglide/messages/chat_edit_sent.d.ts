@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Your change went to the assistant." |
+* | "Your change went to Jadwigo AI." |
 *
 * @param {Chat_Edit_SentInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

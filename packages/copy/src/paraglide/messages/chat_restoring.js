@@ -20,5 +20,5 @@ export const chat_restoring = /** @type {((inputs?: Chat_RestoringInputs, option
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Restoring the conversation…")
-	return /** @type {LocalizedString} */ ("Przywracam rozmowę…")
+	return /** @type {LocalizedString} */ ("Przywracanie rozmowy…")
 });

@@ -17,7 +17,7 @@ test("one scripted turn: the message on the left, the lesson on the right", asyn
 
   await expect(chat.getByText("Dodawanie do 20 dla 1 klasy.")).toBeVisible();
   await expect(chat.locator("[data-status]")).toHaveText("Gotowe", { timeout: 20_000 });
-  await expect(chat.getByRole("status")).toHaveText("Asystent skończył.");
+  await expect(chat.getByRole("status")).toHaveText("Jadwigo AI: gotowe");
   await expect(chat.getByText("Lekcja jest gotowa po prawej.")).toBeVisible();
   await expect(lesson.locator("[data-revision]")).toBeVisible();
   await expect(lesson.locator("[data-step]").first()).toBeVisible();
@@ -52,7 +52,7 @@ test("a phone: one turn in Rozmowa, a badge on Lekcja, then the lesson", async (
   await box.fill("Dodawanie do 20 dla 1 klasy.");
   await chat.getByRole("button", { name: "Wyślij" }).click();
 
-  await expect(chat.getByRole("status")).toHaveText("Asystent skończył.", { timeout: 20_000 });
+  await expect(chat.getByRole("status")).toHaveText("Jadwigo AI: gotowe", { timeout: 20_000 });
   await expect(lessonTab.getByText("Lekcja się zmieniła")).toBeVisible();
 
   await lessonTab.click();

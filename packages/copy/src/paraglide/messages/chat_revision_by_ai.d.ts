@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Changed by the assistant" |
+* | "Changed by Jadwigo AI" |
 *
 * @param {Chat_Revision_By_AiInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Assistant" |
+* | "Jadwigo AI" |
 *
 * @param {Chat_From_AgentInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

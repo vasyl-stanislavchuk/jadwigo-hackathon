@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Reading what the learner found tricky" |
+* | "Reading what the child found tricky" |
 *
 * @param {Chat_Tool_Learner_MistakesInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

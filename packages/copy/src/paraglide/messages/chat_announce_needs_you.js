@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "The assistant is waiting for your answer." |
+* | "Jadwigo AI: waiting for your answer" |
 *
 * @param {Chat_Announce_Needs_YouInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_announce_needs_you = /** @type {((inputs?: Chat_Announce_Needs_YouInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Announce_Needs_YouInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("The assistant is waiting for your answer.")
-	return /** @type {LocalizedString} */ ("Asystent czeka na Twoją odpowiedź.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Jadwigo AI: waiting for your answer")
+	return /** @type {LocalizedString} */ ("Jadwigo AI: czeka na Twoją odpowiedź")
 });

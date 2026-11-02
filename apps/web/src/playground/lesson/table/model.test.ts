@@ -1,8 +1,8 @@
 import type { Finding } from "@jadwigo/lesson-import/file";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
-import { lessonFileToSpecs } from "../adapter.ts";
-import { readDraft } from "../draft.ts";
+import { lessonFileToSpecs } from "../../../chat/lesson/adapter.ts";
+import { readDraft } from "../../../chat/lesson/readDraft.ts";
 import { findingsOf } from "./findings.ts";
 import { stepRows } from "./model.ts";
 

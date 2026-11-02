@@ -20,5 +20,5 @@ export const chat_status_awaiting_input = /** @type {((inputs?: Chat_Status_Awai
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Waiting for you")
-	return /** @type {LocalizedString} */ ("Czekam na Ciebie")
+	return /** @type {LocalizedString} */ ("Czeka na Ciebie")
 });

@@ -49,11 +49,11 @@ import {
   useRef,
   useState,
 } from "react";
+import { ConsentScreen, giveConsent } from "../chat/ConsentScreen.tsx";
+import { newEventId } from "../chat/ids.ts";
 import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { storedAttempt } from "../play/storedAttempt.ts";
-import { ConsentScreen, giveConsent } from "../playground/chat/ConsentScreen.tsx";
-import { newEventId } from "../playground/chat/ids.ts";
 import { AttemptReview } from "./AttemptReview.tsx";
 import { CATEGORY, pageLang } from "./adult.ts";
 import {

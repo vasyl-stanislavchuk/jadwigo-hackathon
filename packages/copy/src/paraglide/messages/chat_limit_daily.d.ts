@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "That's all the assistant can do today. Come back tomorrow, and the lesson will be here." |
+* | "That's all Jadwigo AI can do today. Come back tomorrow, and the lesson will be here." |
 *
 * @param {Chat_Limit_DailyInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

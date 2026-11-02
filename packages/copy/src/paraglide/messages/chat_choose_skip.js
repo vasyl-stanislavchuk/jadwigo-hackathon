@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Skip" |
+* | "Skip the question" |
 *
 * @param {Chat_Choose_SkipInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_choose_skip = /** @type {((inputs?: Chat_Choose_SkipInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Choose_SkipInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Skip")
-	return /** @type {LocalizedString} */ ("Pomiń")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Skip the question")
+	return /** @type {LocalizedString} */ ("Pomiń pytanie")
 });

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Reading the learner's goals" |
+* | "Reading the child's goals" |
 *
 * @param {Chat_Tool_Learner_SkillsInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -4,6 +4,7 @@ import {
   BUDGET_STOP_SHARE,
   type ChooseForm,
   type MessageAttachment,
+  type MessageContext,
   type PlanEntry,
   type Run,
   type RunError,
@@ -38,6 +39,11 @@ export type ChatItem =
       text: string;
       attachments: readonly MessageAttachment[];
       citations?: readonly Citation[];
+      /**
+       * A parent's message only: the page it was sent from, as the log carries it (a learner or a
+       * lesson). The chat's context chip reads the last one (dl-uukj.47.32).
+       */
+      context?: MessageContext;
       /**
        * Present only on a parent's steer (dl-z5ja.51): words sent while the turn ran, or an edit
        * in the lesson pane naming the questions it changed.
@@ -180,7 +186,7 @@ export function foldRun(events: readonly RunEvent[]): RunView {
     view.cursor = e.seq;
     switch (e.type) {
       case "message": {
-        const { from, text, attachments, citations } = e.payload;
+        const { from, text, attachments, citations, context } = e.payload;
         chat.push({
           kind: "message",
           seq: e.seq,
@@ -188,6 +194,7 @@ export function foldRun(events: readonly RunEvent[]): RunView {
           text,
           attachments: attachments ?? [],
           ...(citations ? { citations } : {}),
+          ...(context ? { context } : {}),
         });
         break;
       }

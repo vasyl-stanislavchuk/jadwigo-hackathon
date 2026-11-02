@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "The assistant can't take more messages right now. Try again later." |
+* | "Jadwigo AI can't take more messages right now. Try again later." |
 *
 * @param {Chat_Limit_MessageInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

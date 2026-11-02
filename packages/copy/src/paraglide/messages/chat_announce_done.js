@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "The assistant is done." |
+* | "Jadwigo AI: done" |
 *
 * @param {Chat_Announce_DoneInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_announce_done = /** @type {((inputs?: Chat_Announce_DoneInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Announce_DoneInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("The assistant is done.")
-	return /** @type {LocalizedString} */ ("Asystent skończył.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Jadwigo AI: done")
+	return /** @type {LocalizedString} */ ("Jadwigo AI: gotowe")
 });
