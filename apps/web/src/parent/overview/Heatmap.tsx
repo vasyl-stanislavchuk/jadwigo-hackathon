@@ -50,16 +50,16 @@ export function Heatmap({
   const firstTry = copy(language, "parent_outcome_first_try", {}, CATEGORY);
   return (
     <div className="w-full min-w-0 max-w-full" data-overview-grid>
-      <Table className="w-max border-separate border-spacing-1 text-jw-body text-jw-ink">
+      <Table className="w-max border-separate border-spacing-1 text-jw-page-body text-jw-ink">
         <TableHeader>
           <TableRow>
             <TableHead className={STICKY} />
-            <TableHead className="px-2 text-jw-small font-normal">{firstTry}</TableHead>
+            <TableHead className="px-2 text-jw-page-small font-normal">{firstTry}</TableHead>
             {grid.columns.map((column, index) => (
               <TableHead key={column.key} className="p-0" data-column={column.number}>
                 <button
                   type="button"
-                  className="size-10 rounded-jw-small font-bold text-jw-ink underline decoration-2 underline-offset-4"
+                  className="size-10 rounded-jw-control font-medium text-jw-ink underline underline-offset-4 hover:bg-muted"
                   aria-label={copy(
                     language,
                     "parent_overview_question",
@@ -81,7 +81,10 @@ export function Heatmap({
         </TableBody>
         <TableFooter>
           <TableRow data-footer>
-            <TableHead scope="row" className={`${STICKY} pr-2 text-left text-jw-small font-normal`}>
+            <TableHead
+              scope="row"
+              className={`${STICKY} pr-2 text-left text-jw-page-small font-normal`}
+            >
               {firstTry}
             </TableHead>
             <TableCell />
@@ -90,7 +93,7 @@ export function Heatmap({
               return (
                 <TableCell
                   key={column.key}
-                  className="text-center text-jw-small"
+                  className="text-center text-jw-page-small"
                   data-column-count={count}
                 >
                   {count}
@@ -118,7 +121,7 @@ function GridRow({
   const count = ratio(language, row.firstTry, row.asked);
   return (
     <TableRow data-row={row.attempt.id}>
-      <TableHead scope="row" className={`${STICKY} max-w-40 truncate pr-2 text-left font-bold`}>
+      <TableHead scope="row" className={`${STICKY} max-w-40 truncate pr-2 text-left font-semibold`}>
         {href === null ? (
           name
         ) : (
@@ -129,7 +132,7 @@ function GridRow({
           </Link>
         )}
       </TableHead>
-      <TableCell className="px-2 text-center text-jw-small" data-row-count={count}>
+      <TableCell className="px-2 text-center text-jw-page-small" data-row-count={count}>
         {count}
       </TableCell>
       {row.cells.map((cell, index) => {

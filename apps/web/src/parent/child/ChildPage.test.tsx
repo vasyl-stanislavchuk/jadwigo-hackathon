@@ -50,6 +50,18 @@ describe("ChildPage", () => {
     expect(action.getAttribute("href")).toBe(`/parent?for=${OLA}`);
   });
 
+  it("stands on the wide page with the disc in the child's tone and one primary (dl-uukj.47.67 §8)", async () => {
+    await act(async () => {
+      render(<ChildPage api={api} learner={ola} language="pl" tone={3} />);
+    });
+    const page = document.querySelector("[data-learner-card]") as HTMLElement;
+    expect(page.className).toContain("max-w-240");
+    const disc = page.querySelector("[data-child-header] [data-slot=disc]") as HTMLElement;
+    expect(disc.className).toContain("size-8");
+    expect(disc.className).toContain("jw-tone-3");
+    expect(document.querySelectorAll("[data-slot=button][data-variant=default]")).toHaveLength(1);
+  });
+
   it("has the four agreed tabs, Przegląd first with the child's lessons", async () => {
     await act(async () => {
       render(<ChildPage api={api} learner={ola} language="pl" />);
