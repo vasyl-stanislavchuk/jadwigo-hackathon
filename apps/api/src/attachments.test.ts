@@ -5,9 +5,24 @@ import type { RunStepInput } from "@jadwigo/contracts";
 import { InMemoryRunQueue } from "@jadwigo/jadwigo-ai";
 import { InMemoryStore } from "@jadwigo/store";
 import { describe, expect, it, vi } from "vitest";
-import { HEAD_BYTES, jpegHasNoExif, s3Uploads } from "./attachments.ts";
+import {
+  HEAD_BYTES,
+  isHeic,
+  isPdf,
+  jpegHasNoExif,
+  s3Uploads,
+  zipDirectory,
+  zipNames,
+} from "./attachments.ts";
 import { attachmentSuite } from "./testing/attachments.suite.ts";
-import { syntheticJpeg, syntheticPng } from "./testing/uploads.ts";
+import {
+  DOCX_NAMES,
+  syntheticHeic,
+  syntheticJpeg,
+  syntheticPdf,
+  syntheticPng,
+  syntheticZip,
+} from "./testing/uploads.ts";
 
 attachmentSuite(
   "InMemoryStore",
@@ -135,5 +150,43 @@ describe("s3Uploads", () => {
     const uploads = s3Uploads(client(), read);
     await expect(uploads.presignGet("k", 300)).rejects.toThrow(/UPLOADS_BUCKET/);
     expect(await uploads.presignGet("k", 300)).toContain("jadwigo-uploads-late");
+  });
+});
+
+describe("a document's first bytes (wave 6, dl-z5ja.11.10)", () => {
+  it("takes a HEIC of brand heic, heix or mif1 only", () => {
+    for (const brand of ["heic", "heix", "mif1"])
+      expect(isHeic(syntheticHeic(64, brand))).toBe(true);
+    for (const brand of ["avif", "mp42", "heim"])
+      expect(isHeic(syntheticHeic(64, brand))).toBe(false);
+    expect(isHeic(syntheticJpeg(64))).toBe(false);
+    expect(isHeic(new Uint8Array())).toBe(false);
+  });
+
+  it("takes a PDF by its header only", () => {
+    expect(isPdf(syntheticPdf(64))).toBe(true);
+    expect(isPdf(new TextEncoder().encode("%PDF"))).toBe(false);
+    expect(isPdf(syntheticJpeg(64))).toBe(false);
+  });
+
+  it("finds a ZIP's central directory from its end, and the names in it", () => {
+    const zip = syntheticZip(DOCX_NAMES);
+    const found = zipDirectory(zip, zip.length);
+    expect(found).toBeDefined();
+    const directory = zip.subarray(found?.offset ?? 0, (found?.offset ?? 0) + (found?.length ?? 0));
+    expect(zipNames(directory, "word/document.xml")).toBe(true);
+    expect(zipNames(directory, "word/document.xm")).toBe(false);
+    const sheet = syntheticZip(["xl/workbook.xml"]);
+    const other = zipDirectory(sheet, sheet.length);
+    expect(zipNames(sheet.subarray(other?.offset ?? 0), "word/document.xml")).toBe(false);
+  });
+
+  it("refuses a ZIP with no end record, a directory past the file, or a ZIP64 one", () => {
+    expect(zipDirectory(syntheticPdf(256), 256)).toBeUndefined();
+    const zip = syntheticZip(DOCX_NAMES);
+    expect(zipDirectory(zip, 30)).toBeUndefined();
+    const zip64 = zip.slice();
+    zip64.set([0xff, 0xff, 0xff, 0xff], zip64.length - 6);
+    expect(zipDirectory(zip64, zip64.length)).toBeUndefined();
   });
 });
