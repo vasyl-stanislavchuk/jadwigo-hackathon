@@ -63,6 +63,7 @@ export function LessonActions({
     return () => window.removeEventListener("afterprint", done);
   }, [printing]);
   const printNow = (): void => {
+    if (!ready) return;
     setChoosing(false);
     setPrinting(true);
     printLesson(print);
@@ -98,6 +99,11 @@ export function LessonActions({
           type="button"
           variant="outline"
           size="control"
+          // A sheet reaches a child as surely as a link: it waits for the same passing check, quiet
+          // with the same reason (a harsh word never prints).
+          aria-disabled={!ready}
+          aria-describedby={ready ? undefined : reasonId}
+          className={ready ? undefined : "border-dashed"}
           disabled={lesson === null}
           onClick={printNow}
           data-print

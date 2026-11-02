@@ -991,7 +991,7 @@
   "parent_details_unfold": "Unfold the details",
   "parent_save": "Save for later",
   "parent_give": "Give the lesson",
-  "parent_give_reason": "“Give the lesson” works once the lesson passes its check",
+  "parent_give_reason": "“Give the lesson” and “Print” work once the lesson passes its check",
   "parent_steps_ready": "Steps ready: {done} of {total}",
   "parent_for_whom": "For whom",
   "parent_lesson_skills": "What this lesson practises",
