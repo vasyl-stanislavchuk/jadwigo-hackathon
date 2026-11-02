@@ -63,7 +63,13 @@ DEV_PORTS_MISSING = $(strip $(if $(MEDALLION_DEV_WORKSPACE_NAME),$(foreach v,$(D
 ## the code 123456, Google and Facebook at once; the same email is the same parent in every run,
 ## and its key stays in .logs/dev/auth-key.pem. DEV_AUTH=supabase (or dev-all-supabase) keeps
 ## jadwigo-dev's real sign-in from .env.local instead.
+## The auth pane is also the stand-in for Realtime (apps/web/e2e/realtime-server.ts), so the run
+## channel joins and pokes the page as on Supabase. The runner pane is the step host (apps/runner
+## src/dev.ts): the api pokes it on its socket after each commit, as the Lambda pokes the runner's
+## alias, and it drains the turn through Muse on prod's models. A turn is a paid call, so the pane
+## starts only with a cap: make dev-all JADWIGO_MUSE_CAP_USD=0.50 (dl-uukj.47.14).
 DEV_AUTH ?= local
+LOCAL_RUNNER_URL = unix:$(CURDIR)/.logs/dev/runner.sock
 STANDIN = http://127.0.0.1:$${AUTH_PORT:-54321}
 LOCAL_AUTH_ENV = JW_SUPABASE_URL=$(STANDIN) JW_SUPABASE_KEY=local JW_SUPABASE_PROVIDERS=google,facebook \
 	AUTH_JWKS_URL=$(STANDIN)/auth/v1/.well-known/jwks.json AUTH_ISSUER=$(STANDIN)/auth/v1 \
@@ -91,7 +97,8 @@ dev-all:
 	@command -v dekit >/dev/null || { echo "dev-all: dekit (mprocs) is not installed. Run: mise install"; exit 1; }
 	@mkdir -p .logs/dev
 	@echo "dev-all: the parent's app is http://127.0.0.1:$${WEB_PORT:-5173}/parent ($(if $(filter local,$(DEV_AUTH)),any email and the code 123456,jadwigo-dev's sign-in))"
-	$(if $(filter local,$(DEV_AUTH)),$(LOCAL_AUTH_ENV)) DATABASE_URL=$(LOCAL_DATABASE_URL) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
+	$(if $(filter local,$(DEV_AUTH)),$(LOCAL_AUTH_ENV)) DATABASE_URL=$(LOCAL_DATABASE_URL) \
+	  LOCAL_RUNNER_URL=$(LOCAL_RUNNER_URL) MUSE_ENV=$(MUSE_ENV) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
 
 dev-app:
 	@$(LOCAL_DB_GATE)

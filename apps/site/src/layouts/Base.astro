@@ -237,7 +237,7 @@ const footerLinks = [
     </style>
   </head>
   <body class={prose ? "prose" : undefined}>
-    <Backdrop />
+    <Backdrop lang={lang} />
     <header class="site-header">
       <div class="wrap bar">
         <a class="logo" href={homeHref} aria-label={m.site_nav_home({}, locale)} set:html={wordmark} />

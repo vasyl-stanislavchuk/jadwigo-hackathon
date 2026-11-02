@@ -2,14 +2,16 @@
  * "Dla: Bez dziecka ▾", the first screen's optional selector (decision 2026-11-01-the-parent-app-is-
  * a-sidebar-shell-and-a-3-column-lesson-workspac, dl-xo0q; handoff §3 "Optional selector", §5.2): it
  * sits inline, defaults to the no-choice value, and its menu ends with "Dodaj dziecko…". A lesson
- * belongs to the family, so no child is a full answer.
+ * belongs to the family, so no child is a full answer. "Dodaj dziecko…" puts the focus on the
+ * trigger before the dialog opens, so the dialog gives it back there when it closes (handoff §7,
+ * dl-uukj.47.20): the menu item it was on is gone by then.
  */
 
 import type { Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { cn, Popover, PopoverContent, PopoverTrigger } from "@jadwigo/ui";
 import { CheckIcon, ChevronDownIcon, PlusIcon } from "lucide-react";
-import { type ReactElement, type ReactNode, useState } from "react";
+import { type ReactElement, type ReactNode, useId, useState } from "react";
 import { CATEGORY } from "../adult.ts";
 
 const ROW =
@@ -56,6 +58,9 @@ export function DlaSelect({
   trigger?: ReactElement;
 }): ReactElement {
   const [open, setOpen] = useState(false);
+  // The kit's PopoverTrigger takes no ref (a plain function component on React 18), so the trigger
+  // is found by a mark of its own, whichever element it is.
+  const opener = useId();
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
   const chosen = learners.find((l) => l.id === value);
   const pick = (learner: LearnerId | null): void => {
@@ -64,7 +69,7 @@ export function DlaSelect({
   };
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild data-dla-opener={opener}>
         {trigger ?? (
           <button
             type="button"
@@ -92,6 +97,7 @@ export function DlaSelect({
             type="button"
             role="menuitem"
             onClick={() => {
+              document.querySelector<HTMLElement>(`[data-dla-opener="${opener}"]`)?.focus();
               setOpen(false);
               onAddChild();
             }}

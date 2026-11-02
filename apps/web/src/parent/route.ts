@@ -2,10 +2,10 @@
  * The parent's paths (dl-e8ov.2.38, dl-uukj.30.2):
  *
  *   /parent                    sign in, then "Lekcje / Nowa lekcja", the parent app's first screen
- *   /parent/lessons            the family's lessons (dl-xo0q; its table waits on dl-z5ja.106)
+ *   /parent/lessons            the family's lessons, a table with Archive (dl-z5ja.106.1, dl-uukj.47.9)
  *   /parent/lessons/<conversation>
  *                              one lesson's workspace: its chat, the lesson, its details (dl-uukj.47.5)
- *   /parent/history            every attempt, newest first (its table waits on dl-z5ja.106.1)
+ *   /parent/history            every attempt, newest first, a table (dl-z5ja.106.1)
  *   /parent/children/<learner> one child's page (dl-uukj.47.3)
  *   /parent?claim=<assignment> the same, then keep the attempt this tab played of that assignment
  *   /parent?for=<learner>      the first screen with "Dla" set to that child (dl-uukj.47.2)
