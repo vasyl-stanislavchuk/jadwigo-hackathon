@@ -52,7 +52,8 @@ export function ChildPage({
             </span>
           )}
         </div>
-        <Button asChild variant="outline" size="control">
+        {/* Under the name on a phone, so it never crowds it (dl-uukj.47.21). */}
+        <Button asChild variant="outline" size="control" className="w-full sm:w-auto">
           <NavLink
             href={parentPath({ forLearner: learner.id, lang: pageLang() })}
             data-new-lesson-for
