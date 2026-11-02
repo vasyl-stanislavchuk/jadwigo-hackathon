@@ -108,14 +108,23 @@ const DEFAULT_CAP_USD = 1;
 
 const WORKFLOW = "jadwigo-lesson-compose";
 const TAG = "product:lesson-compose";
+/**
+ * The parent already sees the lesson (dl-z5ja.141): the chat draws a "Lekcja gotowa" card from the
+ * turn's own revision (title, how many questions, the version, the first question) and the card
+ * opens the lesson beside the chat (dl-uukj.47.58). So the answer says what was done in a sentence
+ * or two and never restates what the card shows, PostHog's "the user already sees this" note.
+ */
+export const CARD_RULE =
+  "The parent sees the lesson itself: after your answer the chat shows it as a card with its title, how many questions and the first one, and the parent opens it from there. So never list or repeat the lesson's questions, its title, its count or a link to it. Say in one or two sentences what you made or changed, and anything the parent should decide.";
 const INSTRUCTIONS = [
   "You help a parent make a short lesson for their child in the first school grades.",
   "Draft it with lesson_draft, read it with lesson_show, change a step with lesson_edit and check it with lesson_check.",
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
+  CARD_RULE,
   FENCE_RULE,
 ].join("\n");
-/** Moves on with `INSTRUCTIONS`: 2 since the fence rule (dl-z5ja.47). */
-const PROMPT_CACHE_KEY = `${WORKFLOW}:2`;
+/** Moves on with `INSTRUCTIONS`: 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:3`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
