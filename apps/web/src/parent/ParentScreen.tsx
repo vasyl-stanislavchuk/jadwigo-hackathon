@@ -598,9 +598,13 @@ function SignedIn({
   };
 
   /** Makes the conversation, keeps the words for its page, and opens it there. */
+  /** The signed-in account, whose draft alone the first screen reads back (newLesson/draft.ts). */
+  const owner = view.kind === "ready" ? (view.me.account?.id ?? null) : null;
+
   const start = async (ask: LessonAsk): Promise<void> => {
     // The send cleared the tab's draft; a send that does not start keeps the words again.
-    const keepDraft = (): void => newLessonDraft.put({ text: ask.text, learner: ask.learner });
+    const keepDraft = (): void =>
+      newLessonDraft.put({ owner, text: ask.text, learner: ask.learner });
     if (engine === null) {
       keepDraft();
       setSoon(true);
@@ -847,6 +851,7 @@ function SignedIn({
               busy={starting === "busy"}
               problem={starting === "failed" ? t("parent_start_failed") : null}
               initialText={kept}
+              owner={owner}
             />
           )}
           {soon && (

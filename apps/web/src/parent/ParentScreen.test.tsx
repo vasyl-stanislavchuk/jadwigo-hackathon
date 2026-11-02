@@ -759,6 +759,60 @@ describe("ParentScreen", () => {
     expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
   });
 
+  it("never shows one parent's unsent words to the next parent who signs in on the tab", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let who = ACCOUNT;
+    const other = AccountId.parse("acc_2h4m8gyw0fb1cvz2nkqw0px8fq");
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({
+          getMe: async () => ({ ...me([]), account: { ...account, id: who } }) as unknown as Me,
+        })}
+      />,
+    );
+    const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
+    const account1 = await screen.findByRole("button", { name: "Konto i ustawienia" });
+    await act(async () => fireEvent.click(account1));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+
+    who = other;
+    await screen.findByText("Wyślij kod");
+    type("[data-email]", "drugi@example.com");
+    await press("[data-send-code]");
+    type("[data-code]", "123456");
+    await press("[data-sign-in]");
+    const box = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect((box as HTMLTextAreaElement).value).toBe("");
+  });
+
+  it("reads back only the signed-in account's draft, not one another account left in the tab", async () => {
+    window.sessionStorage.setItem(
+      "jw.parent.draft",
+      JSON.stringify({
+        owner: "acc_2h4m8gyw0fb1cvz2nkqw0px8fq",
+        text: "Cudze słowa",
+        learner: null,
+      }),
+    );
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({ getMe: async () => me([]) })}
+      />,
+    );
+    const box = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect((box as HTMLTextAreaElement).value).toBe("");
+  });
+
   it("starts Dla at the child ?for names", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;

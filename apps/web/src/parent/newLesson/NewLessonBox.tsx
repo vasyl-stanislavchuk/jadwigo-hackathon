@@ -63,6 +63,7 @@ export function NewLessonBox({
   busy = false,
   problem = null,
   initialText = "",
+  owner = null,
 }: {
   language: Language;
   learners: readonly Learner[];
@@ -80,9 +81,11 @@ export function NewLessonBox({
   problem?: string | null;
   /** The words the box opens with: the parent's own, back after the consent screen. */
   initialText?: string;
+  /** The signed-in account, whose draft alone the box reads back (draft.ts). */
+  owner?: string | null;
 }): ReactElement {
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
-  const [text, setText] = useState(() => initialText || (newLessonDraft.get()?.text ?? ""));
+  const [text, setText] = useState(() => initialText || (newLessonDraft.get(owner)?.text ?? ""));
   const [photos, setPhotos] = useState<Photo[]>([]);
   const box = useRef<HTMLTextAreaElement>(null);
   const picker = useRef<HTMLInputElement>(null);
@@ -96,12 +99,15 @@ export function NewLessonBox({
   // the keeping below writes this render's value.
   // biome-ignore lint/correctness/useExhaustiveDependencies: once, on the screen's first render
   useEffect(() => {
-    const kept = newLessonDraft.get()?.learner ?? null;
+    const kept = newLessonDraft.get(owner)?.learner ?? null;
     if (forLearner === null && kept !== null && learners.some((l) => l.id === kept))
       onForChange(kept);
   }, []);
   // The words and Dla, kept in the tab as they change.
-  useEffect(() => newLessonDraft.put({ text, learner: forLearner }), [text, forLearner]);
+  useEffect(
+    () => newLessonDraft.put({ owner, text, learner: forLearner }),
+    [owner, text, forLearner],
+  );
 
   // Each thumbnail's URL goes when its photo does, and all of them when the screen does.
   const urls = useRef<Photo[]>([]);
