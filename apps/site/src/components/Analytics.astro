@@ -56,18 +56,18 @@ const key = posthogKey();
   .consent {
     position: fixed; inset: auto 1rem 1rem; z-index: 50; max-width: 28rem; margin-inline: auto;
     padding: 1.25rem 3rem 1.25rem 1.25rem; color: var(--jw-ink); background: var(--jw-card);
-    border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
-    box-shadow: 0 3px 0 var(--jw-line-strong);
+    border: 1px solid var(--jw-line); border-radius: var(--jw-radius-card);
+    box-shadow: var(--shadow-float);
   }
   .consent[hidden] { display: none; }
-  .consent h2 { margin: 0 0 0.25rem; font-size: 1.125rem; font-weight: 700; }
+  .consent h2 { margin: 0 0 0.25rem; font-size: 1.125rem; font-weight: 600; }
   .consent p { margin: 0; }
   .close {
     position: absolute; top: 0.5rem; right: 0.5rem; display: grid; place-items: center;
     width: 44px; height: 44px; padding: 0; border: 0; border-radius: var(--jw-radius-control);
-    color: var(--jw-ink); background: none; cursor: pointer;
+    color: var(--jw-ink); background: none; cursor: pointer; transition: background-color 120ms;
   }
-  .close:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 2px; }
-  /* The site's action button (.btn in Base.astro), as the app's default Button draws it. */
-  .accept { margin-top: 0.75rem; border: 0; font: inherit; font-weight: 700; cursor: pointer; }
+  .close:hover { background: var(--accent); }
+  /* The site's action button (.btn in Base.astro), as the app's primary Button draws it. */
+  .accept { margin-top: 0.75rem; border: 0; font: inherit; font-weight: 500; cursor: pointer; }
 </style>

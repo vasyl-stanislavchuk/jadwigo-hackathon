@@ -60,7 +60,7 @@ const cards = lessons.map((l) => {
   <ul class="cards">
     {
       cards.map((c) => (
-        <li class="card" data-grade={c.grade}>
+        <li class="card" data-audience="kid" data-grade={c.grade}>
           <a href={c.href}>
             <span class="meta">
               <span>{c.meta}</span>

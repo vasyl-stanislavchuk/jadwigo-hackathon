@@ -2,7 +2,8 @@
 // How it works as one path (owner, 2026-11-02, dl-5ssh.4.50): "make component 1-2-3 nicely showing that
 // these follow 1 after another". 3 numbered stops joined by a dashed pencil line with an arrow to the
 // next stop: across the page from 52rem, down its left edge on a phone. The stop's colour says whose
-// turn it is (the parent's: pick blue; the child's: right green), which the words say too.
+// turn it is (the parent's: pick blue; the child's: right green), which the words say too. It explains
+// the loop to the parent, so it is drawn in the adult look: flat discs on a 1 px ring.
 // Once, when the path first comes into view, the line draws itself from 1 to 3 and each stop lands as
 // the line reaches it. Without JS or under reduced motion the path is simply there.
 interface Step {
@@ -63,13 +64,13 @@ const { steps } = Astro.props;
   .disc {
     position: relative; z-index: 1;
     width: var(--disc); height: var(--disc); display: grid; place-items: center;
-    border: 2px solid var(--jw-ink); border-radius: 50%; box-shadow: 0 4px 0 var(--jw-line);
-    font-size: 1.6rem; font-weight: 700; line-height: 1;
+    border: 1px solid var(--selected-edge); border-radius: 50%;
+    font-size: 1.5rem; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums;
   }
   .parent .disc { background: var(--jw-pick); color: var(--jw-pick-ink); }
-  .child .disc { background: var(--jw-right); color: var(--jw-right-ink); }
+  .child .disc { background: var(--jw-right); color: var(--jw-right-ink); border-color: var(--jw-right-edge); }
   .words { padding-top: 0.2rem; }
-  .who { font-size: 0.95rem; font-weight: 700; color: var(--jw-ink-soft); }
+  .who { font-size: 0.95rem; font-weight: 500; color: var(--jw-ink-soft); }
   .stop h3 { margin-top: 0.15rem; font-size: 1.2rem; line-height: 1.3; }
   .text { margin-top: 0.4rem; color: var(--jw-ink-soft); max-width: 34ch; }
 
@@ -78,14 +79,14 @@ const { steps } = Astro.props;
   .stop:not(:last-child)::before {
     content: ""; position: absolute;
     left: calc(var(--disc) / 2 - 1px); top: calc(var(--disc) + 0.5rem); bottom: calc(-1 * var(--gap) + 0.6rem);
-    border-left: 2px dashed var(--jw-line-strong);
+    border-left: 1px dashed var(--jw-line-strong);
     transform-origin: top;
   }
   .stop:not(:last-child)::after {
     content: ""; position: absolute;
     left: calc(var(--disc) / 2 - 0.35rem); bottom: calc(-1 * var(--gap) + 0.55rem);
     width: 0.55rem; height: 0.55rem;
-    border-right: 2px solid var(--jw-line-strong); border-bottom: 2px solid var(--jw-line-strong);
+    border-right: 1px solid var(--jw-line-strong); border-bottom: 1px solid var(--jw-line-strong);
     transform: rotate(45deg);
   }
 
@@ -96,13 +97,13 @@ const { steps } = Astro.props;
     .stop:not(:last-child)::before {
       left: calc(var(--disc) + 0.75rem); right: calc(-1 * var(--gap) + 0.85rem);
       top: calc(var(--disc) / 2 - 1px); bottom: auto;
-      border-left: 0; border-top: 2px dashed var(--jw-line-strong);
+      border-left: 0; border-top: 1px dashed var(--jw-line-strong);
       transform-origin: left;
     }
     .stop:not(:last-child)::after {
       left: auto; right: calc(-1 * var(--gap) + 0.8rem); bottom: auto;
       top: calc(var(--disc) / 2 - 0.3rem);
-      border-right: 2px solid var(--jw-line-strong); border-bottom: 0; border-top: 2px solid var(--jw-line-strong);
+      border-right: 1px solid var(--jw-line-strong); border-bottom: 0; border-top: 1px solid var(--jw-line-strong);
     }
   }
 

@@ -3,7 +3,8 @@
 // to, beside a simplified child profile from the parent app's child page. A made-up child (never a real
 // learner), 3 goals, 4 skill dots each (filled = can do, ink ring = practising now, dashed = next), the
 // goal's second line and the next lesson. No percentages, no status words, no recent lessons: the owner
-// asked to keep it this simple. The dots carry their meaning in text for a screen reader.
+// asked to keep it this simple. The dots carry their meaning in text for a screen reader. It shows the
+// parent app's page, so it is an adult card: 1 px line, corner 10, flat.
 // The picture: a sprout grows out of the pencil pot faster than the court can keep up (owner,
 // 2026-11-02, dl-5ssh.4.48). A still; the blinking table picture moved to the hero.
 import type { Language } from "@jadwigo/config";
@@ -62,15 +63,15 @@ const p = (await landingWords(Astro.props.lang)).partner;
   .text { font-size: 1.15rem; color: var(--jw-ink-soft); }
   .lead :global(.partner-pic) { margin-top: 0.75rem; height: clamp(10rem, 22vw, 15rem); }
   .profile {
-    padding: 1.25rem; border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
-    background: var(--jw-card); box-shadow: 0 5px 0 var(--jw-line);
+    padding: 1.25rem; border: 1px solid var(--jw-line); border-radius: var(--jw-radius-card);
+    background: var(--jw-card);
   }
   .child { display: flex; align-items: center; gap: 0.75rem; }
   .child strong { display: block; font-size: 1.15rem; line-height: 1.2; }
   .sub { font-size: 0.85rem; color: var(--jw-ink-soft); }
   .avatar {
     width: 2.6rem; height: 2.6rem; flex: none; display: grid; place-items: center; border-radius: 50%;
-    background: var(--jw-pick); color: var(--jw-pick-ink); font-weight: 700;
+    background: var(--jw-pick); color: var(--jw-pick-ink); font-weight: 600;
   }
   .goals { list-style: none; margin: 1.25rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 1rem; }
   .goals li { display: flex; flex-direction: column; gap: 0.15rem; }
@@ -80,7 +81,7 @@ const p = (await landingWords(Astro.props.lang)).partner;
   .dots { display: flex; gap: 0.3rem; flex: none; }
   .dots i { width: 14px; height: 14px; border-radius: 50%; box-sizing: border-box; }
   .dots .done { background: var(--jw-right-edge); }
-  .dots .now { border: 2px solid var(--jw-ink); }
-  .dots .next { border: 2px dashed var(--jw-ink-soft); }
-  .next-lesson { margin-top: 1.25rem; padding-top: 1rem; border-top: 2px solid var(--jw-line); font-size: 0.95rem; }
+  .dots .now { border: 1.5px solid var(--jw-ink); }
+  .dots .next { border: 1px dashed var(--control-edge); }
+  .next-lesson { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--jw-line); font-size: 0.95rem; }
 </style>
