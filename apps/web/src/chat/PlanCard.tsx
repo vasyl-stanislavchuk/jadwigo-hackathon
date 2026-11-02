@@ -2,7 +2,8 @@
  * The plan as a checklist (dl-uukj.47.31; research §15.3, "a plan checklist only when the turn has
  * 3 or more steps"; wave plan lead decision 4): one row per entry of the turn's last `plan` event
  * (`RunView.plan`) with its status in words, under "Plan · {n} z {m}". Pinned above the tool lines
- * while the turn runs, folded to its header once the turn ends. No reasoning row: the log carries
+ * while the turn runs (ChatPane pins its row, a direct child of the scrolling list), folded to its
+ * header once the turn ends. No reasoning row: the log carries
  * none. Icons are decorative; the status word is the text.
  */
 
@@ -66,11 +67,7 @@ export function PlanCard({
   const frame = "rounded-jw-small border-jw border-jw-line bg-jw-card px-3 py-2 text-sm";
   if (open)
     return (
-      <section
-        aria-label={say("chat_plan")}
-        className={cn(frame, "sticky top-0 z-10")}
-        data-plan="open"
-      >
+      <section aria-label={say("chat_plan")} className={frame} data-plan="open">
         <p className="font-bold text-jw-ink" data-plan-header>
           {header}
         </p>

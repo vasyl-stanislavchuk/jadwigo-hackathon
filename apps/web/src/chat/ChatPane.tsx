@@ -150,10 +150,16 @@ function ToolLine({
           <p className="text-jw-page-small font-bold text-jw-ink-soft">
             {say("chat_tool_what_done")}
           </p>
-          {result?.kind === "widget" && !result.keepVisible ? (
+          {result?.kind === "widget" ? (
+            // A widget kept in view under the fold is drawn here too: the opened line shows what
+            // was done, never only the state word (dl-uukj.47.50).
             result.element
           ) : (
-            <p data-what-done>{stateWords(tool, language)}</p>
+            // No widget: the line in plain words, its sentence and where it stands.
+            <p className="flex flex-wrap gap-x-2" data-what-done>
+              <span>{words}</span>
+              <span className="text-jw-ink-soft">{stateWords(tool, language)}</span>
+            </p>
           )}
           {result !== null && <ToolDetails tool={tool} language={language} />}
         </div>
@@ -637,7 +643,15 @@ export function ChatPane({
         {turns.map((turn) => [
           ...turnRows(turn).map((entry) =>
             entry.kind === "plan" ? (
-              <li key={`${turn.run.id}-plan`} className="flex flex-col" data-chat-row>
+              // A direct child of the scrolling list, so it pins while the turn runs and the
+              // turn's tool lines scroll beneath it (dl-uukj.47.50); a sticky card inside a row as
+              // tall as itself never pinned. Jadwigo AI's header pins with it.
+              <li
+                key={`${turn.run.id}-plan`}
+                className={cn("flex flex-col", isOpen(turn) && "sticky top-0 z-10 bg-jw-card")}
+                data-chat-row
+                data-plan-row
+              >
                 {entry.header && <AiHeader language={language} />}
                 <PlanCard plan={turn.view.plan ?? []} open={isOpen(turn)} language={language} />
               </li>
