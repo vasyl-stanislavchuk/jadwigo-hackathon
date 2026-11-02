@@ -528,6 +528,42 @@ describe("ParentScreen", () => {
     await waitFor(() => expect(document.activeElement).toBe(plus));
   });
 
+  it("asks the pod's consent after sign-in inside the shell, at the parent's density", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let consented = false;
+    const patchPod = vi.fn(async () => {
+      consented = true;
+      return {};
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({
+          getMe: async () =>
+            ({
+              ...me([]),
+              pod: { ...pod, ai_consent_at: consented ? AT : null },
+            }) as unknown as Me,
+        })}
+        pods={{ patchPod } as never}
+      />,
+    );
+    const consent = await screen.findByRole("region", { name: /Zanim/ });
+    expect(consent.closest('[data-density="parent"]')).not.toBeNull();
+    expect(document.querySelector("[data-top-bar]")).not.toBeNull();
+    expect(document.querySelector("[data-sidebar]")).not.toBeNull();
+
+    await act(async () =>
+      fireEvent.click(consent.querySelector("[data-consent-agree]") as Element),
+    );
+    expect(patchPod).toHaveBeenCalledWith(POD, { ai_consented: true });
+    await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
+    expect(document.querySelector("[data-consent]")).toBeNull();
+  });
+
   it("lists the family's conversations under Lekcje, and the sidebar's empty line goes once there is one", async () => {
     window.history.replaceState(null, "", "/parent/lessons");
     const auth = signedOutAuth();
