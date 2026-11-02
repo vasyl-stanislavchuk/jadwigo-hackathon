@@ -107,7 +107,7 @@ export function LessonWorkspace({
     sendNow,
     takeNext,
     resend,
-  } = useConversation(engine.transport, conversation, owner);
+  } = useConversation(engine.transport, conversation, owner, engine.owner);
   const lesson = useLessonWiring(state, edit);
   const { turns } = lesson;
   const restoring = state.connection === "restoring";
