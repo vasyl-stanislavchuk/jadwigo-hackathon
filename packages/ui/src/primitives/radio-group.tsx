@@ -1,10 +1,14 @@
 // One choice from two to five (dl-uukj.32.3, promoted from the System page's settings controls): a
 // 24 px ring that turns the pick's edge with a dot, and the whole 48 px row is the target. data-plain
-// keeps the lesson's option rules (a pressed edge, a sink on press; foundation.css) off it.
+// keeps the lesson's option rules (a pressed edge, a sink on press; foundation.css) off it. On an app
+// page it is the adult's (handoff dl-uukj.47.67 §6.3): a 16 px ring on the control's edge, the ink
+// ring and an 8 px dot when chosen, the 34 row at the body size, and an option's hint as a second
+// line. A lesson's keeps its look.
 import { RadioGroup as RadioPrimitive } from "radix-ui";
 import { type ReactElement, useId } from "react";
+import { useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
-import { type Choice, FOCUS, HOVER, LEGEND } from "./choice.ts";
+import { ADULT_RADIO, ADULT_RADIO_DOT, type Choice, FOCUS, HOVER, LEGEND } from "./choice.ts";
 
 function RadioGroup({
   label,
@@ -20,6 +24,9 @@ function RadioGroup({
   className?: string;
 }): ReactElement {
   const id = useId();
+  if (useRegister() === "app") {
+    return <AdultRadioGroup {...{ id, label, options, value, onChange, className }} />;
+  }
   return (
     <div data-slot="radio-group" className={cn("flex min-w-0 flex-col", className)}>
       <span className={LEGEND} id={`${id}-legend`}>
@@ -55,6 +62,63 @@ function RadioGroup({
             </RadioPrimitive.Item>
             {o.icon}
             {o.label}
+          </label>
+        ))}
+      </RadioPrimitive.Root>
+    </div>
+  );
+}
+
+function AdultRadioGroup({
+  id,
+  label,
+  options,
+  value,
+  onChange,
+  className,
+}: {
+  id: string;
+  label: string;
+  options: readonly Choice[];
+  value: string;
+  onChange(value: string): void;
+  className?: string | undefined;
+}): ReactElement {
+  return (
+    <div data-slot="radio-group" className={cn("flex min-w-0 flex-col gap-2", className)}>
+      <span className="text-jw-page-body font-medium text-foreground" id={`${id}-legend`}>
+        {label}
+      </span>
+      <RadioPrimitive.Root
+        aria-labelledby={`${id}-legend`}
+        value={value}
+        onValueChange={onChange}
+        className="flex flex-col gap-1"
+      >
+        {options.map((o) => (
+          <label
+            key={o.value}
+            htmlFor={`${id}-${o.value}`}
+            data-slot="radio-group-row"
+            className="flex cursor-pointer items-start gap-2.5 py-1 text-jw-page-body text-foreground"
+          >
+            <RadioPrimitive.Item
+              id={`${id}-${o.value}`}
+              value={o.value}
+              data-plain
+              className={cn(ADULT_RADIO, "mt-0.5")}
+            >
+              <RadioPrimitive.Indicator className={ADULT_RADIO_DOT} />
+            </RadioPrimitive.Item>
+            <span className="flex flex-col">
+              <span className="flex items-center gap-2">
+                {o.icon}
+                {o.label}
+              </span>
+              {o.hint !== undefined && (
+                <span className="text-jw-page-small text-muted-foreground">{o.hint}</span>
+              )}
+            </span>
           </label>
         ))}
       </RadioPrimitive.Root>

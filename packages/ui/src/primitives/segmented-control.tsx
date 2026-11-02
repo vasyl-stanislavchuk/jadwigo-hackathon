@@ -1,10 +1,20 @@
 // Two to four short choices as one row of joined segments on a quiet track (dl-uukj.32.3, promoted
 // from the System page's settings controls). The track is the control's height, 48 (md) or 44 (sm);
-// its segments stretch to fill it. The chosen one wears the pick.
+// its segments stretch to fill it. The chosen one wears the pick. On an app page it is the adult's
+// (handoff dl-uukj.47.67 §6.7): a stone track, the chosen segment white on the warm line.
 import { RadioGroup as RadioPrimitive } from "radix-ui";
 import { type ReactElement, useId } from "react";
+import { useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
-import { type Choice, type ControlSize, FOCUS, LEGEND, ROW } from "./choice.ts";
+import {
+  ADULT_SEGMENT,
+  ADULT_TRACK,
+  type Choice,
+  type ControlSize,
+  FOCUS,
+  LEGEND,
+  ROW,
+} from "./choice.ts";
 
 function SegmentedControl({
   label,
@@ -28,9 +38,16 @@ function SegmentedControl({
   className?: string;
 }): ReactElement {
   const id = useId();
+  const adult = useRegister() === "app";
   return (
     <div data-slot="segmented-control" className={cn("flex min-w-0 flex-col", className)}>
-      <span className={cn(LEGEND, hideLabel && "sr-only")} id={`${id}-legend`}>
+      <span
+        className={cn(
+          adult ? "pb-2 text-jw-page-body font-medium text-foreground" : LEGEND,
+          hideLabel && "sr-only",
+        )}
+        id={`${id}-legend`}
+      >
         {label}
       </span>
       <RadioPrimitive.Root
@@ -40,8 +57,9 @@ function SegmentedControl({
         onValueChange={onChange}
         data-size={size}
         className={cn(
-          "gap-1 rounded-jw-card border-2 border-jw-line bg-jw-act-quiet p-1",
-          ROW[size],
+          adult
+            ? ADULT_TRACK
+            : ["gap-1 rounded-jw-card border-2 border-jw-line bg-jw-act-quiet p-1", ROW[size]],
           full ? "flex" : "inline-flex self-start",
         )}
       >
@@ -51,8 +69,12 @@ function SegmentedControl({
             value={o.value}
             data-plain
             className={cn(
-              "flex items-center justify-center gap-2 rounded-jw-small border-2 border-transparent px-4 font-semibold whitespace-nowrap text-jw-ink transition-colors duration-jw-fast hover:bg-jw-card data-[state=checked]:border-jw-pick-edge data-[state=checked]:bg-jw-pick data-[state=checked]:font-bold data-[state=checked]:text-jw-pick-ink",
-              FOCUS,
+              adult
+                ? ADULT_SEGMENT
+                : [
+                    "flex items-center justify-center gap-2 rounded-jw-small border-2 border-transparent px-4 font-semibold whitespace-nowrap text-jw-ink transition-colors duration-jw-fast hover:bg-jw-card data-[state=checked]:border-jw-pick-edge data-[state=checked]:bg-jw-pick data-[state=checked]:font-bold data-[state=checked]:text-jw-pick-ink",
+                    FOCUS,
+                  ],
               full && "flex-1",
             )}
           >
