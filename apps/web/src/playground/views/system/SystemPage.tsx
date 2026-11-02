@@ -36,6 +36,7 @@ import {
 } from "@jadwigo/ui";
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { type ReactNode, useContext, useEffect, useState } from "react";
+import { AdultKitA } from "./AdultKitA.tsx";
 import { AppPages } from "./AppPages.tsx";
 import { DESIGN_LINES, METAPHOR, ZONES } from "./data.ts";
 import { Colour, Motion, SpaceAndShape, Sub, subId, Type } from "./Foundations.tsx";
@@ -101,6 +102,7 @@ export const MENU: readonly MenuEntry[] = [
     items: [sub("Six zones", "stage"), page("Six states", subId("The stage in six states"))],
   },
   page("App pages", "app-pages"),
+  page("Adult overlays", "adult-overlays"),
   { heading: "Words" },
   page("Interface words", "lines"),
   {
@@ -631,6 +633,15 @@ export function SystemPage(): JSX.Element {
               app
             >
               <AppPages mode={mode} />
+            </Section>
+
+            <Section
+              id="adult-overlays"
+              title="Adult overlays"
+              lead="The parent app's overlays and menus (dl-uukj.47.67.2), in the adult audience at the parent's density: tooltip, dropdown and context menu, dialog and alert dialog, popover, sheet, the three toasts, a key cap, and a disabled action that says why."
+              app
+            >
+              <AdultKitA />
             </Section>
 
             <LessonScope>
