@@ -386,6 +386,33 @@ describe("ParentScreen", () => {
     expect(api.createAccount).toHaveBeenCalledTimes(1);
   });
 
+  it("gives the child page's disc the child's tone, by when each child was added (dl-uukj.47.67.20)", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const KUBA = "lrn_7qre3atahx8cpak6xbjtz73var";
+    const kuba = {
+      ...snapshot,
+      learner: {
+        ...snapshot.learner,
+        id: KUBA,
+        handle: "kuba",
+        first_name: "Kuba",
+        created_at: "2026-10-30T00:00:00.000Z",
+      },
+    } as unknown as LearnerSnapshot;
+    const api = client({
+      getMe: async () => me([kuba, snapshot]),
+      getLearnerAttempts: async () =>
+        ({ learner: kuba.learner, attempts: [] }) as unknown as LearnerAttempts,
+    });
+    window.history.replaceState(null, "", `/parent/children/${KUBA}`);
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    await screen.findByRole("heading", { level: 1, name: "Kuba" });
+    const disc = document.querySelector("[data-child-header] [data-slot=disc]");
+    // Ola was added first (tone 0), so Kuba is tone 1.
+    expect(disc?.className).toContain("jw-tone-1");
+  });
+
   it("draws each lesson on the child's page as a row of tiles, links it to its attempt page, and opens it", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
