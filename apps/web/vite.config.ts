@@ -6,7 +6,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import { builderPlugin } from "./dev/builder-plugin.ts";
 import { enginePlugin } from "./dev/engine-plugin.ts";
-import { apiTarget, authConfig, webPort } from "./src/config.ts";
+import { analyticsKey, apiTarget, authConfig, webPort } from "./src/config.ts";
 import { devMediaUrl, NO_MEDIA_URL } from "./src/media.ts";
 
 // The lesson player calls /api on its own origin; locally the api is another port (src/config.ts).
@@ -67,6 +67,8 @@ export default defineConfig(({ command, mode }) => {
     define: {
       // The parent's sign-in, or null for none (src/parent/auth.ts).
       __JW_AUTH__: JSON.stringify(authConfig()),
+      // PostHog's public project key, or null for no analytics (src/analytics.ts, dl-376c8).
+      __JW_ANALYTICS__: JSON.stringify(analyticsKey()),
       ...(media === undefined ? {} : { "import.meta.env.VITE_MEDIA_URL": JSON.stringify(media) }),
     },
     // One address everywhere: "localhost" is ::1 alone on macOS, and the Playwright smoke dials 127.0.0.1.

@@ -30,12 +30,21 @@
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit and route tests with the root vitest.config.ts",
-    "@jadwigo/jadwigo-ai": "acceptMessage and PgmqRunQueue.joining: the conversation routes write the run inbox and send the step in the same unit (dl-z5ja.21, dl-z5ja.67)"
+    "@jadwigo/jadwigo-ai": "acceptMessage and PgmqRunQueue.joining: the conversation routes write the run inbox and send the step in the same unit (dl-z5ja.21, dl-z5ja.67)",
+    "@aws-sdk/client-sesv2": "sends the auth mail the Send Email Hook renders, From no-reply@jadwigo.pl, in src/mail/hook.ts (dl-liwi.33)",
+    "@jadwigo/copy": "the auth mail's words in pl and en, the email_* messages, in src/mail/AuthEmail.tsx (dl-liwi.33)",
+    "@react-email/components": "the auth mail's layout as React components, in src/mail/AuthEmail.tsx (dl-liwi.33, docs/research/i18n.md section 7)",
+    "@react-email/render": "renders the auth mail's component to HTML and plain text, in src/mail/render.ts (dl-liwi.33)",
+    "react": "the auth mail's component in src/mail/AuthEmail.tsx, which @react-email/render renders on the server (dl-liwi.33)",
+    "react-dom": "@react-email/render's peer: React's server renderer for the auth mail (dl-liwi.33)",
+    "standardwebhooks": "checks the Standard Webhooks signature Supabase's Send Email Hook carries, in src/mail/hook.ts (dl-liwi.33)",
+    "@types/react": "React's types for the auth mail's .tsx (dl-liwi.33)"
   },
   "devDependencies": {
     "@jadwigo/lesson-import": "workspace:*",
     "@jadwigo/testing": "workspace:*",
     "@types/node": "catalog:",
+    "@types/react": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
@@ -43,12 +52,19 @@
     "@aws-lambda-powertools/event-handler": "2.36.0",
     "@aws-sdk/client-lambda": "3.1156.0",
     "@aws-sdk/client-s3": "3.1156.0",
+    "@aws-sdk/client-sesv2": "3.1156.0",
     "@aws-sdk/client-ssm": "3.1156.0",
     "@aws-sdk/s3-presigned-post": "3.1156.0",
     "@aws-sdk/s3-request-presigner": "3.1156.0",
     "@jadwigo/contracts": "workspace:*",
+    "@jadwigo/copy": "workspace:*",
     "@jadwigo/core": "workspace:*",
     "@jadwigo/jadwigo-ai": "workspace:*",
-    "@jadwigo/store": "workspace:*"
+    "@jadwigo/store": "workspace:*",
+    "@react-email/components": "1.0.12",
+    "@react-email/render": "2.1.1",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "standardwebhooks": "1.1.1"
   }
 }

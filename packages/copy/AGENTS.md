@@ -3,7 +3,7 @@
 Every string a person reads, in `pl` and `en`, as Paraglide JS messages with a reviewed flag per line.
 
 - **Not here:** Strings that only a developer reads, such as log lines.
-- **Owner:** the learner-experience workstream (`docs/workstreams/learner-experience.md`). The `site_*` keys are apps/site's.
+- **Owner:** the learner-experience workstream (`docs/workstreams/learner-experience.md`). The `site_*` keys are apps/site's, and the `email_*` keys are apps/api's auth mail (dl-liwi.33).
 - **Imports:** nothing of ours.
 - **Public surface:** `src/index.ts`, and the compiled messages as `@jadwigo/copy/messages` and `@jadwigo/copy/runtime`. Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test --filter=./packages/copy` (`make check` runs `tools/src/check-copy.ts` in lint:repo)

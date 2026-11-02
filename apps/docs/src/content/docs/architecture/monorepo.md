@@ -41,9 +41,11 @@ flowchart LR
     ui
   end
   api --> contracts
+  api --> copy
   api --> core
   api --> jadwigo_ai
   api --> store
+  web --> analytics
   web --> api_client
   web --> config
   web --> contracts

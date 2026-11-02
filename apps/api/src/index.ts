@@ -3,6 +3,7 @@ import { createApp } from "./app.ts";
 import { s3Uploads, type UploadsBucket } from "./attachments.ts";
 import { type Authenticate, jwksUrlAuth, lambdaAuth } from "./auth.ts";
 import { authIssuer, authJwksUrl, lambdaDatabaseUrl } from "./config.ts";
+import { lambdaMail, type MailDeps } from "./mail/hook.ts";
 import { lambdaPoke, type PokeStepHost } from "./poke.ts";
 import { type BankDeps, type BucketDeps, lambdaBank, lambdaBucket } from "./questions.ts";
 
@@ -49,6 +50,8 @@ const lambdaDeps: HandlerDeps = {
  * are for a local invoke. The message routes poke the step host's alias in
  * `RUNNER_LIVE_ALIAS_ARN` after a commit, or none when it is unset. A message's photos go through
  * the uploads bucket, `UPLOADS_BUCKET`, else the one SSM names, read on the first photo call.
+ * Supabase's Send Email Hook sends through SES with the secrets `SEND_EMAIL_HOOK_SECRET_PARAM`
+ * names, or is not wired when it is unset (dl-liwi.33).
  */
 export function createHandler(
   deps: HandlerDeps = lambdaDeps,
@@ -57,6 +60,7 @@ export function createHandler(
   bucket: BucketDeps = lambdaBucket(),
   poke: PokeStepHost | undefined = lambdaPoke(),
   uploads: UploadsBucket = s3Uploads(),
+  mail: MailDeps | undefined = lambdaMail(),
 ) {
   let store: Promise<Store> | undefined;
   let failed = false;
@@ -82,7 +86,7 @@ export function createHandler(
   };
 
   return (event: unknown, context: Context) =>
-    createApp(open(), { authenticate, bank, bucket, poke, uploads }).resolve(event, context);
+    createApp(open(), { authenticate, bank, bucket, poke, uploads, mail }).resolve(event, context);
 }
 
 /** The Lambda entry (`index.handler` in the bundle `make api-bundle` writes). */

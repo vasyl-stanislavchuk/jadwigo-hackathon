@@ -1,4 +1,5 @@
 import { lazy, type ReactElement, Suspense, useEffect } from "react";
+import { ConsentBanner } from "./analytics/ConsentBanner.tsx";
 import { useDocumentLang, useScreenLanguage } from "./nav/language.ts";
 import { navigate, useLocation } from "./nav/location.ts";
 import { ParentScreen } from "./parent/ParentScreen.tsx";
@@ -46,7 +47,13 @@ export function App(): ReactElement | null {
         <PlaygroundScreen />
       </Suspense>
     );
-  if (inParent) return <ParentScreen language={language} query={query} />;
+  if (inParent)
+    return (
+      <>
+        <ParentScreen language={language} query={query} />
+        <ConsentBanner language={language} />
+      </>
+    );
   if (home) return <HomeScreen language={language} query={query} />;
   if (play === null) return null;
   if (play.assignmentId === null) return <LessonNotFound language={language} />;
