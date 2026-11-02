@@ -8,8 +8,10 @@
  *   report   GET /learners/{id}/reports: the newest one's narrative and its proposals, decided
  *            with PATCH /learners/{id}/reports/{report} (ReportCard.tsx)
  *
- * Each part loads, fails and shows apart from the others. Every word is the copy's, in the adult's
- * lines; counts are digits; no level name, score, percentage, streak or countdown.
+ * Each part loads, fails and shows apart from the others. The weeks start at the week the learner
+ * was added in (`since`), and with nothing played and no report yet the report's "none" line is
+ * left out: the overview says once what will appear (dl-uukj.47.22). Every word is the copy's, in
+ * the adult's lines; counts are digits; no level name, score, percentage, streak or countdown.
  */
 
 import type { LearnerKnowledgeClient, ParentClient } from "@jadwigo/api-client";
@@ -44,13 +46,16 @@ export function LearnerKnowledge({
   api,
   learner,
   language,
+  since,
 }: {
   api: ParentClient;
   learner: LearnerId;
   language: Language;
+  /** When the learner was added (`created_at`): the weeks start there. */
+  since?: string;
 }): ReactElement | null {
   if (!knowsLearners(api)) return null;
-  return <Knowledge api={api} learner={learner} language={language} />;
+  return <Knowledge api={api} learner={learner} language={language} since={since} />;
 }
 
 /** Calls `read` once per `learner`, and keeps its answer or "failed". */
@@ -74,10 +79,12 @@ function Knowledge({
   api,
   learner,
   language,
+  since,
 }: {
   api: KnowledgeClient;
   learner: LearnerId;
   language: Language;
+  since: string | undefined;
 }): ReactElement {
   const [skills] = useLoad<LearnerSkills>(() => api.getLearnerSkills(learner), [api, learner]);
   const [reports, setReports] = useLoad<LearnerReport[]>(
@@ -115,12 +122,22 @@ function Knowledge({
         name="weeks"
       >
         {(both) => (
-          <WeekStrip weeks={weeksOf(both.attempts, both.reports, new Date())} language={language} />
+          <WeekStrip
+            weeks={weeksOf(both.attempts, both.reports, new Date(), 4, since)}
+            language={language}
+          />
         )}
       </Part>
-      <Part load={reports} language={language} name="report">
-        {(list) => <ReportCard report={list[0] ?? null} language={language} onDecide={decide} />}
-      </Part>
+      {!(
+        Array.isArray(attempts) &&
+        attempts.length === 0 &&
+        Array.isArray(reports) &&
+        reports.length === 0
+      ) && (
+        <Part load={reports} language={language} name="report">
+          {(list) => <ReportCard report={list[0] ?? null} language={language} onDecide={decide} />}
+        </Part>
+      )}
     </div>
   );
 }

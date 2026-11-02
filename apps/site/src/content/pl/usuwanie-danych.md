@@ -24,10 +24,10 @@ Dotyczy to też konta, do którego loguje się przez Google albo Facebooka.
    poprosimy o potwierdzenie z adresu konta.
 2. Usuniemy konto i dane z nim powiązane. W Supabase usuniemy adres e-mail i połączenie z kontem
    Google lub Facebook. W Jadwigo usuniemy dane dzieci, ich odpowiedzi i postępy w lekcjach oraz
-   rozmowy z asystentem AI.
+   rozmowy z Jadwigo AI.
 3. Napiszemy, gdy dane zostaną usunięte. Zrobimy to najpóźniej w ciągu miesiąca od otrzymania prośby.
 
-Dane, które asystent wysłał już do firmy Meta, firma Meta przechowuje na własnych zasadach.
+Dane, które przez Jadwigo AI trafiły już do firmy Meta, firma Meta przechowuje na własnych zasadach.
 
 Usuniętego konta nie da się przywrócić. Później można założyć nowe.
 

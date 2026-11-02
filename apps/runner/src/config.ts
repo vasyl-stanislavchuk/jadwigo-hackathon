@@ -52,6 +52,36 @@ export async function runnerDatabaseUrl(read: ReadParameter = readSsm): Promise<
   return checked(value, `the SSM parameter ${name}`);
 }
 
+/**
+ * A local jadwigo database, the rule `make`'s LOCAL_DB_GATE holds: postgres(ql)://, an optional
+ * login, localhost or 127.0.0.1, an optional port, and a database named jadwigo….
+ */
+const LOCAL_DB =
+  /^postgres(ql)?:\/\/([A-Za-z0-9._~%+=:-]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?\/jadwigo[A-Za-z0-9_]*$/;
+
+export function isLocalDatabaseUrl(url: string): boolean {
+  return LOCAL_DB.test(url.trim());
+}
+
+/**
+ * The dev runner's database (`make dev-all`, dl-uukj.47.14.2): `LOCAL_DATABASE_URL`, else the
+ * `DATABASE_URL` make sets from it, and only when it is a local jadwigo database. Never
+ * `RUNNER_DATABASE_URL` and never SSM: a laptop must not drain a deployed queue, sending real
+ * families' turns to the model as paid calls.
+ */
+export function devDatabaseUrl(): string {
+  const url = setting("LOCAL_DATABASE_URL") ?? setting("DATABASE_URL");
+  if (url === undefined) {
+    throw new Error("set LOCAL_DATABASE_URL (make dev-all does) to a local jadwigo database");
+  }
+  if (!isLocalDatabaseUrl(url)) {
+    throw new Error(
+      "the dev runner drains a local database only: LOCAL_DATABASE_URL (or DATABASE_URL) is not postgresql://[user[:password]@]localhost[:port]/jadwigo…",
+    );
+  }
+  return checked(url, "LOCAL_DATABASE_URL or DATABASE_URL");
+}
+
 /** The database the probe's seed and report scripts reach as jadwigo_api: the owner's session URL. */
 export function apiDatabaseUrl(): string {
   const url = setting("DATABASE_URL");

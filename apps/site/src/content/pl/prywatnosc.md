@@ -41,13 +41,13 @@ Gdy dziecko przerabia lekcje, zapisujemy jego odpowiedzi i postępy.
 ## Odpowiedzi dziecka
 
 Odpowiedzi dziecka i jego postępy w lekcjach widzi tylko rodzic, na swoim koncie. Inne rodziny ich
-nie widzą. Gdy rodzic prosi asystenta AI Jadwigo o lekcję albo podsumowanie, asystent czyta
+nie widzą. Gdy rodzic prosi Jadwigo AI o lekcję albo podsumowanie, Jadwigo AI czyta
 odpowiedzi i imię dziecka, żeby przygotować lekcję albo podsumowanie.
 
-## Asystent AI i modele Meta
+## Jadwigo AI i modele Meta
 
-Asystent AI Jadwigo działa na modelach AI firmy Meta. Gdy rodzic pisze do asystenta, wysyłamy do
-firmy Meta wiadomości rodzica i dane dziecka, których asystent potrzebuje: imię, cele, postępy, odpowiedzi, błędy
+Jadwigo AI działa na modelach AI firmy Meta. Gdy rodzic pisze do Jadwigo AI, wysyłamy do
+firmy Meta wiadomości rodzica i dane dziecka, których Jadwigo AI potrzebuje: imię, cele, postępy, odpowiedzi, błędy
 i przerobione lekcje.
 Meta przetwarza je na własnych zasadach. W samej lekcji, którą dziecko przerabia, nie ma jego
 imienia.
@@ -58,7 +58,7 @@ Dane rodziny przetwarzają dla nas te firmy:
 
 - Supabase: logowanie i baza danych Jadwigo, na serwerach we Frankfurcie, w Unii Europejskiej.
 - Amazon Web Services: serwery aplikacji Jadwigo, też we Frankfurcie.
-- Meta: modele AI asystenta i logowanie przez Facebooka.
+- Meta: modele AI, na których działa Jadwigo AI, i logowanie przez Facebooka.
 - Google: logowanie kontem Google i skrzynka privacy@jadwigo.pl.
 
 ## Jak długo trzymamy dane

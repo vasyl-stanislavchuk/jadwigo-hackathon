@@ -228,6 +228,25 @@ describe("the section", () => {
     expect(document.querySelector("[data-week-strip]")).not.toBeNull();
   });
 
+  it("starts the weeks at the learner's first, and leaves out the report's line with nothing yet", async () => {
+    const api = client({
+      getLearnerAttempts: vi.fn(async () => ({ ...ATTEMPTS, attempts: [] })),
+      getLearnerReports: vi.fn(async () => ({ reports: [] })),
+    });
+    render(
+      <LearnerKnowledge
+        api={api}
+        learner={LEARNER}
+        language="pl"
+        since="2026-09-01T07:00:00.000Z"
+      />,
+    );
+    await screen.findByRole("heading", { name: "Tydzień po tygodniu" });
+    expect(document.querySelectorAll("[data-week]")).toHaveLength(1);
+    expect(screen.queryByText("Nie ma jeszcze raportu.")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Ostatni raport" })).toBeNull();
+  });
+
   it("is left out for a client without the knowledge calls", () => {
     const { getLearnerSkills, getLearnerReports, patchReport, ...parentOnly } = client();
     void getLearnerSkills;
