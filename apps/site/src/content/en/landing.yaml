@@ -16,7 +16,7 @@ hero:
     right: Well done! 3 times 12 is 36, and 36 − 9 = 27.
     hint: Almost. First count all the crayons, 3 times 12. Then take away the 9 she gave. Try again.
     signUp:
-      text: Every lesson works like this. A parent account is free, and Jadwigo builds every new lesson from the one before.
+      text: Every lesson works like this. Create a parent account, and Jadwigo builds every new lesson from the one before.
       button: Create an account
       again: Play the question again
 # Under the lessons, one line for the parent.
@@ -105,7 +105,7 @@ partner:
   nextLabel: "Next lesson:"
   next: change with cents and silent letters, in one lesson.
 end:
-  text: A parent creates the account. It's free.
+  text: A parent creates the account.
   button: Create an account
 lessons:
   title: Lessons to start with · Jadwigo
