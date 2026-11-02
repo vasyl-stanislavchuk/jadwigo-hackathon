@@ -13,6 +13,7 @@ import starlightLlmActions from "starlight-llm-actions";
 import starlightLlmsTxt from "starlight-llms-txt";
 import starlightOpenAPI, { createOpenAPISidebarGroup } from "starlight-openapi";
 import { createStarlightTypeDocPlugin } from "starlight-typedoc";
+import { docsPort } from "./src/config.ts";
 import { apiBase, servedHost, sidebar } from "./src/index.ts";
 import { API_REFERENCE_BASE } from "./src/lib/guides.ts";
 import { SEARCH_FOCUS } from "./src/styles/search-focus.ts";
@@ -33,7 +34,11 @@ export default defineConfig({
   build: { format: "directory" },
   // starlight-openapi ships TypeScript, so Vite bundles it and, through it, satteri, whose native
   // binding then can't be found from dist/. Left external, it loads from node_modules.
-  vite: { ssr: { external: ["satteri"] } },
+  // md's DOCS_PORT, strict: a taken port fails loudly instead of moving to the next one.
+  // Read on `dev` only: Astro calls this for every command, and a build or astro check in a worktree
+  // has no md port to read.
+  server: ({ command }) => (command === "dev" ? { host: "127.0.0.1", port: docsPort() } : {}),
+  vite: { ssr: { external: ["satteri"] }, server: { strictPort: true } },
   integrations: [
     // Before Starlight, so its code blocks reach Expressive Code as diagrams, not as code. The
     // diagram is drawn in the browser; the HTML carries its source (check-dist asserts it).

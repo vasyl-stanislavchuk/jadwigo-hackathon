@@ -7,7 +7,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev": "bun src/serve.ts",
+    "dev": "bun --watch src/serve.ts",
     "dream": "bun src/dream.ts",
     "lint": "biome check .",
     "typecheck": "tsc -p tsconfig.json",
