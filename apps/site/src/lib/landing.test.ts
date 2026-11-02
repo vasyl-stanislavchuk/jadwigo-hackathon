@@ -61,15 +61,23 @@ describe("the hero question", () => {
 
 describe("the card pictures' words", () => {
   const pics = landingSchema.shape.lessons.shape.row.shape.pics;
-  const words = { rowneGrupy: "Linijka.", piatki: "Moneta.", razyCztery: "Kotki." };
+  const words = {
+    cukier: "Cukier.",
+    nalesnik: "Naleśnik.",
+    skoki: "Skoki.",
+    mierzenie: "Mierzenie.",
+    czekolada: "Czekolada.",
+    spacer: "Spacer.",
+  };
 
   it("takes alt text for every card picture", () => {
     expect(pics.safeParse(words).success).toBe(true);
   });
 
   it("refuses a card picture with no words", () => {
-    expect(pics.safeParse({ ...words, piatki: "" }).success).toBe(false);
-    expect(pics.safeParse({ rowneGrupy: "Linijka.", razyCztery: "Kotki." }).success).toBe(false);
+    expect(pics.safeParse({ ...words, skoki: "" }).success).toBe(false);
+    const { spacer: _missing, ...five } = words;
+    expect(pics.safeParse(five).success).toBe(false);
   });
 });
 

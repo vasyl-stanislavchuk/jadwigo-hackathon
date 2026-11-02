@@ -39,20 +39,26 @@ export function mondayOf(at: string | Date): string {
 
 const rank = (level: MasteryLevel): number => MasteryLevel.options.indexOf(level);
 
-/** The last `count` weeks up to the one `now` falls in, oldest first. */
+/**
+ * The last `count` weeks up to the one `now` falls in, oldest first. With `since` (the learner's
+ * `created_at`), no week before the one the learner was added in (dl-uukj.47.22): a child added
+ * today has this week only, never weeks of zeros from before they existed.
+ */
 export function weeksOf(
   attempts: readonly LearnerAttempt[],
   reports: readonly LearnerReport[],
   now: Date,
   count = 4,
+  since?: string,
 ): WeekCounts[] {
   const last = new Date(`${mondayOf(now)}T00:00:00.000Z`).getTime();
+  const first = since === undefined ? null : mondayOf(since);
   const weeks: WeekCounts[] = Array.from({ length: count }, (_, i) => ({
     monday: new Date(last - (count - 1 - i) * 7 * DAY_MS).toISOString().slice(0, 10),
     lessons: 0,
     movedUp: 0,
     attention: null,
-  }));
+  })).filter((week, i) => first === null || week.monday >= first || i === count - 1);
   const byMonday = new Map(weeks.map((week) => [week.monday, week]));
 
   const startedAt = new Map<AttemptId, string>();
