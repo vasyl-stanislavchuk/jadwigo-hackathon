@@ -92,6 +92,8 @@ export function LessonFooter({
                 variant="outline"
                 size="control"
                 aria-disabled={onOpenHere === undefined}
+                // Quiet with its reason (handoff §3), never a silent grey.
+                className={onOpenHere === undefined ? "border-dashed text-jw-ink-soft" : undefined}
                 aria-describedby={onOpenHere === undefined ? hereId : undefined}
                 onClick={() => {
                   if (onOpenHere === undefined) return;
