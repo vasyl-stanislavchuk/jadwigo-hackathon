@@ -194,6 +194,13 @@ under `data`, `key`, `hints`, `worked` or `almost`.
 `lesson_check` again with only those steps' words: the others stay as they were. If the same error comes back 3
 times with nothing new to try, stop and show the parent the error as the tool gave it.
 
+To change one step without resending the rest, read it with `lesson_show` and patch it with
+`lesson_edit` (same `names`). A later `lesson_check` keeps the edit, less any part its words for
+that step set. To put the questions in another order, easiest first, call
+`lesson_move(draft_id, step_id, before or after)`. To take a question out, when the parent asks
+or a question does not fit, call `lesson_drop(draft_id, step_id)`; a lesson keeps at least one.
+Both keep the step ids and check the lesson again.
+
 ## 7. Show the parent the card
 
 `ok: true` returns the `card`, its text already plain. Show it in the parent's language, per

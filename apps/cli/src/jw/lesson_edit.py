@@ -5,7 +5,8 @@ step_id, patch)` changes one step of the draft file as it stands instead, and a 
 the change (dl-a38n.40): one not sent words for that step keeps the step as filed, and one sent
 words for it puts the patch back on the rebuilt step, less the parts those words set (the patch
 is kept in jw's record for that, dl-u1y5.39). `move(draft_id, step_id, before=|after=)` puts a
-step elsewhere in the order, which every later check keeps:
+step elsewhere in the order, which every later check keeps, and `drop(draft_id, step_id)` takes
+one out (dl-u1y5.40):
 `patch` is a JSON merge patch (RFC 7386) on the step, over `say` and `question` (its `data`, `key`
 and `help`, the twin included as `help.twin`). An object merges into what is there, `null`
 removes a part, anything else replaces it. A change to a part the bank's copy has (`say`, `data`,
@@ -338,6 +339,61 @@ def _move(
                         answer.get("mistake_classes"))
     return {
         "ok": bool(answer.get("ok")),
+        "order": order,
+        "findings": findings,
+        "lesson_ok": bool(answer.get("ok")),
+        "draft_path": str(path),
+    }
+
+
+def drop(
+    draft_id: str,
+    step_id: str,
+    *,
+    runner: lesson.Runner | None = None,
+    folder: Path | None = None,
+) -> dict[str, Any]:
+    """`_drop`, stamped in the draft's timings."""
+    called_at = lesson.now()
+    where = folder or lesson.drafts_dir()
+    try:
+        return _drop(draft_id, step_id, runner=runner, where=where)
+    finally:
+        lesson.stamp(where, draft_id, "lesson_drop", called_at)
+
+
+def _drop(
+    draft_id: str, step_id: str, *, runner: lesson.Runner | None, where: Path
+) -> dict[str, Any]:
+    """Take step `step_id` out of the draft (dl-u1y5.40), so a lesson can draw more than it keeps
+    and lose the weakest. The other step ids stay as they are. The item goes to the draft's
+    `left_out` as dropped from the draft, and check.ts runs on what is left. A draft's last step is never dropped. Returns `{ok, dropped, order,
+    findings, lesson_ok, draft_path}`, `ok` being check.ts's answer."""
+    stored, file = _load(draft_id, where)
+    known = [q["step_id"] for q in stored["questions"]]
+    if step_id not in known:
+        raise JwError(f"no step {step_id} in {draft_id}", hint=f"Its steps are {', '.join(known)}.")
+    if len(known) == 1:
+        raise JwError(f"{step_id} is the draft's last step", hint="Draft again instead.")
+    gone = next(q for q in stored["questions"] if q["step_id"] == step_id)
+    stored["questions"] = [q for q in stored["questions"] if q["step_id"] != step_id]
+    stored["left_out"] = [*(stored.get("left_out") or []),
+                          {"id": gone["item_id"], "reason": f"dropped from the draft ({step_id})"}]
+    order = [q["step_id"] for q in stored["questions"]]
+    lesson._write_json(lesson._state_path(where, draft_id), stored)
+
+    for part in (file.get("script") or {}).get("parts") or []:
+        part["steps"] = [st for st in part.get("steps") or [] if str(st.get("id")) != step_id]
+    path = lesson._lesson_path(where, draft_id)
+    lesson._make_dirs(where)
+    lesson._write_json(path, file)
+    answer = lesson._run_check(path, runner)
+    findings = lesson._findings(answer)
+    lesson._write_check(where, stored, bool(answer.get("ok")), findings,
+                        answer.get("mistake_classes"))
+    return {
+        "ok": bool(answer.get("ok")),
+        "dropped": step_id,
         "order": order,
         "findings": findings,
         "lesson_ok": bool(answer.get("ok")),
