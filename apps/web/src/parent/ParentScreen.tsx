@@ -623,21 +623,6 @@ function SignedIn({
       </ParentPage>
     );
 
-  const pod = view.me.pod;
-  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
-    return (
-      <ParentPage>
-        <ConsentScreen
-          language={language}
-          onAgree={async () => {
-            await pods.patchPod(pod.id, { ai_consented: true });
-            load();
-          }}
-          onLater={() => setLater(true)}
-        />
-      </ParentPage>
-    );
-
   const learners = view.me.learners.map((s) => s.learner);
   const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
   const lang = pageLang();
@@ -663,6 +648,25 @@ function SignedIn({
       />
     </ParentShell>
   );
+
+  // The pod's consent to the AI, once, right after the first sign-in: inside the shell at the
+  // parent's density, as it is when a send asks for it (dl-uukj.47.25).
+  const pod = view.me.pod;
+  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
+    return shell(
+      { kind: "lessons" },
+      newLesson,
+      <div className="mx-auto flex w-full max-w-jw-shell-box flex-col px-4 py-10" data-consent-page>
+        <ConsentScreen
+          language={language}
+          onAgree={async () => {
+            await pods.patchPod(pod.id, { ai_consented: true });
+            load();
+          }}
+          onLater={() => setLater(true)}
+        />
+      </div>,
+    );
 
   // Keeping the tab's attempt with no child yet: the page asks for one before anything else.
   if (pending !== null && learners.length === 0)
