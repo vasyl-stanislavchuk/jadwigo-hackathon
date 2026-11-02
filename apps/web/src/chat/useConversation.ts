@@ -320,7 +320,7 @@ export function useConversation(
               const index = latestQueue.current.indexOf(text);
               if (index >= 0) redo.current?.sendNow(index);
             }, limitOf(e));
-          } else fail(() => void postRef.current?.(text, context), limitOf(e));
+          } else fail(() => void postRef.current?.(text, given), limitOf(e));
           return false;
         });
     },
