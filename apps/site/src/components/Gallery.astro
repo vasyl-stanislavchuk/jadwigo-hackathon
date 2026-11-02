@@ -1,7 +1,7 @@
 ---
 // The featured lessons as cards (dl-5ssh.4.3, redrawn in design handoff "landing 3", dl-5ssh.4.13):
 // the subject and grade with the question count, the title, an illustration slot, the first question
-// on squared paper, and one link to play in the app with no login. With `row`, the landing page's
+// on exercise-book paper, and one link to play in the app with no login. With `row`, the landing page's
 // version: a tab per grade present ("Klasa 1 · 2 · 3", the lowest chosen, dl-w0b4.108), a subject
 // filter only while there is more than one subject, a count, and one row of 300 px cards that
 // scrolls sideways with snap to the page's right edge, moved a card at a time by 2 arrow buttons.
@@ -211,7 +211,7 @@ const shownCount = cards.filter((c) => !c.hidden).length;
   .meta { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.85rem; font-weight: 700; color: var(--jw-ink-soft); }
   .title { font-size: 1.3rem; font-weight: 700; line-height: 1.25; }
   .card a :global(.card-pic) { height: 6.5rem; min-height: 0; }
-  /* The teaser: the first question as the child sees it, on squared paper. */
+  /* The teaser: the first question as the child sees it, on exercise-book paper. */
   .teaser { --cell: 1.25rem; padding: 0.6rem 0.75rem; font-size: 1.05rem; font-weight: 700; line-height: 1.35; border-radius: var(--jw-radius-small); }
   .go { margin-top: auto; padding-top: 0.5rem; font-weight: 700; color: var(--jw-brand-go); }
   .none { margin-top: 0.5rem; font-weight: 700; color: var(--jw-ink-soft); }

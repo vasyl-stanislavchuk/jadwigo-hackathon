@@ -1,6 +1,6 @@
 ---
 // The hero's one question (dl-5ssh.4.9, redrawn in design handoff "landing 3", dl-5ssh.4.13): a grade 3
-// word problem on squared notebook paper, answered right here, with its label, an illustration slot and
+// word problem on a spiral notebook page, answered right here, with its label, an illustration slot and
 // its source. A wrong tile turns the help yellow and shows the hint so the child tries again, never a
 // bare "wrong". A right tile turns green with the right line, Jadwiga's clip plays over the sheet as it
 // does in the app (apps/web/src/play/Queen.tsx), and then the sheet turns over to the invitation to a
@@ -23,7 +23,7 @@ const { lang } = Astro.props;
 const q = (await landingWords(lang)).hero.question;
 ---
 
-<div class="sheet paper" data-answer={q.answer} data-right={q.right} data-hint={q.hint}>
+<div class="sheet paper notebook" data-answer={q.answer} data-right={q.right} data-hint={q.hint}>
   <div class="face ask">
     <p class="label">{q.label}</p>
     <div class="q">

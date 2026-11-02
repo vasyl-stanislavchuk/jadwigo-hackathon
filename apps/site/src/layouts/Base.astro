@@ -207,14 +207,20 @@ const footerLinks = [
       .site-footer .data { text-wrap: pretty; }
       .site-footer .data a { color: var(--jw-ink-soft); text-decoration: underline; }
 
-      /* Squared paper (kratka), the exercise book a child writes maths in: behind questions only. */
+      /* Exercise-book paper, warmed towards the help note's yellow but lighter than it, so a hint on it
+         still stands out (owner, 2026-11-02, dl-5ssh.4.30): mixed from 2 tokens, no new colour. */
       .paper {
         --cell: 1.5rem;
         border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
-        background:
-          linear-gradient(to right, var(--jw-line) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
-          linear-gradient(to bottom, var(--jw-line) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
-          var(--jw-card);
+        background: color-mix(in srgb, var(--jw-card), var(--jw-help) 50%);
+      }
+      /* A notebook's binding, kept quiet: a row of slim rings over the top edge, reaching into the page.
+         The shape is a mask, so the colour is Zeszyt tokens (ink softened into the paper). */
+      .paper.notebook { position: relative; }
+      .paper.notebook::before {
+        content: ""; position: absolute; left: 1.5rem; right: 1.5rem; top: calc(-0.875rem - 1px); height: 1.75rem; /* the border runs through the rings' middle */
+        background: color-mix(in srgb, var(--jw-ink-soft) 70%, var(--jw-card)); pointer-events: none;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='28'%3E%3Crect x='10' y='1' width='4' height='26' rx='2' fill='none' stroke='black' stroke-width='1.4'/%3E%3C/svg%3E") 0 0 / 1.5rem 1.75rem space no-repeat;
       }
       .prose main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1rem 0; }
       .prose h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); }
