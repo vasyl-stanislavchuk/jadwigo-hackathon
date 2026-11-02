@@ -11,6 +11,11 @@
 // handoff "landing 3" (dl-5ssh.4.12).
 import "@fontsource/andika/400.css";
 import "@fontsource/andika/700.css";
+// The Andika files every page draws with first, preloaded so the text rarely waits for them (dl-5ssh.4.43).
+import andikaLatin400 from "@fontsource/andika/files/andika-latin-400-normal.woff2?url";
+import andikaLatin700 from "@fontsource/andika/files/andika-latin-700-normal.woff2?url";
+import andikaLatinExt400 from "@fontsource/andika/files/andika-latin-ext-400-normal.woff2?url";
+import andikaLatinExt700 from "@fontsource/andika/files/andika-latin-ext-700-normal.woff2?url";
 import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import { m } from "@jadwigo/copy/messages";
@@ -98,10 +103,35 @@ const footerLinks = [
       )
     }
     <link rel="sitemap" href="/sitemap-index.xml" />
+    {
+      [andikaLatin400, andikaLatin700, andikaLatinExt400, andikaLatinExt700].map((href) => (
+        <link rel="preload" href={href} as="font" type="font/woff2" crossorigin="anonymous" />
+      ))
+    }
     <script is:inline>document.documentElement.classList.add("js");</script>
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd(lang))} />
     <style is:global>
       *, *::before, *::after { box-sizing: border-box; }
+      /* Until Andika arrives the text is drawn in Arial sized to Andika's own metrics, so the swap moves
+         nothing (dl-5ssh.4.43: the page jumped by 0.37 CLS on a phone). Measured in Chromium: Andika is
+         1.22 em above the baseline and 0.39 below, and 3.7% (bold 2.7%) wider than Arial. */
+      @font-face {
+        font-family: "Andika fallback"; font-weight: 400; src: local("Arial"), local("ArialMT");
+        size-adjust: 103.7%; ascent-override: 117.6%; descent-override: 37.6%; line-gap-override: 0%;
+      }
+      @font-face {
+        font-family: "Andika fallback"; font-weight: 700; src: local("Arial Bold"), local("Arial-BoldMT");
+        size-adjust: 102.7%; ascent-override: 118.8%; descent-override: 38%; line-gap-override: 0%;
+      }
+      /* A picture's slot holds its place while the picture loads: a soft paper-tone block at the slot's
+         size, and the picture fades in over it (dl-5ssh.4.43). Without JS the pictures show as they are. */
+      .js .fade-in:not(.ready) { background: color-mix(in srgb, var(--jw-act-quiet) 80%, transparent); border-radius: var(--jw-radius-card); animation: waiting 1.6s ease-in-out infinite alternate; }
+      .js .fade-in img { opacity: 0; transition: opacity 0.45s ease; }
+      .js .fade-in.ready img { opacity: 1; }
+      .js .fade-in.ready .blink-eyes { opacity: 0; }
+      @keyframes waiting { from { opacity: 0.55; } to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .js .fade-in:not(.ready) { animation: none; } .js .fade-in img { transition: none; } }
+      :root { --jw-font: "Andika", "Andika fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
       html { scroll-behavior: smooth; }
       [id] { scroll-margin-top: 7rem; } /* an anchor lands below the sticky header */
       @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
@@ -309,6 +339,18 @@ const footerLinks = [
         setOpen(false);
         burger.focus();
       });
+    </script>
+    <script is:inline>
+      // Each picture slot shows its placeholder until its picture has loaded (dl-5ssh.4.43). One listener
+      // on the page catches every picture, those added later too (the lesson row's copies, dl-5ssh.4.44).
+      const ready = (img) => img.closest(".fade-in")?.classList.add("ready");
+      for (const kind of ["load", "error"]) {
+        document.addEventListener(kind, (e) => e.target instanceof HTMLImageElement && ready(e.target), true);
+      }
+      for (const slot of document.querySelectorAll(".fade-in")) {
+        const img = slot.querySelector("img");
+        if (!img || (img.complete && img.naturalWidth > 0)) slot.classList.add("ready");
+      }
     </script>
   </body>
 </html>

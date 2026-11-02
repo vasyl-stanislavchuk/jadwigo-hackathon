@@ -28,7 +28,7 @@ tracker. A workstream owns a scope on it: its epics, and the label every open is
 | ai-workflows | `project:jadwigo-ai-workflows` | this repo | `dl-hin8`, `dl-u1y5` |
 | marketing | `project:jadwigo-marketing` | this repo | `dl-w0b4` |
 | learner-experience | `project:jadwigo-learner-experience` | the david-learns playground, until `dl-5ssh.34.6` ports it here | `dl-uukj`, `dl-w3`, `dl-7wlo` |
-| question-bank | `project:jadwigo-question-bank` | `packages/bank` here; the Khan pipeline in david-learns until it has a home | `dl-n9fr`, `dl-r772` |
+| question-bank | `project:jadwigo-question-bank` | `packages/bank` here; the Khan and Alfik pipelines in jadwigo-bank (`~/projects/jadwigo-bank/tools/khan`, `tools/alfik`) | `dl-n9fr`, `dl-r772` |
 
 - **Finding work:** `bd -C ~/projects/david-learns/.beads ready --label project:jadwigo-<workstream>`
   (in zsh, wrap `bd -C …` in a function such as `B() { bd -C ~/projects/david-learns/.beads "$@"; }`, never a variable).

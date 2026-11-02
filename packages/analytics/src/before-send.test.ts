@@ -1,6 +1,7 @@
 import type { CaptureResult } from "posthog-js";
 import { describe, expect, it } from "vitest";
-import { beforeSend, beforeSendFor, cutPath } from "./before-send.ts";
+import { beforeSend, beforeSendFor, cutPath, maskAttribute } from "./before-send.ts";
+import { posthogOptions } from "./options.ts";
 
 const event = (name: string, properties: Record<string, unknown>): CaptureResult => ({
   uuid: "u1",
@@ -106,5 +107,30 @@ describe("beforeSend", () => {
   it("stamps the surface and turns GeoIP off", () => {
     const sent = beforeSendFor("site")(event("email_sign_in_submitted", { locale: "pl" }));
     expect(sent?.properties).toEqual({ locale: "pl", surface: "site", $geoip_disable: true });
+  });
+});
+
+describe("maskAttribute, the replay's attributes (dl-w0b4.13's review)", () => {
+  const LEARNER = "lrn_7qre3atahx8cpak6xbjtz73var";
+
+  it("cuts a link's ids and query, as an event's URLs are cut", () => {
+    expect(maskAttribute("href", `/parent?for=${LEARNER}`)).toBe("/parent");
+    expect(maskAttribute("href", `/parent/children/${LEARNER}`)).toBe("/parent/children/:id");
+    expect(maskAttribute("src", `https://app.jadwigo.pl/parent/children/${LEARNER}?x=1`)).toBe(
+      "https://app.jadwigo.pl/parent/children/:id",
+    );
+  });
+
+  it("turns an id in any other attribute into :id, and leaves the rest", () => {
+    expect(maskAttribute("data-learner-card", LEARNER)).toBe(":id");
+    expect(maskAttribute("data-attempt", "att_43007b83dp9w2tnfjxhha74cyq")).toBe(":id");
+    expect(maskAttribute("data-run", "0b6f3c1e-8f7a-4c1d-9e2b-1a2b3c4d5e6f")).toBe(":id");
+    expect(maskAttribute("class", "flex gap-2")).toBe("flex gap-2");
+    expect(maskAttribute("aria-label", "Ola, klasa 2")).toBe("Ola, klasa 2");
+  });
+
+  it("is the replay's maskAttributeFn", () => {
+    const fn = posthogOptions("app").session_recording?.maskAttributeFn;
+    expect(fn?.("data-learner-card", LEARNER)).toBe(":id");
   });
 });

@@ -2,21 +2,18 @@
 // The featured lessons as cards (dl-5ssh.4.3, redrawn in design handoff "landing 3", dl-5ssh.4.13):
 // the subject and grade with the question count, the title, an illustration slot, the first question
 // on exercise-book paper, and one link to play in the app with no login. With `row`, the landing page's
-// version: a tab per grade present ("Klasa 1 · 2 · 3", the lowest chosen, dl-w0b4.108), a subject
-// filter only while there is more than one subject, a count, and one row of 300 px cards that
-// scrolls sideways with snap to the page's right edge, moved a card at a time by 2 arrow buttons.
-// While no lesson has a grade there are no tabs and every card shows; once one has, a lesson with
-// no grade is left off the row (it stays on /lekcje). Without `row`, a still grid (/lekcje). Only
-// the real featured lessons show (owner, 2026-11-01).
+// version: the heading and one row of 300 px cards with every featured lesson, in the featured order
+// (grade 1 first), drifting sideways by itself and scrolled by hand. No grade tabs, no subject filter
+// (dl-5ssh.4.42), no count and no arrows (owner, 2026-11-02, dl-5ssh.4.44). Without `row`, a still
+// grid (/lekcje). Only the real featured lessons show (owner, 2026-11-01).
 import type { Language } from "@jadwigo/config";
 import type { FeaturedLesson } from "@jadwigo/contracts";
-import { assertLanguage, gradesOf, playUrl } from "../lib/featured.ts";
+import { assertLanguage, playUrl } from "../lib/featured.ts";
 import { withLang } from "../lib/i18n.ts";
 import { cardArt } from "../lib/illustrations.ts";
 import { firstSentence, plural } from "../lib/landing.ts";
 import { landingWords } from "../lib/words.ts";
 import Pic from "./Pic.astro";
-import Segmented from "./Segmented.astro";
 
 interface Props {
   lang: Language;
@@ -31,10 +28,7 @@ const { lang, lessons, row = false } = Astro.props;
 assertLanguage(lessons, lang);
 const words = (await landingWords(lang)).lessons;
 
-const grades = row ? gradesOf(lessons) : [];
-const first = grades[0];
-const onRow = first === undefined ? lessons : lessons.filter((l) => l.grade !== null);
-const cards = onRow.map((l) => {
+const cards = lessons.map((l) => {
   const art = cardArt(l);
   return {
     href: withLang(playUrl(l), lang),
@@ -43,10 +37,7 @@ const cards = onRow.map((l) => {
     pic: art
       ? { src: art.src, label: words.row.pics[art.alt] }
       : { src: undefined, label: `${words.row.pic} · ${l.title}` },
-    subject: l.subject,
     grade: l.grade === null ? "" : String(l.grade),
-    // Before the script runs, the row shows the lowest grade's tab.
-    hidden: first !== undefined && l.grade !== first,
     teaser: l.first_say === null ? null : firstSentence(l.first_say),
     meta: [words.subjects[l.subject], l.grade === null ? null : `${words.grade} ${l.grade}`]
       .filter((m): m is string => m !== null)
@@ -54,37 +45,14 @@ const cards = onRow.map((l) => {
     count: l.question_count > 0 ? plural(l.question_count, words.questions, lang) : null,
   };
 });
-const subjects = [...new Set(onRow.map((l) => l.subject))];
-const gradeOptions = grades.map((g) => ({
-  value: String(g),
-  label: `${words.row.gradeLabel} ${g}`,
-}));
-const subjectOptions = [
-  { value: "all", label: words.row.allSubjects },
-  ...subjects.map((s) => ({ value: s, label: words.subjects[s] })),
-];
-const shownCount = cards.filter((c) => !c.hidden).length;
 ---
 
-<div class:list={["lessons-ui", { row }]} data-count={JSON.stringify(words.row.count)} data-lang={lang}>
+<div class:list={["lessons-ui", { row }]}>
   {
     row && (
       <div class="wrap controls">
         <div class="head">
           <slot />
-        </div>
-        <div class="filters">
-          {first !== undefined && (
-            <Segmented name="grade" label={words.row.gradeLabel} options={gradeOptions} value={String(first)} hideLabel />
-          )}
-          {subjects.length > 1 && (
-            <Segmented name="subject" label={words.row.subjectLabel} options={subjectOptions} value="all" />
-          )}
-        </div>
-        <div class="bar">
-          <p class="count" aria-live="polite">{plural(shownCount, words.row.count, lang)}</p>
-          <button type="button" class="arrow" data-step="-1" aria-label={words.row.prev}>←</button>
-          <button type="button" class="arrow" data-step="1" aria-label={words.row.next}>→</button>
         </div>
       </div>
     )
@@ -92,7 +60,7 @@ const shownCount = cards.filter((c) => !c.hidden).length;
   <ul class="cards">
     {
       cards.map((c) => (
-        <li class="card" data-grade={c.grade} data-subject={c.subject} hidden={c.hidden}>
+        <li class="card" data-grade={c.grade}>
           <a href={c.href}>
             <span class="meta">
               <span>{c.meta}</span>
@@ -100,122 +68,137 @@ const shownCount = cards.filter((c) => !c.hidden).length;
             </span>
             <span class="title">{c.title}</span>
             <Pic label={c.pic.label} src={c.pic.src} sizes="17rem" class="card-pic" />
-            {c.teaser && <span class="teaser paper">{c.teaser}</span>}
+            {c.teaser ? <span class="teaser paper">{c.teaser}</span> : <span class="teaser-none" />}
             <span class="go">{words.play} →</span>
           </a>
         </li>
       ))
     }
   </ul>
-  {row && <p class="wrap none" hidden>{words.row.none}</p>}
 </div>
 
 <script>
   import { track } from "@jadwigo/analytics";
   import { pageLocale } from "../lib/page-locale.ts";
 
-  import { plural } from "../lib/landing.ts";
-
+  // The landing page's row (dl-5ssh.4.44): it drifts on its own, slowly and without end, so every
+  // lesson passes by. A copy of the cards follows the real ones (inert: out of the tab order and hidden
+  // from a screen reader), and the row steps back by one set as it reaches the copy, which looks the
+  // same. It rests while the pointer is on it or a card has focus, for a few seconds after a touch or
+  // a wheel, while the row is off screen or the tab is hidden; under reduced motion it never moves.
+  const SPEED = 22; // px a second
+  const REST = 4000; // ms after a touch or a wheel
   for (const ui of document.querySelectorAll<HTMLElement>(".lessons-ui.row")) {
     const list = ui.querySelector<HTMLElement>(".cards");
     const cards = [...ui.querySelectorAll<HTMLElement>(".card")];
-    const count = ui.querySelector(".count");
-    const none = ui.querySelector<HTMLElement>(".none");
-    const arrows = [...ui.querySelectorAll<HTMLButtonElement>(".arrow")];
-    const forms = JSON.parse(ui.dataset["count"] ?? "[]") as [string, string, string];
-    const lang = ui.dataset["lang"] === "en" ? "en" : "pl";
     const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!list) continue;
+    if (!list || cards.length === 0) continue;
 
-    // The arrows go grey at either end of the row.
-    const ends = () => {
-      const max = list.scrollWidth - list.clientWidth - 1;
-      arrows[0]?.toggleAttribute("disabled", list.scrollLeft <= 0);
-      arrows[1]?.toggleAttribute("disabled", list.scrollLeft >= max);
-    };
-
-    // A tab and the subject filter show the cards that match both choices and put the row back at
-    // its start. With no tabs (no lesson has a grade yet) every grade fits.
-    const filter = () => {
-      const grade = ui.querySelector<HTMLInputElement>('input[name="grade"]:checked')?.value ?? "all";
-      const subject = ui.querySelector<HTMLInputElement>('input[name="subject"]:checked')?.value ?? "all";
-      let shown = 0;
-      for (const card of cards) {
-        const fits =
-          (grade === "all" || card.dataset["grade"] === grade) &&
-          (subject === "all" || card.dataset["subject"] === subject);
-        card.hidden = !fits;
-        if (fits) shown += 1;
-      }
-      if (count) count.textContent = plural(shown, forms, lang);
-      if (none) none.hidden = shown > 0;
-      list.scrollLeft = 0;
-      ends();
-    };
-    for (const input of ui.querySelectorAll<HTMLInputElement>("input")) {
-      input.addEventListener("change", () => {
-        filter();
-        const which = input.name === "grade" ? "grade" : "subject";
-        track("lesson_filter_applied", { locale: pageLocale(), filter: which });
-      });
-    }
+    // A featured lesson opened from the row (dl-w0b4.14). The drifting copies below are inert.
     for (const card of cards) {
       card.querySelector("a")?.addEventListener("click", () =>
         track("featured_lesson_opened", { locale: pageLocale() }),
       );
     }
 
-    // Each arrow moves the row by one card and its gap.
-    for (const arrow of arrows) {
-      arrow.addEventListener("click", () => {
-        const card = cards.find((c) => !c.hidden);
-        const gap = Number.parseFloat(getComputedStyle(list).columnGap) || 0;
-        const step = (card?.offsetWidth ?? 300) + gap;
-        list.scrollBy({ left: step * Number(arrow.dataset["step"]), behavior: still ? "auto" : "smooth" });
-      });
+    // Under reduced motion the row stays still; a hand scrolls it.
+    if (still) continue;
+
+    for (const card of cards) {
+      const copy = card.cloneNode(true) as HTMLElement;
+      copy.inert = true;
+      copy.setAttribute("aria-hidden", "true");
+      // A copied picture that is already in shows at once; one still on its way fades in when it lands.
+      for (const slot of copy.querySelectorAll(".fade-in")) {
+        const img = slot.querySelector("img");
+        if (img?.complete && img.naturalWidth > 0) slot.classList.add("ready");
+      }
+      list.append(copy);
     }
-    list.addEventListener("scroll", ends, { passive: true });
-    addEventListener("resize", ends);
-    ends();
+    list.classList.add("drifting");
+    // One set of cards, from the first card to its copy.
+    const span = () => (list.children[cards.length] as HTMLElement).offsetLeft - cards[0]!.offsetLeft;
+
+    let pos = list.scrollLeft;
+    let last = performance.now();
+    let restUntil = 0;
+    let hovered = false;
+    let focused = false;
+    let seen = true;
+    const rest = () => {
+      restUntil = performance.now() + REST;
+    };
+    const wrap = () => {
+      const s = span();
+      if (s <= 0) return;
+      if (pos >= s) pos -= s;
+      if (pos < 0) pos += s;
+    };
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      // A hand on the row (a swipe, a wheel) takes over; the drift goes on from where it left.
+      if (Math.abs(list.scrollLeft - pos) > 2) pos = list.scrollLeft;
+      if (!hovered && !focused && seen && !document.hidden && now > restUntil) {
+        pos += (SPEED * dt) / 1000;
+        wrap();
+        list.scrollLeft = pos;
+      } else if (list.scrollLeft >= span()) {
+        pos = list.scrollLeft - span();
+        list.scrollLeft = pos;
+      }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+
+    list.addEventListener("pointerenter", () => {
+      hovered = true;
+    });
+    list.addEventListener("pointerleave", () => {
+      hovered = false;
+    });
+    list.addEventListener("focusin", () => {
+      focused = true;
+    });
+    list.addEventListener("focusout", () => {
+      focused = false;
+    });
+    list.addEventListener("touchstart", rest, { passive: true });
+    list.addEventListener("wheel", rest, { passive: true });
+    new IntersectionObserver((entries) => {
+      seen = entries.some((e) => e.isIntersecting);
+    }).observe(list);
+
   }
 </script>
 
 <style>
-  /* The heading, then the filters; on a laptop the filters stand to the heading's right. */
-  .controls { display: grid; gap: 1rem 1.5rem; align-items: end; }
-  @media (min-width: 60rem) {
-    .controls { grid-template-columns: 1fr auto; }
-    .bar { grid-column: 1 / -1; }
-  }
-  .filters { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; }
-  .bar { display: flex; align-items: center; gap: 0.75rem; }
-  .count { flex: 1; font-weight: 700; color: var(--jw-ink-soft); }
-  .arrow {
-    width: 48px; height: 48px; display: grid; place-items: center; cursor: pointer;
-    font: inherit; font-size: 1.3rem; font-weight: 700; color: var(--jw-ink);
-    background: var(--jw-card); border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
-    box-shadow: 0 3px 0 var(--jw-line-strong); transition: transform 80ms, box-shadow 80ms;
-  }
-  .arrow:not(:disabled):active { transform: translateY(2px); box-shadow: 0 1px 0 var(--jw-line-strong); }
-  .arrow:disabled { opacity: 0.4; cursor: default; }
-  .arrow:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; }
+  /* The row's heading. */
+  .controls { display: grid; gap: 1rem 1.5rem; }
 
+  /* Every card's 5 parts (meta, title, picture, teaser, link) sit on shared rows (subgrid), so the
+     pictures and the teasers line up across the cards (owner, 2026-11-02, dl-5ssh.4.44). */
   .cards {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 18.75rem), 1fr)); gap: 1.25rem;
     list-style: none; margin: 1.5rem 0 0; padding: 0 0 1rem;
   }
+  .card { display: grid; grid-row: span 5; grid-template-rows: subgrid; }
   /* The row: one line of 300 px cards from the page's left margin to its right edge, snapping to a card. */
   .row .cards {
     --edge: max(1rem, calc((100vw - 72rem) / 2 + 1rem));
-    display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--edge);
+    display: grid; grid-auto-flow: column; grid-auto-columns: 18.75rem; grid-template-columns: none;
+    grid-template-rows: repeat(5, auto); row-gap: 0;
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--edge);
     margin-top: 1.25rem; padding: 0.25rem var(--edge) 1.25rem;
     width: 100vw; margin-left: calc(50% - 50vw);
   }
-  .row .card { flex: 0 0 18.75rem; scroll-snap-align: start; }
-  .card[hidden] { display: none; }
+  .row .card { scroll-snap-align: start; }
+  /* While the row drifts by itself, snapping would hold it still. */
+  .row .cards.drifting { scroll-snap-type: none; scrollbar-width: none; }
+  .row .cards.drifting::-webkit-scrollbar { display: none; }
 
   .card a {
-    display: flex; flex-direction: column; gap: 0.75rem; height: 100%; padding: 1rem;
+    display: grid; grid-row: span 5; grid-template-rows: subgrid; row-gap: 0.75rem; padding: 1rem;
     border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
     background: var(--jw-card); color: var(--jw-ink); text-decoration: none;
     box-shadow: 0 5px 0 var(--jw-line); transition: border-color 120ms;
@@ -227,8 +210,13 @@ const shownCount = cards.filter((c) => !c.hidden).length;
   .card a :global(.card-pic) { height: 6.5rem; min-height: 0; }
   /* The teaser: the first question as the child sees it, on exercise-book paper. */
   .teaser { --cell: 1.25rem; padding: 0.6rem 0.75rem; font-size: 1.05rem; font-weight: 700; line-height: 1.35; border-radius: var(--jw-radius-small); }
-  .go { margin-top: auto; padding-top: 0.5rem; font-weight: 700; color: var(--jw-brand-go); }
-  .none { margin-top: 0.5rem; font-weight: 700; color: var(--jw-ink-soft); }
-  .none[hidden] { display: none; }
-  @media (prefers-reduced-motion: reduce) { .arrow { transition: none; } }
+  /* Play: centred at the card's foot, shown when the card is pointed at or focused; where there is no
+     hover (a touch screen) it always shows. Its place is kept, so nothing moves when it appears. */
+  .go {
+    align-self: end; justify-self: center; padding-top: 0.25rem; font-weight: 700; color: var(--jw-brand-go);
+    opacity: 0; transition: opacity 160ms ease;
+  }
+  .card a:hover .go, .card a:focus-visible .go { opacity: 1; }
+  @media (hover: none) { .go { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .go { transition: none; } }
 </style>

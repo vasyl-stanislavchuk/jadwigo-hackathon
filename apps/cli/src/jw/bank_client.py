@@ -57,7 +57,8 @@ CONTRACTS = Path(__file__).resolve().parent / "contracts"
 ENVELOPE_SCHEMA = CONTRACTS / "search-envelope.schema.json"
 NEED_SCHEMA = CONTRACTS / "need.schema.json"
 SET_SCHEMA = CONTRACTS / "set.schema.json"
-SET_ID_RE = re.compile(r"^set_[a-z]+_[a-z0-9]+$")
+# The set schema's id pattern: set_khan_<exercise id>, or set_alfik_<grade>_<skill> (dl-n9fr.66.9).
+SET_ID_RE = re.compile(r"^set_(khan_[a-z0-9]+|alfik_[1-4]_[a-z0-9-]+)$")
 
 # The arms the envelope's description names. A degraded envelope reports every one of them,
 # because a failed call cannot say which arm would have answered.

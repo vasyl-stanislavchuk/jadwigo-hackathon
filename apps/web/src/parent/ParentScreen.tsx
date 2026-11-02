@@ -71,8 +71,10 @@ import { HistoryTable } from "./history/HistoryTable.tsx";
 import { inAppBrowser } from "./inApp.ts";
 import { LanguagePick } from "./LanguagePick.tsx";
 import { LessonsTable } from "./lessons/LessonsTable.tsx";
+import { useLessons } from "./lessons/useLessons.ts";
 import { AddChildDialog } from "./newLesson/AddChildDialog.tsx";
 import { DlaSelect } from "./newLesson/DlaSelect.tsx";
+import { newLessonDraft } from "./newLesson/draft.ts";
 import { type LessonAsk, NewLessonBox } from "./newLesson/NewLessonBox.tsx";
 import { AssignmentOverview } from "./overview/AssignmentOverview.tsx";
 import { ProviderButton } from "./ProviderButton.tsx";
@@ -86,6 +88,7 @@ import {
   lessonPath,
   lessonsPath,
   type ParentRoute,
+  parentPath,
   parentRoute,
   providerOf,
 } from "./route.ts";
@@ -132,10 +135,11 @@ export function ParentScreen({
    */
   pods?: PodClient;
   /**
-   * The family's conversations, the Lekcje table's rows (dl-z5ja.106.1), for tests; the page's own
-   * client when `client` is absent. With a test's `client` and no `lessons`, the table is empty.
+   * The family's conversations, the Lekcje table's rows and their Archive (dl-z5ja.106.1,
+   * dl-uukj.47.9), for tests; the page's own client when `client` is absent. With a test's `client`
+   * and no `lessons`, the table is empty.
    */
-  lessons?: Pick<ConversationListClient, "listConversations">;
+  lessons?: ConversationListClient;
   /**
    * The lesson engine (dl-z5ja.108), for tests; the build's conversation routes and Realtime when
    * `client` is absent. With a test's `client` and no `engine`, sending says it is on its way.
@@ -156,6 +160,11 @@ export function ParentScreen({
   const route = parentRoute(useLocation().path);
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
   const [returned, setReturned] = useState<CopyKey | null>(null);
+  // Signed out, however the session ended (this tab, another tab, an expired or revoked token): the
+  // first screen's draft goes, so the next parent on this tab never finds it (dl-uukj.47.24).
+  useEffect(() => {
+    if (signedIn === false) newLessonDraft.clear();
+  }, [signedIn]);
   // The URL the page opened at. completeRedirect takes the return off the address bar, so a second
   // run of the effect (dev StrictMode) reads it here, gets the first exchange's outcome, and still
   // shows its line.
@@ -212,8 +221,13 @@ export function ParentScreen({
       forLearner={forOf(query)}
       claim={claimOf(query)}
       onSignOut={() => {
+        // The next parent on this tab never finds this one's unsent words (dl-uukj.47.24).
+        newLessonDraft.clear();
         auth.signOut().finally(() => {
           setPodLanguage(null);
+          // Back to /parent, so the next parent to sign in here never lands on this one's page,
+          // such as a lesson's workspace (dl-uukj.47.16). The page's language stays.
+          navigate(parentPath({ lang: pageLang() }), { replace: true });
           setSignedIn(false);
         });
       }}
@@ -493,7 +507,7 @@ function SignedIn({
 }: {
   api: ParentClient;
   pods: PodClient | null;
-  conversations: Pick<ConversationListClient, "listConversations"> | null;
+  conversations: ConversationListClient | null;
   engine: LessonEngine | null;
   language: Language;
   route: ParentRoute;
@@ -518,6 +532,19 @@ function SignedIn({
   const [notice, setNotice] = useState<CopyKey | null>(null);
   /** "Nie teraz" on the consent screen: asked again on the next visit, not on this one. */
   const [later, setLater] = useState(false);
+  // False once this signed-in page is gone (a sign-out): a send still in flight keeps nothing then.
+  const here = useRef(true);
+  useEffect(() => {
+    here.current = true;
+    return () => {
+      here.current = false;
+    };
+  }, []);
+  // The family's lessons, read again as the page moves, so a lesson just made or saved is listed.
+  const family = useLessons(
+    conversations,
+    route.kind === "lesson" ? `lesson ${route.conversation}` : route.kind,
+  );
 
   // The first sign-in's language is the one on screen then; a later pick moves the screens without
   // reading /me again.
@@ -590,8 +617,16 @@ function SignedIn({
   };
 
   /** Makes the conversation, keeps the words for its page, and opens it there. */
+  /** The signed-in account, whose draft alone the first screen reads back (newLesson/draft.ts). */
+  const owner = view.kind === "ready" ? (view.me.account?.id ?? null) : null;
+
   const start = async (ask: LessonAsk): Promise<void> => {
+    // The send cleared the tab's draft; a send that does not start keeps the words again.
+    const keepDraft = (): void => {
+      if (here.current) newLessonDraft.put({ owner, text: ask.text, learner: ask.learner });
+    };
     if (engine === null) {
+      keepDraft();
       setSoon(true);
       return;
     }
@@ -604,11 +639,14 @@ function SignedIn({
         has_learner: ask.learner !== null,
       });
       firstMessage.put(made.id, ask.text);
+      // Started: the words now wait for the workspace, not the first screen.
+      newLessonDraft.clear();
       setStarting("idle");
       setKept("");
       navigate(lessonPath({ conversation: made.id, lang: pageLang() }));
     } catch (error) {
       setStarting("idle");
+      keepDraft();
       if (error instanceof ApiError && error.type === "AiConsentMissing") setConsentFor(ask);
       else setStarting("failed");
     }
@@ -619,21 +657,6 @@ function SignedIn({
     return (
       <ParentPage>
         <Failed language={language} />
-      </ParentPage>
-    );
-
-  const pod = view.me.pod;
-  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
-    return (
-      <ParentPage>
-        <ConsentScreen
-          language={language}
-          onAgree={async () => {
-            await pods.patchPod(pod.id, { ai_consented: true });
-            load();
-          }}
-          onLater={() => setLater(true)}
-        />
       </ParentPage>
     );
 
@@ -648,6 +671,7 @@ function SignedIn({
       language={language}
       learners={learners}
       place={place}
+      hasLessons={Array.isArray(family.rows) && family.rows.length > 0}
       trail={trail}
       onAddChild={() => setAdding("plus")}
       onSignOut={onSignOut}
@@ -661,6 +685,25 @@ function SignedIn({
       />
     </ParentShell>
   );
+
+  // The pod's consent to the AI, once, right after the first sign-in: inside the shell at the
+  // parent's density, as it is when a send asks for it (dl-uukj.47.25).
+  const pod = view.me.pod;
+  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
+    return shell(
+      { kind: "lessons" },
+      newLesson,
+      <div className="mx-auto flex w-full max-w-jw-shell-box flex-col px-4 py-10" data-consent-page>
+        <ConsentScreen
+          language={language}
+          onAgree={async () => {
+            await pods.patchPod(pod.id, { ai_consented: true });
+            load();
+          }}
+          onLater={() => setLater(true)}
+        />
+      </div>,
+    );
 
   // Keeping the tab's attempt with no child yet: the page asks for one before anything else.
   if (pending !== null && learners.length === 0)
@@ -712,7 +755,12 @@ function SignedIn({
         { kind: "lessons" },
         [{ label: t("parent_nav_lessons") }],
         <ParentPage>
-          <LessonsTable language={language} learners={learners} list={conversations} />
+          <LessonsTable
+            language={language}
+            learners={learners}
+            lessons={family.rows}
+            onArchive={family.archive}
+          />
         </ParentPage>,
       );
     case "lesson": {
@@ -827,6 +875,7 @@ function SignedIn({
               busy={starting === "busy"}
               problem={starting === "failed" ? t("parent_start_failed") : null}
               initialText={kept}
+              owner={owner}
             />
           )}
           {soon && (

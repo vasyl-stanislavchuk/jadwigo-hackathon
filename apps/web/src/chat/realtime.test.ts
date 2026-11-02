@@ -70,7 +70,7 @@ describe("supabaseLive (dl-z5ja.65, dl-z5ja.92)", () => {
   it("a refused join refreshes and joins again, once", async () => {
     const f = fakeClient(["CHANNEL_ERROR", "CHANNEL_ERROR"]);
     let refreshes = 0;
-    const ups: boolean[] = [];
+    const ups: string[] = [];
     const live = supabaseLive(
       f.client,
       async () => "jwt",
@@ -87,8 +87,20 @@ describe("supabaseLive (dl-z5ja.65, dl-z5ja.92)", () => {
       "subscribe → CHANNEL_ERROR",
     ]);
     expect(f.log.filter((l) => l === "removeChannel")).toHaveLength(1);
-    // The second refusal is the connection down, not a third try.
-    expect(ups).toEqual([false]);
+    // The second refusal is the channel's error, not a third try.
+    expect(ups).toEqual(["error"]);
+  });
+
+  it("a timeout is the channel down, and a join after it brings it up (dl-uukj.47.29)", async () => {
+    const f = fakeClient(["TIMED_OUT", "SUBSCRIBED"]);
+    const links: string[] = [];
+    const live = supabaseLive(f.client, async () => "jwt");
+    live.onConnection((link) => links.push(link));
+    live.subscribe("run:run_a", () => {});
+    await flush();
+    live.subscribe("run:run_b", () => {});
+    await flush();
+    expect(links).toEqual(["down", "up"]);
   });
 
   it("a broadcast is a poke, and unsubscribing leaves the channel", async () => {

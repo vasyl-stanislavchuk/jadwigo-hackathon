@@ -10,17 +10,10 @@ import { type FindingLevel, type LessonCheckView, toolViewData } from "@jadwigo/
 import type { VerbName } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
-import {
-  CalendarDays,
-  ClipboardCheck,
-  type LucideIcon,
-  PencilLine,
-  Search,
-  Target,
-} from "lucide-react";
 import type { ReactElement } from "react";
 import { GoalLists } from "../../parent/learner/GoalLists.tsx";
 import { WeekStrip } from "../../parent/learner/WeekStrip.tsx";
+import { TOOL_ICON } from "../toolLine.ts";
 
 export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 
@@ -29,11 +22,10 @@ interface Props<T> {
   language: Language;
 }
 
-/** One verb's widget: its title and icon, how it reads the view, and how it draws it. */
+/** One verb's widget: its title, how it reads the view, and how it draws it (its icon is TOOL_ICON). */
 interface WidgetEntry<T> {
   verb: VerbName;
   title: CopyKey;
-  icon: LucideIcon;
   read(data: unknown): T | null;
   Widget(props: Props<T>): ReactElement;
   /** Drawn in view under the folded tool lines, not inside the fold. */
@@ -44,7 +36,6 @@ interface WidgetEntry<T> {
 interface Registered {
   verb: VerbName;
   title: CopyKey;
-  icon: LucideIcon;
   keepVisible: boolean;
   draw(data: unknown, language: Language): ReactElement | null;
 }
@@ -54,7 +45,6 @@ function register<T>(entry: WidgetEntry<T>): Registered {
   return {
     verb: entry.verb,
     title: entry.title,
-    icon: entry.icon,
     keepVisible: entry.keepVisible ?? false,
     draw(data, language) {
       const read = entry.read(data);
@@ -103,7 +93,6 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
   lesson_check: register({
     verb: "lesson_check",
     title: "chat_tool_lesson_check",
-    icon: ClipboardCheck,
     read: (data) => toolViewData("lesson_check", data),
     Widget: ({ data, language }) => <Findings view={data} language={language} />,
     keepVisible: true,
@@ -111,7 +100,6 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
   lesson_edit: register({
     verb: "lesson_edit",
     title: "chat_tool_lesson_edit",
-    icon: PencilLine,
     read: (data) => toolViewData("lesson_edit", data),
     Widget: ({ data, language }) => (
       <ul className="flex flex-wrap gap-1">
@@ -127,7 +115,6 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
   question_search: register({
     verb: "question_search",
     title: "chat_search_sets",
-    icon: Search,
     read: (data) => toolViewData("question_search", data),
     Widget: ({ data, language }) =>
       data.sets.length === 0 ? (
@@ -148,7 +135,6 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
   learner_skills: register({
     verb: "learner_skills",
     title: "chat_tool_learner_skills",
-    icon: Target,
     read: (data) => toolViewData("learner_skills", data),
     Widget: ({ data, language }) => (
       <GoalLists goals={data.goals} catalogue={data.skills} language={language} />
@@ -158,7 +144,6 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
   learner_week: register({
     verb: "learner_week",
     title: "chat_tool_learner_week",
-    icon: CalendarDays,
     read: (data) => toolViewData("learner_week", data),
     Widget: ({ data, language }) => (
       <WeekStrip
@@ -192,7 +177,7 @@ export function toolResult(tool: ToolItem, language: Language): ToolResult {
   if (entry !== undefined && tool.view !== undefined && tool.view.kind === tool.verb) {
     const drawn = entry.draw(tool.view.data, language);
     if (drawn !== null) {
-      const Icon = entry.icon;
+      const Icon = TOOL_ICON[tool.verb];
       return {
         kind: "widget",
         keepVisible: entry.keepVisible,
@@ -213,19 +198,26 @@ export function toolResult(tool: ToolItem, language: Language): ToolResult {
     }
   }
   if (tool.view === undefined && tool.input === undefined && tool.output === undefined) return null;
-  return { kind: "plain", element: <PlainCard tool={tool} language={language} /> };
+  return { kind: "plain", element: <ToolDetails tool={tool} language={language} /> };
 }
 
 /**
- * "Step details": what Jadwigo AI sent the verb and what came back, one tap away (dl-z5ja.68).
- * What came back is the call's output, or its view when the log holds no output.
+ * "Szczegóły": what Jadwigo AI sent the verb and what came back, one more tap under an opened
+ * tool line (dl-z5ja.68, dl-uukj.47.30). What came back is the call's output, or its view when the
+ * log holds no output.
  */
-function PlainCard({ tool, language }: { tool: ToolItem; language: Language }): ReactElement {
+export function ToolDetails({
+  tool,
+  language,
+}: {
+  tool: ToolItem;
+  language: Language;
+}): ReactElement {
   const say = (key: CopyKey) => copy(language, key, {}, "adult");
   const back = tool.output !== undefined ? tool.output : (tool.view?.data ?? null);
   return (
     <details data-card="plain" data-tool={tool.verb} className="text-sm">
-      <summary>{say("chat_card_details")}</summary>
+      <summary className="cursor-pointer">{say("chat_tool_details")}</summary>
       {tool.input !== undefined && (
         <>
           <p className="text-muted-foreground text-xs">{say("chat_card_input")}</p>

@@ -31,14 +31,6 @@ export const CATALOG = {
     surfaces: ["site"],
     props: { locale },
   },
-  lesson_filter_applied: {
-    question: "Which of the gallery's filters do visitors use?",
-    surfaces: ["site"],
-    props: {
-      locale,
-      filter: { kind: "enum", values: ["grade", "subject"], meaning: "the filter changed" },
-    },
-  },
   hero_question_answered: {
     question: "Do visitors try the landing page's example question?",
     surfaces: ["site"],

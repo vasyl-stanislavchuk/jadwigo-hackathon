@@ -3,6 +3,8 @@
 # The hero is the h1 and one question to answer: no lead line, no buttons (owner, 2026-10-31, dl-5ssh.4.9).
 # Lines below marked "draft" are the design handoff "landing 3" drafts (2026-11-01), for the native review.
 hero:
+  # Beside the h1 until its picture exists (owner, 2026-11-02: less text on top; dl-5ssh.4.46).
+  pic: ilustracja · Jadwiga i jej dwór z piórnika przy stole
   # A grade 3 two-step word problem: the owner found "2 razy 7" too simple for a 9-10-year-old (draft).
   # 36 is "forgot to take away", 45 is "added instead". The source is not confirmed yet.
   question:
@@ -170,17 +172,14 @@ lessons:
   row:
     heading: Zagraj bez logowania
     gradeLabel: Klasa
-    subjectLabel: Przedmiot
-    allSubjects: Wszystkie
-    count: [lekcja, lekcje, lekcji]
-    prev: Poprzednie lekcje
-    next: Kolejne lekcje
-    none: Nie ma jeszcze lekcji dla tej klasy.
     pic: ilustracja
     pics:
-      rowneGrupy: Linijka pilnuje dwóch równych rzędów ciastek, Jadwiga czeka na werdykt.
-      piatki: Jadwiga toczy monetę wielką jak ona w stronę czekolady.
-      razyCztery: Ołówek narysował dwa kotki, a Jadwiga dorysowuje dwa kolejne.
+      cukier: Jadwiga zdejmuje kostkę cukru z wieży, a Gumka mdleje z wrażenia.
+      nalesnik: Linijka sprawdza naleśnik pokrojony na cztery równe części, a Jadwiga trzyma ćwiartkę jak tarczę.
+      skoki: Linijka leży jak oś liczbowa, a Jadwiga skacze po niej od kreski do kreski.
+      mierzenie: Linijka mierzy Ołówka, któremu właśnie odpadł czubek, a Jadwiga czeka na swoją kolej.
+      czekolada: Jadwiga dzieli tabliczkę czekolady i podaje Gumce cały rząd kostek.
+      spacer: Jadwiga ziewa i obchodzi brzeg zamalowanego prostokąta w zeszycie w kratkę.
 signIn:
   title: Zaloguj się · Jadwigo
   description: Zaloguj się albo załóż konto rodzica w Jadwigo kodem z e-maila, przez Google albo przez Facebooka.

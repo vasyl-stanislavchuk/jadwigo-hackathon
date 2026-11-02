@@ -1,4 +1,5 @@
 import type { ConversationClient } from "@jadwigo/api-client";
+import { LearnerId } from "@jadwigo/contracts";
 import {
   type Conversation,
   ConversationId,
@@ -40,7 +41,7 @@ function server(name: string) {
       calls.push(
         body.kind === "steer"
           ? `steer ${id} ${body.source} ${body.question_ids?.join(",")} ${body.text}`
-          : `message ${id} ${body.text}`,
+          : `message ${id} ${body.text}${body.context === undefined ? "" : ` ${JSON.stringify(body.context)}`}`,
       );
       state.posted = true;
       return { run };
@@ -157,5 +158,17 @@ describe("the routes transport (dl-z5ja.65)", () => {
     expect(s.calls).toContain(
       `steer ${SERVER} lesson_edit s02 Rodzic prosi o zmianę w kroku s02: …`,
     );
+  });
+
+  it("carries a message's page as its context, and none when it has none (dl-uukj.47.12)", async () => {
+    const s = server("happy-turn");
+    const transport = routesTransport(s.api, s.live, s.storage);
+    const { result } = renderHook(() => useConversation(transport, LOCAL));
+    await settle();
+    const learner_id = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+    await act(async () => result.current.send("Dodawanie do 20.", { learner_id }));
+    expect(s.calls).toContain(`message ${SERVER} Dodawanie do 20. {"learner_id":"${learner_id}"}`);
+    await act(async () => result.current.send("Jeszcze jedno."));
+    expect(s.calls).toContain(`message ${SERVER} Jeszcze jedno.`);
   });
 });
