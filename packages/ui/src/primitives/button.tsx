@@ -10,7 +10,7 @@
 // writes the reason beside it. Its border is Zeszyt's line width, 2 px, and 1 px in that density.
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
-import type * as React from "react";
+import * as React from "react";
 import { PAGE_FOCUS, type Register, useRegister } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 
@@ -63,18 +63,21 @@ const buttonVariants = cva(
   },
 );
 
-function Button({
-  className,
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  Omit<VariantProps<typeof buttonVariants>, "register"> & { asChild?: boolean }) {
+type ButtonProps = React.ComponentPropsWithoutRef<"button"> &
+  Omit<VariantProps<typeof buttonVariants>, "register"> & { asChild?: boolean };
+
+// It takes a ref (dl-uukj.47.46): a Radix trigger built with asChild around it (PopoverTrigger,
+// DropdownMenuTrigger) passes one through Slot, and on React 18 a plain function component drops
+// it, so the popover never measures its anchor and stays unplaced.
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  { className, variant = "default", size = "default", asChild = false, ...props },
+  ref,
+) {
   const Comp = asChild ? Slot.Root : "button";
   const register = useRegister();
   return (
     <Comp
+      ref={ref}
       data-slot="button"
       data-variant={variant}
       data-size={size}
@@ -82,6 +85,6 @@ function Button({
       {...props}
     />
   );
-}
+});
 
 export { Button, buttonVariants };

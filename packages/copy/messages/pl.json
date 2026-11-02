@@ -1070,5 +1070,10 @@
   "parent_source_authored": "Napisane przez Jadwigo AI",
   "parent_step_move_up": "Przenieś wyżej",
   "parent_step_move_down": "Przenieś niżej",
-  "parent_step_drop": "Usuń"
+  "parent_step_drop": "Usuń",
+  "parent_give_title": "Jak dać lekcję?",
+  "parent_this_computer": "Otwórz na tym komputerze",
+  "parent_print": "Wydrukuj",
+  "parent_print_hint": "Kartka z zadaniami, bez odpowiedzi",
+  "parent_this_computer_soon": "Otwieranie lekcji na komputerze jest w drodze."
 }
