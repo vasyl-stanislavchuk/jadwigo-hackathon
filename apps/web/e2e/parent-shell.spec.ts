@@ -53,7 +53,9 @@ const box = async (page: Page, selector: string) => {
 
 test.beforeEach(({ page }) => agreeToAi(page));
 
-test("one 56 px line runs across the logo row and the top bar, which holds the breadcrumb only", async ({
+// The top bar holds the breadcrumb and, in its right corner, the account (decision dl-hz9ks,
+// 2026-11-02, amending dl-xo0q): on the first screen the account is its one button.
+test("one 56 px line runs across the logo row and the top bar: the breadcrumb, then the account", async ({
   page,
 }) => {
   await signIn(page);
@@ -62,7 +64,9 @@ test("one 56 px line runs across the logo row and the top bar, which holds the b
   expect(Math.round(bar.height)).toBe(56);
   expect(Math.round(logoRow.height)).toBe(56);
   expect(Math.round(logoRow.y + logoRow.height)).toBe(Math.round(bar.y + bar.height));
-  await expect(page.locator("[data-top-bar]").getByRole("button")).toBeHidden();
+  const buttons = page.locator("[data-top-bar]").getByRole("button");
+  await expect(buttons).toHaveCount(2); // the phone's menu (hidden here) and the account
+  await expect(buttons.filter({ visible: true })).toHaveText(["Konto i ustawienia"]);
   await expect(page.getByRole("navigation", { name: "Gdzie jesteś" })).toContainText(
     "Lekcje/Nowa lekcja",
   );
