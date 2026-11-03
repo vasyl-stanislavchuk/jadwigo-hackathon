@@ -1113,6 +1113,7 @@ export const COPY_KEYS = [
   "chat_copy_support",
   "chat_stopped_none",
   "chat_stopped_some",
+  "chat_stopped_before",
   "chat_send_disabled",
   "chat_queue_label",
   "chat_queue_now",

@@ -1439,6 +1439,7 @@
   "chat_copy_support": "Copy details for support",
   "chat_stopped_none": "Stopped. The lesson is unchanged.",
   "chat_stopped_some": "Stopped. The lesson has what I managed to change.",
+  "chat_stopped_before": "Stopped.",
   "chat_send_disabled": "Type something or add a photo.",
   "chat_queue_label": "I'll send this when I'm done",
   "chat_queue_now": "Send now",

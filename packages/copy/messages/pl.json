@@ -1505,6 +1505,7 @@
   "chat_copy_support": "Kopiuj szczegóły dla pomocy",
   "chat_stopped_none": "Zatrzymane. Lekcja została bez zmian.",
   "chat_stopped_some": "Zatrzymane. W lekcji jest to, co zdążyłam zmienić.",
+  "chat_stopped_before": "Zatrzymane.",
   "chat_send_disabled": "Napisz coś albo dodaj zdjęcie.",
   "chat_queue_label": "Wyślę, gdy skończę",
   "chat_queue_now": "Wyślij teraz",
