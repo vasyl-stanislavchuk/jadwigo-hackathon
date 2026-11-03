@@ -24,7 +24,7 @@ import type { ReactElement } from "react";
 import { GoalLists } from "../../parent/learner/GoalLists.tsx";
 import { WeekStrip } from "../../parent/learner/WeekStrip.tsx";
 import type { ObjectRef } from "../objects/ref.ts";
-import { TOOL_ICON } from "../toolLine.ts";
+import { TOOL_ICON } from "../spine/lines.ts";
 
 export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 

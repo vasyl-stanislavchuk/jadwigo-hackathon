@@ -64,6 +64,9 @@ import {
   type Pod,
   type PodId,
   type PodPatch,
+  type PrintId,
+  type PrintStart,
+  type PrintStatus,
   type ReportCreate,
   type ReportPatch,
   ROUTES,
@@ -201,6 +204,17 @@ export interface LessonGiveClient {
 }
 
 /**
+ * The PDF of the conversation's checked lesson (dl-1eieq.8.4): started once, then asked about until
+ * it is ready. Needs a token. `waitForPrint` does both.
+ */
+export interface LessonPrintClient {
+  /** `ready` when this lesson was printed before, else `pending` while the print Lambda renders. */
+  startPrint(conversationId: ConversationId, body: PrintStart): Promise<PrintStatus>;
+  /** Where it stands; another pod's print is 404 `NotFound`. */
+  getPrint(printId: PrintId): Promise<PrintStatus>;
+}
+
+/**
  * A parent's conversation list and its delete, which archives (dl-z5ja.105, decision dl-84wo).
  * Each needs a token.
  */
@@ -242,6 +256,7 @@ export type Client = AttemptClient &
   ConversationClient &
   ConversationListClient &
   LessonGiveClient &
+  LessonPrintClient &
   RunRatingClient &
   AttachmentClient;
 
@@ -358,8 +373,33 @@ export function createClient({
       call(ROUTES.listRunEvents, { id: runId }, undefined, { after }),
     cancelRun: (runId, body) => call(ROUTES.cancelRun, { id: runId }, body),
     giveLesson: (conversationId, body) => call(ROUTES.giveLesson, { id: conversationId }, body),
+    startPrint: (conversationId, body) => call(ROUTES.startPrint, { id: conversationId }, body),
+    getPrint: (printId) => call(ROUTES.getPrint, { id: printId }, undefined),
     rateRun: (runId, body) => call(ROUTES.rateRun, { id: runId }, body),
     createAttachment: (body) => call(ROUTES.createAttachment, {}, body),
     getAttachment: (attachmentId) => call(ROUTES.getAttachment, { id: attachmentId }, undefined),
   };
+}
+
+/** How long `waitForPrint` waits between asks, and how many asks it makes before it gives up. */
+const PRINT_POLL_MS = 1000;
+const PRINT_POLLS = 45;
+
+/**
+ * Starts the conversation's print and asks about it once a second until it is `ready` or
+ * `failed`, for at most 45 asks; past that it answers the last `pending`, and the page says the
+ * print is taking too long. `sleep` is the wait, so a test passes one that returns at once.
+ */
+export async function waitForPrint(
+  client: LessonPrintClient,
+  conversationId: ConversationId,
+  body: PrintStart,
+  sleep: (ms: number) => Promise<void> = (ms) => new Promise((done) => setTimeout(done, ms)),
+): Promise<PrintStatus> {
+  let status = await client.startPrint(conversationId, body);
+  for (let ask = 0; status.status === "pending" && ask < PRINT_POLLS; ask++) {
+    await sleep(PRINT_POLL_MS);
+    status = await client.getPrint(status.print_id);
+  }
+  return status;
 }
