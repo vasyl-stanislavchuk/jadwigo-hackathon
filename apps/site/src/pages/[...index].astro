@@ -45,7 +45,11 @@ const [one, two, three] = words.steps.items;
   {/* How it works as one path of 3 steps, then one question to try, above the lessons (owner,
       2026-11-02, dl-5ssh.4.46, dl-5ssh.4.49, dl-5ssh.4.50). The words are /jak-to-dziala's own steps. */}
   <section class="how wrap" aria-labelledby="how-title">
-    <h2 id="how-title">{words.steps.heading}</h2>
+    {/* Each section opens with its line to the parent, then the child's own artefact (dl-w0b4.123). */}
+    <div class="opener">
+      <h2 id="how-title">{words.steps.heading}</h2>
+      <p>{words.steps.lead}</p>
+    </div>
     <StepPath
       steps={[
         { who: one?.who ?? "", title: one?.title ?? "", text: one?.text ?? "", turn: "parent" },
@@ -62,7 +66,10 @@ const [one, two, three] = words.steps.items;
     {
       lessons.length > 0 ? (
         <Gallery lang={lang} lessons={lessons} row>
-          <h2 id="lessons-title">{words.lessons.row.heading}</h2>
+          <div class="opener">
+            <h2 id="lessons-title">{words.lessons.row.heading}</h2>
+            <p>{words.lessons.row.text}</p>
+          </div>
         </Gallery>
       ) : (
         <>
@@ -120,6 +127,10 @@ const [one, two, three] = words.steps.items;
     list-style: none; margin: 1.75rem 0 0; padding: 0;
     display: grid; gap: 1.5rem 2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   }
-  .promises h3 { font-size: 1.05rem; }
+  /* Section headings on the adult scale, as in the app (dl-w0b4.124): h2 28 (26 on a phone), h3 22. */
+  h2 { font-size: var(--jw-page-h1); }
+  h3 { font-size: var(--jw-page-h2); }
+  .opener { display: grid; gap: 0.5rem; }
+  .opener p { max-width: 38rem; color: var(--jw-ink-soft); font-size: 1.15rem; }
   .promises p { margin-top: 0.35rem; color: var(--jw-ink-soft); font-size: 0.98rem; }
 </style>
