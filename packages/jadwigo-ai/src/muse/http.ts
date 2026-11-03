@@ -39,6 +39,16 @@ import { mapStrings, outbound } from "./tiers.ts";
 
 const MUSE_BASE_URL = "https://api.meta.ai/v1";
 export const CONTRIBUTOR_MODEL = "muse-spark-1.3-contributor";
+/**
+ * Reasoning counts against this cap and takes most of it: a probe spent 2974 of 4000 tokens on it
+ * before writing a word, so 4000 cut off a response of several edits (dl-hin8.43).
+ */
+const MAX_OUTPUT_TOKENS = 12_000;
+/**
+ * How long an attempt may go with no event before it is aborted. Muse sends nothing while it
+ * reasons: at about 150 tokens a second, a full cap of reasoning is 80 s of healthy silence.
+ */
+const NO_DATA_MS = 120_000;
 
 /** USD per 1M tokens. The contributor's is `jw.muse.PRICES` (its model card, 2026-10-28). */
 export interface Price {
@@ -78,11 +88,14 @@ export interface HttpMuseOptions {
   batch_chars?: number;
   effort?: "low" | "medium" | "high";
   max_output_tokens?: number;
+  no_data_ms?: number;
 }
 
 /** A failed attempt: why, what it cost, whether another may follow, and whether it was a 429. */
 class Attempt extends Error {
   constructor(
+    /** What went wrong, from code: safe to log, unlike the message. */
+    readonly code: string,
     message: string,
     readonly usage: ModelUsage,
     readonly retry: boolean,
@@ -124,6 +137,7 @@ export class HttpMuse implements MuseClient {
     let spent = 0;
     let usage = NO_USAGE;
     let last = "";
+    let code = "failed";
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       await this.#o.budget(request.tag, spent);
       const live = this.#liveFor(request, guard);
@@ -140,12 +154,13 @@ export class HttpMuse implements MuseClient {
         usage = add(usage, error.usage);
         spent = round6(spent + this.#cost(model, error.usage));
         last = error.message;
+        code = error.code;
         // The page has text from this attempt; a retry would show it twice.
         if (!error.retry || live.emitted || attempt === attempts - 1) break;
         await this.#o.sleep((error.rate_limited ? 15_000 : 2_000) * (attempt + 1));
       }
     }
-    throw new MuseFailed(last, spent, usage, this.#tierOf(model));
+    throw new MuseFailed(last, spent, usage, this.#tierOf(model), code);
   }
 
   /** The tier `model` serves: the contributor model is `contributor`, any other `private`. */
@@ -205,6 +220,32 @@ export class HttpMuse implements MuseClient {
     guard: PromptGuard | null,
     live: Live,
   ): Promise<MuseResponse> {
+    const silence = new AbortController();
+    const noDataMs = this.#o.no_data_ms ?? NO_DATA_MS;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const heard = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => silence.abort(), noDataMs);
+      timer.unref?.();
+    };
+    heard();
+    try {
+      return await this.#stream(model, request, guard, live, silence.signal, heard);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async #stream(
+    model: string,
+    request: MuseRequest,
+    guard: PromptGuard | null,
+    live: Live,
+    signal: AbortSignal,
+    heard: () => void,
+  ): Promise<MuseResponse> {
+    const silent = () =>
+      new Attempt("timeout", `no data for ${this.#o.no_data_ms ?? NO_DATA_MS} ms`, NO_USAGE, true);
     let res: Response;
     try {
       res = await this.#o.fetch(`${this.#o.base_url ?? MUSE_BASE_URL}/responses`, {
@@ -215,38 +256,70 @@ export class HttpMuse implements MuseClient {
           accept: "text/event-stream",
         },
         body: JSON.stringify(bodyFor(model, request, this.#o)),
+        signal,
       });
     } catch (error) {
-      throw new Attempt(`unreachable: ${(error as Error).message}`, NO_USAGE, true);
+      if (signal.aborted) throw silent();
+      throw new Attempt("unreachable", `unreachable: ${(error as Error).message}`, NO_USAGE, true);
     }
     if (!res.ok || res.body === null) {
       const text = (await res.text().catch(() => "")).slice(0, 300);
       const limited = res.status === 429;
       const retry = limited || res.status >= 500 || res.ok;
-      throw new Attempt(`http ${res.status}: ${text}`, NO_USAGE, retry, limited);
+      throw new Attempt(
+        `http_${res.status}`,
+        `http ${res.status}: ${text}`,
+        NO_USAGE,
+        retry,
+        limited,
+      );
     }
     let text = "";
     let done: Record<string, unknown> | null = null;
     let failed = "";
     const items: Record<string, unknown>[] = [];
-    for await (const event of sse(res.body)) {
-      const type = event["type"];
-      if (type === "response.output_text.delta" && typeof event["delta"] === "string") {
-        text += event["delta"];
-        live.push(event["delta"]);
-      } else if (type === "response.output_item.done" && isObject(event["item"])) {
-        items.push(event["item"]);
-      } else if (type === "response.completed") {
-        done = isObject(event["response"]) ? event["response"] : {};
-      } else if (type === "response.failed" || type === "response.incomplete") {
-        const r = isObject(event["response"]) ? event["response"] : {};
-        throw new Attempt(`${type}: ${reasonOf(r)}`, usageOf(r), true, rateLimited(reasonOf(r)));
-      } else if (type === "error") {
-        failed = JSON.stringify(event).slice(0, 300);
+    try {
+      for await (const event of sse(res.body, signal)) {
+        heard();
+        const type = event["type"];
+        if (type === "response.output_text.delta" && typeof event["delta"] === "string") {
+          text += event["delta"];
+          live.push(event["delta"]);
+        } else if (type === "response.output_item.done" && isObject(event["item"])) {
+          items.push(event["item"]);
+        } else if (type === "response.completed") {
+          done = isObject(event["response"]) ? event["response"] : {};
+        } else if (type === "response.failed" || type === "response.incomplete") {
+          const r = isObject(event["response"]) ? event["response"] : {};
+          throw new Attempt(
+            codeOf(type, r),
+            `${type}: ${reasonOf(r)}`,
+            usageOf(r),
+            true,
+            rateLimited(reasonOf(r)),
+          );
+        } else if (type === "error") {
+          failed = JSON.stringify(event).slice(0, 300);
+        }
       }
+    } catch (error) {
+      if (error instanceof Attempt) throw error;
+      if (signal.aborted) throw silent();
+      throw new Attempt(
+        "stream_failed",
+        `the stream broke: ${(error as Error).message}`,
+        NO_USAGE,
+        true,
+      );
     }
+    if (signal.aborted) throw silent();
     if (done === null) {
-      throw new Attempt(failed || "the stream ended with no response.completed", NO_USAGE, true);
+      throw new Attempt(
+        failed ? "failed" : "stream_ended",
+        failed || "the stream ended with no response.completed",
+        NO_USAGE,
+        true,
+      );
     }
     live.end();
     const output = Array.isArray(done["output"]) ? done["output"].filter(isObject) : items;
@@ -254,7 +327,7 @@ export class HttpMuse implements MuseClient {
     const usage = usageOf(done);
     const restoreText = (s: string) => (guard ? guard.restore(s) : s);
     const calls = toolCalls(output.length > 0 ? output : items, restoreText);
-    if (typeof calls === "string") throw new Attempt(calls, usage, false);
+    if (typeof calls === "string") throw new Attempt("bad_tool_call", calls, usage, false);
     return {
       response_id: typeof done["id"] === "string" ? done["id"] : "",
       model: typeof done["model"] === "string" ? done["model"] : model,
@@ -283,7 +356,7 @@ function bodyFor(model: string, request: MuseRequest, o: HttpMuseOptions): Recor
     store: false,
     prompt_cache_key: request.prompt_cache_key,
     reasoning: { effort: o.effort ?? "low" },
-    max_output_tokens: o.max_output_tokens ?? 4000,
+    max_output_tokens: o.max_output_tokens ?? MAX_OUTPUT_TOKENS,
   };
 }
 
@@ -313,11 +386,16 @@ function inputItem(item: MuseInput): Record<string, unknown> {
 }
 
 /** The `data:` records of a server-sent event stream, as JSON objects. */
-async function* sse(body: ReadableStream<Uint8Array>): AsyncGenerator<Record<string, unknown>> {
+async function* sse(
+  body: ReadableStream<Uint8Array>,
+  signal: AbortSignal,
+): AsyncGenerator<Record<string, unknown>> {
   const decoder = new TextDecoder();
   let pending = "";
   let event = "";
   const reader = body.getReader();
+  // A silent stream's pending read ends here, whichever fetch made it.
+  signal.addEventListener("abort", () => reader.cancel().catch(() => undefined), { once: true });
   const lineOut = (line: string): Record<string, unknown> | null => {
     if (line.startsWith("event:")) {
       event = line.slice(6).trim();
@@ -359,6 +437,15 @@ function usageOf(response: Record<string, unknown>): ModelUsage {
     output_tokens: num(u["output_tokens"]),
     cached_tokens: num(details["cached_tokens"]),
   };
+}
+
+/** A failed or incomplete response's code. The provider's reason is a word of its own, never text. */
+function codeOf(type: string, response: Record<string, unknown>): string {
+  if (type === "response.failed") return "failed";
+  const details = response["incomplete_details"];
+  return isObject(details) && details["reason"] === "max_output_tokens"
+    ? "max_output_tokens"
+    : "incomplete";
 }
 
 function reasonOf(response: Record<string, unknown>): string {
