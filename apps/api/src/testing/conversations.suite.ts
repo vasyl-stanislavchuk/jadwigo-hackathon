@@ -5,6 +5,7 @@
 import { randomUUID } from "node:crypto";
 import {
   type AccountId,
+  type AttemptSnapshot,
   type Conversation,
   type ConversationRuns,
   type Conversations,
@@ -712,7 +713,7 @@ export function conversationSuite(
         expect(given.status).toBe(201);
         expect(given.body.assignment).toMatchObject({
           pod_id: a.pod,
-          audience: "learners",
+          audience: "anyone",
           identity: "pick",
           lesson_id: given.body.lesson_version.lesson_id,
         });
@@ -728,6 +729,32 @@ export function conversationSuite(
         expect(theirs.status).toBe(201);
         expect(theirs.body.assignment.id).not.toBe(given.body.assignment.id);
         expect(theirs.body.lesson_version.id).toBe(given.body.lesson_version.id);
+      });
+
+      it("gives a link anyone holding it may start: with a name, with none, or as the child", async () => {
+        const a = await parent();
+        const d = await drafted(a);
+        await d.write();
+        await d.checked(true);
+        const child = await a.call<LearnerSnapshot>("POST", pathOf("createLearner", {}), {
+          first_name: "Fox",
+        });
+        const open = (await d.give()).body.assignment.id;
+        const named = (await d.give({ learner_id: child.body.learner.id })).body.assignment.id;
+        const start = (id: string, body: object) =>
+          a.call<AttemptSnapshot>("POST", pathOf("startAttempt", { id }), body);
+
+        const anonymous = await start(open, {});
+        expect(anonymous.status).toBe(201);
+        expect(anonymous.body.attempt).toMatchObject({ learner_id: null, player_name: null });
+        const guest = await start(open, { player_name: "  Ola  " });
+        expect(guest.status).toBe(201);
+        expect(guest.body.attempt).toMatchObject({ learner_id: null, player_name: "Ola" });
+        const theirs = await start(named, { learner_id: child.body.learner.id });
+        expect(theirs.body.attempt.learner_id).toBe(child.body.learner.id);
+        // "To nie ja": a child's link still takes someone else, under their own name.
+        const other = await start(named, { player_name: "Ola" });
+        expect(other.body.attempt).toMatchObject({ learner_id: null, player_name: "Ola" });
       });
 
       it("refuses an unchecked, failed, superseded or too long revision", async () => {

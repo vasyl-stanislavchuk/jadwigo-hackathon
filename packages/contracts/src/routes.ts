@@ -17,6 +17,7 @@ import { Conversation, RunRating, RunRatingCreate } from "./run.ts";
 import {
   AccountCreate,
   AssignmentAttempts,
+  AssignmentIntro,
   AttachmentCreate,
   AttachmentRead,
   AttachmentUpload,
@@ -163,6 +164,20 @@ export const ROUTES = {
     tag: "lessons",
     description:
       "The one response that carries a key: the playground reviews Jadwigo's own examples, and Try it looks a free answer up in the key.",
+  },
+  getAssignmentIntro: {
+    method: "GET",
+    path: "/api/v1/assignments/{id}",
+    params: z.object({ id: AssignmentId }),
+    query: z.object({ learner_id: LearnerId.optional() }),
+    body: null,
+    response: AssignmentIntro,
+    status: 200,
+    auth: "none",
+    summary: "Reads what a play link's first screen says, before any attempt exists.",
+    tag: "attempts",
+    description:
+      "No sign-in: holding the link is the access. It names a learner's first name only when the link's `learner_id` is in the assignment's pod.",
   },
   startAttempt: {
     method: "POST",

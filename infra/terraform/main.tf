@@ -89,6 +89,7 @@ module "app" {
     "GET /api/health",
     "GET /api/v1/featured-lessons",
     "GET /api/v1/playground-examples/{language}",
+    "GET /api/v1/assignments/{id}",
     "POST /api/v1/assignments/{id}/attempts",
     "GET /api/v1/attempts/{id}",
     "PATCH /api/v1/attempts/{id}",

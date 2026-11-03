@@ -34,6 +34,7 @@ import {
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
 import { giveLesson } from "./give.ts";
+import { getAssignmentIntro } from "./intro.ts";
 import {
   createGoal,
   createReport,
@@ -227,6 +228,9 @@ export function createApp(
   // Public by design: no authorize(). It reads only Jadwigo's own pod's written playground
   // examples, which hold no learner's data (dl-w3.75).
   on("playgroundExamples", (params) => run((s) => playgroundExamples(s, params.language)));
+  on("getAssignmentIntro", (params) =>
+    run((s) => getAssignmentIntro(s, params.id, params.learner_id)),
+  );
   on("startAttempt", (params, body) => run((s) => startAttempt(s, params.id, body)));
   on("getAttempt", (params) => run((s) => getAttempt(s, params.id)));
   on("answer", (params, body) => run((s) => answer(s, params.id, body)));
