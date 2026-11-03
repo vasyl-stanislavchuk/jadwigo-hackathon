@@ -740,21 +740,73 @@ describe("runStep and drain", () => {
     expect(t.muse.calls).toHaveLength(3);
   });
 
-  it("takes the tools away at 40 tool calls, and ignores a call the model still names (dl-hin8.38)", async () => {
+  it("takes the tools away at 60 tool calls, and ignores a call the model still names (dl-hin8.38)", async () => {
     const show = { calls: [{ verb: "lesson_show" as const }] };
     const t = await setup(
-      [...Array.from({ length: 40 }, () => show), show, { text: "Here is what I have so far." }],
+      [...Array.from({ length: 60 }, () => show), show, { text: "Here is what I have so far." }],
       fakeVerbs(),
     );
     const run = await t.say("Go.");
     for (let i = 0; i < 5; i++) await drain(t.deps);
 
     const log = await t.log(run);
-    expect(log.filter((e) => e.type === "tool_result")).toHaveLength(40);
-    expect(t.muse.calls[39]?.tools.length).toBeGreaterThan(0);
-    expect(t.muse.calls[39]?.instructions).not.toContain("all the tool calls");
-    expect(t.muse.calls[40]?.tools).toEqual([]);
-    expect(t.muse.calls[40]?.instructions).toContain("all the tool calls");
+    expect(log.filter((e) => e.type === "tool_result")).toHaveLength(60);
+    expect(t.muse.calls[59]?.tools.length).toBeGreaterThan(0);
+    expect(t.muse.calls[59]?.instructions).not.toContain("all the tool calls");
+    expect(t.muse.calls[60]?.tools).toEqual([]);
+    expect(t.muse.calls[60]?.instructions).toContain("all the tool calls");
+  });
+
+  it("after the limit the turn ends completed, with the model's closing words (dl-hin8.42)", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    const t = await setup(
+      [...Array.from({ length: 60 }, () => show), { text: "Here is what I have so far." }],
+      fakeVerbs(),
+    );
+    const run = await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect((await t.run(run)).status).toBe("completed");
+    expect(t.muse.calls[60]?.instructions).toContain("never say you are doing or will do");
+    const said = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(said.at(-1)).toBe("Here is what I have so far.");
+  });
+
+  it("lets one response's batch pass the limit, then closes", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    const batch = { calls: Array.from({ length: 5 }, () => ({ verb: "lesson_show" as const })) };
+    const t = await setup(
+      [...Array.from({ length: 59 }, () => show), batch, { text: "Closing." }],
+      fakeVerbs(),
+    );
+    const run = await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect((await t.log(run)).filter((e) => e.type === "tool_result")).toHaveLength(64);
+    expect(t.muse.calls[60]?.tools).toEqual([]);
+  });
+
+  it("gives the tools back when the parent speaks after the limit", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    let shows = 0;
+    let say: (text: string) => Promise<unknown> = () => Promise.resolve();
+    const t = await setup(
+      [...Array.from({ length: 60 }, () => show), { text: "Done." }],
+      fakeVerbs({
+        lesson_show: async () => {
+          shows += 1;
+          if (shows === 60) await say("One more thing.");
+          return { output: {} };
+        },
+      }),
+    );
+    say = (text) => t.say(text);
+    await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect(t.muse.calls[60]?.tools.length).toBeGreaterThan(0);
   });
 
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
