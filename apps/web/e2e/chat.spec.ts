@@ -122,3 +122,64 @@ test("390: the lesson card brings Lekcja to the front", async ({ page }) => {
   await expect(chatOf(page)).toBeHidden();
   await expect(lessonOf(page).locator("[data-step]").first()).toBeVisible();
 });
+
+// The turn that ends in the lesson-ready card scrolls only the message list (dl-uukj.47.68): the
+// owner saw the whole window jump on a wide screen with the lesson closed, the composer left at the
+// top over blank space. A short window makes the scripted turn overflow the list, so the follow has
+// to scroll; every scroll during the turn is recorded, not just the end state, so a jump the page
+// later scrolls back still fails here.
+for (const [width, height] of [
+  [2000, 480],
+  [1280, 480],
+] as const) {
+  test(`${width}: the lesson-ready card lands with only the message list scrolled`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height });
+    await page.addInitScript(() => {
+      const moved: string[] = [];
+      (window as unknown as { __moved: string[] }).__moved = moved;
+      document.addEventListener(
+        "scroll",
+        (e) => {
+          const t = e.target;
+          if (t === document || t === document.documentElement || t === document.body) {
+            if (window.scrollY !== 0) moved.push(`window:${window.scrollY}`);
+            return;
+          }
+          if (!(t instanceof Element) || t.matches("ol[data-chat-list]")) return;
+          if (t.scrollTop !== 0) moved.push(`${t.tagName.toLowerCase()}:${t.scrollTop}`);
+        },
+        { capture: true },
+      );
+    });
+    await page.goto("/playground/workspace");
+    const card = chatOf(page).locator("[data-object-card='lesson']");
+    await expect(card).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator("[data-lesson-column]")).toBeHidden();
+    // Past the follow's smooth scroll.
+    await page.waitForTimeout(800);
+
+    const state = await page.evaluate(() => {
+      const list = document.querySelector("ol[data-chat-list]");
+      const ancestors: string[] = [];
+      for (let el = list?.parentElement ?? null; el !== null; el = el.parentElement)
+        if (el.scrollTop !== 0) ancestors.push(`${el.tagName.toLowerCase()}:${el.scrollTop}`);
+      return {
+        list: list?.scrollTop ?? 0,
+        scrollY: window.scrollY,
+        ancestors,
+        moved: (window as unknown as { __moved: string[] }).__moved,
+      };
+    });
+    // The list followed the turn down...
+    expect(state.list).toBeGreaterThan(0);
+    // ...and nothing else moved.
+    expect(state.scrollY).toBe(0);
+    expect(state.ancestors).toEqual([]);
+    expect(state.moved).toEqual([]);
+    await expect(card).toBeInViewport();
+    const box = await chatOf(page).getByRole("textbox").boundingBox();
+    expect(box && box.y + box.height <= height).toBe(true);
+  });
+}

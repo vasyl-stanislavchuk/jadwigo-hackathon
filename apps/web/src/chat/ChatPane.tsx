@@ -728,7 +728,8 @@ export function ChatPane({
   // Back to the composer once the form is answered.
   const wasAsking = useRef(false);
   useEffect(() => {
-    if (wasAsking.current && asking === null) composer.current?.focus();
+    // preventScroll: a focus scrolls the page's boxes to the field the way scrollIntoView does.
+    if (wasAsking.current && asking === null) composer.current?.focus({ preventScroll: true });
     wasAsking.current = asking !== null;
   }, [asking]);
   const context = contextClosed ? null : contextLine(turns, nameOf, language);
@@ -741,16 +742,19 @@ export function ChatPane({
   const [still] = useState(lessMotion);
   // The list follows Jadwigo AI to the bottom as it writes (design review 2026-11-02): a new row,
   // a reply that grows, the echo, the activity line. Only while the parent is at the bottom: one
-  // who scrolled up to read stays where they are until they come back down.
-  const end = useRef<HTMLLIElement>(null);
+  // who scrolled up to read stays where they are until they come back down. Only the list's own box
+  // moves: scrollIntoView scrolls every scrollable ancestor too, overflow-hidden ones and the window
+  // included, which left the composer at the top of a wide window over blank space (dl-uukj.47.68).
+  const list = useRef<HTMLOListElement>(null);
   const atBottom = useRef(true);
   const rowCount = turns.reduce((n, t) => n + t.view.chat.length, 0);
   const lastItem = turns.at(-1)?.view.chat.at(-1);
   const growth = lastItem?.kind === "message" ? lastItem.text.length : 0;
   const follow = `${rowCount}:${growth}:${pending ?? ""}:${phase?.kind ?? ""}`;
   useEffect(() => {
-    if (rowCount > 0 && atBottom.current)
-      end.current?.scrollIntoView?.({ block: "end", behavior: scrollBehavior() });
+    const box = list.current;
+    if (rowCount > 0 && atBottom.current && box !== null)
+      box.scrollTo?.({ top: box.scrollHeight, behavior: scrollBehavior() });
   }, [follow]);
   const last = turns.at(-1);
   const open = last !== undefined && isOpen(last);
@@ -800,7 +804,9 @@ export function ChatPane({
       {/* In the workspace the list reaches the panel's edges, so its scrollbar sits on the right
         edge, and pads its rows back in line with the composer. */}
       <ol
+        ref={list}
         aria-label={say("chat_messages")}
+        data-chat-list
         className={cn("flex flex-1 flex-col gap-3 overflow-y-auto", parent && "-mx-3 px-3")}
         onScroll={(e) => {
           const list = e.currentTarget;
@@ -905,7 +911,6 @@ export function ChatPane({
             />
           </li>
         )}
-        <li ref={end} aria-hidden className="-mt-3" />
       </ol>
       {turns.length === 0 && !restoring && !parent && (
         <div data-row="empty" className="flex flex-col gap-2">
