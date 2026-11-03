@@ -134,6 +134,24 @@ describe("the chat pane, one state per golden log", () => {
     expect(stopButton()).toBeNull();
   });
 
+  it("a turn stopped mid-call draws no reply row: its last sentence stays in the spine (dl-uukj.47.71.38)", () => {
+    // cancel-during-a-verb with the draft held: the model's sentence, then its call, then the stop.
+    const base = turnOf("cancel-during-a-verb");
+    const golden = (base.events ?? []).filter(
+      (e) => e.type !== "tool_result" && e.type !== "lesson_revision",
+    );
+    const said = RunEvent.parse({
+      ...golden[1],
+      seq: 3,
+      event_id: "00000000-0000-4000-8fff-000000000003",
+      type: "message",
+      payload: { from: "agent", text: "Układam lekcję z tych zadań." },
+    });
+    const events = [...golden.slice(0, 2), said, ...golden.slice(2)];
+    pane({ turns: [{ ...base, view: foldRun(events), events }] });
+    expect(document.querySelector("[data-reply]")).toBeNull();
+  });
+
   it("tool failed: the engine's own words never reach the thread (S3)", () => {
     pane({
       turns: [

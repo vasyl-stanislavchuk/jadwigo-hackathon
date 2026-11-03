@@ -209,19 +209,7 @@ export function spineOf(
     if (entries.length === 0) return LOOSE;
     return running() && current !== null ? current : NEXT;
   };
-  // The engine settles the plan as the turn ends: every stage not done reads failed (jadwigo-ai
-  // plan.ts `settlePlan`), a stopped or completed turn too. That says nothing about the stages, so
-  // the plan before it stands (dl-uukj.47.71.37).
-  const settles = new Set(
-    log.flatMap((e, i) => {
-      const next = log[i + 1];
-      return e.type === "plan" &&
-        next?.type === "status" &&
-        ["completed", "failed", "cancelled"].includes(next.payload.status)
-        ? [e.seq]
-        : [];
-    }),
-  );
+  const settles = settlesIn(log);
 
   for (const e of log) {
     switch (e.type) {
@@ -500,6 +488,44 @@ export function spineOf(
   };
 }
 
+/**
+ * The engine's settle, as jadwigo-ai plan.ts `settlePlan` writes it: every stage not done reads
+ * failed, or nothing when every stage is already done or failed.
+ */
+function settled(entries: readonly { status: string }[]): string[] | null {
+  if (entries.every((e) => e.status === "done" || e.status === "failed")) return null;
+  return entries.map((e) => (e.status === "done" ? "done" : "failed"));
+}
+
+/**
+ * The seqs of the plan events that are the engine's end-of-turn settle (dl-uukj.47.71.37). The
+ * settle says nothing about the stages, so the fold reads the plan before it. A plan event is one
+ * only when all 3 hold: it comes right before the turn's end status (`endTurn` writes them
+ * together); it is exactly `settlePlan` of the plan before it; and it is not the move a verb's
+ * result ends its stage with, which comes right after that result or its revision (`runTool`). The
+ * last keeps a check that failed and was then stopped (done, done, failed, no settle written) failed.
+ */
+function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
+  const found = new Set<number>();
+  let before: readonly { status: string }[] | null = null;
+  log.forEach((e, i) => {
+    if (e.type !== "plan") return;
+    const next = log[i + 1];
+    const prior = log[i - 1];
+    const atEnd =
+      next?.type === "status" && ["completed", "failed", "cancelled"].includes(next.payload.status);
+    const afterResult = prior?.type === "tool_result" || prior?.type === "lesson_revision";
+    const expected = before === null ? null : settled(before);
+    const same =
+      expected !== null &&
+      expected.length === e.payload.entries.length &&
+      e.payload.entries.every((entry, k) => entry.status === expected[k]);
+    if (atEnd && same && !afterResult) found.add(e.seq);
+    before = e.payload.entries;
+  });
+  return found;
+}
+
 /** A finished call with the lesson around it: what it wrote, what stood before, the known steps. */
 function doneCall(
   call: Call,
@@ -545,8 +571,8 @@ function nowLine(
 
 /**
  * A stage's mark (§4.1). The stage being worked on takes the turn's phase; one left for another is
- * done once it ran, since the engine never re-opens it, and todo when it never did. A stopped turn
- * shows no failed stage: the engine's settle says nothing (S15, dl-uukj.47.71.37).
+ * done once it ran, since the engine never re-opens it, and todo when it never did. A stage reads
+ * failed only when its verb failed: the engine's settle is never read (S15, dl-uukj.47.71.37).
  */
 function stageStatus(
   plan: string,
@@ -556,7 +582,7 @@ function stageStatus(
   phase: SpinePhase,
 ): StageStatus {
   if (!open) {
-    if (plan === "failed" && phase !== "cancelled") return "failed";
+    if (plan === "failed") return "failed";
     if (plan === "done") return "done";
     return visited ? "done" : "todo";
   }
@@ -565,6 +591,7 @@ function stageStatus(
       return "done";
     case "cancelled":
       if (running || plan === "in_progress") return "stopped";
+      if (plan === "failed") return "failed";
       return plan === "done" || visited ? "done" : "todo";
     case "failed":
       if (plan === "done" && !running) return "done";

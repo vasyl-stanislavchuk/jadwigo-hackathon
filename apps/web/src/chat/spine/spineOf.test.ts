@@ -609,6 +609,48 @@ describe("the engine's own sequences", () => {
     expect(spine.reply).toBe("Lekcja jest gotowa.");
   });
 
+  it("keeps the plan's own end move before a stop: a check that finished reads done (the steward's input)", () => {
+    // A stop asked for while the check ran: runTool writes the result and the plan's end move, the
+    // next step finds the cancel, and endTurn writes no settle, since every stage is done.
+    const events = append(
+      start(),
+      ...searchedAndDrafted,
+      say("Sprawdzam lekcję."),
+      call("call_3", "lesson_check", {}),
+      plan("done", "done", "in_progress"),
+      result("call_3", "lesson_check", { publishable: true, findings: [] }),
+      plan("done", "done", "done"),
+      { type: "status", payload: { status: "cancelled" } },
+      { type: "turn_complete", payload: {} },
+    );
+    const spine = spineOf(events, null, 0);
+    expect(spine.stages.map((s) => s.status)).toEqual(["done", "done", "done"]);
+  });
+
+  it("keeps a check that failed, then was stopped, failed: no settle was written", () => {
+    const events = append(
+      start(),
+      ...searchedAndDrafted,
+      call("call_3", "lesson_check", {}),
+      plan("done", "done", "in_progress"),
+      {
+        type: "tool_result",
+        payload: {
+          call_id: "call_3",
+          verb: "lesson_check",
+          output: null,
+          error: { type: "bank-busy", message: "the bank did not answer in time" },
+        },
+      },
+      plan("done", "done", "failed"),
+      { type: "status", payload: { status: "cancelled" } },
+      { type: "turn_complete", payload: {} },
+    );
+    const spine = spineOf(events, null, 0);
+    expect(spine.stages.map((s) => s.status)).toEqual(["done", "done", "failed"]);
+    expect(spine.stages.some((s) => s.status === "stopped")).toBe(false);
+  });
+
   it("stops in the running stage with the square and leaves the rest hollow (S15, dl-uukj.47.71.37)", () => {
     const events = append(
       start(),
