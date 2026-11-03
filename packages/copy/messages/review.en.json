@@ -1011,6 +1011,7 @@
   "chat_copy_support": false,
   "chat_stopped_none": false,
   "chat_stopped_some": false,
+  "chat_stopped_before": false,
   "chat_send_disabled": false,
   "chat_queue_label": false,
   "chat_queue_now": false,

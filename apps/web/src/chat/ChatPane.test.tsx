@@ -345,6 +345,27 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
+  it("a turn stopped before any lesson exists says only 'Zatrzymane.' (dl-uukj.47.71.40)", () => {
+    /** cancel-during-a-verb with its lesson taken out: a stop that changed nothing. */
+    const unchanged = (): Turn => {
+      const turn = turnOf("cancel-during-a-verb", (view) => {
+        view.lesson = null;
+      });
+      const events = (turn.events ?? []).filter((e) => e.type !== "lesson_revision");
+      return { ...turn, events };
+    };
+    const foot = () => document.querySelector("[data-foot='stopped']")?.textContent;
+    pane({ turns: [unchanged()] });
+    expect(foot()).toBe("Zatrzymane.");
+    cleanup();
+    pane({ language: "en", turns: [unchanged()] });
+    expect(foot()).toBe("Stopped.");
+    cleanup();
+    // A lesson from an earlier turn stands: the stop left it as it was.
+    pane({ turns: [turnOf("happy-turn"), unchanged()] });
+    expect(foot()).toBe("Zatrzymane. Lekcja została bez zmian.");
+  });
+
   it("a stopped turn's foot says whether the lesson changed, and names no version (S15, dl-vxjv2)", () => {
     // cancel-during-a-verb wrote a revision before the stop.
     pane({ turns: [turnOf("cancel-during-a-verb")] });
