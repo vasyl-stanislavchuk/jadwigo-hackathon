@@ -193,7 +193,7 @@ function dayWords(at: number, now: number, language: Language): string {
 function AiHeader({ language }: { language: Language }): ReactElement {
   return (
     <p
-      className="mb-1 flex items-center gap-2 text-jw-page-small font-bold text-jw-ink"
+      className="mb-1 flex items-center gap-1.5 text-jw-page-small font-bold text-jw-ink"
       data-ai-header
     >
       <JadwigoAiMark />
@@ -625,6 +625,21 @@ export function ChatThread({
           </>
         )}
       </ol>
+      {/* A soft fade over the list's foot while there is more below, so the thread reads as going
+          on under the composer instead of ending at a hard edge. */}
+      {away && (
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute bottom-0 h-16 bg-linear-to-t from-background from-15% via-background/70 to-transparent",
+            // The list reaches past the pane's padding on the parent page; so does its fade.
+            parent ? "-inset-x-3" : "inset-x-0",
+            // A soft shadow line on the composer's edge: the thread goes on under it.
+            "after:absolute after:inset-x-0 after:bottom-0 after:h-px after:shadow-float",
+          )}
+          data-thread-fade
+        />
+      )}
       {away && (
         <Button
           variant="outline"

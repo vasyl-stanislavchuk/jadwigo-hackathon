@@ -47,6 +47,9 @@ import { firstMessage, type LessonEngine } from "./engine.ts";
 import { useInspector } from "./inspector.ts";
 import { Workspace } from "./Workspace.tsx";
 
+/** Saves a new title, answering what to say if it could not (the card's `onRename`). */
+export type LessonRename = (title: string) => Promise<CopyKey | null>;
+
 export function LessonWorkspace({
   language,
   conversation,
@@ -58,6 +61,7 @@ export function LessonWorkspace({
   api = null,
   readAttachment = null,
   uploadDeps = null,
+  onTitle,
 }: {
   language: Language;
   /** The server's conversation: the route's id. */
@@ -76,6 +80,11 @@ export function LessonWorkspace({
   readAttachment?: ReadAttachment | null;
   /** What a photo's upload runs on (dl-uukj.47.71.8): the chat's composer adds photos with it. */
   uploadDeps?: UploadDeps | null;
+  /**
+   * The lesson's title as it moves, for the top bar's breadcrumb, with the rename the card uses
+   * (absent where nothing can rename). "" until the lesson has one.
+   */
+  onTitle?: (title: string, rename: LessonRename | undefined) => void;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string | number> = {}): string =>
     copy(language, key, vars, CATEGORY);
@@ -199,6 +208,16 @@ export function LessonWorkspace({
       return type === "AnswerConflict" ? "parent_title_busy" : "parent_title_failed";
     }
   };
+
+  // The breadcrumb names the lesson as it is now and renames it the card's way. The rename it
+  // gets is one stable function over the latest one, so reporting it never loops.
+  const renameNow = useRef(renameLesson);
+  renameNow.current = renameLesson;
+  const canRename = engine.give !== null;
+  const shownTitle = summary.title;
+  useEffect(() => {
+    onTitle?.(shownTitle, canRename ? (title) => renameNow.current(title) : undefined);
+  }, [onTitle, shownTitle, canRename]);
 
   // A lesson URL the routes refuse (another family's, or gone): one line and the way to a new one,
   // never 3 empty columns stuck restoring (dl-uukj.47.33).

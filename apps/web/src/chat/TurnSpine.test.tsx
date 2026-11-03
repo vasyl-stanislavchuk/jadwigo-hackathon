@@ -114,8 +114,12 @@ describe("the spine, one state at a time", () => {
       T0 + 84_000,
     );
     expect(meta()).toBe("1 min 24 s");
-    const stages = [...document.querySelectorAll("[data-stage]")];
-    expect(stages.map((s) => s.getAttribute("data-stage"))).toEqual(["done", "active", "todo"]);
+    const stages = [...document.querySelectorAll("[data-spine-stage]")];
+    expect(stages.map((s) => s.getAttribute("data-spine-stage"))).toEqual([
+      "done",
+      "active",
+      "todo",
+    ]);
     // Done: a button, folded, its summary beside the name.
     const done = stages[0]?.querySelector("button") as HTMLButtonElement;
     expect(done.getAttribute("aria-expanded")).toBe("false");
@@ -185,7 +189,9 @@ describe("the spine, one state at a time", () => {
     );
     expect(mark()).toBe("waiting");
     expect(meta()).toBe("czeka na Ciebie");
-    expect(document.querySelector("[data-stage='waiting'] [data-mark='waiting']")).not.toBeNull();
+    expect(
+      document.querySelector("[data-spine-stage='waiting'] [data-mark='waiting']"),
+    ).not.toBeNull();
     expect(card().textContent).toContain("Czekam na Twoją odpowiedź poniżej");
   });
 
@@ -213,9 +219,9 @@ describe("the spine, one state at a time", () => {
     );
     expect(mark()).toBe("failed");
     expect(meta()).toBe("przerwane · 2 min 10 s");
-    expect(document.querySelector("[data-stage='failed'] [data-stage-note]")?.textContent).toBe(
-      "nie wyszło po 3 próbach",
-    );
+    expect(
+      document.querySelector("[data-spine-stage='failed'] [data-stage-note]")?.textContent,
+    ).toBe("nie wyszło po 3 próbach");
     const foot = document.querySelector("[data-foot='failed']") as HTMLElement;
     expect(foot.textContent).toContain("Nie udało się ułożyć lekcji.");
     fireEvent.click(within(foot).getByRole("button", { name: "Spróbuj ponownie" }));
@@ -251,7 +257,7 @@ describe("the open stage (D3) and the search tags (S14)", () => {
 
   it("shows the last 3 lines and folds the older ones under '{n} wcześniej'", () => {
     draw(spine({ stages: [SEARCH, five, CHECK] }));
-    const stage = document.querySelector("[data-stage='active']") as HTMLElement;
+    const stage = document.querySelector("[data-spine-stage='active']") as HTMLElement;
     const shown = () => [...stage.querySelectorAll("[data-line]")].map((l) => l.textContent);
     expect(shown()).toEqual(["trzy", "cztery", "pięć0 s"]);
     const earlier = stage.querySelector("[data-earlier]") as HTMLButtonElement;
@@ -263,18 +269,18 @@ describe("the open stage (D3) and the search tags (S14)", () => {
 
   it("a done stage opens on its row (a button with aria-expanded) and folds again", () => {
     draw(spine({ stages: [SEARCH, five, CHECK] }));
-    const row = document.querySelector("[data-stage='done'] button") as HTMLButtonElement;
+    const row = document.querySelector("[data-spine-stage='done'] button") as HTMLButtonElement;
     expect(row.tagName).toBe("BUTTON");
     fireEvent.click(row);
     expect(row.getAttribute("aria-expanded")).toBe("true");
-    expect(document.querySelector("[data-stage='done'] [data-lines]")).not.toBeNull();
+    expect(document.querySelector("[data-spine-stage='done'] [data-lines]")).not.toBeNull();
     fireEvent.click(row);
     expect(row.getAttribute("aria-expanded")).toBe("false");
   });
 
   it("shows 4 tags then '+3 więcej', opens to 'Zwiń', and is closed again when the stage reopens", () => {
     draw(spine({ stages: [SEARCH, five, CHECK] }));
-    const row = document.querySelector("[data-stage='done'] button") as HTMLButtonElement;
+    const row = document.querySelector("[data-spine-stage='done'] button") as HTMLButtonElement;
     fireEvent.click(row);
     const tags = () => document.querySelectorAll("[data-tag]").length;
     const chip = () => document.querySelector("[data-tags-more]") as HTMLButtonElement;
@@ -292,9 +298,9 @@ describe("the open stage (D3) and the search tags (S14)", () => {
 
   it("says a second visit 'drugi raz' beside the stage name (D1)", () => {
     draw(spine({ stages: [SEARCH, { ...five, visit: 2 }, CHECK] }));
-    expect(document.querySelector("[data-stage='active'] [data-stage-note]")?.textContent).toBe(
-      copy("pl", "chat_stage_again_2", {}, "adult"),
-    );
+    expect(
+      document.querySelector("[data-spine-stage='active'] [data-stage-note]")?.textContent,
+    ).toBe(copy("pl", "chat_stage_again_2", {}, "adult"));
   });
 
   it("draws a steer as its label above the parent's words in quotes (S17)", () => {
@@ -370,7 +376,7 @@ describe("the folded summary row (D5, §4.2)", () => {
     expect(row.getAttribute("aria-expanded")).toBe("false");
     expect(row.querySelector("[data-title]")?.textContent).toBe("Zrobione w 3 etapach");
     expect(row.querySelector("[data-meta]")?.textContent).toBe("9 kroków · 41 s");
-    expect(document.querySelector("[data-stage]")).toBeNull();
+    expect(document.querySelector("[data-spine-stage]")).toBeNull();
     clean();
   });
 
@@ -379,7 +385,7 @@ describe("the folded summary row (D5, §4.2)", () => {
     const row = document.querySelector("[data-summary-row]") as HTMLButtonElement;
     fireEvent.click(row);
     expect(row.getAttribute("aria-expanded")).toBe("true");
-    const stages = [...document.querySelectorAll("[data-stage]")];
+    const stages = [...document.querySelectorAll("[data-spine-stage]")];
     expect(stages).toHaveLength(3);
     for (const stage of stages)
       expect(stage.querySelector("button")?.getAttribute("aria-expanded")).toBe("false");

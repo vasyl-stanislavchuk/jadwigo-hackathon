@@ -1192,6 +1192,7 @@
   ],
   "parent_expand_all": "Expand all",
   "parent_collapse_all": "Collapse all",
+  "parent_show_answers": "Show answers",
   "parent_step_coming": "Another step on its way",
   "parent_step_kind_choose": "Pick",
   "parent_step_kind_enter": "Type",

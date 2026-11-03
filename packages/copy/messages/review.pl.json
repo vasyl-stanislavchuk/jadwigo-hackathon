@@ -890,6 +890,7 @@
   "parent_list_archive_title": false,
   "parent_expand_all": false,
   "parent_collapse_all": false,
+  "parent_show_answers": false,
   "parent_step_coming": false,
   "parent_step_kind_choose": false,
   "parent_step_kind_enter": false,
