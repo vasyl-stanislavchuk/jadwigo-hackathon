@@ -55,14 +55,24 @@ describe("runPhase", () => {
   });
 
   it("walks the happy turn: queued, thinking, a tool in its own words, done", () => {
-    expect(phaseAt(apply(...upTo(1)), T0)?.kind).toBe("queued");
-    expect(phaseAt(apply(...upTo(2)), T0)?.kind).toBe("thinking");
+    const queued = phaseAt(apply(...upTo(1)), T0);
+    expect(queued?.kind).toBe("queued");
+    const thinking = phaseAt(apply(...upTo(2)), T0);
+    expect(thinking?.kind).toBe("thinking");
     const tool = phaseAt(apply(...upTo(5)), T0);
     expect(tool).toMatchObject({ kind: "tool", verb: "lesson_draft" });
     expect(tool?.copyKey).toBe("chat_tool_lesson_draft");
     const done = phaseAt(apply(...upTo(17)), T0);
     expect(done).toMatchObject({ kind: "done", open: false, since: null });
-    expect(phaseAnnouncement(done)).toBe("chat_announce_done");
+    // The live region (§3, dl-uukj.47.71.10): one "Jadwigo pracuje" for the whole working turn,
+    // never a step's own words, then "Gotowe".
+    expect([queued, thinking, tool].map(phaseAnnouncement)).toEqual([
+      "live_working",
+      "live_working",
+      "live_working",
+    ]);
+    expect(phaseAnnouncement(done)).toBe("live_done");
+    expect(phaseAnnouncement(null)).toBeNull();
   });
 
   it("goes slow at 20 s and stalled at 60 s without an event, and back on a late one", () => {
@@ -70,7 +80,8 @@ describe("runPhase", () => {
     expect(phaseAt(quiet, T0 + SLOW_MS - 1)?.kind).toBe("thinking");
     expect(phaseAt(quiet, T0 + SLOW_MS)?.kind).toBe("slow");
     expect(phaseAt(quiet, T0 + STALL_MS)?.kind).toBe("stalled");
-    expect(phaseAnnouncement(phaseAt(quiet, T0 + STALL_MS))).toBe("chat_phase_stalled");
+    expect(phaseAnnouncement(phaseAt(quiet, T0 + SLOW_MS))).toBe("live_working");
+    expect(phaseAnnouncement(phaseAt(quiet, T0 + STALL_MS))).toBe("live_stalled");
     const late = conversationReducer(quiet, {
       type: "live",
       run_id: run("queued").id,
@@ -87,15 +98,19 @@ describe("runPhase", () => {
       "stalled",
     );
     // A dropped channel is connecting, while its clock still runs.
-    expect(phaseAt(apply(...upTo(2), { type: "disconnected" }), T0)?.kind).toBe("connecting");
+    const dropped = phaseAt(apply(...upTo(2), { type: "disconnected" }), T0);
+    expect(dropped?.kind).toBe("connecting");
+    // Quiet while it reconnects: the live region says nothing it may have to take back.
+    expect(phaseAnnouncement(dropped)).toBeNull();
   });
 
   it("says failed only when the run's status does", () => {
-    const failed = apply({ type: "run", run: run("failed"), at: T0 });
-    expect(phaseAt(failed, T0)?.kind).toBe("failed");
-    expect(phaseAt(apply({ type: "run", run: run("cancelled"), at: T0 }), T0)?.kind).toBe(
-      "cancelled",
-    );
+    const failed = phaseAt(apply({ type: "run", run: run("failed"), at: T0 }), T0);
+    expect(failed?.kind).toBe("failed");
+    expect(phaseAnnouncement(failed)).toBe("live_failed");
+    const stopped = phaseAt(apply({ type: "run", run: run("cancelled"), at: T0 }), T0);
+    expect(stopped?.kind).toBe("cancelled");
+    expect(phaseAnnouncement(stopped)).toBe("live_stopped");
   });
 
   it("keeps a turn open on the echo alone, and counts its seconds from the send", () => {
@@ -112,6 +127,7 @@ describe("runPhase", () => {
   it("waits on the parent with no clock", () => {
     const asked = apply({ type: "run", run: run("awaiting_input"), at: T0 });
     expect(phaseAt(asked, T0 + 10 * STALL_MS)?.kind).toBe("awaiting_input");
+    expect(phaseAnnouncement(phaseAt(asked, T0))).toBe("live_waiting");
   });
 });
 

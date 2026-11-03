@@ -353,6 +353,8 @@ export interface SpineActions {
   onRetry?: (() => void) | undefined;
   /** Kopiuj szczegóły dla pomocy: the run log to the clipboard (S3), the toast says Skopiowane. */
   onCopyDetails?: (() => void) | undefined;
+  /** No lesson exists yet in the conversation: a stop says only "Zatrzymane." (dl-uukj.47.71.40). */
+  noLesson?: boolean | undefined;
 }
 
 /** The card's foot (D7, S11, S15, §4.6): never an alert box, never red. */
@@ -376,7 +378,13 @@ function Foot({
     return (
       <div className={frame} data-foot="stopped">
         <p className="text-jw-page-small text-jw-ink-soft">
-          {s(foot.changed === true ? "chat_stopped_some" : "chat_stopped_none")}
+          {s(
+            foot.changed === true
+              ? "chat_stopped_some"
+              : actions.noLesson === true
+                ? "chat_stopped_before"
+                : "chat_stopped_none",
+          )}
         </p>
       </div>
     );

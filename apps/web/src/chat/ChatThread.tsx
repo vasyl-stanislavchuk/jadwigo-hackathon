@@ -497,6 +497,7 @@ export function ChatThread({
     const actions: SpineActions = {
       onRetry: last && spine.foot?.kind === "stalled" ? onRetry : retryOf(turn, resend),
       onCopyDetails: copyDetails(turn, language),
+      noLesson: !turns.slice(0, index + 1).some((t) => t.view.lesson !== null),
     };
     entries.push(
       <li
