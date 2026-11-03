@@ -872,8 +872,6 @@
   "chat_finding_key_grades": "The right answer would not be marked right.",
   "chat_finding_harsh_word": "A child would read a word that is too harsh here.",
   "chat_check_level_info": "For your information",
-  "chat_search_none": "No question set fits this request yet.",
-  "chat_search_sets": "Question sets",
   "chat_announce_done": "Jadwigo AI: done",
   "chat_announce_needs_you": "Jadwigo AI: waiting for your answer",
   "chat_announce_stopped": "Saved, stopped.",
@@ -1064,7 +1062,6 @@
   "attach_kind_docx": "DOCX",
   "attach_kind_heic": "HEIC",
   "attach_photo_alt": "Photo {n}",
-  "chat_photos_received": "What Jadwigo received",
   "chat_photo_open": "Show photo {n} full size",
   "chat_photo_unloaded": "Photo {n} could not be shown",
   "attach_uploading": "Uploading the photo, {percent}%",
@@ -1489,6 +1486,7 @@
   "choose_own": "Or say it in your own words…",
   "choose_skip": "Skip question",
   "attach_caption": "This is how Jadwigo sees the photos",
+  "attach_caption_files": "This is how Jadwigo sees the files",
   "attach_pages": [
     {
       "declarations": ["input n", "local pages_noun = n: plural"],

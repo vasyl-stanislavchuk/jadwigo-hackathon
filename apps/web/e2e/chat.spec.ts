@@ -140,9 +140,11 @@ test("1440: Daj lekcję from the widget gives the lesson and opens it here", asy
 // top over blank space. A short window makes the scripted turn overflow the list, so the follow has
 // to scroll; every scroll during the turn is recorded, not just the end state, so a jump the page
 // later scrolls back still fails here.
+// 360 tall: the folded spine (dl-uukj.47.71.3) made the scripted turn fit 480, so nothing had to
+// scroll; at 360 it overflows again and the follow is tested.
 for (const [width, height] of [
-  [2000, 480],
-  [1280, 480],
+  [2000, 360],
+  [1280, 360],
 ] as const) {
   test(`${width}: the lesson-ready card lands with only the message list scrolled`, async ({
     page,

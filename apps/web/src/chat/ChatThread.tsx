@@ -1,21 +1,27 @@
 /**
- * The chat's thread (split from ChatPane.tsx, dl-uukj.47.71.1, no change in behaviour): each turn's
- * rows, the plan, the tool groups, the lesson card and the rating, the pending echo and the activity
- * line, inside the one scrolling list that follows the bottom. Lane B of wave dl-uukj.47.71 turns
- * these rows into the turn spine.
+ * The chat's thread (wave dl-uukj.47.71 lane B, handoff D1-D5, D7, S9, S19, §3): each turn drawn as
+ * the parent's bubble · Jadwigo AI's spine · its reply · the lesson card · the rating. The spine is
+ * the turn's one working indicator: it appears at send, grows in place (never sticky), and folds to
+ * one summary row when the turn is done. There are no tool groups, no Szczegóły, no activity line
+ * and no error boxes: a retry is a line in its stage and a failed turn is the spine's foot (D7).
+ * Older turns keep their bubble, the folded row and the reply clamped to 2 lines; a day divider
+ * separates sessions. The one scrolling list follows the bottom while the parent is within 80 px of
+ * it; scrolled up, it holds still and "Najnowsze" brings them back down.
  */
 
-import {
-  RUN_ERROR_TYPE,
-  type RunError,
-  type RunId,
-  type RunRatingCreate,
-} from "@jadwigo/contracts/run";
+import type { RunEvent, RunId, RunRatingCreate } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import type { ChatItem } from "@jadwigo/core";
-import { Button, cn } from "@jadwigo/ui";
-import { CheckIcon, ChevronDownIcon, LoaderCircleIcon, ZapIcon } from "lucide-react";
-import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
+import type { ChatItem, RunView } from "@jadwigo/core";
+import { Button, cn, Separator, showToast } from "@jadwigo/ui";
+import { ArrowDownIcon } from "lucide-react";
+import {
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { ChatMarkdown } from "./ChatMarkdown.tsx";
 import { recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
@@ -25,426 +31,78 @@ import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
 import { CitationChips } from "./objects/CitationChips.tsx";
 import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
 import type { ObjectRef } from "./objects/ref.ts";
-import { PLAN_MIN, PlanCard } from "./PlanCard.tsx";
-import { elapsedSeconds, type RunPhase } from "./phase.ts";
+import type { RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
-import { type LineContext, sentenceOf, TOOL_ICON } from "./spine/lines.ts";
-import { ToolDetails, toolResult } from "./widgets/Widgets.tsx";
+import { cardStatesOf } from "./spine/card.ts";
+import type { LineContext } from "./spine/lines.ts";
+import { spineOf } from "./spine/spineOf.ts";
+import type { LessonCardState, TurnSpine as Spine } from "./spine/types.ts";
+import { type SpineActions, TurnSpine } from "./TurnSpine.tsx";
+import { TurnSummary } from "./TurnSummary.tsx";
+import { type StopKey, useStopKey } from "./useStopKey.ts";
+import { toolResult } from "./widgets/Widgets.tsx";
 
-/** The parent's words: a quiet box in the soft paper fill on the right, Jadwigo AI's answer plain prose beside it. */
+/** The parent's words: a quiet box in the soft paper fill on the right. */
 const PARENT_BOX =
   "rounded-jw-box border-jw border-jw-line bg-jw-act-quiet px-3.5 py-2.5 whitespace-pre-wrap text-jw-ink";
 
+/** Within this many pixels of the bottom, the thread follows what arrives (§3). */
+const FOLLOW_PX = 80;
+
 type ToolItem = Extract<ChatItem, { kind: "tool" }>;
+type Message = Extract<ChatItem, { kind: "message" }>;
 
-/** A turn's rows with each stretch of tool lines gathered into one group. */
-type Row = { kind: "tools"; seq: number; tools: ToolItem[] } | Exclude<ChatItem, ToolItem>;
-
-function rowsOf(chat: readonly ChatItem[]): Row[] {
-  const rows: Row[] = [];
-  for (const item of chat) {
-    const last = rows.at(-1);
-    if (item.kind !== "tool") rows.push(item);
-    else if (last?.kind === "tools") last.tools.push(item);
-    else rows.push({ kind: "tools", seq: item.seq, tools: [item] });
-  }
-  return rows;
-}
-
-/** A line's state in words: the state mark beside it is decorative. */
-function stateWords(tool: ToolItem, language: Language): string {
-  const say = (key: CopyKey, vars: Record<string, string> = {}) =>
-    copy(language, key, vars, "adult");
-  switch (tool.state) {
-    case "failed":
-      return say("chat_tool_stuck", { message: tool.error?.message ?? "" });
-    case "running":
-      return say("chat_tool_running");
-    case "pending":
-      return say("chat_tool_pending");
-    case "rejected":
-      return say("chat_tool_rejected");
-    case "done":
-      return say("chat_tool_done");
-  }
-}
-
-/** The state mark: a spinner while it runs (turning only under motion-safe), a check, a red dot. */
-function StateMark({ state }: { state: ToolItem["state"] }): ReactElement | null {
-  if (state === "running")
-    return (
-      <LoaderCircleIcon
-        aria-hidden
-        className="size-3.5 shrink-0 text-jw-ink-soft motion-safe:animate-spin"
-        data-mark="running"
-      />
-    );
-  if (state === "done")
-    return (
-      <CheckIcon aria-hidden className="size-3.5 shrink-0 text-jw-right-ink" data-mark="done" />
-    );
-  if (state === "failed")
-    return (
-      <span
-        aria-hidden
-        className="size-2 shrink-0 rounded-full bg-jw-miss-edge"
-        data-mark="failed"
-      />
-    );
-  return null;
-}
+/** A turn's run log: the spine and Kopiuj szczegóły read it; a hand-built turn has none. */
+const eventsOf = (turn: Turn): readonly RunEvent[] => turn.events ?? [];
 
 /**
- * One tool line (dl-uukj.47.30): its icon, its sentence from the call's input, and a state mark
- * with the state in text. Opening it shows "Co zostało zrobione" (the typed widget, or the line in
- * plain words), and the raw input and output one more tap away under "Szczegóły". A failed line
- * says its reason in view.
+ * The spine of one turn. The foot follows the page's own phase when the fold gives none: a stall
+ * is only known to the page's clock, and a turn that ended badly always says so in its card (D7).
  */
-function ToolLine({
-  tool,
-  language,
-  context,
-}: {
-  tool: ToolItem;
-  language: Language;
-  context: LineContext;
-}): ReactElement {
-  const say = (key: CopyKey) => copy(language, key, {}, "adult");
-  const sentence = sentenceOf(tool.verb, tool.input, context);
-  const words = copy(language, sentence.key, sentence.vars, "adult");
-  const Icon = TOOL_ICON[tool.verb];
-  const result = toolResult(tool, language, context);
-  const failed = tool.state === "failed";
-  return (
-    <li data-tool={tool.verb} data-state={tool.state}>
-      <details data-tool-line>
-        <summary className="flex cursor-pointer items-center gap-2">
-          <Icon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" data-tool-icon />
-          <span className="min-w-0 text-jw-ink" data-sentence>
-            {words}
-          </span>
-          <StateMark state={tool.state} />
-          <span className={failed ? "text-jw-ink" : "sr-only"} data-state-words>
-            {` · ${stateWords(tool, language)}`}
-          </span>
-        </summary>
-        {/* Opened: the widget, if the step has one, then Szczegóły. The summary already says the
-            step and its state, so the plain-words line is for screen readers only (design review
-            2026-11-02: one structure, one small size). */}
-        <div className="ml-6 flex flex-col gap-1.5 py-1 text-jw-page-small">
-          <p className="sr-only">{say("chat_tool_what_done")}</p>
-          {result?.kind === "widget" && !result.keepVisible ? (
-            result.element
-          ) : (
-            // No widget here (none, or one kept in view under the fold, drawn once there): the line
-            // in plain words, its sentence and where it stands, never only the state word
-            // (dl-uukj.47.50).
-            <p className="sr-only" data-what-done>
-              <span>{words}</span>
-              <span className="text-jw-ink-soft">{stateWords(tool, language)}</span>
-            </p>
-          )}
-          {result !== null && <ToolDetails tool={tool} language={language} />}
-        </div>
-      </details>
-    </li>
+function spineFor(
+  turn: Turn,
+  phase: RunPhase | null,
+  now: number,
+  priorRevision: number | undefined,
+): Spine {
+  const spine = spineOf(
+    eventsOf(turn),
+    phase,
+    now,
+    priorRevision === undefined ? {} : { priorRevision },
   );
+  if (spine.foot !== undefined) return spine;
+  if (spine.phase === "stalled") return { ...spine, foot: { kind: "stalled" } };
+  if (spine.phase === "failed") return { ...spine, foot: { kind: "failed" } };
+  if (spine.phase === "cancelled") return { ...spine, foot: { kind: "stopped" } };
+  return spine;
 }
+
+/** The spine drawn at send, before the server named the run (S9): "W kolejce · 0 s". */
+const queuedSpine = (since: number): Spine => ({
+  phase: "queued",
+  title: { copyKey: "chat_phase_queued", values: {} },
+  startedAt: since,
+  stepCount: 0,
+  stages: [],
+  looseLines: [],
+});
 
 /**
- * Tool lines folded under one summary, "{n} kroków · ostatni: {sentence}"; a failed line stays in
- * view under the fold, and so does each widget its registry entry keeps visible (dl-z5ja.24).
+ * The turn's reply (D4): the fold's, else, once the turn ended, its last agent message. While the
+ * turn runs, Jadwigo's sentences are the spine's now line, never prose.
  */
-function ToolGroup({
-  tools,
-  language,
-  context,
-}: {
-  tools: ToolItem[];
-  language: Language;
-  context: LineContext;
-}): ReactElement {
-  const stuck = tools.filter((t) => t.state === "failed");
-  const latest = tools.at(-1);
-  const last = latest === undefined ? null : sentenceOf(latest.verb, latest.input, context);
-  const head = copy(
-    language,
-    "chat_tool_summary",
-    { n: tools.length, last: last === null ? "" : copy(language, last.key, last.vars, "adult") },
-    "adult",
+function replyOf(turn: Turn, spine: Spine): Message | null {
+  const agent = turn.view.chat.filter(
+    (i): i is Message => i.kind === "message" && i.from === "agent",
   );
-  const shown = tools.flatMap((t) => {
-    const result = toolResult(t, language, context);
-    return result?.kind === "widget" && result.keepVisible
-      ? [{ call_id: t.call_id, element: result.element }]
-      : [];
-  });
-  return (
-    <div className="flex flex-col gap-1 text-jw-page-body" data-tools>
-      {/* Small and quiet (design review 2026-11-02): parents rarely open it, the lesson is the
-          goal. One muted line, the steps under a thin rule on the left once opened. */}
-      <details className="group text-jw-page-small text-jw-ink-soft" data-tool-group>
-        <summary className="flex w-fit max-w-full cursor-pointer list-none items-center gap-1.5 rounded-jw-small py-0.5 hover:text-jw-ink [&::-webkit-details-marker]:hidden">
-          <ZapIcon aria-hidden className="size-3.5 shrink-0" />
-          <span className="min-w-0 truncate">{head}</span>
-          <ChevronDownIcon
-            aria-hidden
-            className="size-3.5 shrink-0 transition-transform duration-jw-fast group-open:rotate-180"
-          />
-        </summary>
-        <ul
-          aria-label={copy(language, "chat_tool_lines", {}, "adult")}
-          className="mt-1 ml-1.5 flex flex-col gap-1 border-l-jw border-jw-line pl-3"
-        >
-          {tools.map((t) => (
-            <ToolLine key={t.call_id} tool={t} language={language} context={context} />
-          ))}
-        </ul>
-      </details>
-      {stuck.length > 0 && (
-        <ul
-          aria-label={copy(language, "chat_tool_lines_stuck", {}, "adult")}
-          className="flex flex-col gap-1"
-        >
-          {stuck.map((t) => (
-            <ToolLine key={t.call_id} tool={t} language={language} context={context} />
-          ))}
-        </ul>
-      )}
-      {shown.map((w) => (
-        <div key={w.call_id}>{w.element}</div>
-      ))}
-    </div>
-  );
+  if (spine.reply !== undefined)
+    return agent.findLast((m) => m.text === spine.reply) ?? { ...messageStub, text: spine.reply };
+  if (isOpen(turn)) return null;
+  return agent.at(-1) ?? null;
 }
 
-/**
- * An error row's words (dl-z5ja.28, .83): the engine's own limits in plain words with what to do
- * next, a step delivered again as "trying again", and anything else as what went off track.
- */
-function problemOf(error: RunError, retryable: boolean, language: Language): string {
-  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
-    copy(language, key, vars, "adult");
-  if (error.type === RUN_ERROR_TYPE.runTimedOut) return say("chat_limit_too_long");
-  // An idle close (dl-z5ja.94): the turn is completed, so no retry; the parent writes what next.
-  if (error.type === RUN_ERROR_TYPE.runIdle) return say("chat_limit_idle");
-  if (error.type === RUN_ERROR_TYPE.stepTimedOut) return say("chat_problem_retrying");
-  // Every try failed (dl-hin8.28): said plainly, never the engine's own words; the turn's
-  // "Tej tury nie udało się dokończyć" line and its retry follow under it.
-  if (error.type === RUN_ERROR_TYPE.stepFailed) return say("chat_problem_failed");
-  const line = say("chat_problem", { message: error.message });
-  return retryable ? `${line} ${say("chat_problem_retrying")}` : line;
-}
-
-/** Copy details: the words to paste into a message to us, the run id first. */
-function CopyDetails({ details, language }: { details: string; language: Language }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      data-details={details}
-      onClick={() => {
-        void navigator.clipboard?.writeText(details).then(() => setCopied(true));
-      }}
-    >
-      {copied
-        ? copy(language, "chat_copied", {}, "adult")
-        : copy(language, "chat_copy_details", {}, "adult")}
-    </Button>
-  );
-}
-
-function ErrorRow({
-  item,
-  run,
-  language,
-}: {
-  item: Extract<ChatItem, { kind: "error" }>;
-  run: RunId;
-  language: Language;
-}): ReactElement {
-  const details = `run ${run} attempt ${item.attempt}: ${item.error.type}`;
-  return (
-    <div
-      role="alert"
-      data-row="error"
-      className="flex flex-col items-start gap-2 rounded-jw-card border-jw border-jw-line p-3 text-jw-page-body"
-    >
-      <p>{problemOf(item.error, item.retryable, language)}</p>
-      <CopyDetails details={details} language={language} />
-    </div>
-  );
-}
-
-function RowView({
-  row,
-  run,
-  language,
-  context,
-  readAttachment,
-}: {
-  row: Row;
-  run: RunId;
-  language: Language;
-  context: LineContext;
-  readAttachment?: ReadAttachment | undefined;
-}) {
-  switch (row.kind) {
-    case "message": {
-      const steer =
-        row.steer === undefined
-          ? null
-          : copy(
-              language,
-              row.steer.source === "lesson_edit" ? "chat_steered_edit" : "chat_steered",
-              {},
-              "adult",
-            );
-      if (row.from === "parent")
-        return (
-          <div
-            data-from="parent"
-            data-steer={row.steer?.source}
-            className="flex max-w-[90%] flex-col items-end gap-1 self-end"
-          >
-            {/* "Ty" for a screen reader; a steer says what it was in view. */}
-            <p className={cn("text-jw-page-small text-jw-ink-soft", steer === null && "sr-only")}>
-              {copy(language, "chat_from_parent", {}, "adult")}
-              {steer !== null && ` · ${steer}`}
-            </p>
-            {row.text !== "" && (
-              <p className={PARENT_BOX} data-bubble>
-                {row.text}
-              </p>
-            )}
-            {readAttachment !== undefined && (
-              <ThreadAttachments
-                language={language}
-                attachments={row.attachments}
-                read={readAttachment}
-              />
-            )}
-          </div>
-        );
-      return (
-        <div data-from={row.from} className="text-jw-ink" data-prose>
-          <ChatMarkdown text={row.text} />
-          {/* What the message rests on, each opening beside the chat (dl-uukj.47.62). */}
-          {context.onOpen !== undefined && row.citations !== undefined && (
-            <CitationChips citations={row.citations} language={language} onOpen={context.onOpen} />
-          )}
-        </div>
-      );
-    }
-    case "tools":
-      return <ToolGroup tools={row.tools} language={language} context={context} />;
-    case "steer":
-      return (
-        <p data-row="steer" data-level={row.level} className="text-jw-page-body">
-          {copy(
-            language,
-            row.level === "steer" ? "chat_budget_steer" : "chat_budget_stop",
-            {},
-            "adult",
-          )}
-          {row.level === "stop" && ` ${copy(language, "chat_budget_steer_note", {}, "adult")}`}
-        </p>
-      );
-    case "approval": {
-      const key: CopyKey =
-        row.decision === null
-          ? "chat_approval"
-          : row.decision === "approved"
-            ? "chat_approval_approved"
-            : "chat_approval_rejected";
-      // A choose form's answers stay in the thread as one line each (dl-uukj.47.35).
-      const answers =
-        context.chosen?.(row.call_id) ?? (row.decision === null ? undefined : row.answers);
-      return (
-        <div data-row="approval" className="flex flex-col gap-0.5 text-jw-page-body">
-          <p>{copy(language, key, { summary: row.summary }, "adult")}</p>
-          {row.choose !== undefined &&
-            answers !== undefined &&
-            recapOf(row.choose, answers, language).map((line) => (
-              <p key={line} className="text-jw-ink-soft" data-choose-recap>
-                {line}
-              </p>
-            ))}
-        </div>
-      );
-    }
-    case "error":
-      return <ErrorRow item={row} run={run} language={language} />;
-  }
-}
-
-/** The kinds of phase while Jadwigo AI is at work: the activity line shimmers then. */
-const WORKING: ReadonlySet<RunPhase["kind"]> = new Set([
-  "connecting",
-  "queued",
-  "thinking",
-  "tool",
-]);
-
-/** The header over Jadwigo AI's rows: its crown mark and its name. */
-function AiHeader({ language }: { language: Language }): ReactElement {
-  return (
-    <p
-      className="mb-1 flex items-center gap-2 text-jw-page-small font-bold text-jw-ink"
-      data-ai-header
-    >
-      <JadwigoAiMark />
-      {copy(language, "chat_from_agent", {}, "adult")}
-    </p>
-  );
-}
-
-/**
- * The activity line under Jadwigo AI's turn (dl-uukj.47.29): the phase in words, a tool's own
- * words while it runs, the elapsed seconds, and a shimmer only when the system allows motion.
- * Stalled, it offers Spróbuj ponownie and Copy details with the run id.
- */
-function ActivityLine({
-  phase,
-  now,
-  still,
-  onRetry,
-  language,
-}: {
-  phase: RunPhase;
-  now: number;
-  still: boolean;
-  onRetry?: (() => void) | undefined;
-  language: Language;
-}): ReactElement {
-  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
-    copy(language, key, vars, "adult");
-  const seconds = phase.kind === "awaiting_input" ? null : elapsedSeconds(phase, now);
-  const working = WORKING.has(phase.kind);
-  return (
-    <div className="flex flex-col gap-2" data-activity data-phase={phase.kind}>
-      <p className="flex items-baseline gap-2 text-jw-page-small text-jw-ink-soft">
-        <span {...(working && !still ? { "data-shimmer": "" } : {})}>{say(phase.copyKey)}</span>
-        {seconds !== null && (
-          <span className="tabular-nums" data-elapsed>
-            {say("chat_phase_elapsed", { seconds })}
-          </span>
-        )}
-      </p>
-      {phase.kind === "stalled" && (
-        <div className="flex flex-wrap items-center gap-2" data-row="stalled">
-          {onRetry !== undefined && (
-            <Button variant="outline" size="sm" onClick={onRetry}>
-              {say("chat_retry_turn")}
-            </Button>
-          )}
-          {phase.run !== null && <CopyDetails details={`run ${phase.run}`} language={language} />}
-        </div>
-      )}
-    </div>
-  );
-}
+const messageStub: Message = { kind: "message", seq: 0, from: "agent", text: "", attachments: [] };
 
 /** A turn that ended well: its rating band shows (dl-z5ja.63). */
 function completed(turn: Turn): boolean {
@@ -470,35 +128,200 @@ export const lessMotion = (): boolean =>
 /** Smooth unless the parent asked the system for less motion. */
 const scrollBehavior = (): ScrollBehavior => (lessMotion() ? "auto" : "smooth");
 
+/**
+ * Where a turn's card comes from: lane A's fold over its log, or, for a turn built without its log
+ * (a test's), the revision it wrote once it ended.
+ */
+function cardOf(
+  turn: Turn,
+  state: LessonCardState | null,
+): { state: LessonCardState } | { lesson: NonNullable<RunView["lesson"]> } | null {
+  if (turn.events !== undefined) return state === null ? null : { state };
+  const lesson = turn.view.lesson;
+  return !isOpen(turn) && lesson !== null && wroteLesson(turn.view) ? { lesson } : null;
+}
+
+/** Whether a card is the living one, which alone carries the actions (S7). */
+const living = (card: NonNullable<ReturnType<typeof cardOf>>, newest: boolean): boolean =>
+  "state" in card ? card.state.kind !== "superseded" : newest;
+
 /** The newest finished turn that wrote the lesson: the one whose card carries the actions. */
 function newestCard(turns: readonly Turn[]): Turn | undefined {
   return turns.findLast((t) => !isOpen(t) && t.view.lesson !== null && wroteLesson(t.view));
 }
 
-/** Whether a turn draws its plan (PlanCard.tsx: 3 or more entries). */
-const hasPlan = (turn: Turn): boolean => (turn.view.plan?.length ?? 0) >= PLAN_MIN;
+/** The calendar day of an instant, by the page's clock: "2026-11-03". */
+const dayOf = (ms: number): string => {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+};
 
-/** One entry of a turn as the pane draws it: a row, or the plan pinned above Jadwigo AI's rows. */
-type TurnEntry = { kind: "row"; row: Row; header: boolean } | { kind: "plan"; header: boolean };
+/** A day divider's words (S19): "Dziś", "Wczoraj", else the date. */
+function dayWords(at: number, now: number, language: Language): string {
+  if (dayOf(at) === dayOf(now)) return copy(language, "day_today", {}, "adult");
+  if (dayOf(at) === dayOf(now - 86_400_000)) return copy(language, "day_yesterday", {}, "adult");
+  return new Intl.DateTimeFormat(language, { day: "numeric", month: "long" }).format(at);
+}
+
+/** The header over Jadwigo AI's part of a turn: its crown mark and its name. */
+function AiHeader({ language }: { language: Language }): ReactElement {
+  return (
+    <p
+      className="mb-1 flex items-center gap-2 text-jw-page-small font-bold text-jw-ink"
+      data-ai-header
+    >
+      <JadwigoAiMark />
+      {copy(language, "chat_from_agent", {}, "adult")}
+    </p>
+  );
+}
+
+function ParentBubble({
+  message,
+  language,
+  readAttachment,
+}: {
+  message: Message;
+  language: Language;
+  readAttachment?: ReadAttachment | undefined;
+}): ReactElement {
+  return (
+    <div data-from="parent" className="flex max-w-[90%] flex-col items-end gap-1 self-end">
+      {/* "Ty" for a screen reader. */}
+      <p className="sr-only">{copy(language, "chat_from_parent", {}, "adult")}</p>
+      {message.text !== "" && (
+        <p className={PARENT_BOX} data-bubble>
+          {message.text}
+        </p>
+      )}
+      {readAttachment !== undefined && (
+        <ThreadAttachments
+          language={language}
+          attachments={message.attachments}
+          read={readAttachment}
+        />
+      )}
+    </div>
+  );
+}
 
 /**
- * A turn's rows, the first of Jadwigo AI's marked to carry its header: one header per turn, over
- * its prose, tool lines and widgets, however the parent's words fall between them. A plan of 3 or
- * more entries goes first among Jadwigo AI's rows, under the header (dl-uukj.47.31).
+ * The reply (D4): plain prose under the spine. An older turn's is clamped to 2 lines in muted ink
+ * and opens on a click, Enter or Space (S19).
  */
-function turnRows(turn: Turn): TurnEntry[] {
-  let headed = false;
-  const entries: TurnEntry[] = [];
-  const plan = hasPlan(turn);
-  for (const row of rowsOf(turn.view.chat)) {
-    const ai = !(row.kind === "message" && row.from === "parent");
-    if (ai && !headed && plan) entries.push({ kind: "plan", header: true });
-    const header = ai && !headed && !plan;
-    if (ai) headed = true;
-    entries.push({ kind: "row", row, header });
-  }
-  if (plan && !headed) entries.push({ kind: "plan", header: true });
-  return entries;
+function Reply({
+  message,
+  older,
+  language,
+  context,
+}: {
+  message: Message;
+  older: boolean;
+  language: Language;
+  context: LineContext;
+}): ReactElement {
+  const [open, setOpen] = useState(false);
+  const clamped = older && !open;
+  const toggle = older
+    ? {
+        role: "button",
+        tabIndex: 0,
+        "aria-expanded": open,
+        onClick: () => setOpen((o) => !o),
+        onKeyDown: (e: KeyboardEvent) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          setOpen((o) => !o);
+        },
+      }
+    : {};
+  return (
+    <div data-from="agent" data-reply={older ? "older" : "current"}>
+      <div
+        {...toggle}
+        className={cn(
+          "text-jw-ink",
+          older &&
+            "cursor-pointer rounded-jw-control outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
+          clamped && "line-clamp-2 text-jw-ink-soft",
+        )}
+        data-prose
+      >
+        <ChatMarkdown text={message.text} />
+      </div>
+      {/* What the reply rests on, each opening beside the chat (dl-uukj.47.62, P3). */}
+      {context.onOpen !== undefined && message.citations !== undefined && (
+        <CitationChips citations={message.citations} language={language} onOpen={context.onOpen} />
+      )}
+    </div>
+  );
+}
+
+/** What a turn says in the thread besides its spine: a choose form's recap, the budget's steer. */
+function Aside({
+  item,
+  language,
+  context,
+}: {
+  item: ChatItem;
+  language: Language;
+  context: LineContext;
+}): ReactElement | null {
+  if (item.kind === "steer")
+    return (
+      <p data-row="steer" data-level={item.level} className="text-jw-page-body">
+        {copy(
+          language,
+          item.level === "steer" ? "chat_budget_steer" : "chat_budget_stop",
+          {},
+          "adult",
+        )}
+        {item.level === "stop" && ` ${copy(language, "chat_budget_steer_note", {}, "adult")}`}
+      </p>
+    );
+  if (item.kind !== "approval") return null;
+  const key: CopyKey =
+    item.decision === null
+      ? "chat_approval"
+      : item.decision === "approved"
+        ? "chat_approval_approved"
+        : "chat_approval_rejected";
+  // A choose form's answers stay in the thread as one line each (dl-uukj.47.35).
+  const answers =
+    context.chosen?.(item.call_id) ?? (item.decision === null ? undefined : item.answers);
+  return (
+    <div data-row="approval" className="flex flex-col gap-0.5 text-jw-page-body">
+      <p>{copy(language, key, { summary: item.summary }, "adult")}</p>
+      {item.choose !== undefined &&
+        answers !== undefined &&
+        recapOf(item.choose, answers, language).map((line) => (
+          <p key={line} className="text-jw-ink-soft" data-choose-recap>
+            {line}
+          </p>
+        ))}
+    </div>
+  );
+}
+
+/** The learner widgets a turn keeps in view (S1): its answers, not its work. */
+function shownWidgets(turn: Turn, language: Language, context: LineContext) {
+  return turn.view.chat.flatMap((item) => {
+    if (item.kind !== "tool") return [];
+    const result = toolResult(item as ToolItem, language, context);
+    return result?.kind === "widget" && result.keepVisible
+      ? [{ call_id: item.call_id, element: result.element }]
+      : [];
+  });
+}
+
+/** Kopiuj szczegóły dla pomocy (S3): the turn's run log to the clipboard, then "Skopiowane". */
+function copyDetails(turn: Turn, language: Language): () => void {
+  return () => {
+    const log = JSON.stringify({ run: turn.run.id, events: eventsOf(turn) }, null, 2);
+    void navigator.clipboard
+      ?.writeText(log)
+      .then(() => showToast({ kind: "done", text: copy(language, "chat_copied", {}, "adult") }));
+  };
 }
 
 export interface ChatThreadProps {
@@ -517,6 +340,8 @@ export interface ChatThreadProps {
   onOpen?: ((object: ObjectRef) => void) | undefined;
   lessonActions?: ReactNode;
   readAttachment?: ReadAttachment | undefined;
+  /** Esc stops a running turn with focus anywhere in the thread (S6, §3; lane D's hook). */
+  stop: StopKey;
 }
 
 export function ChatThread({
@@ -535,142 +360,212 @@ export function ChatThread({
   onOpen,
   lessonActions,
   readAttachment,
+  stop,
 }: ChatThreadProps): ReactElement {
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
-  // The list follows Jadwigo AI to the bottom as it writes (design review 2026-11-02): a new row,
-  // a reply that grows, the echo, the activity line. Only while the parent is at the bottom: one
-  // who scrolled up to read stays where they are until they come back down. Only the list's own box
-  // moves: scrollIntoView scrolls every scrollable ancestor too, overflow-hidden ones and the window
-  // included, which left the composer at the top of a wide window over blank space (dl-uukj.47.68).
+  /** The done turns the parent opened from their summary row, by run. */
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
+  // The list follows the bottom while the parent is within 80 px of it (§3). One who scrolled up
+  // to read stays where they are, the growing card anchored, and "Najnowsze" brings them back.
+  // Only the list's own box moves: scrollIntoView scrolls every scrollable ancestor too, the window
+  // included (dl-uukj.47.68).
   const list = useRef<HTMLOListElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  useStopKey(root, stop);
   const atBottom = useRef(true);
+  const [away, setAway] = useState(false);
   const rowCount = turns.reduce((n, t) => n + t.view.chat.length, 0);
   const lastItem = turns.at(-1)?.view.chat.at(-1);
   const growth = lastItem?.kind === "message" ? lastItem.text.length : 0;
   const follow = `${rowCount}:${growth}:${pending ?? ""}:${phase?.kind ?? ""}`;
-  useEffect(() => {
+  const toBottom = (behavior: ScrollBehavior) => {
     const box = list.current;
-    if (rowCount > 0 && atBottom.current && box !== null)
-      box.scrollTo?.({ top: box.scrollHeight, behavior: scrollBehavior() });
+    box?.scrollTo?.({ top: box.scrollHeight, behavior });
+  };
+  useEffect(() => {
+    if ((rowCount > 0 || pending !== null) && atBottom.current) toBottom(scrollBehavior());
   }, [follow]);
-  const last = turns.at(-1);
-  /** Whether Jadwigo AI has a row in the last turn yet, so the activity line needs no header. */
-  const aiSpoke =
-    pending === null &&
-    last !== undefined &&
-    (hasPlan(last) || last.view.chat.some((i) => !(i.kind === "message" && i.from === "parent")));
-  return (
-    <ol
-      ref={list}
-      aria-label={say("chat_messages")}
-      data-chat-list
-      // relative: the list is its sr-only lines' containing block, so on a long turn they stay
-      // inside its clip rather than stretching the page below the window (steward on #778).
-      className={cn("relative flex flex-1 flex-col gap-3 overflow-y-auto", parent && "-mx-3 px-3")}
-      onScroll={(e) => {
-        const list = e.currentTarget;
-        atBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 48;
-      }}
-    >
-      {turns.map((turn) => [
-        ...turnRows(turn).map((entry) =>
-          entry.kind === "plan" ? (
-            // A direct child of the scrolling list, so it pins while the turn runs and the
-            // turn's tool lines scroll beneath it (dl-uukj.47.50); a sticky card inside a row as
-            // tall as itself never pinned. Jadwigo AI's header pins with it.
-            <li
-              key={`${turn.run.id}-plan`}
-              className={cn(
-                "flex flex-col",
-                isOpen(turn) && "sticky top-0 z-10 bg-jw-card",
-                // Its fill spans the list's padding too, so no row shows beside it.
-                isOpen(turn) && parent && "-mx-3 px-3",
-              )}
-              data-chat-row
-              data-plan-row
-            >
-              {entry.header && <AiHeader language={language} />}
-              <PlanCard plan={turn.view.plan ?? []} open={isOpen(turn)} language={language} />
-            </li>
-          ) : (
-            <li
-              key={`${turn.run.id}-${entry.row.seq}`}
-              className={cn(
-                "flex flex-col",
-                entry.row.kind === "message" && entry.row.from === "parent"
-                  ? "items-end"
-                  : "items-stretch",
-              )}
-              data-chat-row
-              {...(still ? {} : { "data-enter": "" })}
-            >
-              {entry.header && <AiHeader language={language} />}
-              <RowView
-                row={entry.row}
-                run={turn.run.id}
-                language={language}
-                context={lineContext}
-                readAttachment={readAttachment}
-              />
-            </li>
-          ),
-        ),
-        // The lesson this turn wrote, as one card under its words (handoff moment 6).
-        ...(lessonObject !== undefined &&
-        onOpen !== undefined &&
-        !isOpen(turn) &&
-        turn.view.lesson !== null &&
-        wroteLesson(turn.view)
-          ? [
-              <li key={`${turn.run.id}-lesson`} className="flex flex-col" data-chat-row>
-                <LessonCard
-                  lesson={turn.view.lesson}
-                  object={lessonObject}
-                  language={language}
-                  onOpen={onOpen}
-                  {...(lessonActions !== undefined && turn === newestCard(turns)
-                    ? { actions: lessonActions }
-                    : {})}
-                />
-              </li>,
-            ]
-          : []),
-        ...(onRate !== undefined && completed(turn)
-          ? [
-              <li key={`${turn.run.id}-rating`} className="flex flex-col">
-                <Rating
-                  language={language}
-                  run={turn.run.id}
-                  onRate={onRate}
-                  onRetry={retryOf(turn, resend)}
-                />
-              </li>,
-            ]
-          : []),
-      ])}
-      {pending !== null && (
-        <li className="flex flex-col items-end" data-chat-row data-pending>
-          <div className="flex max-w-[90%] flex-col items-end gap-1 self-end" data-from="parent">
-            <p className="sr-only">{say("chat_from_parent")}</p>
-            <p className={PARENT_BOX} data-bubble>
-              {pending}
-            </p>
-          </div>
-        </li>
-      )}
-      {phase != null && (phase.open || phase.kind === "stalled") && (
-        <li className="flex flex-col" data-chat-row>
-          {!aiSpoke && <AiHeader language={language} />}
-          <ActivityLine
-            phase={phase}
+  const multiDay = new Set(turns.map((t) => dayOf(Date.parse(t.run.created_at)))).size > 1;
+  const newest = newestCard(turns);
+  const cards = cardStatesOf(turns.map(eventsOf));
+  const lastTurn = turns.at(-1);
+  const lastOpen = lastTurn !== undefined && isOpen(lastTurn);
+
+  const turnEntries = (turn: Turn, index: number): ReactElement[] => {
+    const last = index === turns.length - 1;
+    const id = turn.run.id;
+    // The lesson's version before this turn: a stopped turn's foot names the one that stands (S15).
+    const prior =
+      Math.max(0, ...turns.slice(0, index).map((t) => t.view.lesson?.revision ?? 0)) || undefined;
+    const spine = spineFor(turn, last ? (phase ?? null) : null, now, prior);
+    const reply = replyOf(turn, spine);
+    const entries: ReactElement[] = [];
+    const at = Date.parse(turn.run.created_at);
+    const before = turns[index - 1];
+    if (
+      multiDay &&
+      (before === undefined || dayOf(Date.parse(before.run.created_at)) !== dayOf(at))
+    )
+      entries.push(
+        <li key={`${id}-day`} className="flex items-center gap-3 py-1" data-day-divider>
+          <Separator className="flex-1 bg-jw-line" />
+          <span className="text-jw-page-small text-jw-ink-soft">{dayWords(at, now, language)}</span>
+          <Separator className="flex-1 bg-jw-line" />
+        </li>,
+      );
+    // The parent's words; a steer is a line in the spine's active stage instead (S17).
+    for (const item of turn.view.chat)
+      if (item.kind === "message" && item.from === "parent" && item.steer === undefined)
+        entries.push(
+          <li key={`${id}-${item.seq}`} className="flex flex-col items-end" data-chat-row>
+            <ParentBubble message={item} language={language} readAttachment={readAttachment} />
+          </li>,
+        );
+    const done = spine.phase === "done";
+    const actions: SpineActions = {
+      onRetry: last && spine.foot?.kind === "stalled" ? onRetry : retryOf(turn, resend),
+      onCopyDetails: copyDetails(turn, language),
+    };
+    entries.push(
+      <li
+        key={`${id}-spine`}
+        className="flex flex-col"
+        data-chat-row
+        data-turn={last ? "current" : "older"}
+        {...(still ? {} : { "data-enter": "" })}
+      >
+        <AiHeader language={language} />
+        {done ? (
+          <TurnSummary
+            spine={spine}
             now={now}
-            still={still}
-            onRetry={onRetry}
             language={language}
+            open={opened.has(id)}
+            onOpenChange={(open) =>
+              setOpened((was) => {
+                const next = new Set(was);
+                if (open) next.add(id);
+                else next.delete(id);
+                return next;
+              })
+            }
           />
-        </li>
+        ) : (
+          <TurnSpine spine={spine} now={now} language={language} actions={actions} />
+        )}
+      </li>,
+    );
+    for (const item of turn.view.chat)
+      if (item.kind === "approval" || item.kind === "steer")
+        entries.push(
+          <li key={`${id}-${item.seq}`} className="flex flex-col" data-chat-row>
+            <Aside item={item} language={language} context={lineContext} />
+          </li>,
+        );
+    for (const w of shownWidgets(turn, language, lineContext))
+      entries.push(
+        <li key={`${id}-${w.call_id}`} className="flex flex-col" data-chat-row>
+          {w.element}
+        </li>,
+      );
+    if (reply !== null)
+      entries.push(
+        <li key={`${id}-reply`} className="flex flex-col" data-chat-row>
+          <Reply message={reply} older={!last} language={language} context={lineContext} />
+        </li>,
+      );
+    // The lesson this turn wrote, as one card under its words (S7, S16): its state from the fold,
+    // the newest version living with the actions, every older one a superseded row.
+    const card = cardOf(turn, cards[index] ?? null);
+    if (lessonObject !== undefined && onOpen !== undefined && card !== null)
+      entries.push(
+        <li key={`${id}-lesson`} className="flex flex-col" data-chat-row>
+          <LessonCard
+            {...card}
+            object={lessonObject}
+            language={language}
+            onOpen={onOpen}
+            onFix={() => resend(copy(language, "card_fix_action", {}, "adult"))}
+            {...(lessonActions !== undefined && living(card, turn === newest)
+              ? { actions: lessonActions }
+              : {})}
+          />
+        </li>,
+      );
+    if (onRate !== undefined && completed(turn))
+      entries.push(
+        <li key={`${id}-rating`} className="flex flex-col">
+          <Rating
+            language={language}
+            run={turn.run.id}
+            onRate={onRate}
+            onRetry={retryOf(turn, resend)}
+          />
+        </li>,
+      );
+    return entries;
+  };
+
+  return (
+    <div ref={root} className="relative flex min-h-0 flex-1 flex-col" data-thread>
+      <ol
+        ref={list}
+        aria-label={say("chat_messages")}
+        data-chat-list
+        // relative: the list is its sr-only lines' containing block, so on a long turn they stay
+        // inside its clip rather than stretching the page below the window (steward on #778).
+        className={cn(
+          "relative flex flex-1 flex-col gap-3 overflow-y-auto",
+          parent && "-mx-3 px-3",
+        )}
+        onScroll={(e) => {
+          const box = e.currentTarget;
+          const near = box.scrollHeight - box.scrollTop - box.clientHeight <= FOLLOW_PX;
+          atBottom.current = near;
+          setAway(!near);
+        }}
+      >
+        {turns.flatMap(turnEntries)}
+        {pending !== null && (
+          <>
+            <li className="flex flex-col items-end" data-chat-row data-pending>
+              <div
+                className="flex max-w-[90%] flex-col items-end gap-1 self-end"
+                data-from="parent"
+              >
+                <p className="sr-only">{say("chat_from_parent")}</p>
+                <p className={PARENT_BOX} data-bubble>
+                  {pending}
+                </p>
+              </div>
+            </li>
+            {/* S9: the spine appears at send, before the run has a row. */}
+            {!lastOpen && (
+              <li className="flex flex-col" data-chat-row data-pending-spine>
+                <AiHeader language={language} />
+                <TurnSpine spine={queuedSpine(phase?.since ?? now)} now={now} language={language} />
+              </li>
+            )}
+          </>
+        )}
+      </ol>
+      {away && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="absolute bottom-2 left-1/2 -translate-x-1/2 shadow-float"
+          onClick={() => {
+            atBottom.current = true;
+            setAway(false);
+            toBottom(scrollBehavior());
+          }}
+          data-newest
+        >
+          <ArrowDownIcon aria-hidden />
+          {say("chat_newest")}
+        </Button>
       )}
-    </ol>
+    </div>
   );
 }

@@ -892,8 +892,6 @@
   "chat_finding_key_grades": "Dobra odpowiedź nie zostałaby zaliczona.",
   "chat_finding_harsh_word": "Dziecko przeczyta tu za ostre słowo.",
   "chat_check_level_info": "Dla informacji",
-  "chat_search_none": "Żaden zestaw zadań nie pasuje jeszcze do tej prośby.",
-  "chat_search_sets": "Zestawy zadań",
   "chat_announce_done": "Jadwigo AI: gotowe",
   "chat_announce_needs_you": "Jadwigo AI: czeka na Twoją odpowiedź",
   "chat_announce_stopped": "Zapisane, zatrzymane.",
@@ -1092,7 +1090,6 @@
   "attach_kind_docx": "DOCX",
   "attach_kind_heic": "HEIC",
   "attach_photo_alt": "Zdjęcie {n}",
-  "chat_photos_received": "Tak Jadwigo widzi zdjęcia",
   "chat_photo_open": "Pokaż zdjęcie {n} w pełnym rozmiarze",
   "chat_photo_unloaded": "Nie udało się pokazać zdjęcia {n}",
   "attach_uploading": "Wysyłam zdjęcie, {percent}%",
@@ -1559,6 +1556,7 @@
   "choose_own": "Albo napisz własnymi słowami…",
   "choose_skip": "Pomiń pytanie",
   "attach_caption": "Tak Jadwigo widzi zdjęcia",
+  "attach_caption_files": "Tak Jadwigo widzi pliki",
   "attach_pages": [
     {
       "declarations": ["input n", "local pages_noun = n: plural"],

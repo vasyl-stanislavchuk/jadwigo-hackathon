@@ -207,6 +207,7 @@ export function ChatPane({
         onOpen={onOpen}
         lessonActions={lessonActions}
         readAttachment={readAttachment}
+        stop={{ running: open, stopping, onStop }}
       />
       <ComposerLines
         language={language}

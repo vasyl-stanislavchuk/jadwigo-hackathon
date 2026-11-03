@@ -8,19 +8,22 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatPane, type ChatPaneProps } from "./ChatPane.tsx";
 import type { Turn } from "./conversation.ts";
 import { LessonPane } from "./LessonPane.tsx";
+import type { ObjectRef } from "./objects/ref.ts";
+import type { RunPhase } from "./phase.ts";
 
 afterEach(cleanup);
 
 /** A golden log by name (`packages/testing/src/runs/`): its events parsed, its expected view. */
-function golden(name: string): { run_id: RunId; view: RunView } {
+function golden(name: string): { run_id: RunId; view: RunView; events: RunEvent[] } {
   const log = RUN_LOGS.find((l) => l.name === name);
   if (log === undefined) throw new Error(`no golden log ${name}`);
-  const first = RunEvent.parse(log.events[0]);
-  return { run_id: first.run_id, view: structuredClone(log.expected) as RunView };
+  const events = log.events.map((e) => RunEvent.parse(e));
+  const first = events[0] as RunEvent;
+  return { run_id: first.run_id, view: structuredClone(log.expected) as RunView, events };
 }
 
 function turnOf(name: string, change: (view: RunView) => void = () => {}): Turn {
-  const { run_id, view } = golden(name);
+  const { run_id, view, events } = golden(name);
   change(view);
   const status = view.status ?? "queued";
   const run: Run = {
@@ -40,7 +43,23 @@ function turnOf(name: string, change: (view: RunView) => void = () => {}): Turn 
     created_at: "2026-09-01T08:00:00.000Z",
     completed_at: null,
   };
-  return { run, view };
+  return { run, view, events };
+}
+
+/** What the old thread drew and the spine replaces (dl-uukj.47.71.3): none of it is in the DOM. */
+function noOldRows() {
+  for (const old of [
+    "[data-tool-group]",
+    "[data-tools]",
+    "[data-plan]",
+    "[data-activity]",
+    "[data-row='error']",
+    "[data-card='plain']",
+  ])
+    expect(document.querySelector(old)).toBeNull();
+  const chat = screen.getByRole("list", { name: "Wiadomości" });
+  expect(chat.textContent).not.toContain("Szczegóły");
+  expect(chat.textContent).not.toMatch(/[a-z_]+\(|\{|"[a-z_]+":/);
 }
 
 function pane(props: Partial<ChatPaneProps> = {}) {
@@ -63,6 +82,15 @@ function pane(props: Partial<ChatPaneProps> = {}) {
 }
 
 const status = () => document.querySelector("[data-status]") as HTMLElement;
+
+/** The page's phase for a turn that ended failed (phase.ts). */
+const failedPhase = (turn: Turn): RunPhase => ({
+  kind: "failed",
+  copyKey: "chat_phase_failed",
+  since: null,
+  open: false,
+  run: turn.run.id,
+});
 const stopButton = () => screen.queryByRole("button", { name: "Zatrzymaj" });
 
 describe("the chat pane, one state per golden log", () => {
@@ -75,14 +103,13 @@ describe("the chat pane, one state per golden log", () => {
     expect(stopButton()).toBeNull();
   });
 
-  it("running (reload-with-duplicates): the state in words, a Stop, the tool line folded", () => {
+  it("running (reload-with-duplicates): the state in words, a Stop, one spine and no tool rows", () => {
     const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
     expect(status().textContent).toBe("W toku");
     // The live region stays quiet while a turn runs: it speaks when it ends or needs the parent.
     expect(screen.getByRole("status").textContent).toBe("");
-    const details = screen.getByText(/1 krok/).closest("details");
-    expect(details?.open).toBe(false);
-    expect(screen.queryByRole("list", { name: "Kroki, które się zacięły" })).toBeNull();
+    expect(document.querySelectorAll("[data-spine]")).toHaveLength(1);
+    noOldRows();
     fireEvent.click(stopButton() as HTMLElement);
     expect(onStop).toHaveBeenCalledOnce();
   });
@@ -93,19 +120,23 @@ describe("the chat pane, one state per golden log", () => {
     expect(stopping.disabled).toBe(true);
   });
 
-  it("happy turn: messages from both sides, 2 tool lines folded, done, no Stop", () => {
+  it("happy turn: the parent's words, the folded spine, the reply, done, no Stop", () => {
     pane({ turns: [turnOf("happy-turn")] });
     const messages = screen.getByRole("list", { name: "Wiadomości" });
     expect(
       within(messages).getByText("A short lesson on equal groups for grade 2, please."),
     ).toBeTruthy();
     expect(within(messages).getByText("Your lesson is ready on the right.")).toBeTruthy();
-    expect(screen.getByText("2 kroki · ostatni: Sprawdzanie lekcji")).toBeTruthy();
+    // D5: the done turn folds to one row, closed until the parent opens it.
+    const row = document.querySelector("[data-summary-row]") as HTMLElement;
+    expect(row.getAttribute("aria-expanded")).toBe("false");
+    expect(row.querySelector("[data-meta]")?.textContent).toMatch(/^2 kroki · \d/);
+    noOldRows();
     expect(status().textContent).toBe("Gotowe");
     expect(stopButton()).toBeNull();
   });
 
-  it("tool failed: the stuck line stays in view outside the fold, with its reason", () => {
+  it("tool failed: the engine's own words never reach the thread (S3)", () => {
     pane({
       turns: [
         turnOf("happy-turn", (view) => {
@@ -117,11 +148,8 @@ describe("the chat pane, one state per golden log", () => {
         }),
       ],
     });
-    const stuck = screen.getByRole("list", { name: "Kroki, które się zacięły" });
-    expect(stuck.querySelector("summary")?.textContent).toBe(
-      "Sprawdzanie lekcji · nie udało się: step s03 has no key",
-    );
-    expect(stuck.closest("details")).toBeNull();
+    expect(document.body.textContent).not.toContain("step s03 has no key");
+    noOldRows();
   });
 
   it("steer (budget-steer-then-stop): the steer at half and the stop near the cap are shown", () => {
@@ -148,16 +176,17 @@ describe("the chat pane, one state per golden log", () => {
     expect(screen.getByText("Przywracanie rozmowy…")).toBeTruthy();
   });
 
-  it("an error row (stale-attempt) copies the run id and the attempt", async () => {
-    const writeText = vi.fn(() => Promise.resolve());
+  it("a failed turn's foot copies its run log for support (D7, S3)", () => {
+    const writeText = vi.fn((_text: string) => Promise.resolve());
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
-    const turn = turnOf("stale-attempt");
-    pane({ turns: [turn] });
-    const row = screen.getByRole("alert");
-    expect(row.textContent).toContain("Ponowna próba.");
-    fireEvent.click(within(row).getByRole("button", { name: "Kopiuj szczegóły" }));
-    expect(writeText).toHaveBeenCalledWith(`run ${turn.run.id} attempt 1: StepTimedOut`);
-    expect(await within(row).findByRole("button", { name: "Skopiowane" })).toBeTruthy();
+    const turn = turnOf("failed-turn");
+    pane({ turns: [turn], phase: failedPhase(turn) });
+    expect(screen.queryByRole("alert")).toBeNull();
+    const foot = document.querySelector("[data-foot='failed']") as HTMLElement;
+    fireEvent.click(within(foot).getByRole("button", { name: "Kopiuj szczegóły dla pomocy" }));
+    const copied = JSON.parse(String(writeText.mock.calls.at(0)?.at(0)));
+    expect(copied.run).toBe(turn.run.id);
+    expect(copied.events).toHaveLength(turn.events?.length ?? -1);
   });
 
   it("a follow-up sent mid-turn is listed as queued", () => {
@@ -263,6 +292,24 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
+  it("a stopped turn's foot names the version that stands (S15)", () => {
+    // cancel-during-a-verb wrote revision 1 before the stop, so that is the version that stands.
+    pane({ turns: [turnOf("cancel-during-a-verb")] });
+    expect(document.querySelector("[data-foot='stopped']")?.textContent).toBe(
+      "Zatrzymane. Lekcja została w wersji 1, z tym, co zdążyłam zmienić.",
+    );
+  });
+
+  it("Escape in the thread stops a running turn once, and does nothing once it has ended (S6)", () => {
+    const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
+    fireEvent.keyDown(document.querySelector("[data-spine]") as HTMLElement, { key: "Escape" });
+    expect(onStop).toHaveBeenCalledTimes(1);
+    cleanup();
+    const done = pane({ turns: [turnOf("happy-turn")] });
+    fireEvent.keyDown(document.querySelector("[data-spine]") as HTMLElement, { key: "Escape" });
+    expect(done.onStop).not.toHaveBeenCalled();
+  });
+
   it("scrolls to the newest row without motion when the parent asks for less", () => {
     // Only the list's own box moves, never the page around it (dl-uukj.47.68): scrollIntoView
     // would scroll every scrollable ancestor too.
@@ -294,40 +341,35 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     }
   });
 
-  it("every error row has Copy details naming the run and the attempt", () => {
+  it("a step tried again draws no error box (S5): a retry is a quiet line in its stage", () => {
     pane({ turns: [turnOf("stale-attempt")] });
-    const error = document.querySelector("[data-row='error']");
-    const details = error?.querySelector("[data-details]")?.getAttribute("data-details") ?? "";
-    expect(details).toMatch(/^run run_\w+ attempt \d+: /);
-    expect(error?.textContent).toContain("Kopiuj szczegóły");
+    expect(screen.queryByRole("alert")).toBeNull();
+    noOldRows();
   });
 });
 
-describe("a logged steer in the chat (dl-z5ja.30)", () => {
-  it("marks a parent's lesson edit and a chat steer apart from an ordinary message", () => {
-    const turn = turnOf("happy-turn", (view) => {
-      const first = view.chat[0];
-      if (first?.kind === "message") first.steer = { source: "lesson_edit", question_ids: ["s02"] };
-    });
-    pane({ turns: [turn] });
-    const steered = document.querySelector("[data-steer='lesson_edit']");
-    expect(steered?.textContent).toContain("Ty · Twoja zmiana w lekcji");
-    cleanup();
-    pane({
-      turns: [
-        turnOf("happy-turn", (view) => {
-          const first = view.chat[0];
-          if (first?.kind === "message") first.steer = { source: "chat" };
-        }),
-      ],
-    });
-    expect(document.querySelector("[data-steer='chat']")?.textContent).toContain(
-      "Ty · Dopisane w trakcie",
-    );
+describe("a logged steer in the chat (dl-z5ja.30, S17)", () => {
+  it("draws a steer as a line in the spine, never as a bubble of its own", () => {
+    for (const steer of [
+      { source: "lesson_edit" as const, question_ids: ["s02"] },
+      { source: "chat" as const },
+    ]) {
+      pane({
+        turns: [
+          turnOf("happy-turn", (view) => {
+            const first = view.chat[0];
+            if (first?.kind === "message") first.steer = steer;
+          }),
+        ],
+      });
+      expect(document.querySelector("[data-steer]")).toBeNull();
+      expect(document.querySelector("[data-bubble]")).toBeNull();
+      cleanup();
+    }
   });
 });
 
-describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
+describe("the engine's limits never in its own words (dl-z5ja.28, D7, S3)", () => {
   const withError = (type: string, retryable: boolean) =>
     turnOf("happy-turn", (view) => {
       view.chat.push({
@@ -339,67 +381,28 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
       });
     });
 
-  it("a turn past its time limit says the lesson so far is saved and what to do next", () => {
-    pane({ turns: [withError(RUN_ERROR_TYPE.runTimedOut, false)] });
-    const row = document.querySelector("[data-row='error']");
-    expect(row?.querySelector("p")?.textContent).toBe(
-      "Ta tura trwała zbyt długo, więc się zatrzymała. Lekcja do tej pory jest zapisana: napisz, co dalej.",
-    );
-    expect(row?.textContent).not.toContain("30 minutes");
-    expect(row?.querySelector("[data-details]")?.getAttribute("data-details")).toContain(
-      "attempt 2: RunTimedOut",
-    );
+  it.each([
+    RUN_ERROR_TYPE.runTimedOut,
+    RUN_ERROR_TYPE.runIdle,
+    RUN_ERROR_TYPE.stepTimedOut,
+    "unknown-draft",
+  ])("%s: no error box, no engine message in the thread", (type) => {
+    pane({ turns: [withError(type, false)] });
+    expect(document.body.textContent).not.toContain("30 minutes");
+    noOldRows();
   });
 
-  it("a turn closed while nothing happened says so in Polish, with no retry", () => {
-    pane({
-      turns: [
-        turnOf("happy-turn", (view) => {
-          view.chat.push({
-            kind: "error",
-            seq: 99,
-            error: {
-              type: RUN_ERROR_TYPE.runIdle,
-              message: "nothing happened in the turn for 10 minutes, so it closed",
-            },
-            attempt: 1,
-            retryable: true,
-          });
-        }),
-      ],
-    });
-    const row = document.querySelector("[data-row='error']");
-    expect(row?.querySelector("p")?.textContent).toBe(
-      "Na następny krok trzeba było czekać zbyt długo, więc tura się zakończyła. Lekcja do tej pory jest zapisana: napisz, co dalej.",
-    );
-    expect(row?.textContent).not.toContain("10 minutes");
-    expect(row?.textContent).not.toContain("Ponowna próba.");
-    expect(document.querySelector("[data-row='retry-turn']")).toBeNull();
-  });
-
-  it("a step delivered again only says it is trying again", () => {
-    pane({ turns: [withError(RUN_ERROR_TYPE.stepTimedOut, true)] });
-    expect(document.querySelector("[data-row='error'] p")?.textContent).toBe("Ponowna próba.");
-  });
-
-  it("a turn whose every try failed says so plainly, with the turn's retry under it (dl-hin8.28)", () => {
+  it("a turn whose every try failed ends in the spine's foot, with Spróbuj ponownie (dl-hin8.28)", () => {
     const turn = withError(RUN_ERROR_TYPE.stepFailed, false);
     turn.view.status = "failed";
-    pane({ turns: [turn] });
-    const row = document.querySelector("[data-row='error'] p");
-    expect(row?.textContent).toBe("Jadwigo nie dała rady dokończyć tej prośby, mimo kilku prób.");
-    expect(row?.textContent).not.toContain("every try");
-    const retry = document.querySelector("[data-row='retry-turn']") as HTMLElement;
-    expect(within(retry).getByRole("button", { name: "Spróbuj ponownie" })).toBeTruthy();
-    // The turn ended: no spinner, and the status says it did not finish.
+    const first = turn.view.chat[0];
+    const words = first?.kind === "message" ? first.text : "";
+    const { onSend } = pane({ turns: [turn], phase: failedPhase(turn) });
+    const foot = document.querySelector("[data-foot='failed']") as HTMLElement;
+    expect(foot.textContent).toContain("Nie udało się ułożyć lekcji.");
+    fireEvent.click(within(foot).getByRole("button", { name: "Spróbuj ponownie" }));
+    expect(onSend).toHaveBeenCalledWith(words);
     expect(status().getAttribute("data-status")).toBe("failed");
-  });
-
-  it("any other problem keeps its message", () => {
-    pane({ turns: [withError("unknown-draft", false)] });
-    expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(
-      "Coś się zacięło: the turn ran past its 30 minutes",
-    );
   });
 });
 
@@ -420,6 +423,25 @@ describe("the message limits (dl-z5ja.62, .100)", () => {
     );
     expect(document.querySelector("[data-row='send-failed']")).toBeNull();
     expect(screen.queryByRole("button", { name: "Spróbuj ponownie" })).toBeNull();
+  });
+});
+
+describe("one living lesson card (S7, S16)", () => {
+  it("the newest version's card carries the actions; an older one is a superseded row without them", () => {
+    pane({
+      turns: [turnOf("happy-turn"), turnOf("happy-turn")],
+      lessonObject: { kind: "lesson", id: "lsn_2h4m8gyw0fb1cvz2nkqw0px8fq" } as ObjectRef,
+      onOpen: vi.fn(),
+      lessonActions: <button type="button">Daj lekcję</button>,
+    });
+    const cards = [...document.querySelectorAll("[data-card-state]")];
+    expect(cards.map((c) => c.getAttribute("data-card-state"))).toEqual(["superseded", "ready"]);
+    expect(
+      within(cards[0] as HTMLElement).queryByRole("button", { name: "Daj lekcję" }),
+    ).toBeNull();
+    expect(
+      within(cards[1] as HTMLElement).getByRole("button", { name: "Daj lekcję" }),
+    ).toBeTruthy();
   });
 });
 
@@ -472,173 +494,31 @@ describe("the two sides apart (dl-uukj.47.28)", () => {
   });
 });
 
-describe("tool calls explained (dl-uukj.47.30)", () => {
-  const line = (verb: string) => document.querySelector(`[data-tools] [data-tool='${verb}']`);
-
-  it("gives each line its icon, its sentence from the call's input, and its state in text", () => {
-    pane({ turns: [turnOf("happy-turn")] });
-    const draft = line("lesson_draft") as HTMLElement;
-    const icon = draft.querySelector("summary [data-tool-icon]");
-    expect(icon?.tagName.toLowerCase()).toBe("svg");
-    expect(icon?.getAttribute("aria-hidden")).toBe("true");
-    expect(draft.querySelector("[data-sentence]")?.textContent).toBe(
-      "Układanie lekcji o: equal groups",
-    );
-    expect(draft.querySelector("[data-mark='done']")?.getAttribute("aria-hidden")).toBe("true");
-    const state = draft.querySelector("[data-state-words]") as HTMLElement;
-    expect(state.textContent).toBe(" · gotowe");
-    expect(state.className).toContain("sr-only");
-    // No input to say more with: the verb's plain sentence.
-    expect(line("lesson_check")?.querySelector("[data-sentence]")?.textContent).toBe(
-      "Sprawdzanie lekcji",
-    );
-    expect(document.querySelector("[data-tools] [role='status']")).toBeNull();
-  });
-
-  it("sums the folded group up as the count and the last line's sentence", () => {
-    pane({ turns: [turnOf("happy-turn")] });
-    const group = document.querySelector("[data-tool-group]") as HTMLDetailsElement;
-    expect(group.open).toBe(false);
-    expect(group.querySelector("summary")?.textContent).toBe(
-      "2 kroki · ostatni: Sprawdzanie lekcji",
-    );
-    cleanup();
-    pane({ turns: [turnOf("cancel-during-a-verb")] });
-    expect(document.querySelector("[data-tool-group] summary")?.textContent).toBe(
-      "1 krok · ostatni: Układanie lekcji o: clock",
-    );
-  });
-
-  it("keeps a failed line in view, with a red dot and its reason, while the group stays folded", () => {
-    pane({
-      turns: [
-        turnOf("happy-turn", (view) => {
-          const check = view.chat.find((c) => c.kind === "tool" && c.verb === "lesson_check");
-          if (check?.kind === "tool") {
-            check.state = "failed";
-            check.error = { type: "CheckFailed", message: "step s03 has no key" };
-          }
-        }),
-      ],
-    });
-    expect((document.querySelector("[data-tool-group]") as HTMLDetailsElement).open).toBe(false);
-    const stuck = screen.getByRole("list", { name: "Kroki, które się zacięły" });
-    expect(stuck.closest("details")).toBeNull();
-    expect(stuck.querySelector("[data-mark='failed']")?.getAttribute("aria-hidden")).toBe("true");
-    const reason = stuck.querySelector("[data-state-words]") as HTMLElement;
-    expect(reason.className).not.toContain("sr-only");
-    expect(reason.textContent).toBe(" · nie udało się: step s03 has no key");
-  });
-
-  it("opens a line on what was done, and the raw input and output one more tap under Szczegóły", () => {
-    pane({ turns: [turnOf("happy-turn")] });
-    const draft = line("lesson_draft") as HTMLElement;
-    const opened = draft.querySelector("[data-tool-line]") as HTMLDetailsElement;
-    expect(opened.textContent).toContain("Co zostało zrobione");
-    const raw = draft.querySelector("[data-card='plain']") as HTMLDetailsElement;
-    expect(raw.parentElement?.closest("[data-tool-line]")).toBe(opened);
-    expect(raw.querySelector("summary")?.textContent).toBe("Szczegóły");
-    expect(raw.querySelector("[data-card-input]")?.textContent).toContain(
-      '"topic": "equal groups"',
-    );
-  });
-
-  it("spins a running line's mark only under motion-safe", () => {
-    pane({
-      turns: [
-        turnOf("happy-turn", (view) => {
-          const check = view.chat.find((c) => c.kind === "tool" && c.verb === "lesson_check");
-          if (check?.kind === "tool") check.state = "running";
-        }),
-      ],
-    });
-    const mark = line("lesson_check")?.querySelector("[data-mark='running']");
-    expect(mark?.getAttribute("class")).toContain("motion-safe:animate-spin");
-    expect(mark?.getAttribute("class")).not.toMatch(/(^|\s)animate-spin/);
-  });
-
-  it("names the child a learner verb read, when the family has them", () => {
-    pane({
-      nameOf: (id) => (id === "lrn_1" ? "Ola" : null),
-      turns: [
-        turnOf("happy-turn", (view) => {
-          const check = view.chat.find((c) => c.kind === "tool" && c.verb === "lesson_check");
-          if (check?.kind === "tool") {
-            check.verb = "learner_week";
-            check.input = { learner_id: "lrn_1" };
-            delete check.view;
-          }
-        }),
-      ],
-    });
-    expect(line("learner_week")?.querySelector("[data-sentence]")?.textContent).toBe(
-      "Czytanie tygodnia · Ola",
-    );
-  });
-});
-
-describe("the plan as a checklist (dl-uukj.47.31)", () => {
+describe("one spine per turn, no plan card (D1, S9)", () => {
   /** plan-and-cite folded up to `seq`, as a turn. */
-  function planTurn(seq: number, change: (view: RunView) => void = () => {}): Turn {
+  function planTurn(seq: number): Turn {
     const turn = turnOf("plan-and-cite");
-    const log = RUN_LOGS.find((l) => l.name === "plan-and-cite")?.events ?? [];
-    const view = foldRun(log.map((e) => RunEvent.parse(e)).filter((e) => e.seq <= seq));
-    change(view);
-    return { run: turn.run, view };
+    const events = (turn.events ?? []).filter((e) => e.seq <= seq);
+    return { run: turn.run, view: foldRun(events), events };
   }
-  const card = () => document.querySelector("[data-plan]") as HTMLElement | null;
-  const header = () => card()?.querySelector("[data-plan-header]")?.textContent;
 
-  it("pins the entries, each with its status in words, above the tool lines while the turn runs", () => {
-    pane({ turns: [planTurn(3)] });
-    expect(card()?.getAttribute("data-plan")).toBe("open");
-    expect(card()?.tagName.toLowerCase()).toBe("section");
-    expect(header()).toBe("Plan · 0 z 3");
-    const entries = [...(card()?.querySelectorAll("[data-plan-entry]") ?? [])];
-    expect(entries.map((e) => e.getAttribute("data-status"))).toEqual([
-      "in_progress",
-      "pending",
-      "pending",
-    ]);
-    expect(entries[0]?.textContent).toBe("Find questions on carrying" + "w toku");
-    // Jadwigo AI's one header sits over the plan.
+  it.each([3, 15])("plan-and-cite at seq %i: one spine under one header, no plan card", (seq) => {
+    pane({ turns: [planTurn(seq)] });
+    expect(document.querySelectorAll("[data-spine]")).toHaveLength(1);
     expect(document.querySelectorAll("[data-ai-header]")).toHaveLength(1);
-    expect(card()?.closest("li")?.querySelector("[data-ai-header]")).not.toBeNull();
+    const spine = document.querySelector("[data-spine]") as HTMLElement;
+    expect(spine.closest("li")?.querySelector("[data-ai-header]")).not.toBeNull();
+    // Not sticky (§3): it grows in place.
+    expect(spine.closest("li")?.className).not.toContain("sticky");
+    noOldRows();
   });
 
-  it("moves the count as entries are done, and keeps the plan above the tool lines", () => {
-    pane({ turns: [planTurn(15)] });
-    expect(header()).toBe("Plan · 1 z 3");
-    const plan = card() as HTMLElement;
-    const tools = document.querySelector("[data-tools]") as HTMLElement;
-    expect(plan.compareDocumentPosition(tools) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it("folds to its header once the turn ends", () => {
-    pane({
-      turns: [
-        planTurn(15, (view) => {
-          view.turn_open = false;
-          view.status = "completed";
-        }),
-      ],
-    });
-    const folded = card() as HTMLDetailsElement;
-    expect(folded.getAttribute("data-plan")).toBe("folded");
-    expect(folded.tagName.toLowerCase()).toBe("details");
-    expect(folded.open).toBe(false);
-    expect(folded.querySelector("summary")?.textContent).toBe("Plan · 1 z 3");
-  });
-
-  it("draws nothing for a plan of 2 entries", () => {
-    pane({
-      turns: [
-        planTurn(15, (view) => {
-          view.plan = view.plan?.slice(0, 2) ?? null;
-        }),
-      ],
-    });
-    expect(card()).toBeNull();
+  it("the spine appears at send, before the run has a row (S9)", () => {
+    pane({ pending: "Dodawanie do 20", now: 1_000 });
+    const spine = document.querySelector("[data-spine='queued']") as HTMLElement;
+    expect(spine.querySelector("[data-title]")?.textContent).toBe("W kolejce");
+    expect(spine.querySelector("[data-meta]")?.textContent).toBe("0 s");
+    expect(spine.textContent).toContain("Zacznę za chwilę.");
   });
 });
 
