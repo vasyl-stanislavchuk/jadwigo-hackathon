@@ -923,8 +923,6 @@ export const COPY_KEYS = [
   "chat_check_level_error",
   "chat_check_level_warning",
   "chat_check_level_info",
-  "chat_search_none",
-  "chat_search_sets",
   "chat_announce_done",
   "chat_announce_needs_you",
   "chat_announce_stopped",
@@ -1012,7 +1010,6 @@ export const COPY_KEYS = [
   // end the chat page
   // a parent's photos (dl-z5ja.11.5)
   "attach_photo_alt",
-  "chat_photos_received",
   "chat_photo_open",
   "chat_photo_unloaded",
   "attach_uploading",
@@ -1127,6 +1124,7 @@ export const COPY_KEYS = [
   "choose_own",
   "choose_skip",
   "attach_caption",
+  "attach_caption_files",
   "attach_pages",
   "day_yesterday",
   "day_today",
