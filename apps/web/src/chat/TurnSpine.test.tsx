@@ -318,6 +318,21 @@ describe("the open stage (D3) and the search tags (S14)", () => {
       "Dopisane w trakcie" + "„Dodaj jedno z dzieleniem”",
     );
   });
+
+  it("draws a lesson edit made after the turn ended without the label", () => {
+    draw(
+      spine({
+        stages: [
+          SEARCH,
+          DRAFT("active", [{ kind: "steer", afterTurn: true, ...words("chat_steered_edit") }]),
+          CHECK,
+        ],
+      }),
+    );
+    expect(document.querySelector("[data-line='steer']")?.textContent).toBe(
+      "Twoja zmiana w lekcji",
+    );
+  });
 });
 
 describe("the folded summary row (D5, §4.2)", () => {

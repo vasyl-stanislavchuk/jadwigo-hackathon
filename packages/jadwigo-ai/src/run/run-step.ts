@@ -123,12 +123,13 @@ const INSTRUCTIONS = [
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
   CARD_RULE,
   "A nearby source is a starting point: inspect the actual question.data, not only say. Adapt data, key and help consistently to the requested operation and range. Renaming a subtraction does not turn it into addition.",
+  "When you already know the changes for several steps, send all their lesson_edit calls together in one response: they run in order, each on the result of the one before, and a refused one leaves the others standing. The parent is waiting, so do not spend a response on each step.",
   "Once the questions are settled, give the lesson its title by passing title to the lesson_check that closes your work: a few plain words a child reads, naming what it practises, in the lesson's language. Never the parent's request word for word, and never a name.",
   "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key and inherits the main question family when omitted. If a check still fails, explain the limitation and do not claim the lesson is ready.",
   FENCE_RULE,
 ].join("\n");
-/** Moves on with `INSTRUCTIONS`: 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
-const PROMPT_CACHE_KEY = `${WORKFLOW}:4`;
+/** Moves on with `INSTRUCTIONS`: 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:5`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).

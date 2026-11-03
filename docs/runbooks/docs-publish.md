@@ -8,6 +8,7 @@ worth publishing (`dl-5ssh.90`). The owner runs it: a merge publishes nothing
 `jadwigo.pl` zone and with no www: a certificate, a private bucket `jadwigo-docs-prod-843109108289`,
 a CloudFront distribution that maps a page path to its `index.html`, and an A and AAAA alias record.
 `make -C infra docs-deploy` builds `apps/docs`, checks `dist/`, syncs it to the bucket and invalidates.
+`make release` skips it unless you pass `DOCS=1` (`make release DOCS=1`, `dl-5ssh.34.81`).
 Hashed files under `_astro/` cache for a year, everything else for 5 minutes, which includes the
 files agents read: `/llms.txt`, `/openapi.json` and `/mcp-tools.json`. Each page's Markdown
 (`/guides/first-call.md`) goes up in a second pass as `text/markdown; charset=utf-8`.
