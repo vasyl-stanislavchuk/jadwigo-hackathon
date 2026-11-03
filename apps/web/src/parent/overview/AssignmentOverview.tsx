@@ -8,6 +8,9 @@
  *   legend   the 6 outcomes and the twin mark
  *   sheet    a column's number opens the question's sheet (QuestionSheet.tsx)
  *
+ * On the adult frame (dl-uukj.47.67 §12.7): the wide page and a title block, the title with the
+ * counts as its one muted line. The outcome tiles are results, so they keep their verdict tones (S3).
+ *
  * Counts, never a percentage (decisions 2026-10-18 and 2026-10-03). The rows are attempt_result's,
  * so a try's value and the solution stay on each attempt's own page.
  */
@@ -15,11 +18,12 @@
 import type { ParentClient } from "@jadwigo/api-client";
 import type { AssignmentAttempts, AssignmentId } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
-import { Heading, Link, Notice, Page, Spinner } from "@jadwigo/ui";
+import { Link, Notice, Spinner } from "@jadwigo/ui";
 import { type ReactElement, type ReactNode, useEffect, useMemo, useState } from "react";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { parentPath } from "../route.ts";
+import { TitleBlock, WidePage } from "./frame.tsx";
 import { buildGrid, type Grid } from "./grid.ts";
 import { Heatmap } from "./Heatmap.tsx";
 import { Legend } from "./Legend.tsx";
@@ -114,12 +118,12 @@ function Ready({
   );
 }
 
-/** The overview: the app page's prose column, which the grid never widens (it scrolls inside). */
+/** The overview: the wide column, which the grid never widens (it scrolls inside). */
 function OverviewPage({ children }: { children: ReactNode }): ReactElement {
   return (
-    <Page width="prose" className="min-w-0" data-parent data-assignment-overview>
+    <WidePage data-parent data-assignment-overview>
       {children}
-    </Page>
+    </WidePage>
   );
 }
 
@@ -133,17 +137,20 @@ function Header({
   language: Language;
 }): ReactElement {
   return (
-    <header className="flex flex-col gap-2" data-overview-header>
-      <p className="text-jw-small text-jw-ink-soft">
-        {copy(language, "parent_overview_title", {}, CATEGORY)}
-      </p>
-      <Heading>{title}</Heading>
-      <p data-attempts={grid.rows.length}>
-        {copy(language, "parent_overview_attempts", { n: grid.rows.length }, CATEGORY)}
-      </p>
-      <p data-asked={grid.columns.length}>
-        {copy(language, "parent_review_asked", { n: grid.columns.length }, CATEGORY)}
-      </p>
-    </header>
+    <TitleBlock
+      data-overview-header
+      title={title}
+      line={
+        <>
+          <span data-attempts={grid.rows.length}>
+            {copy(language, "parent_overview_attempts", { n: grid.rows.length }, CATEGORY)}
+          </span>
+          <span aria-hidden="true">·</span>
+          <span data-asked={grid.columns.length}>
+            {copy(language, "parent_review_asked", { n: grid.columns.length }, CATEGORY)}
+          </span>
+        </>
+      }
+    />
   );
 }

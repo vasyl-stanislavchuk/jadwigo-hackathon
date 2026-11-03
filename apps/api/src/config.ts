@@ -171,3 +171,12 @@ export async function uploadsBucket(read: ReadParameter = readSsm): Promise<stri
   if (direct) return direct;
   return (await read(UPLOADS_BUCKET_PARAM))?.trim() || undefined;
 }
+
+/**
+ * The folder `make dev-all`'s uploads stand-in keeps photos in (dl-z5ja.11.19), `.logs/dev/uploads`:
+ * set, serve.ts serves the photo routes from it in place of S3. Undefined when unset or blank; the
+ * Lambda never reads it.
+ */
+export function localUploadsDir(): string | undefined {
+  return process.env["LOCAL_UPLOADS_DIR"]?.trim() || undefined;
+}

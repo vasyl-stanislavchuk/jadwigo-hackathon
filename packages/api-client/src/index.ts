@@ -8,6 +8,7 @@ export type {
   ConversationListClient,
   FeaturedClient,
   LearnerKnowledgeClient,
+  LessonGiveClient,
   ParentClient,
   PlaygroundClient,
   PodClient,

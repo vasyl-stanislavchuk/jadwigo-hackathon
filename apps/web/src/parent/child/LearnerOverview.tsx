@@ -59,7 +59,7 @@ export function LearnerOverview({
         <ol className="flex flex-col gap-4">
           {attempts.map(({ attempt, title, results }) => (
             <li key={attempt.id} data-attempt={attempt.id}>
-              <Card size="compact">
+              <Card size="compact" className="shadow-none">
                 <CardContent className="items-start gap-2">
                   <Link asChild>
                     <NavLink
@@ -73,7 +73,7 @@ export function LearnerOverview({
                       {title}
                     </NavLink>
                   </Link>
-                  <span className="text-jw-small text-jw-ink-soft">
+                  <span className="text-jw-page-small text-jw-ink-soft">
                     {day.format(new Date(attempt.started_at))}
                   </span>
                   <LessonTiles results={results} language={language} />

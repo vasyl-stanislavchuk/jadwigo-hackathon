@@ -155,6 +155,17 @@
         "question": {
           "$ref": "#/$defs/PageFamilyQuestion"
         },
+        "credit": {
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PageCredit"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "added": {
           "$ref": "#/$defs/Added"
         },
@@ -218,6 +229,7 @@
         "question_type",
         "say",
         "question",
+        "credit",
         "added",
         "placed",
         "added_for",
@@ -2057,6 +2069,44 @@
         "input"
       ],
       "additionalProperties": false
+    },
+    "PageCredit": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "licence": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_lang": {
+          "$ref": "#/$defs/Language"
+        },
+        "adapted": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "ref",
+        "licence",
+        "original_lang",
+        "adapted"
+      ],
+      "additionalProperties": false
+    },
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en"
+      ]
     },
     "Added": {
       "type": "string",

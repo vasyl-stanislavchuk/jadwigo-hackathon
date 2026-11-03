@@ -1,0 +1,93 @@
+{#- choose: the child circles one option (a square to tick when there may be several). -#}
+{% import "parts.html.j2" as parts %}
+{% import "figures.html.j2" as figures %}
+
+{#- What an option shows, in the lesson's words. -#}
+{% macro _content(c, text, sheet) %}
+{% if c.kind == "text" %}{{ text.rich(c.text) }}
+{% elif c.kind == "number" %}{{ c.number|num }}
+{% elif c.kind == "bool" %}{{ sheet.labels.true_word if c.bool else sheet.labels.false_word }}
+{% elif c.kind == "array" %}{{ figures.dots(c.rows, c.cols) }}
+{% elif c.kind == "image" %}{% if text.src(c.image) %}<img src="{{ text.src(c.image) }}" alt="{{ c.alt }}">{% endif %}
+{% elif c.kind == "pictures" %}{% for p in c.pictures if text.src(p.src) %}<img src="{{ text.src(p.src) }}" alt="{{ p.alt }}">{% endfor %}
+{% elif c.kind == "none" %}{{ sheet.labels.none_word if sheet.labels.none_word is defined else "—" }}
+{% endif %}
+{%- endmacro %}
+
+{% macro _letter(o, i) %}{{ o.letter or "ABCDE"[i] if i < 5 else (i + 1) }}{% endmacro %}
+
+{#- The words around `{oN}` markers, each option printed underlined where it stands. -#}
+{% macro _inline(q, text, sheet) %}
+{% set by_id = {} %}
+{% for o in q.data.options %}{% set _ = by_id.update({o.id: o}) %}{% endfor %}
+<div class="template">
+{% for kind, piece in text.split(q.data.stem.text if q.data.stem and q.data.stem.text else "") %}
+{% if kind == "text" %}{{ text.rich(piece) }}{% elif piece in by_id %}<span class="inline-option">{{ _content(by_id[piece].content, text, sheet) }}</span>{% else %}{{ "{" ~ piece ~ "}" }}{% endif %}
+{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro _stem(q, text) %}{% if q.data.layout != "inline" %}{{ parts.stem(q.data.stem, text) }}{% endif %}{% endmacro %}
+
+{#- A row of options, or a column when one is long. `mark` is "letter", "square" or "". -#}
+{% macro _options(q, text, sheet, mark, framed=false) %}
+{% set long = q.data.options|selectattr("content.kind", "equalto", "text")|map(attribute="content.text")|map("length")|select("gt", 12)|list %}
+<div class="options{% if long and not framed %} column{% endif %}">
+{% for o in q.data.options %}
+  {% if framed %}
+  <div class="option framed"><div class="frame">{{ _content(o.content, text, sheet) }}</div>
+    {% if mark == "square" %}<span class="square"></span>{% else %}<span class="letter">{{ _letter(o, loop.index0) }}</span>{% endif %}</div>
+  {% else %}
+  <div class="option">{% if mark == "letter" %}<span class="letter">{{ _letter(o, loop.index0) }}</span>{% elif mark == "square" %}<span class="square"></span>{% endif %}<span>{{ _content(o.content, text, sheet) }}</span></div>
+  {% endif %}
+{% endfor %}
+</div>
+{%- endmacro %}
+
+
+{#- The statement, then two large word pills: the child circles one word. -#}
+{% macro true_false(q, text, sheet) %}
+{{ _stem(q, text) }}
+<div class="pills">
+{% for o in q.data.options %}<span class="pill">{{ _content(o.content, text, sheet) }}</span>{% endfor %}
+</div>
+{%- endmacro %}
+
+{#- Options in frames, a small letter under each only for the parent: the child circles the thing. -#}
+{% macro recognition(q, text, sheet) %}
+{{ _stem(q, text) }}
+{% if q.data.layout == "inline" %}{{ _inline(q, text, sheet) }}{% else %}{{ _options(q, text, sheet, "letter", framed=true) }}{% endif %}
+{%- endmacro %}
+
+{#- A to E in circles before each option, as on the Alfik sheet; a column when one option is long. -#}
+{% macro lettered_choice(q, text, sheet) %}
+{{ _stem(q, text) }}
+{{ _options(q, text, sheet, "letter", framed=framed(q)) }}
+{%- endmacro %}
+
+{#- A square before each option: a square means "maybe more than one". -#}
+{% macro multi_select(q, text, sheet) %}
+{{ _stem(q, text) }}
+{% if q.data.layout == "inline" %}{{ _inline(q, text, sheet) }}{% else %}{{ _options(q, text, sheet, "square", framed=framed(q)) }}{% endif %}
+{%- endmacro %}
+
+{#- The tokens in a row with room for a loose circle each, or underlined in their sentence. -#}
+{% macro mark_numbers(q, text, sheet) %}
+{{ _stem(q, text) }}
+{% if q.data.layout == "inline" %}{{ _inline(q, text, sheet) }}
+{% else %}
+<div class="tokens">{% for o in q.data.options %}<span>{{ _content(o.content, text, sheet) }}</span>{% endfor %}</div>
+{% endif %}
+{%- endmacro %}
+
+{#- Two fractions with the signs in circles where the sign belongs: the child circles one. -#}
+{% macro fraction_compare(q, text, sheet) %}
+{% set signs %}<span class="signs">{% for o in q.data.options %}<span class="sign">{{ _content(o.content, text, sheet) }}</span>{% endfor %}</span>{% endset %}
+{% if q.data.line and "{pick}" in q.data.line %}
+{{ parts.stem(q.data.stem, text) }}
+<div class="template answer-line">{% for kind, piece in text.split(q.data.line) %}{% if kind == "text" %}{{ text.rich(piece) }}{% else %}{{ signs }}{% endif %}{% endfor %}</div>
+{% else %}
+{{ parts.stem(q.data.stem, text) }}
+{{ signs }}
+{% endif %}
+{%- endmacro %}

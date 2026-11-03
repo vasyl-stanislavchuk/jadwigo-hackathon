@@ -1,7 +1,7 @@
 ---
 // The design system's SegmentedControl (packages/ui primitives/segmented-control.tsx) without React:
-// 2 to 5 short choices as one row of joined segments on a quiet track, 44 px tall (size sm). The chosen
-// one wears the pick. With `name`, the segments are radios a page's script reads (the lesson filters);
+// 2 to 5 short choices as one row of joined segments on a quiet track, 40 px tall. In the adult look
+// (handoff §6.7): a stone track, the chosen segment white on a 1 px line. With `name`, the segments are radios a page's script reads (the lesson filters);
 // with `href` on every option, they are links and the chosen one is the current page (the language switch).
 interface Option {
   value: string;
@@ -50,24 +50,24 @@ const links = options.every((o) => o.href !== undefined);
 
 <style>
   .seg { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-  legend { padding: 0; font-size: 0.95rem; font-weight: 700; color: var(--jw-ink-soft); }
+  legend { padding: 0; font-size: 0.95rem; font-weight: 500; color: var(--jw-ink-soft); }
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .track {
-    display: inline-flex; align-self: flex-start; gap: 0.25rem; height: 44px; padding: 0.25rem;
-    border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card); background: var(--jw-act-quiet);
+    display: inline-flex; align-self: flex-start; gap: 0.125rem; height: var(--jw-control-height-lg); padding: 0.1875rem;
+    border-radius: var(--jw-radius-control); background: var(--secondary);
   }
   label { position: relative; display: flex; }
   input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
   label > span, a {
     display: flex; align-items: center; justify-content: center; padding: 0 0.9rem;
-    border: 2px solid transparent; border-radius: var(--jw-radius-small);
-    font-size: 0.95rem; font-weight: 600; white-space: nowrap; color: var(--jw-ink); text-decoration: none;
+    border-radius: var(--jw-radius-small);
+    font-size: 0.95rem; font-weight: 500; white-space: nowrap; color: var(--jw-ink); text-decoration: none;
     transition: background-color 120ms;
   }
-  label:hover > span, a:hover { background: var(--jw-card); }
+  label:hover > span, a:hover { background: var(--jw-hover-strong); }
   input:checked + span, a[aria-current] {
-    background: var(--jw-pick); border-color: var(--jw-pick-edge); color: var(--jw-pick-ink); font-weight: 700;
+    background: var(--jw-card); color: var(--jw-ink); box-shadow: 0 0 0 1px var(--jw-line); font-weight: 600;
   }
-  input:focus-visible + span { outline: 3px solid var(--jw-focus); outline-offset: 2px; }
+  input:focus-visible + span { box-shadow: var(--halo); }
   @media (prefers-reduced-motion: reduce) { label > span, a { transition: none; } }
 </style>

@@ -9,10 +9,9 @@
 import type { ConversationListClient, RunRatingClient } from "@jadwigo/api-client";
 import { ConversationId, type RunId, type RunRatingCreate } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
-import { cn } from "@jadwigo/ui";
+import { Badge, Button, cn, RegisterProvider } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useMemo, useState } from "react";
 import { queryLanguage, useLocation } from "../nav/location.ts";
-import { Button } from "./button.tsx";
 import { ChatPane } from "./ChatPane.tsx";
 import { type ConsentClient, ConsentScreen, giveConsent } from "./ConsentScreen.tsx";
 import { ConversationList } from "./ConversationList.tsx";
@@ -176,18 +175,15 @@ function ChatLayout({
       data-tab={name}
       onClick={() => setFront(name)}
       className={cn(
-        "flex-1 rounded-md px-3 py-1 text-sm",
+        "flex-1 rounded-jw-control px-3 py-1 text-jw-page-body",
         front === name ? "bg-muted font-medium" : "text-muted-foreground",
       )}
     >
       {label}
       {badge && (
-        <span
-          data-badge
-          className="bg-primary text-primary-foreground ml-2 rounded-full px-2 text-xs"
-        >
+        <Badge data-badge variant="count" className="ml-2">
           {say("chat_lesson_changed")}
-        </span>
+        </Badge>
       )}
     </button>
   );
@@ -198,11 +194,13 @@ function ChatLayout({
       className="grid h-dvh grid-rows-[auto_auto_1fr] gap-4 p-4 text-foreground bg-background lg:grid-rows-[auto_1fr]"
     >
       <header className="flex items-center justify-between">
-        <h1 className="text-lg font-medium">{say("chat_title")}</h1>
+        <h1 className="text-jw-page-h1 font-semibold">{say("chat_title")}</h1>
         {onNew && (
-          <Button variant="outline" size="sm" onClick={onNew}>
-            {say("chat_new")}
-          </Button>
+          <RegisterProvider value="app">
+            <Button variant="outline" size="sm" onClick={onNew}>
+              {say("chat_new")}
+            </Button>
+          </RegisterProvider>
         )}
       </header>
       <div role="tablist" aria-label={say("chat_switch")} className="flex gap-1 lg:hidden">

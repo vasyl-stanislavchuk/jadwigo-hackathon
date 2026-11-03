@@ -1,3 +1,4 @@
+import { AttachmentId, ID_PREFIXES, idOf } from "@jadwigo/contracts";
 import type { Run } from "@jadwigo/contracts/run";
 import { RUN_ERROR_TYPE, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun, type RunView } from "@jadwigo/core";
@@ -261,13 +262,20 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
   });
 
   it("scrolls to the newest row without motion when the parent asks for less", () => {
-    const scroll = vi.fn();
-    Element.prototype.scrollIntoView = scroll;
+    // Only the list's own box moves, never the page around it (dl-uukj.47.68): scrollIntoView
+    // would scroll every scrollable ancestor too.
+    const intoView = vi.fn();
+    Element.prototype.scrollIntoView = intoView;
+    const scrollTo = vi.spyOn(HTMLElement.prototype, "scrollTo").mockImplementation(() => {});
     vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce") }));
     try {
       pane({ turns: [turnOf("happy-turn")] });
-      expect(scroll).toHaveBeenCalledWith({ block: "end", behavior: "auto" });
+      const list = screen.getByRole("list", { name: "Wiadomości" });
+      expect(scrollTo.mock.contexts).toContain(list);
+      expect(scrollTo).toHaveBeenCalledWith({ top: list.scrollHeight, behavior: "auto" });
+      expect(intoView).not.toHaveBeenCalled();
     } finally {
+      scrollTo.mockRestore();
       vi.unstubAllGlobals();
     }
   });
@@ -370,6 +378,19 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
   it("a step delivered again only says it is trying again", () => {
     pane({ turns: [withError(RUN_ERROR_TYPE.stepTimedOut, true)] });
     expect(document.querySelector("[data-row='error'] p")?.textContent).toBe("Ponowna próba.");
+  });
+
+  it("a turn whose every try failed says so plainly, with the turn's retry under it (dl-hin8.28)", () => {
+    const turn = withError(RUN_ERROR_TYPE.stepFailed, false);
+    turn.view.status = "failed";
+    pane({ turns: [turn] });
+    const row = document.querySelector("[data-row='error'] p");
+    expect(row?.textContent).toBe("Jadwigo nie dała rady dokończyć tej prośby, mimo kilku prób.");
+    expect(row?.textContent).not.toContain("every try");
+    const retry = document.querySelector("[data-row='retry-turn']") as HTMLElement;
+    expect(within(retry).getByRole("button", { name: "Spróbuj ponownie" })).toBeTruthy();
+    // The turn ended: no spinner, and the status says it did not finish.
+    expect(status().getAttribute("data-status")).toBe("failed");
   });
 
   it("any other problem keeps its message", () => {
@@ -671,5 +692,43 @@ describe("the context chip and the footnote (dl-uukj.47.32)", () => {
     pane({ variant: "parent" });
     expect(document.querySelector("[data-footnote]")).toBeNull();
     expect(screen.queryByText(/może się mylić/)).toBeNull();
+  });
+});
+
+const ATTACHMENT = AttachmentId.parse(
+  idOf(ID_PREFIXES.attachment, "0b8f4c3e-6a1d-4f2b-9c7e-1d2e3f4a5b6c"),
+);
+
+describe("what Jadwigo received under a parent's message (dl-z5ja.11.6)", () => {
+  const attach = (view: RunView) => {
+    const first = view.chat.find((item) => item.kind === "message" && item.from === "parent");
+    if (first?.kind !== "message") throw new Error("the golden log has no parent message");
+    first.attachments = [
+      {
+        attachment_id: ATTACHMENT,
+        storage_path: "pods/pod_made_up/attachments/atch_1.jpg",
+        media_type: "image/jpeg",
+        bytes: 1000,
+        width: 800,
+        height: 600,
+      },
+    ];
+  };
+
+  it("shows the message's photos as a strip under its bubble when the pane can read them", () => {
+    const readAttachment = vi.fn(() => new Promise<never>(() => {}));
+    pane({ variant: "parent", turns: [turnOf("happy-turn", attach)], readAttachment });
+    const row = document.querySelector("[data-from='parent']") as HTMLElement;
+    expect(within(row).getByText("Tak Jadwigo widzi zdjęcia")).toBeTruthy();
+    expect(row.querySelectorAll("[data-attachment]")).toHaveLength(1);
+    expect(readAttachment).toHaveBeenCalledWith(ATTACHMENT);
+  });
+
+  it("shows no strip without a way to read them, and none for a message with no photos", () => {
+    pane({ variant: "parent", turns: [turnOf("happy-turn", attach)] });
+    expect(document.querySelector("[data-thread-attachments]")).toBeNull();
+    cleanup();
+    pane({ variant: "parent", turns: [turnOf("happy-turn")], readAttachment: vi.fn() });
+    expect(document.querySelector("[data-thread-attachments]")).toBeNull();
   });
 });

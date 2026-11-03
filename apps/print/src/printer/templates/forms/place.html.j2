@@ -1,0 +1,85 @@
+{#- place: the child marks the answer on a drawing: a line, a picture, a grid, a graph, a clock,
+    coins or a shape. -#}
+{% import "parts.html.j2" as parts %}
+{% import "figures.html.j2" as figures %}
+
+{#- The line the whole width, ticks at least a pencil mark apart, the number to place above it. -#}
+{% macro number_line_place(q, text, sheet) %}
+{% set d = q.data %}
+{{ parts.stem(d.stem, text) }}
+{% if d.target_label is not none %}<p class="answer"><b>{{ d.target_label|num if d.target_label is number else text.rich(d.target_label) }}</b></p>{% endif %}
+<div class="figure">{{ figures.number_line(d.min, d.max, d.step, d.labelled) }}</div>
+{%- endmacro %}
+
+{#- The picture at up to 120 mm: the child circles or crosses the right place. -#}
+{% macro hotspot(q, text, sheet) %}
+{{ parts.stem(q.data.stem, text) }}
+{% if text.src(q.data.image) %}<div class="figure"><img class="picture" src="{{ text.src(q.data.image) }}" alt="{{ q.data.image_alt }}"></div>{% endif %}
+{%- endmacro %}
+
+{% macro _grid(q, text) %}
+{{ parts.stem(q.data.stem, text) }}
+{% if q.data.label %}<p class="answer">{{ text.rich(q.data.label) }}</p>{% endif %}
+<div class="figure">{{ figures.dot_grid(q.data.size, q.data.cells or "dots") }}</div>
+{%- endmacro %}
+
+{#- A dot grid of the surface's size: colouring the dots draws the array. -#}
+{% macro spatial_build(q, text, sheet) %}{{ _grid(q, text) }}{% endmacro %}
+
+{#- The grid to split: the child draws the line(s) and writes each part's size. -#}
+{% macro area_model(q, text, sheet) %}{{ _grid(q, text) }}{% endmacro %}
+
+{#- Axes, categories and a grid row at each step; a starting bar drawn as an outline. -#}
+{% macro draw_graph(q, text, sheet) %}
+{% set d = q.data %}
+{{ parts.stem(d.stem, text) }}
+{% set steps = (d.max / d.step)|round(0, "ceil")|int %}
+{% set g = geom %}{% set H = geom.GRAPH_H_MM %}{% set C = geom.GRAPH_COL_MM %}
+{% set left = g.GRAPH_AXIS_W_MM %}{% set bottom = g.GRAPH_LABELS_H_MM %}
+{% set W = left + d.categories|length * C %}
+{% set fs = geom.SMALL_PT / geom.PT_PER_MM %}
+{#- Every value is labelled when the rows leave room for a number, else every second or fifth. -#}
+{% set every = [1, 2, 5, 10]|select("ge", (fs * 1.1 * steps / H))|first|default(10) %}
+<div class="figure">
+<svg width="{{ W|mm }}" height="{{ (H + bottom + 2)|mm }}" viewBox="0 -2 {{ W }} {{ H + bottom + 2 }}" xmlns="http://www.w3.org/2000/svg">
+  {% for i in range(steps + 1) %}
+  {% set y = H - H * i / steps %}
+  <path d="M{{ left }} {{ y }}H{{ W }}" stroke="{{ geom.GREY }}" stroke-width="{{ geom.STROKE_MM * 0.5 }}"/>
+  {% if i % every == 0 %}<text x="{{ left - g.SPACE_S_MM }}" y="{{ y + fs * 0.35 }}" font-size="{{ fs }}" text-anchor="end">{{ (i * d.step)|num }}</text>{% endif %}
+  {% endfor %}
+  {% for cat in d.categories %}
+  {% set x = left + loop.index0 * C %}
+  {% if d.starting and cat.id in d.starting %}
+  {% set h = H * d.starting[cat.id] / (steps * d.step) %}
+  <rect x="{{ x + C * 0.2 }}" y="{{ H - h }}" width="{{ C * 0.6 }}" height="{{ h }}" fill="none" stroke="#000" stroke-width="{{ geom.STROKE_MM * 1.5 }}"/>
+  {% endif %}
+  <text x="{{ x + C / 2 }}" y="{{ H + bottom * 0.7 }}" font-size="{{ fs }}" text-anchor="middle">{{ cat.label }}</text>
+  {% endfor %}
+  <path d="M{{ left }} 0V{{ H }}H{{ W }}" fill="none" stroke="#000" stroke-width="{{ geom.STROKE_MM * 2 }}"/>
+</svg>
+</div>
+{% if d.unit_label %}<p class="ends">{{ text.rich(d.unit_label) }}</p>{% endif %}
+{%- endmacro %}
+
+{#- A blank clock with numbers, minute ticks and a centre dot; the time to draw above it. -#}
+{% macro clock_set(q, text, sheet) %}
+{{ parts.stem(q.data.stem, text) }}
+<div class="beside">
+  <div class="figure">{{ figures.clock(geom.CLOCK_SET_MM) }}</div>
+  <div><p class="answer"><b>{{ text.rich(q.data.target_label) }}</b></p><p class="ends">{{ sheet.labels.hours_hand }}</p></div>
+</div>
+{%- endmacro %}
+
+{#- A purse: each coin of the bank drawn several times; the child circles the coins that pay. -#}
+{% macro money_pay(q, text, sheet) %}
+{{ parts.stem(q.data.stem, text) }}
+<p class="answer"><b>{{ text.rich(q.data.amount_label) }}</b></p>
+<div class="figure">{% for d in q.data.bank %}{% for _ in range(geom.PURSE_COPIES) %}{{ figures.coin(d) }} {% endfor %}{% endfor %}</div>
+{%- endmacro %}
+
+{#- The shape split into outlined parts: the child colours the parts. -#}
+{% macro fraction_shade(q, text, sheet) %}
+{{ parts.stem(q.data.stem, text) }}
+{% if q.data.label %}<p class="answer"><b>{{ text.rich(q.data.label) }}</b></p>{% endif %}
+<div class="figure">{{ figures.fraction_shape(q.data.shape, q.data.parts, 0, q.data.rows or 1) }}</div>
+{%- endmacro %}

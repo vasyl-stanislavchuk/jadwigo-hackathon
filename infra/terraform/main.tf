@@ -58,6 +58,17 @@ module "converter" {
   image_tag           = var.converter_image_tag
 }
 
+# The print Lambda (dl-1eieq.8.3, decision dl-o05aa): apps/print's image, which the api invokes with
+# S3 keys to draw a lesson's sheet as a PDF. print_image_tag blank makes the ECR repo only; the owner
+# pushes an image, sets the tag in prod.tfvars and applies again (dl-1eieq.8.5).
+module "print" {
+  source = "./modules/print"
+
+  environment         = var.environment
+  uploads_bucket_name = module.uploads.bucket_name
+  image_tag           = var.print_image_tag
+}
+
 # The service at app.<apex>: apps/web, and /api/* to the one Lambda (dl-5ssh.3.3).
 module "app" {
   source = "./modules/app"
@@ -180,6 +191,9 @@ module "app" {
   # The message and Stop routes poke the step host's live alias after a commit (dl-z5ja.88): the api
   # role gains lambda:InvokeFunction on that alias only.
   runner_alias_arn = module.runner.live_alias_arn
+
+  # The print route invokes the print Lambda (decision dl-o05aa), once it has an image.
+  print_function_arn = module.print.function_arn
 
   # The api role presigns, checks, copies and deletes a message's photos (modules/app/uploads.tf).
   uploads_bucket_name      = module.uploads.bucket_name

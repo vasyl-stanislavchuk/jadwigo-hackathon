@@ -78,8 +78,34 @@ describe("the lesson-ready card (dl-uukj.47.58)", () => {
     expect(shown?.querySelector("[data-card-title]")?.textContent).toBe("Równe grupy");
     expect(shown?.querySelector("[data-card-facts]")?.textContent).toMatch(/zada.* · Wersja 2/);
     expect(shown?.querySelector("[data-card-first]")?.textContent).toMatch(/^Na początek: /);
-    fireEvent.click(screen.getByRole("button", { name: "Otwórz lekcję: Równe grupy" }));
+    fireEvent.click(screen.getByRole("button", { name: "Podgląd lekcji: Równe grupy" }));
     expect(onOpen).toHaveBeenCalledWith(LESSON);
+  });
+
+  it("carries the lesson's actions under the newest card only (dl-uukj.47.55)", () => {
+    const first = happyTurn();
+    const second = happyTurn();
+    second.run = { ...second.run, id: RunId.parse("run_00000000000000000000000002") };
+    render(
+      <ChatPane
+        language="pl"
+        variant="parent"
+        turns={[first, second]}
+        queued={[]}
+        restoring={false}
+        stopping={false}
+        sendFailed={false}
+        onSend={() => {}}
+        onStop={() => {}}
+        lessonObject={LESSON}
+        onOpen={() => {}}
+        lessonActions={<span data-test-actions>actions</span>}
+      />,
+    );
+    const cards = [...document.querySelectorAll("[data-object-card='lesson']")];
+    expect(cards).toHaveLength(2);
+    expect(cards[0]?.querySelector("[data-test-actions]")).toBeNull();
+    expect(cards[1]?.querySelector("[data-card-actions] [data-test-actions]")).not.toBeNull();
   });
 
   it("is not drawn while the turn is still open", () => {

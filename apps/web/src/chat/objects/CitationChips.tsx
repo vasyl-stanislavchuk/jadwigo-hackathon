@@ -68,7 +68,7 @@ export function CitationChips({
               <button
                 type="button"
                 onClick={() => onOpen(ref)}
-                className="flex min-h-8 items-center gap-1 rounded-full border-jw border-jw-line px-2.5 text-jw-page-small text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+                className="flex min-h-jw-control-sm items-center gap-1 rounded-jw-small border-jw border-border px-2 text-jw-page-small font-medium text-foreground transition-colors duration-jw-fast hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
                 data-citation={ref.kind}
               >
                 <Icon aria-hidden className="size-3.5 text-jw-ink-soft" />

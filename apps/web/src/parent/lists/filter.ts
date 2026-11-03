@@ -1,37 +1,32 @@
 /**
- * What the Lekcje and Historia tables share (handoff §3 "Lists = table + filter", dl-z5ja.106.1):
- * a segmented filter of whose rows to show (every row, one child's, or the rows with no child) and a
- * search over each row's words. Pure, so both tables and their tests read the same rule.
+ * What the Lekcje and Historia lists share for their facets (handoff dl-uukj.47.67 §7.1, S14, S15):
+ * the Data facet's presets and the value each child has in the URL. Pure, so both lists and their
+ * tests read the same rule.
  */
 
-import type { LearnerId } from "@jadwigo/contracts";
+import type { Learner, LearnerId } from "@jadwigo/contracts";
 
-/** The filter's pick: every row, the rows with no child, or one child's. */
-export type Who = "all" | "none" | LearnerId;
+/** The Dziecko facet's value for the rows with no child. */
+export const NO_CHILD = "bez";
 
-/** What a row offers the filter and the search. */
-export interface Filterable {
-  /** The child the row belongs to, or null for "Bez dziecka". */
-  learner: LearnerId | null;
-  /** The words a search looks in: the lesson's title, the child's name. */
-  words: readonly string[];
+/** The Data facet's presets, as the URL names them: today, this week from Monday, this month. */
+export const DATE_PRESETS = ["dzis", "tydzien", "miesiac"] as const;
+
+/** Whether `at` falls in `preset`'s span, which ends now. An unknown preset holds every row. */
+export function inPreset(at: string, preset: string, now: Date): boolean {
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  if (preset === "tydzien") start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+  else if (preset === "miesiac") start.setDate(1);
+  else if (preset !== "dzis") return true;
+  return new Date(at) >= start;
 }
 
-/** Lower case with the accents off, so "zolw" finds "żółw" and "LEKCJA" finds "lekcja". */
-export function folded(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .replace(/ł/g, "l")
-    .replace(/Ł/g, "l")
-    .toLocaleLowerCase("pl");
-}
-
-/** Whether a row shows under the filter's pick and the search's words. An empty search shows all. */
-export function shows(row: Filterable, who: Who, search: string): boolean {
-  if (who === "none" && row.learner !== null) return false;
-  if (who !== "all" && who !== "none" && row.learner !== who) return false;
-  const query = folded(search.trim());
-  if (query === "") return true;
-  return row.words.some((word) => folded(word).includes(query));
+/**
+ * Each child's value in `?dziecko=`: the learner id, never a name (the #765 review, dl-uukj.47.67.31).
+ * A URL lands in the browser's history, a bookmark and analytics' page views, and a child's name must
+ * reach none of them (AGENTS.md, house rules); an id also stays the same through a rename.
+ */
+export function childSlugs(learners: readonly Learner[]): Map<LearnerId, string> {
+  return new Map(learners.map((learner) => [learner.id, learner.id]));
 }

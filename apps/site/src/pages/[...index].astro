@@ -45,7 +45,11 @@ const [one, two, three] = words.steps.items;
   {/* How it works as one path of 3 steps, then one question to try, above the lessons (owner,
       2026-11-02, dl-5ssh.4.46, dl-5ssh.4.49, dl-5ssh.4.50). The words are /jak-to-dziala's own steps. */}
   <section class="how wrap" aria-labelledby="how-title">
-    <h2 id="how-title">{words.steps.heading}</h2>
+    {/* Each section opens with its line to the parent, then the child's own artefact (dl-w0b4.123). */}
+    <div class="opener">
+      <h2 id="how-title">{words.steps.heading}</h2>
+      <p>{words.steps.lead}</p>
+    </div>
     <StepPath
       steps={[
         { who: one?.who ?? "", title: one?.title ?? "", text: one?.text ?? "", turn: "parent" },
@@ -62,12 +66,18 @@ const [one, two, three] = words.steps.items;
     {
       lessons.length > 0 ? (
         <Gallery lang={lang} lessons={lessons} row>
-          <h2 id="lessons-title">{words.lessons.row.heading}</h2>
+          <div class="opener">
+            <h2 id="lessons-title">{words.lessons.row.heading}</h2>
+            <p>{words.lessons.row.text}</p>
+          </div>
         </Gallery>
       ) : (
         <>
-          <h2 id="lessons-title" class="wrap">{words.lessons.row.heading}</h2>
-          <p class="wrap">{words.lessons.empty}</p>
+          {/* With no lessons yet, the section still opens with its line to the parent (lead, dl-w0b4.123). */}
+          <div class="opener wrap">
+            <h2 id="lessons-title">{words.lessons.row.heading}</h2>
+            <p>{words.lessons.row.text}</p>
+          </div>
         </>
       )
     }
@@ -99,27 +109,32 @@ const [one, two, three] = words.steps.items;
      the top carries one line of words (owner, 2026-11-02, dl-5ssh.4.46). */
   .hero {
     display: grid; gap: 1.5rem; align-items: center;
-    padding-block: clamp(2.5rem, 7vw, 5rem);
+    padding-block: clamp(1.5rem, 4vw, 3rem);
   }
   .hero h1 { max-width: 15ch; font-size: clamp(2.2rem, 5vw, 3.5rem); line-height: 1.08; letter-spacing: -0.015em; }
   @media (min-width: 52rem) {
-    /* The headline and the picture own the first screen: what Jadwigo is for, in focus (owner,
-       2026-11-02, dl-5ssh.4.50). */
-    .hero { grid-template-columns: 1fr 1.15fr; column-gap: 3.5rem; min-height: min(72vh, 42rem); }
+    /* The headline and the picture in one compact band, so "Jak to działa" and its path start on the
+       first screen of a laptop (owner, 2026-11-03, dl-w0b4.123; was the whole first screen, dl-5ssh.4.50). */
+    .hero { grid-template-columns: 1fr 1.15fr; column-gap: 3.5rem; }
   }
-  .hero :global(.hero-art) { height: clamp(13rem, 30vw, 23rem); }
+  /* The box is no taller than the drawing at the page's widest, which fits it by width. */
+  .hero :global(.hero-art) { height: clamp(13rem, 24vw, 17rem); }
   /* How it works: the path of 3 steps, then the question to try as the child sees it. */
-  .how { margin-top: clamp(3rem, 7vw, 4.5rem); display: grid; gap: clamp(1.75rem, 4vw, 2.75rem); }
+  .how { margin-top: clamp(1rem, 3vw, 2rem); display: grid; gap: clamp(1.75rem, 4vw, 2.75rem); }
   .lessons { margin-top: clamp(3rem, 7vw, 4.5rem); }
   /* The question to try: one sheet, centred, as wide as a page of a notebook. */
   .try { display: grid; justify-items: center; margin-block: clamp(1rem, 3vw, 2rem); }
   .try > :global(.sheet) { width: min(100%, 40rem); }
   /* Each block below the lessons starts on its own line across the page. */
-  .band { border-top: 2px solid var(--jw-line); margin-top: clamp(3rem, 7vw, 5rem); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+  .band { border-top: 1px solid var(--jw-line); margin-top: clamp(3rem, 7vw, 5rem); padding-top: clamp(2.5rem, 6vw, 4.5rem); }
   .promises ul {
     list-style: none; margin: 1.75rem 0 0; padding: 0;
     display: grid; gap: 1.5rem 2rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   }
-  .promises h3 { font-size: 1.05rem; }
+  /* Section headings on the adult scale, as in the app (dl-w0b4.124): h2 28 (26 on a phone), h3 22. */
+  h2 { font-size: var(--jw-page-h1); }
+  h3 { font-size: var(--jw-page-h2); }
+  .opener { display: grid; gap: 0.5rem; }
+  .opener p { max-width: 38rem; color: var(--jw-ink-soft); font-size: 1.15rem; }
   .promises p { margin-top: 0.35rem; color: var(--jw-ink-soft); font-size: 0.98rem; }
 </style>

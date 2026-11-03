@@ -70,6 +70,8 @@ DEV_PORTS_MISSING = $(strip $(if $(MEDALLION_DEV_WORKSPACE_NAME),$(foreach v,$(D
 ## starts only with a cap: make dev-all JADWIGO_MUSE_CAP_USD=0.50 (dl-uukj.47.14).
 ## Its verbs draw questions from the prod bank through the API, read-only, with jw's bank.env
 ## (JW_API_URL and JW_BANK_READ_TOKEN); BANK_ENV= draws from the fixture instead (dl-hin8.23).
+## A message's photos go to .logs/dev/uploads, the api's stand-in for the uploads bucket, which the
+## runner reads too (dl-z5ja.11.19). JPEG only: the converter is not wired on this machine.
 BANK_ENV ?= $(HOME)/.config/jadwigo-bank/bank.env
 DEV_AUTH ?= local
 LOCAL_RUNNER_URL = unix:$(CURDIR)/.logs/dev/runner.sock
@@ -98,10 +100,10 @@ dev-all:
 	@$(LOCAL_DB_GATE)
 	@case "$(DEV_AUTH)" in local|supabase) ;; *) echo "dev-all: DEV_AUTH=local or DEV_AUTH=supabase, not $(DEV_AUTH)"; exit 1;; esac
 	@command -v dekit >/dev/null || { echo "dev-all: dekit (mprocs) is not installed. Run: mise install"; exit 1; }
-	@mkdir -p .logs/dev
+	@mkdir -p .logs/dev/uploads
 	@echo "dev-all: the parent's app is http://127.0.0.1:$${WEB_PORT:-5173}/parent ($(if $(filter local,$(DEV_AUTH)),any email and the code 123456,jadwigo-dev's sign-in))"
 	$(if $(filter local,$(DEV_AUTH)),$(LOCAL_AUTH_ENV)) DATABASE_URL=$(LOCAL_DATABASE_URL) \
-	  LOCAL_RUNNER_URL=$(LOCAL_RUNNER_URL) MUSE_ENV=$(MUSE_ENV) BANK_ENV=$(BANK_ENV) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
+	  LOCAL_RUNNER_URL=$(LOCAL_RUNNER_URL) LOCAL_UPLOADS_DIR=$(CURDIR)/.logs/dev/uploads MUSE_ENV=$(MUSE_ENV) BANK_ENV=$(BANK_ENV) dekit mprocs --config mprocs.yaml --log-dir .logs/dev --log-mode truncate
 
 dev-app:
 	@$(LOCAL_DB_GATE)

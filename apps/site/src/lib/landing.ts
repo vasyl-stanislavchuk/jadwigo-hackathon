@@ -48,6 +48,8 @@ export const landingSchema = z.object({
   steps: z.object({
     ...head,
     intro: text,
+    // The landing page's one line to the parent under its "Jak to działa" heading (dl-w0b4.123).
+    lead: text,
     pic: text,
     items: z.array(z.object({ who: text, title: text, text })).length(3),
     request: z.object({ ask: text, lines: z.array(text).min(1), soon: text, screencast: text }),
@@ -82,27 +84,14 @@ export const landingSchema = z.object({
     teaser: z.object({ text, link: text }),
   }),
   promises: z.object({ heading: text, items: z.array(item).min(1) }),
-  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside a made-up
-  // child's profile as the parent app shows it. Goals and skill dots, never a score or a percentage.
+  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside a screenshot
+  // of the parent app's child page (dl-w0b4.123).
   partner: z.object({
     heading: text,
     text,
     pic: text,
-    child: z.object({ initial: text, name: text, sub: text }),
-    practising: text,
-    allDone: text,
-    nextUp: text,
-    states: z.object({ done: text, now: text, next: text }),
-    goals: z
-      .array(
-        z.object({
-          name: text,
-          skills: z.array(z.object({ name: text, state: z.enum(["done", "now", "next"]) })).min(1),
-        }),
-      )
-      .min(1),
-    nextLabel: text,
-    next: text,
+    // The parent app's child page, a screenshot with made-up names (dl-w0b4.123): its alt text.
+    app: text,
   }),
   // The end of the landing page and /jak-to-dziala: one line for the parent and the sign-up.
   end: z.object({ text, button: text }),
@@ -122,6 +111,8 @@ export const landingSchema = z.object({
     // with no grade tabs and no subject filter (owner, 2026-11-02, dl-5ssh.4.42).
     row: z.object({
       heading: text,
+      // The one line to the parent under the row's heading (dl-w0b4.123).
+      text,
       // /lekcje's heading over each grade's group ("Klasa 1").
       gradeLabel: text,
       // The grey slot's label on a card with no picture yet.

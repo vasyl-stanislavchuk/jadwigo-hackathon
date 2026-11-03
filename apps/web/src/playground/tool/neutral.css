@@ -50,6 +50,17 @@ html[data-playground] {
   --sidebar-accent-foreground: #171717;
   --sidebar-border: #e5e5e5;
   --sidebar-ring: #a3a3a3;
+  /* The adult layer's names (packages/ui foundation.css, dl-uukj.47.67), neutral here. */
+  --selected: #f5f5f5;
+  --selected-foreground: #171717;
+  --selected-edge: #d4d4d4;
+  --selected-row: #fafafa;
+  --control-edge: #a3a3a3;
+  --link: #171717;
+  --placeholder: #737373;
+  --primary-hover: #262626;
+  --hover-strong: #e5e5e5;
+  --destructive: #171717;
 }
 
 html[data-playground][theme="dark"] {
@@ -81,4 +92,14 @@ html[data-playground][theme="dark"] {
   --sidebar-accent-foreground: #fafafa;
   --sidebar-border: #2e2e2e;
   --sidebar-ring: #737373;
+  --selected: #262626;
+  --selected-foreground: #fafafa;
+  --selected-edge: #525252;
+  --selected-row: #171717;
+  --control-edge: #737373;
+  --link: #fafafa;
+  --placeholder: #a3a3a3;
+  --primary-hover: #e5e5e5;
+  --hover-strong: #404040;
+  --destructive: #fafafa;
 }

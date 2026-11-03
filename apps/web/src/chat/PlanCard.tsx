@@ -64,7 +64,7 @@ export function PlanCard({
       })}
     </ol>
   );
-  const frame = "rounded-jw-small border-jw border-jw-line bg-jw-card px-3 py-2 text-sm";
+  const frame = "rounded-jw-small border-jw border-jw-line bg-jw-card px-3 py-2 text-jw-page-body";
   if (open)
     return (
       <section aria-label={say("chat_plan")} className={frame} data-plan="open">

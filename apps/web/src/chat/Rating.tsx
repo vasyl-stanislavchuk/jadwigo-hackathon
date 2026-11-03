@@ -6,51 +6,20 @@
  * lead decision 37), never to an analytics event, since a note may hold learner data. Try again is
  * no route: the page sends the turn's own message again as a new turn.
  *
- * Super compact (design review 2026-11-02): one row of three small icon buttons under the turn,
- * thumbs up, thumbs down and try again, each named from copy and titled with the same words; "Jak
- * poszło?" names the group for a screen reader. Słabo opens the note under the row.
+ * On the adult kit (dl-uukj.47.67 S11, §6.9): Dobrze and Słabo are a labelled toggle group, each
+ * choice its icon and its word, so no icon stands alone; Spróbuj jeszcze raz is a quiet button with
+ * its word beside them, an action rather than a choice. The route holds two verdicts, good and bad,
+ * so the group has two (the handoff's three, Za łatwa · W sam raz · Za trudna, wait on a contract
+ * change, dl-uukj.47.67.10's follow-up). "Jak poszło?" names the group. Słabo opens the note.
  */
 
 import { track } from "@jadwigo/analytics";
 import type { RunId, RunRatingCreate } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { cn } from "@jadwigo/ui";
+import { Button, Textarea, ToggleGroup, ToggleGroupItem } from "@jadwigo/ui";
 import { RotateCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
-import type { FormEvent, ReactElement, ReactNode } from "react";
-import { useState } from "react";
-import { Button } from "./button.tsx";
-
-/** A small icon-only control, named and titled from copy. */
-function IconAction({
-  label,
-  onClick,
-  disabled = false,
-  pressed,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  pressed?: boolean;
-  children: ReactNode;
-}): ReactElement {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      disabled={disabled}
-      {...(pressed === undefined ? {} : { "aria-pressed": pressed })}
-      onClick={onClick}
-      className={cn(
-        "grid size-7 place-items-center rounded-jw-small text-jw-ink-soft hover:bg-jw-act-quiet hover:text-jw-ink focus-visible:outline-3 focus-visible:outline-jw-focus disabled:opacity-50",
-        pressed === true && "bg-jw-act-quiet text-jw-ink",
-      )}
-    >
-      {children}
-    </button>
-  );
-}
+import type { FormEvent, ReactElement } from "react";
+import { useId, useState } from "react";
 
 type State = "asking" | "missing" | "saving" | "saved" | "failed";
 
@@ -70,6 +39,7 @@ export function Rating({
   const say = (key: CopyKey) => copy(language, key, {}, "adult");
   const [state, setState] = useState<State>("asking");
   const [note, setNote] = useState("");
+  const noteId = useId();
   const rate = (body: RunRatingCreate) => {
     setState("saving");
     onRate(run, body).then(
@@ -88,45 +58,48 @@ export function Rating({
   };
   if (state === "saved")
     return (
-      <p data-rating={run} data-rated className="text-jw-page-small text-jw-ink-soft">
+      <p data-rating={run} data-rated className="text-jw-page-small text-muted-foreground">
         {say("chat_rate_thanks")}
       </p>
     );
   return (
-    <div data-rating={run} className="flex flex-col gap-1 text-sm">
-      <div role="group" aria-label={say("chat_rate_ask")} className="-ml-1.5 flex items-center">
-        <IconAction
-          label={say("chat_rate_good")}
+    <div data-rating={run} className="flex flex-col gap-2 text-jw-page-body">
+      <div className="flex flex-wrap items-center gap-2">
+        <ToggleGroup
+          type="single"
+          kind="rating"
+          // Its items are radios (one pick), so the group says so for a screen reader.
+          role="radiogroup"
+          aria-label={say("chat_rate_ask")}
           disabled={state === "saving"}
-          onClick={() => rate({ verdict: "good" })}
+          value={state === "missing" ? "bad" : ""}
+          onValueChange={(value) => {
+            if (value === "good") rate({ verdict: "good" });
+            else setState(value === "bad" ? "missing" : "asking");
+          }}
         >
-          <ThumbsUpIcon aria-hidden className="size-4" />
-        </IconAction>
-        <IconAction
-          label={say("chat_rate_bad")}
-          disabled={state === "saving"}
-          pressed={state === "missing"}
-          onClick={() => setState("missing")}
-        >
-          <ThumbsDownIcon aria-hidden className="size-4" />
-        </IconAction>
+          <ToggleGroupItem value="good" className="min-h-jw-control-sm px-2.5 text-jw-page-small">
+            <ThumbsUpIcon aria-hidden className="size-3.5" />
+            {say("chat_rate_good")}
+          </ToggleGroupItem>
+          <ToggleGroupItem value="bad" className="min-h-jw-control-sm px-2.5 text-jw-page-small">
+            <ThumbsDownIcon aria-hidden className="size-3.5" />
+            {say("chat_rate_bad")}
+          </ToggleGroupItem>
+        </ToggleGroup>
         {onRetry && (
-          <IconAction label={say("chat_rate_retry")} onClick={onRetry}>
-            <RotateCcwIcon aria-hidden className="size-4" />
-          </IconAction>
+          <Button variant="ghost" size="sm" onClick={onRetry}>
+            <RotateCcwIcon aria-hidden />
+            {say("chat_rate_retry")}
+          </Button>
         )}
       </div>
       {state === "missing" && (
-        <form onSubmit={sendBad} className="flex flex-col gap-1">
-          <label className="flex flex-col gap-1 text-jw-page-small text-jw-ink-soft">
+        <form onSubmit={sendBad} className="flex flex-col gap-2">
+          <label htmlFor={noteId} className="text-jw-page-small text-muted-foreground">
             {say("chat_rate_missing")}
-            <textarea
-              value={note}
-              rows={2}
-              className="rounded-md border px-2 py-1"
-              onChange={(e) => setNote(e.target.value)}
-            />
           </label>
+          <Textarea id={noteId} value={note} onChange={(e) => setNote(e.target.value)} />
           <Button type="submit" variant="outline" size="sm" className="self-start">
             {say("chat_rate_send")}
           </Button>

@@ -25,7 +25,7 @@ import {
   pageSpec,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import { Button } from "@jadwigo/ui";
+import { Button, RegisterProvider } from "@jadwigo/ui";
 import { ChevronRight } from "lucide-react";
 import {
   type FormEvent,
@@ -106,6 +106,7 @@ export function LessonPane({
   outcomeOf,
   ghosts = 0,
   withChild = false,
+  bare = false,
 }: {
   /** The parent's language, for the pane's own words. */
   language: Language;
@@ -133,11 +134,15 @@ export function LessonPane({
   ghosts?: number;
   /** The lesson is for a child, so an opened step shows its skill (handoff §5.5). */
   withChild?: boolean;
+  /** In the preview, whose title names the lesson (dl-1eieq.1): no heading or title of its own. */
+  bare?: boolean;
 }): ReactElement {
   const say: Say = (key, vars = {}) => copy(language, key, vars, "adult");
-  return (
+  // The pane's chrome is an adult's (the kit draws flat at the parent's sizes); each step's preview
+  // sets the child's register back, so what the child will see stays theirs.
+  const body = (
     <section aria-label={say("chat_lesson_title")} className="flex min-h-0 flex-col gap-4">
-      <h2 className="text-base font-medium">{say("chat_lesson_title")}</h2>
+      {!bare && <h2 className="text-jw-page-h2 font-semibold">{say("chat_lesson_title")}</h2>}
       {lesson === null ? (
         ghosts > 0 ? (
           <ol className="flex flex-col gap-2" data-steps>
@@ -160,10 +165,12 @@ export function LessonPane({
           outcomeOf={outcomeOf ?? (() => "pending")}
           ghosts={ghosts}
           withChild={withChild}
+          bare={bare}
         />
       )}
     </section>
   );
+  return <RegisterProvider value="app">{body}</RegisterProvider>;
 }
 
 /** A row slides in only when the system allows motion (decision 8 of wave dl-uukj.47-1). */
@@ -178,7 +185,7 @@ function Ghosts({ count, from, say }: { count: number; from: number; say: Say })
           // A ghost has no id of its own: it is a place, numbered after the last real row.
           key={`ghost-${from + i}`}
           data-ghost
-          className="flex min-h-11 items-center gap-3 rounded-md border border-dashed border-jw-line px-3 text-jw-page-small text-jw-ink-soft"
+          className="flex min-h-11 items-center gap-3 rounded-jw-control border-jw border-dashed border-jw-line px-3 text-jw-page-small text-jw-ink-soft"
         >
           <span aria-hidden className="w-4" />
           <span className="tabular-nums">{from + i}</span>
@@ -202,6 +209,7 @@ function Revision({
   outcomeOf,
   ghosts,
   withChild,
+  bare,
 }: {
   lesson: NonNullable<RunView["lesson"]>;
   say: Say;
@@ -213,6 +221,7 @@ function Revision({
   outcomeOf: (event_id: string) => PatchOutcome;
   ghosts: number;
   withChild: boolean;
+  bare: boolean;
 }): ReactElement {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const read = readDraft(lesson.lesson_file);
@@ -243,36 +252,41 @@ function Revision({
   return (
     <div data-revision={lesson.revision} className="flex flex-col gap-4 overflow-y-auto">
       <div className="flex flex-col gap-1">
-        <h3 className="min-w-0 text-lg font-medium break-words">{file.title}</h3>
+        {!bare && (
+          <h3 className="min-w-0 text-jw-page-h1 font-semibold break-words">{file.title}</h3>
+        )}
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-xs">
+          <span className="text-jw-page-small text-muted-foreground">
             {say("chat_lesson_revision", { n: lesson.revision })}
           </span>
           {changed.size > 0 && onUndo && (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               data-undo
               disabled={undoPending}
               onClick={onUndo}
-              className="rounded-md border px-2 py-0.5 text-sm"
             >
               {say("chat_undo")}
-            </button>
+            </Button>
           )}
           {openable.length > 0 && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               data-expand-all={allOpen ? "close" : "open"}
               onClick={() => setOpen(allOpen ? new Set() : new Set(openable))}
-              className="ml-auto rounded-md px-2 py-0.5 text-sm whitespace-nowrap underline-offset-4 hover:underline"
+              className="ml-auto"
             >
               {say(allOpen ? "parent_collapse_all" : "parent_expand_all")}
-            </button>
+            </Button>
           )}
         </div>
       </div>
       {undoRefused && (
-        <p role="alert" data-undo-refused className="text-sm">
+        <p role="alert" data-undo-refused className="text-jw-page-body">
           {say("chat_edit_not_applied")}
         </p>
       )}
@@ -374,13 +388,13 @@ function StepRow({
   edit: StepActions | null;
 }): ReactElement {
   const bodyId = useId();
-  const edge = changed ? "border-2 border-primary" : "border border-jw-line";
+  const edge = changed ? "border-2 border-jw-focus" : "border-jw border-jw-line";
   if (step.kind !== "question")
     return (
       <li
         data-step={step.step_id}
         data-changed={changed || undefined}
-        className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground ${edge} ${ENTER}`}
+        className={`flex min-h-11 items-center gap-3 rounded-jw-card px-3 text-jw-page-body text-muted-foreground ${edge} ${ENTER}`}
       >
         <span aria-hidden className="w-4" />
         <span className="tabular-nums">{number}</span>
@@ -394,17 +408,19 @@ function StepRow({
     step.spec.say.trim() === "" ? say("chat_lesson_step", { step: step.step_id }) : step.spec.say;
   const source = sourceOf(step.source, say);
   const view = (showKey: boolean) => (
-    <LessonTheme>
-      <FamilyView
-        spec={pageSpec(step.spec) as never}
-        language={lessonLanguage}
-        category={category}
-        clock={clock}
-        mode={ViewMode.Preview}
-        answerKey={step.spec.key as never}
-        showKey={showKey}
-      />
-    </LessonTheme>
+    <RegisterProvider value="lesson">
+      <LessonTheme>
+        <FamilyView
+          spec={pageSpec(step.spec) as never}
+          language={lessonLanguage}
+          category={category}
+          clock={clock}
+          mode={ViewMode.Preview}
+          answerKey={step.spec.key as never}
+          showKey={showKey}
+        />
+      </LessonTheme>
+    </RegisterProvider>
   );
   return (
     <li
@@ -412,7 +428,7 @@ function StepRow({
       data-step={step.step_id}
       data-changed={changed || undefined}
       data-open={open || undefined}
-      className={`rounded-md ${edge} ${ENTER}`}
+      className={`rounded-jw-card ${edge} ${ENTER}`}
     >
       <button
         type="button"
@@ -514,7 +530,7 @@ function StepRow({
 /** The tag on a row this revision changed: words, not only a coloured edge. */
 function ChangedTag({ say }: { say: Say }): ReactElement {
   return (
-    <span data-changed-mark className="shrink-0 text-xs font-medium text-primary">
+    <span data-changed-mark className="shrink-0 text-jw-page-small font-medium text-link">
       {say("chat_revision_by_ai")}
     </span>
   );
@@ -579,7 +595,7 @@ function StepEdit({
   }, [outcome, sent]);
   if (!open)
     return (
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-2 text-jw-page-body">
         <Button
           type="button"
           variant="outline"
@@ -618,7 +634,7 @@ function StepEdit({
     setWhy("");
   };
   return (
-    <form onSubmit={submit} className="mt-2 flex flex-col gap-1 text-sm">
+    <form onSubmit={submit} className="mt-2 flex flex-col gap-2 text-jw-page-body">
       {refused && (
         <p role="alert" data-edit-refused>
           {say("chat_edit_not_applied")}
@@ -629,7 +645,7 @@ function StepEdit({
         <textarea
           value={words}
           rows={2}
-          className="rounded-md border px-2 py-1"
+          className="rounded-jw-control border-jw border-input bg-background px-2.5 py-2 text-jw-page-body text-foreground outline-none focus-visible:border-jw-focus focus-visible:ring-2 focus-visible:ring-selected"
           onChange={(e) => setWords(e.target.value)}
         />
       </label>
@@ -638,17 +654,17 @@ function StepEdit({
         <textarea
           value={why}
           rows={2}
-          className="rounded-md border px-2 py-1"
+          className="rounded-jw-control border-jw border-input bg-background px-2.5 py-2 text-jw-page-body text-foreground outline-none focus-visible:border-jw-focus focus-visible:ring-2 focus-visible:ring-selected"
           onChange={(e) => setWhy(e.target.value)}
         />
       </label>
       <div className="flex gap-2">
-        <button type="submit" className="rounded-md border px-2 py-0.5">
+        <Button type="submit" variant="outline" size="sm">
           {say("chat_edit_send")}
-        </button>
-        <button type="button" onClick={() => setOpen(false)} className="px-2 py-0.5">
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
           {say("chat_edit_cancel")}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -13,6 +13,12 @@ variable "allowed_origins" {
   }
 }
 
+variable "print_days" {
+  description = "Days a printed sheet, its PDF and its error file (tagged kind=print) stay before S3 deletes them"
+  type        = number
+  default     = 30
+}
+
 variable "pending_days" {
   description = "Days an upload no message carried stays under pending/ before S3 deletes it"
   type        = number

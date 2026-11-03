@@ -23,7 +23,7 @@ const { lang } = Astro.props;
 const q = (await landingWords(lang)).hero.question;
 ---
 
-<div class="sheet paper notebook" data-answer={q.answer} data-right={q.right} data-hint={q.hint}>
+<div class="sheet paper notebook" data-audience="kid" data-answer={q.answer} data-right={q.right} data-hint={q.hint}>
   <div class="face ask">
     <p class="label">{q.label}</p>
     <div class="q">

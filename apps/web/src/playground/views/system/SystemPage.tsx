@@ -36,6 +36,9 @@ import {
 } from "@jadwigo/ui";
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { type ReactNode, useContext, useEffect, useState } from "react";
+import { AdultKitA } from "./AdultKitA.tsx";
+import { AdultKitB } from "./AdultKitB.tsx";
+import { AdultKitC } from "./AdultKitC.tsx";
 import { AppPages } from "./AppPages.tsx";
 import { DESIGN_LINES, METAPHOR, ZONES } from "./data.ts";
 import { Colour, Motion, SpaceAndShape, Sub, subId, Type } from "./Foundations.tsx";
@@ -101,6 +104,9 @@ export const MENU: readonly MenuEntry[] = [
     items: [sub("Six zones", "stage"), page("Six states", subId("The stage in six states"))],
   },
   page("App pages", "app-pages"),
+  page("Adult kit", "adult-overlays"),
+  page("Adult kit: display", "adult-kit-b"),
+  page("Adult kit: lists", "adult-kit-c"),
   { heading: "Words" },
   page("Interface words", "lines"),
   {
@@ -631,6 +637,33 @@ export function SystemPage(): JSX.Element {
               app
             >
               <AppPages mode={mode} />
+            </Section>
+
+            <Section
+              id="adult-overlays"
+              title="Adult kit"
+              lead="The parent app's overlays, menus and form controls (dl-uukj.47.67.2, .3), in the adult audience at the parent's density: tooltip, dropdown and context menu, dialog and alert dialog, popover, sheet, the three toasts, a key cap, a disabled action that says why, then field, textarea, code, checkbox, radio, radio cards, switch, select, the Dla combobox, segmented and rating toggles, and underlined tabs."
+              app
+            >
+              <AdultKitA />
+            </Section>
+
+            <Section
+              id="adult-kit-b"
+              title="Adult kit: display"
+              lead="The parent app's display parts (dl-uukj.47.67.4) in the adult audience: status by dot shape, counts, tags and chips, a disc in each of the 10 child tones, the parent's avatar, skeleton, empty states, result bars, the pager and the breadcrumb."
+              app
+            >
+              <AdultKitB />
+            </Section>
+
+            <Section
+              id="adult-kit-c"
+              title="Adult kit: lists"
+              lead="The parent app's list parts (dl-uukj.47.67.5) in the adult audience: the one-row filter bar (facets with chips and counts, the Data presets, Widok, Wyczyść) over the data table (sort asc, desc, off; checkboxes and the light selection bar; the row menu, also on a right-click; the pager), with 1 or 10 children and in each of the four list states. Below 768 the bar is Filtry (n) and a sort, the filters open in a bottom sheet, and the rows are two lines with load-more. The URL it would write shows under it."
+              app
+            >
+              <AdultKitC />
             </Section>
 
             <LessonScope>

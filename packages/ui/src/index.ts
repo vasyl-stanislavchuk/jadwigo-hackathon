@@ -3,6 +3,15 @@
 // an app page is built from (dl-uukj.32.3), and the register they draw in (dl-uukj.32.17).
 
 export {
+  type ListQuery,
+  type ListQuerySchema,
+  type ListSort,
+  PAGE_PARAM,
+  readListQuery,
+  SORT_PARAM,
+  writeListQuery,
+} from "./lib/list-query.ts";
+export {
   type Density,
   DensityScope,
   type Register,
@@ -10,9 +19,27 @@ export {
   useDensity,
   useRegister,
 } from "./lib/register.tsx";
-export { followSystemTheme, heldTheme, holdTheme, type Theme } from "./lib/theme.ts";
+export { followSystemTheme, heldTheme, holdTheme, setAudience, type Theme } from "./lib/theme.ts";
+export { TONE_COUNT, toneClasses } from "./lib/tone.ts";
 export { cn } from "./lib/utils.ts";
+export {
+  DataTable,
+  type DataTableColumn,
+  type DataTableSelection,
+  dataTableColumns,
+  type RowAction,
+} from "./parts/data-table.tsx";
+export { Facet, type FacetChoice, type FacetOption, FacetToggles } from "./parts/facet.tsx";
 export { Field } from "./parts/field.tsx";
+export {
+  activeFilterWords,
+  FilterBar,
+  type FilterBarFacet,
+  type FilterBarLabels,
+  SortMenu,
+  type TableDensity,
+  ViewMenu,
+} from "./parts/filter-bar.tsx";
 export { Heading } from "./parts/heading.tsx";
 export { Label } from "./parts/label.tsx";
 export { Link, linkVariants } from "./parts/link.tsx";
@@ -20,6 +47,14 @@ export { Logo } from "./parts/logo.tsx";
 export { Notice } from "./parts/notice.tsx";
 export { OutcomeTile } from "./parts/outcome-tile.tsx";
 export { Page } from "./parts/page.tsx";
+export {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogTrigger,
+} from "./primitives/alert-dialog.tsx";
 export { Badge, badgeVariants } from "./primitives/badge.tsx";
 export { Breadcrumb, type Crumb } from "./primitives/breadcrumb.tsx";
 export { Button, buttonVariants } from "./primitives/button.tsx";
@@ -32,7 +67,17 @@ export {
   CardHeader,
   CardTitle,
 } from "./primitives/card.tsx";
+export { Checkbox } from "./primitives/checkbox.tsx";
+export { Chip } from "./primitives/chip.tsx";
 export type { Choice, ControlSize } from "./primitives/choice.ts";
+export { Combobox, type ComboboxOption } from "./primitives/combobox.tsx";
+export {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "./primitives/context-menu.tsx";
 export {
   Dialog,
   DialogClose,
@@ -40,13 +85,41 @@ export {
   DialogFooter,
   DialogTrigger,
 } from "./primitives/dialog.tsx";
-export { Disc } from "./primitives/disc.tsx";
+export { DisabledReason } from "./primitives/disabled-reason.tsx";
+export { Disc, DiscStack } from "./primitives/disc.tsx";
+export {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "./primitives/dropdown-menu.tsx";
+export { Empty } from "./primitives/empty.tsx";
 export { Input } from "./primitives/input.tsx";
+export { InputOtp } from "./primitives/input-otp.tsx";
+export { Kbd } from "./primitives/kbd.tsx";
+export { Pagination } from "./primitives/pagination.tsx";
 export { PanelToggle } from "./primitives/panel-toggle.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./primitives/popover.tsx";
 export { Progress } from "./primitives/progress.tsx";
+export { RadioCards } from "./primitives/radio-cards.tsx";
 export { RadioGroup } from "./primitives/radio-group.tsx";
+export { ResultBar } from "./primitives/result-bar.tsx";
 export { SegmentedControl } from "./primitives/segmented-control.tsx";
+export {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./primitives/select.tsx";
 export {
   Sheet,
   SheetClose,
@@ -58,8 +131,10 @@ export {
   SheetTrigger,
 } from "./primitives/sheet.tsx";
 export { type MenuEntry, type MenuItem, SideMenu } from "./primitives/side-menu.tsx";
+export { Skeleton } from "./primitives/skeleton.tsx";
 export { Slider } from "./primitives/slider.tsx";
 export { Spinner } from "./primitives/spinner.tsx";
+export { type LessonStatus, Status } from "./primitives/status.tsx";
 export { Switch } from "./primitives/switch.tsx";
 export {
   Table,
@@ -72,6 +147,9 @@ export {
   TableRow,
 } from "./primitives/table.tsx";
 export { Tabs } from "./primitives/tabs.tsx";
+export { Textarea } from "./primitives/textarea.tsx";
+export { showToast, Toaster, type ToastInput } from "./primitives/toast.tsx";
 export { Toggle, toggleVariants } from "./primitives/toggle.tsx";
 export { ToggleGroup, ToggleGroupItem } from "./primitives/toggle-group.tsx";
+export { Tooltip, TooltipContent, TooltipTrigger } from "./primitives/tooltip.tsx";
 export { VisuallyHidden } from "./visually-hidden.tsx";

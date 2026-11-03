@@ -7741,6 +7741,17 @@
           "question": {
             "$ref": "#/components/schemas/PageFamilyQuestion"
           },
+          "credit": {
+            "default": null,
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageCredit"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "added": {
             "$ref": "#/components/schemas/Added"
           },
@@ -7804,6 +7815,7 @@
           "question_type",
           "say",
           "question",
+          "credit",
           "added",
           "placed",
           "added_for",
@@ -7855,6 +7867,37 @@
           "added",
           "ended",
           "help_used"
+        ],
+        "additionalProperties": false
+      },
+      "PageCredit": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "ref": {
+            "type": "string",
+            "minLength": 1
+          },
+          "licence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "original_lang": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "adapted": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "source",
+          "ref",
+          "licence",
+          "original_lang",
+          "adapted"
         ],
         "additionalProperties": false
       },

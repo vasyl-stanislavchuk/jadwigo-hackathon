@@ -56,6 +56,8 @@ import {
   type LearnerReports,
   type LearnerSkills,
   type LearnerSnapshot,
+  type LessonGive,
+  type LessonGiven,
   type Me,
   type ParentAttemptReview,
   type PlaygroundExamples,
@@ -186,6 +188,19 @@ export interface ConversationClient {
 }
 
 /**
+ * Giving the conversation's checked lesson to play (dl-uukj.47.55): a published version and an
+ * assignment, for one learner of the pod or for anyone on this computer. Needs a token.
+ */
+export interface LessonGiveClient {
+  /**
+   * The latest revision, once its latest lesson_check passed; else 409 `LessonNotPublishable`.
+   * A learner outside the pod is 404 `NotFound`. Giving the same revision again answers the same
+   * assignment.
+   */
+  giveLesson(conversationId: ConversationId, body: LessonGive): Promise<LessonGiven>;
+}
+
+/**
  * A parent's conversation list and its delete, which archives (dl-z5ja.105, decision dl-84wo).
  * Each needs a token.
  */
@@ -226,6 +241,7 @@ export type Client = AttemptClient &
   PodClient &
   ConversationClient &
   ConversationListClient &
+  LessonGiveClient &
   RunRatingClient &
   AttachmentClient;
 
@@ -341,6 +357,7 @@ export function createClient({
     listRunEvents: (runId, after) =>
       call(ROUTES.listRunEvents, { id: runId }, undefined, { after }),
     cancelRun: (runId, body) => call(ROUTES.cancelRun, { id: runId }, body),
+    giveLesson: (conversationId, body) => call(ROUTES.giveLesson, { id: conversationId }, body),
     rateRun: (runId, body) => call(ROUTES.rateRun, { id: runId }, body),
     createAttachment: (body) => call(ROUTES.createAttachment, {}, body),
     getAttachment: (attachmentId) => call(ROUTES.getAttachment, { id: attachmentId }, undefined),
