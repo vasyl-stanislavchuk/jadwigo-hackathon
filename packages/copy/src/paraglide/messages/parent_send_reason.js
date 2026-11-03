@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Describe the homework or add a photo first" |
+* | "Write what they should learn." |
 *
 * @param {Parent_Send_ReasonInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const parent_send_reason = /** @type {((inputs?: Parent_Send_ReasonInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_Send_ReasonInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Describe the homework or add a photo first")
-	return /** @type {LocalizedString} */ ("Najpierw opisz zadanie albo dodaj zdjęcie")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Write what they should learn.")
+	return /** @type {LocalizedString} */ ("Napisz, czego ma się uczyć.")
 });

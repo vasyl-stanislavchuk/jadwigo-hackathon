@@ -133,6 +133,12 @@ const press = async (selector: string): Promise<void> => {
   if (target === null) throw new Error(`no ${selector}`);
   await act(async () => fireEvent.click(target));
 };
+/** Opens Dla and picks its footer, "Dodaj dziecko…", which opens the dialog once Dla has closed. */
+const addFromDla = async (): Promise<void> => {
+  await act(async () => fireEvent.click(screen.getByRole("combobox", { name: "Dla" })));
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: /Dodaj dziecko…/ })));
+  await screen.findByRole("dialog", { name: "Dodaj dziecko" });
+};
 
 beforeEach(() => {
   window.sessionStorage.clear();
@@ -526,8 +532,7 @@ describe("ParentScreen", () => {
     const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
     fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
 
-    await press("[data-dla]");
-    await act(async () => fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem")));
+    await addFromDla();
     const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
     expect(within(dialog).getByText(/Nie trafia do lekcji/)).toBeDefined();
     expect(within(dialog).getByRole("radiogroup", { name: "Klasa" })).toBeDefined();
@@ -536,9 +541,10 @@ describe("ParentScreen", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(api.createLearner).toHaveBeenCalledWith({ first_name: "Ola" });
-    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    const dla = screen.getByRole("combobox", { name: "Dla" });
+    expect(dla.textContent).toContain("Ola");
     // The focus comes back to Dla, where the dialog was opened from (dl-uukj.47.20).
-    await waitFor(() => expect(document.activeElement).toBe(document.querySelector("[data-dla]")));
+    await waitFor(() => expect(document.activeElement).toBe(dla));
     expect(document.querySelector(`[data-child-row="${LEARNER}"]`)).not.toBeNull();
     expect(
       (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
@@ -563,8 +569,7 @@ describe("ParentScreen", () => {
     });
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
-    await press("[data-dla]");
-    await act(async () => fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem")));
+    await addFromDla();
     const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
     fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Ola" } });
     await press("[data-add-child-dialog] [data-add]");
@@ -978,7 +983,7 @@ describe("ParentScreen", () => {
       />,
     );
     await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
-    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    expect(screen.getByRole("combobox", { name: "Dla" }).textContent).toContain("Ola");
   });
 
   it("shows no provider button when the build turns none on", async () => {

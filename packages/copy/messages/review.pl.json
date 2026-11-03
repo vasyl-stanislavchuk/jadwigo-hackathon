@@ -782,6 +782,8 @@
   "parent_overview_empty": false,
   "parent_result_right": false,
   "parent_add_child_reason": false,
+  "parent_grade_n": false,
+  "parent_grade_age": false,
   "parent_filter_label": false,
   "parent_filter_all": false,
   "parent_search": false,

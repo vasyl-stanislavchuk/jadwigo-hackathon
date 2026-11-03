@@ -667,6 +667,8 @@ export const COPY_KEYS = [
   "parent_overview_empty",
   "parent_result_right",
   "parent_add_child_reason",
+  "parent_grade_n",
+  "parent_grade_age",
   "parent_filter_label",
   "parent_filter_all",
   "parent_search",
