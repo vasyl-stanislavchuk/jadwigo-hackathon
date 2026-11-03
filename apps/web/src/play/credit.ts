@@ -69,8 +69,10 @@ function lineOf(credit: PageCredit, language: Language): CreditShown["line"] {
 /** The credit a question shows in `language` (the lesson's), or null when it shows none. */
 export function creditShown(credit: PageCredit | null, language: Language): CreditShown | null {
   if (credit === null) return null;
-  const source = SOURCES[credit.source];
-  const licence = LICENCES[credit.licence];
+  // Own keys only: a credit is page data, and `constructor`, `toString` or `__proto__` would read
+  // Object.prototype's instead and draw "z Object" or throw in the page's render.
+  const source = Object.hasOwn(SOURCES, credit.source) ? SOURCES[credit.source] : undefined;
+  const licence = Object.hasOwn(LICENCES, credit.licence) ? LICENCES[credit.licence] : undefined;
   if (source === undefined || licence === undefined) return null;
   const notice = source.notice?.(language);
   return {

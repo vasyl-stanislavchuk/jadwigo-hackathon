@@ -36,4 +36,11 @@ describe("creditShown", () => {
     expect(creditShown({ ...KHAN, source: "elsewhere" }, "pl")).toBeNull();
     expect(creditShown({ ...KHAN, licence: "cc-by-nd-4.0" }, "pl")).toBeNull();
   });
+
+  it("shows nothing for a source or licence named like an Object.prototype key, and never throws", () => {
+    for (const key of ["constructor", "toString", "__proto__", "hasOwnProperty"]) {
+      expect(creditShown({ ...KHAN, source: key }, "pl")).toBeNull();
+      expect(creditShown({ ...KHAN, licence: key }, "pl")).toBeNull();
+    }
+  });
 });
