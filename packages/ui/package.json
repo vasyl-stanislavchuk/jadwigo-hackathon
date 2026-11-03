@@ -29,7 +29,7 @@
     "clsx": "joins class names in cn() (src/lib/utils.ts)",
     "happy-dom": "the DOM the dom Vitest project runs *.test.tsx in, as the playground's tests do",
     "lucide-react": "the icons the primitives and parts draw (a chevron, a check, a close cross, Field's problem mark)",
-    "radix-ui": "the behaviour under the shadcn/ui primitives: popover, tooltip, dropdown and context menu, alert dialog, dialog (the sheet, src/primitives/sheet.tsx), radio group (radio-group, segmented-control), tabs, and Slot for asChild (Button, Link, OutcomeTile)",
+    "radix-ui": "the behaviour under the shadcn/ui primitives: popover, tooltip, dropdown and context menu, alert dialog, dialog (the sheet, src/primitives/sheet.tsx), radio group (radio-group, segmented-control), tabs, collapsible (src/primitives/collapsible.tsx: a chat turn and its stages fold), separator (src/primitives/separator.tsx, the day divider), and Slot for asChild (Button, Link, OutcomeTile)",
     "react": "the components in src/*.tsx; 18.3.1, the version the playground runs (dl-5ssh.34.6 ports it)",
     "react-dom": "React's renderer, which @testing-library/react renders the components with",
     "sonner": "the toast (src/primitives/toast.tsx): Zrobione, Do cofnięcia, Nie wyszło (dl-uukj.47.67 D17)",

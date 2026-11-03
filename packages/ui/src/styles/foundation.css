@@ -350,6 +350,9 @@
   --jw-control-height-sm: 2.75rem; /* 44px */
   /* An adult's large control: sign-in and consent, one step up from the app's (dl-uukj.47.67 S2). */
   --jw-control-height-lg: 2.5rem; /* 40px */
+  /* An adult's square icon button between the small and the app's: a lesson card's expand, a turn's
+     * foot (handoff dl-uukj.47.71 §4.1, §4.4). The same in every density. */
+  --jw-control-height-icon: 2rem; /* 32px */
   /* A small line on an app page: a row's second fact, a muted note. The parent's density sets 12.5. */
   --jw-page-small: 0.9375rem; /* 15px */
   /* The adult's smallest words: a count, a badge in the sidebar, a small disc's initial (handoff §3). */
@@ -402,6 +405,7 @@
   --jw-step-shift: 1.5rem; /* 24px: how far it slides */
   --jw-dur-scroll: 320ms; /* a scroll the frame makes: more below, to the band, to a new hint */
   --jw-dur-tools: 200ms; /* the laptop's tools panel unfolds upward */
+  --jw-dur-fold: 200ms; /* a collapsible opens or folds: a chat stage, a turn (handoff dl-uukj.47.71 §6) */
   --jw-dur-tick: 400ms; /* the right tick arrives */
   --jw-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -1326,6 +1330,7 @@
     --jw-dur-step: 0ms;
     --jw-dur-scroll: 0ms;
     --jw-dur-tools: 0ms;
+    --jw-dur-fold: 0ms;
     --jw-dur-tick: 0ms;
   }
 

@@ -55,6 +55,7 @@ describe("conversationReducer", () => {
     });
     expect(state.runs[0]?.events.map((e) => e.seq)).toEqual(events.map((e) => e.seq));
     expect(turnsOf(state)[0]?.view).toEqual(foldRun(events));
+    expect(turnsOf(state)[0]?.events?.map((e) => e.seq)).toEqual(events.map((e) => e.seq));
     // A push after the fetch that repeats what is held changes nothing.
     const again = conversationReducer(state, { type: "live", run_id: run.id, events });
     expect(again.runs[0]?.events).toHaveLength(events.length);
