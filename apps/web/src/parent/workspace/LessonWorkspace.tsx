@@ -102,7 +102,7 @@ export function LessonWorkspace({
     consented,
     refetch,
     retry,
-    next,
+    nextRows,
     sendNow,
     takeNext,
     contextClosed,
@@ -255,7 +255,7 @@ export function LessonWorkspace({
       pending={state.pending?.text ?? null}
       onRetry={retry}
       nameOf={(id) => learners.find((l) => l.id === id)?.first_name ?? null}
-      next={next}
+      next={nextRows}
       onSendNow={sendNow}
       onTakeNext={takeNext}
       contextClosed={contextClosed}

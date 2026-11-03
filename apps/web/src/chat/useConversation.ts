@@ -6,7 +6,7 @@
  */
 
 import { ApiError } from "@jadwigo/api-client";
-import { type AttachmentId, ErrorType, type EventId } from "@jadwigo/contracts";
+import { AttachmentId, ErrorType, type EventId } from "@jadwigo/contracts";
 import type { ConversationId, MessageContext, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useContextClosed } from "./contextHold.ts";
@@ -21,7 +21,7 @@ import {
 } from "./conversation.ts";
 import { newEventId } from "./ids.ts";
 import type { LessonChange } from "./patches.ts";
-import { useNextQueue } from "./queue.ts";
+import { useNextQueue, type Waiting } from "./queue.ts";
 import {
   type EventsAnswer,
   eventsPath,
@@ -111,6 +111,17 @@ export function hotTransport(pace: Pace | null = null): EngineTransport | null {
   };
 }
 
+/**
+ * A queued row's photo ids, read back from the tab's storage: only those that still parse as
+ * attachment ids go out with the message.
+ */
+function heldIds(ids: readonly string[]): AttachmentId[] {
+  return ids.flatMap((id) => {
+    const parsed = AttachmentId.safeParse(id);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
+
 export interface Conversation {
   state: ConversationState;
   /** Sends the parent's words, with the page they were sent from when there is one (dl-uukj.47.12). */
@@ -139,7 +150,12 @@ export interface Conversation {
    * in the tab. It goes out in order once the turn ends, one turn each.
    */
   next: readonly string[];
-  /** "Wyślij teraz": one waiting row goes into the running turn now, as a steer. */
+  /** The same rows with their photos' ids, for the row above the composer (dl-uukj.47.71.9). */
+  nextRows: readonly Waiting[];
+  /**
+   * "Wyślij teraz": one waiting row goes into the running turn now, as a steer. A row with photos
+   * can't be a steer, so it waits for the turn to end (the row says so).
+   */
   sendNow(index: number): void;
   /** Takes one waiting row out (to remove it, or back to the composer), answering its words. */
   takeNext(index: number): string | null;
@@ -349,12 +365,12 @@ export function useConversation(
   const send = useCallback(
     (text: string, context?: MessageContext, attachmentIds: readonly AttachmentId[] = []) => {
       const last = turnsOf(latest.current).at(-1);
-      // Mid-turn words wait under "Następne" in the tab, not in the running turn's inbox (once the
-      // account they belong to is known; before that they go as they did).
+      // Mid-turn words and photos wait in the tab, not in the running turn's inbox (once the
+      // account they belong to is known; before that they go as they did). A photo message waits
+      // too, with its photos (dl-uukj.47.71.9): it goes as its own turn once this one ends.
       const busy = (last !== undefined && isOpen(last)) || latest.current.pending !== null;
-      // The queue keeps words only, so a message with photos goes now (dl-z5ja.11.16).
-      if (busy && queue.ready && attachmentIds.length === 0) {
-        queue.add(text);
+      if (busy && queue.ready) {
+        queue.add(text, attachmentIds);
         return;
       }
       void post(text, context, false, attachmentIds);
@@ -368,15 +384,25 @@ export function useConversation(
    */
   const sendNow = useCallback(
     (index: number) => {
-      const text = queue.items[index];
-      if (text === undefined) return;
+      const row = queue.rows[index];
+      if (row === undefined) return;
+      const { text, attachmentIds } = row;
+      const running = () => {
+        const last = turnsOf(latest.current).at(-1);
+        return last !== undefined && isOpen(last);
+      };
+      // A steer carries no photos: a photo row waits for the turn to end.
+      if (attachmentIds.length > 0 && running()) return;
       void stillOwner().then((mine) => {
         if (!mine) return;
-        const last = turnsOf(latest.current).at(-1);
-        if (last === undefined || !isOpen(last)) {
-          void post(text, undefined, true).then((ok) => ok && queue.remove(text));
+        if (!running()) {
+          void post(text, undefined, true, heldIds(attachmentIds)).then(
+            (ok) => ok && queue.remove(text),
+          );
           return;
         }
+        // The turn ended and another started in the meantime: the photos still wait.
+        if (attachmentIds.length > 0) return;
         transport
           .send({
             conversation_id: conversation,
@@ -398,7 +424,7 @@ export function useConversation(
           );
       });
     },
-    [queue.items, queue.remove, stillOwner, post, transport, conversation, follow, went, fail],
+    [queue.rows, queue.remove, stillOwner, post, transport, conversation, follow, went, fail],
   );
 
   /** "Spróbuj ponownie" after a failed send of any kind: the same send, done again. */
@@ -413,21 +439,21 @@ export function useConversation(
   // Once no turn runs, the waiting rows go out in order, one turn each; never after a failed send
   // (it waits for "Spróbuj ponownie"), a failed restore or a lesson that is not there.
   useEffect(() => {
-    if (queue.items.length === 0 || state.connection === "restoring" || state.pending !== null)
+    if (queue.rows.length === 0 || state.connection === "restoring" || state.pending !== null)
       return;
     if (state.sendFailed || state.restoreFailed || state.notFound) return;
     const last = turnsOf(state).at(-1);
     if (last !== undefined && isOpen(last)) return;
-    const text = queue.items[0];
-    if (text === undefined || draining.current) return;
+    const row = queue.rows[0];
+    if (row === undefined || draining.current) return;
     draining.current = true;
     void stillOwner()
-      .then((mine) => (mine ? post(text, undefined, true) : false))
-      .then((ok) => ok && queue.remove(text))
+      .then((mine) => (mine ? post(row.text, undefined, true, heldIds(row.attachmentIds)) : false))
+      .then((ok) => ok && queue.remove(row.text))
       .finally(() => {
         draining.current = false;
       });
-  }, [state, queue.items, queue.remove, post, stillOwner]);
+  }, [state, queue.rows, queue.remove, post, stillOwner]);
 
   const consented = useCallback(() => {
     const words = refused;
@@ -526,6 +552,7 @@ export function useConversation(
     refetch,
     retry,
     next: queue.items,
+    nextRows: queue.rows,
     sendNow,
     takeNext: queue.take,
     contextClosed: chip.closed,
