@@ -11,7 +11,7 @@
 
 import type { RunEvent, RunId, RunRatingCreate } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import type { ChatItem } from "@jadwigo/core";
+import type { ChatItem, RunView } from "@jadwigo/core";
 import { Button, cn, Separator, showToast } from "@jadwigo/ui";
 import { ArrowDownIcon } from "lucide-react";
 import {
@@ -33,9 +33,10 @@ import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
 import type { ObjectRef } from "./objects/ref.ts";
 import type { RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
+import { cardStatesOf } from "./spine/card.ts";
 import type { LineContext } from "./spine/lines.ts";
 import { spineOf } from "./spine/spineOf.ts";
-import type { TurnSpine as Spine } from "./spine/types.ts";
+import type { LessonCardState, TurnSpine as Spine } from "./spine/types.ts";
 import { type SpineActions, TurnSpine } from "./TurnSpine.tsx";
 import { TurnSummary } from "./TurnSummary.tsx";
 import { type StopKey, useStopKey } from "./useStopKey.ts";
@@ -126,6 +127,23 @@ export const lessMotion = (): boolean =>
 
 /** Smooth unless the parent asked the system for less motion. */
 const scrollBehavior = (): ScrollBehavior => (lessMotion() ? "auto" : "smooth");
+
+/**
+ * Where a turn's card comes from: lane A's fold over its log, or, for a turn built without its log
+ * (a test's), the revision it wrote once it ended.
+ */
+function cardOf(
+  turn: Turn,
+  state: LessonCardState | null,
+): { state: LessonCardState } | { lesson: NonNullable<RunView["lesson"]> } | null {
+  if (turn.events !== undefined) return state === null ? null : { state };
+  const lesson = turn.view.lesson;
+  return !isOpen(turn) && lesson !== null && wroteLesson(turn.view) ? { lesson } : null;
+}
+
+/** Whether a card is the living one, which alone carries the actions (S7). */
+const living = (card: NonNullable<ReturnType<typeof cardOf>>, newest: boolean): boolean =>
+  "state" in card ? card.state.kind !== "superseded" : newest;
 
 /** The newest finished turn that wrote the lesson: the one whose card carries the actions. */
 function newestCard(turns: readonly Turn[]): Turn | undefined {
@@ -370,6 +388,7 @@ export function ChatThread({
   }, [follow]);
   const multiDay = new Set(turns.map((t) => dayOf(Date.parse(t.run.created_at)))).size > 1;
   const newest = newestCard(turns);
+  const cards = cardStatesOf(turns.map(eventsOf));
   const lastTurn = turns.at(-1);
   const lastOpen = lastTurn !== undefined && isOpen(lastTurn);
 
@@ -456,22 +475,21 @@ export function ChatThread({
           <Reply message={reply} older={!last} language={language} context={lineContext} />
         </li>,
       );
-    // The lesson this turn wrote, as one card under its words.
-    if (
-      lessonObject !== undefined &&
-      onOpen !== undefined &&
-      !isOpen(turn) &&
-      turn.view.lesson !== null &&
-      wroteLesson(turn.view)
-    )
+    // The lesson this turn wrote, as one card under its words (S7, S16): its state from the fold,
+    // the newest version living with the actions, every older one a superseded row.
+    const card = cardOf(turn, cards[index] ?? null);
+    if (lessonObject !== undefined && onOpen !== undefined && card !== null)
       entries.push(
         <li key={`${id}-lesson`} className="flex flex-col" data-chat-row>
           <LessonCard
-            lesson={turn.view.lesson}
+            {...card}
             object={lessonObject}
             language={language}
             onOpen={onOpen}
-            {...(lessonActions !== undefined && turn === newest ? { actions: lessonActions } : {})}
+            onFix={() => resend(copy(language, "card_fix_action", {}, "adult"))}
+            {...(lessonActions !== undefined && living(card, turn === newest)
+              ? { actions: lessonActions }
+              : {})}
           />
         </li>,
       );

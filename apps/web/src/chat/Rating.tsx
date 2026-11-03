@@ -11,15 +11,23 @@
  * its word beside them, an action rather than a choice. The route holds two verdicts, good and bad,
  * so the group has two (the handoff's three, Za łatwa · W sam raz · Za trudna, wait on a contract
  * change, dl-uukj.47.67.10's follow-up). "Jak poszło?" names the group. Słabo opens the note.
+ *
+ * Drawn as the chat handoff's rating row (dl-uukj.47.71 S8, s15): the label in muted words, the 2
+ * values as words on one stone track (no icons), the pick in the picked fill, and Spróbuj jeszcze
+ * raz at the row's end. The 3 values wait on dl-uukj.47.67.21 (owner, 2026-11-03).
  */
 
 import { track } from "@jadwigo/analytics";
 import type { RunId, RunRatingCreate } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { Button, Textarea, ToggleGroup, ToggleGroupItem } from "@jadwigo/ui";
-import { RotateCcwIcon, ThumbsDownIcon, ThumbsUpIcon } from "lucide-react";
+import { RotateCcwIcon } from "lucide-react";
 import type { FormEvent, ReactElement } from "react";
 import { useId, useState } from "react";
+
+/** One value on the track: the small radius (4), no edge until picked (handoff §11). */
+const SEGMENT =
+  "min-h-7 rounded-jw-small border-transparent bg-transparent px-2.5 text-jw-page-small hover:bg-jw-card";
 
 type State = "asking" | "missing" | "saving" | "saved" | "failed";
 
@@ -40,6 +48,7 @@ export function Rating({
   const [state, setState] = useState<State>("asking");
   const [note, setNote] = useState("");
   const noteId = useId();
+  const labelId = useId();
   const rate = (body: RunRatingCreate) => {
     setState("saving");
     onRate(run, body).then(
@@ -65,12 +74,16 @@ export function Rating({
   return (
     <div data-rating={run} className="flex flex-col gap-2 text-jw-page-body">
       <div className="flex flex-wrap items-center gap-2">
+        <span id={labelId} className="text-jw-page-small text-jw-ink-soft">
+          {say("chat_rate_ask")}
+        </span>
         <ToggleGroup
           type="single"
           kind="rating"
           // Its items are radios (one pick), so the group says so for a screen reader.
           role="radiogroup"
-          aria-label={say("chat_rate_ask")}
+          aria-labelledby={labelId}
+          className="gap-0 rounded-jw-control bg-jw-hover p-0.5"
           disabled={state === "saving"}
           value={state === "missing" ? "bad" : ""}
           onValueChange={(value) => {
@@ -78,17 +91,15 @@ export function Rating({
             else setState(value === "bad" ? "missing" : "asking");
           }}
         >
-          <ToggleGroupItem value="good" className="min-h-jw-control-sm px-2.5 text-jw-page-small">
-            <ThumbsUpIcon aria-hidden className="size-3.5" />
+          <ToggleGroupItem value="good" className={SEGMENT}>
             {say("chat_rate_good")}
           </ToggleGroupItem>
-          <ToggleGroupItem value="bad" className="min-h-jw-control-sm px-2.5 text-jw-page-small">
-            <ThumbsDownIcon aria-hidden className="size-3.5" />
+          <ToggleGroupItem value="bad" className={SEGMENT}>
             {say("chat_rate_bad")}
           </ToggleGroupItem>
         </ToggleGroup>
         {onRetry && (
-          <Button variant="ghost" size="sm" onClick={onRetry}>
+          <Button variant="ghost" size="sm" className="ml-auto" onClick={onRetry}>
             <RotateCcwIcon aria-hidden />
             {say("chat_rate_retry")}
           </Button>

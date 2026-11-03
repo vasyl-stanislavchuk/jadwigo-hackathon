@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatPane, type ChatPaneProps } from "./ChatPane.tsx";
 import type { Turn } from "./conversation.ts";
 import { LessonPane } from "./LessonPane.tsx";
+import type { ObjectRef } from "./objects/ref.ts";
 import type { RunPhase } from "./phase.ts";
 
 afterEach(cleanup);
@@ -420,6 +421,25 @@ describe("the message limits (dl-z5ja.62, .100)", () => {
     );
     expect(document.querySelector("[data-row='send-failed']")).toBeNull();
     expect(screen.queryByRole("button", { name: "Spróbuj ponownie" })).toBeNull();
+  });
+});
+
+describe("one living lesson card (S7, S16)", () => {
+  it("the newest version's card carries the actions; an older one is a superseded row without them", () => {
+    pane({
+      turns: [turnOf("happy-turn"), turnOf("happy-turn")],
+      lessonObject: { kind: "lesson", id: "lsn_2h4m8gyw0fb1cvz2nkqw0px8fq" } as ObjectRef,
+      onOpen: vi.fn(),
+      lessonActions: <button type="button">Daj lekcję</button>,
+    });
+    const cards = [...document.querySelectorAll("[data-card-state]")];
+    expect(cards.map((c) => c.getAttribute("data-card-state"))).toEqual(["superseded", "ready"]);
+    expect(
+      within(cards[0] as HTMLElement).queryByRole("button", { name: "Daj lekcję" }),
+    ).toBeNull();
+    expect(
+      within(cards[1] as HTMLElement).getByRole("button", { name: "Daj lekcję" }),
+    ).toBeTruthy();
   });
 });
 

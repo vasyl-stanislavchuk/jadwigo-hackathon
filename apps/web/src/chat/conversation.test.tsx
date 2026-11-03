@@ -337,7 +337,7 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     expect(screen.getByText("Wersja 3")).toBeTruthy();
     const marked = () => [...document.querySelectorAll("[data-changed]")];
     expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
-    expect(marked()[0]?.textContent).toContain("Zmiana od Jadwigo AI");
+    expect(marked()[0]?.textContent).toContain("zmienione");
     // Cofnij sends the patch back to revision 2 as a lesson_edit steer, which the runner applies
     // with no model call even on an ended turn (wave 4 decision 41, dl-z5ja.111).
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
