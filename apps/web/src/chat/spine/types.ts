@@ -98,8 +98,8 @@ interface CardBase {
 /** What the living card shows of the lesson: its questions and the first 3 prompts (delta C3). */
 interface CardContent {
   count: number;
-  /** Up to 3 question prompts, as plain text, in lesson order. */
-  preview: readonly string[];
+  /** Up to 3 question prompts as plain text, each with its question's number, in lesson order. */
+  preview: readonly { place: number; prompt: string }[];
 }
 
 /**

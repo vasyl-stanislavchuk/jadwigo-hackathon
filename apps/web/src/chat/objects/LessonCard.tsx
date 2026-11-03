@@ -240,10 +240,11 @@ export function LessonCard({
           )}
           {state.preview.length > 0 && (
             <ol className="mt-2 flex flex-col gap-1" data-card-preview>
-              {state.preview.slice(0, SHOWN).map((prompt, i) => (
-                <li key={`${i}-${prompt}`} className="flex min-w-0 items-baseline gap-2">
+              {state.preview.slice(0, SHOWN).map(({ place, prompt }) => (
+                <li key={place} className="flex min-w-0 items-baseline gap-2" data-card-row={place}>
+                  {/* The question's own number, the one the findings and the preview modal use. */}
                   <span className="w-3.5 shrink-0 text-xs text-jw-placeholder tabular-nums">
-                    {i + 1}
+                    {place}
                   </span>
                   <span className="truncate text-jw-page-small text-jw-ink" data-card-prompt>
                     {prompt}
