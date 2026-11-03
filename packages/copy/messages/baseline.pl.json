@@ -648,9 +648,6 @@
   "chat_check_level_error": "Do poprawy",
   "chat_check_level_warning": "Warto spojrzeć",
   "chat_check_level_info": "Dla informacji",
-  "chat_announce_done": "Asystent skończył.",
-  "chat_announce_needs_you": "Asystent czeka na Twoją odpowiedź.",
-  "chat_announce_stopped": "Zapisane, zatrzymane.",
   "chat_switch": "Rozmowa albo lekcja",
   "chat_check_findings": {
     "notes_noun=one": "{n} uwaga do poprawy",

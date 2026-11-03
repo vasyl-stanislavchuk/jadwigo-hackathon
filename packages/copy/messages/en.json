@@ -872,9 +872,6 @@
   "chat_finding_key_grades": "The right answer would not be marked right.",
   "chat_finding_harsh_word": "A child would read a word that is too harsh here.",
   "chat_check_level_info": "For your information",
-  "chat_announce_done": "Jadwigo AI: done",
-  "chat_announce_needs_you": "Jadwigo AI: waiting for your answer",
-  "chat_announce_stopped": "Saved, stopped.",
   "chat_switch": "Conversation or lesson",
   "chat_check_findings": [
     {

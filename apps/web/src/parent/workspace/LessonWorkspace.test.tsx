@@ -320,6 +320,9 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     expect(echo?.textContent).toBe("Odejmowanie przez 10");
     expect(band()).toMatch(/^W kolejce/);
     expect(activity()).toBe("queued");
+    // The page's one polite live region (§3, dl-uukj.47.71.10), saying only the live words.
+    expect(document.querySelectorAll("[aria-live]")).toHaveLength(1);
+    expect(live()).toBe("Jadwigo pracuje");
 
     const before = q.reads.runs;
     await tick(20_000);

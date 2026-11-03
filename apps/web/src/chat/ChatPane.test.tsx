@@ -106,8 +106,6 @@ describe("the chat pane, one state per golden log", () => {
   it("running (reload-with-duplicates): the state in words, a Stop, one spine and no tool rows", () => {
     const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
     expect(status().textContent).toBe("W toku");
-    // The live region stays quiet while a turn runs: it speaks when it ends or needs the parent.
-    expect(screen.getByRole("status").textContent).toBe("");
     expect(document.querySelectorAll("[data-spine]")).toHaveLength(1);
     noOldRows();
     fireEvent.click(stopButton() as HTMLElement);
@@ -288,27 +286,6 @@ describe("the lesson pane", () => {
 });
 
 describe("accessibility and recovery (dl-z5ja.28)", () => {
-  const live = () => screen.getByRole("status");
-
-  it("the live region speaks when a turn finishes, stops or needs the parent, and not while restoring", () => {
-    pane({ turns: [turnOf("happy-turn")] });
-    expect(live().getAttribute("aria-live")).toBe("polite");
-    expect(live().textContent).toBe("Jadwigo AI: gotowe");
-    cleanup();
-    // plan-and-cite's approval, still unanswered.
-    const waiting = turnOf("plan-and-cite", (view) => {
-      for (const item of view.chat) if (item.kind === "approval") item.decision = null;
-    });
-    pane({ turns: [waiting] });
-    expect(live().textContent).toBe("Jadwigo AI: czeka na Twoją odpowiedź");
-    cleanup();
-    pane({ turns: [turnOf("cancel-during-a-verb")] });
-    expect(live().textContent).toBe("Zapisane, zatrzymane.");
-    cleanup();
-    pane({ turns: [turnOf("happy-turn")], restoring: true });
-    expect(live().textContent).toBe("");
-  });
-
   it("the run's state is text, not a colour alone", () => {
     pane({ turns: [turnOf("happy-turn")] });
     expect(status().textContent).toBe("Gotowe");
@@ -322,7 +299,6 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     expect(retries).toHaveLength(1);
     expect(retries[0]?.closest("[data-foot='failed']")).not.toBeNull();
     expect(document.querySelector("[data-row='retry-turn']")).toBeNull();
-    expect(live().textContent).toContain("Tej tury nie udało się dokończyć.");
   });
 
   it("a send that did not reach the server can go again, and the draft being typed stays", () => {
