@@ -147,33 +147,6 @@ export function phaseAnnouncement(p: RunPhase | null): CopyKey | null {
   }
 }
 
-/**
- * The thread's one polite live region (handoff §3): six words, said when the turn starts working,
- * needs the parent, ends, is stopped, fails or stalls. Never a line, never the seconds. Quiet while
- * the page reconnects and before any turn.
- */
-export function liveOf(p: RunPhase | null): CopyKey | null {
-  switch (p?.kind) {
-    case "queued":
-    case "thinking":
-    case "tool":
-    case "slow":
-      return "live_working";
-    case "awaiting_input":
-      return "live_waiting";
-    case "done":
-      return "live_done";
-    case "cancelled":
-      return "live_stopped";
-    case "failed":
-      return "live_failed";
-    case "stalled":
-      return "live_stalled";
-    default:
-      return null;
-  }
-}
-
 /** A span of time as the spine says it (§4.1): "0 s", "41 s", "1 min 04 s"; tabular in view. */
 export function durationWords(ms: number): string {
   const total = Math.max(0, Math.floor(ms / 1000));

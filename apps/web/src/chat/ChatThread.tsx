@@ -50,9 +50,8 @@ export const FOLLOW_PX = 80;
 type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 type Message = Extract<ChatItem, { kind: "message" }>;
 
-/** A turn with its log, once the page hands it over: the spine and Kopiuj szczegóły read it. */
-type Logged = Turn & { events?: readonly RunEvent[] };
-const eventsOf = (turn: Logged): readonly RunEvent[] => turn.events ?? [];
+/** A turn's run log: the spine and Kopiuj szczegóły read it; a hand-built turn has none. */
+const eventsOf = (turn: Turn): readonly RunEvent[] => turn.events ?? [];
 
 /**
  * The spine of one turn. The foot follows the page's own phase when the fold gives none: a stall
