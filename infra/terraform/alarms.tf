@@ -29,6 +29,36 @@ variable "alarm_email" {
   sensitive   = true
 }
 
+# How long a ready step sat with nobody on it: a run's idle time, which should stay near 0
+# (dl-hin8.52). The runner logs it on every drain that ran a fresh step; a drain with none logs null,
+# which this pattern skips, so a quiet system is no data, not a breach.
+resource "aws_cloudwatch_log_metric_filter" "runner_step_wait" {
+  name           = "jadwigo-runner-${var.environment}-step-wait"
+  log_group_name = module.runner.log_group_name
+  pattern        = "{ $.max_wait_s >= 0 }"
+
+  metric_transformation {
+    name      = "StepWaitSeconds"
+    namespace = "Jadwigo/Runner/${var.environment}"
+    value     = "$.max_wait_s"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "runner_step_wait" {
+  alarm_name          = "jadwigo-runner-${var.environment}-step-wait"
+  alarm_description   = "A ready step waited over 10 s for a runner: a lost wake-up, every slot busy, or a run past the drain's limit. docs/runbooks/run-timeline.md"
+  namespace           = "Jadwigo/Runner/${var.environment}"
+  metric_name         = "StepWaitSeconds"
+  statistic           = "Maximum"
+  period              = 300
+  evaluation_periods  = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  threshold           = 10
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [module.alarms.topic_arn]
+  ok_actions          = [module.alarms.topic_arn]
+}
+
 output "alarm_topic_arn" {
   value = module.alarms.topic_arn
 }
