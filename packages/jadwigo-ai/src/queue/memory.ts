@@ -49,6 +49,15 @@ export class InMemoryRunQueue implements RunQueue {
     return Promise.resolve(read);
   }
 
+  extend(msg_id: number, vt_s: number): Promise<void> {
+    const step = this.#queued.get(msg_id);
+    if (step !== undefined) {
+      const vt = new Date(this.now().getTime() + vt_s * 1000).toISOString();
+      this.#queued.set(msg_id, { ...step, vt });
+    }
+    return Promise.resolve();
+  }
+
   archive(msg_id: number): Promise<void> {
     this.#queued.delete(msg_id);
     return Promise.resolve();

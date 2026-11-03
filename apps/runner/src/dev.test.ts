@@ -48,7 +48,7 @@ async function queuedTurn() {
   });
   const logged: string[] = [];
   const handler = createRunnerHandler(
-    createHost(async () => ({ engine, max_steps: 20, warn: (l) => logged.push(l) })),
+    createHost(async () => ({ engine, max_drain_ms: 240_000, warn: (l) => logged.push(l) })),
     (line) => logged.push(line),
   );
   return { store, queue, member, run, logged, handler };

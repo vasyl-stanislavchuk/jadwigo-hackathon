@@ -41,8 +41,8 @@ export const STUCK_AFTER_S = 60;
 
 export interface HostDeps {
   engine: EngineDeps;
-  /** The most steps one invocation runs; the queue keeps the rest for the next. */
-  max_steps: number;
+  /** How long one invocation starts new steps, in ms; the queue keeps the rest for the next. */
+  max_drain_ms: number;
   /** The queue's stuck-run read, when the queue has one. */
   stuck?: () => Promise<Stuck>;
   /** How many steps sit in the dead-letter queue, when the queue can say. */
@@ -115,7 +115,9 @@ export function createHost(
       },
     };
     const outputs = await drain(engine, {
-      max_steps: host.max_steps,
+      // The clock is the limit, so drain's default count must not stop it first.
+      max_steps: Number.POSITIVE_INFINITY,
+      keep_going: () => meter.wall() - wall0 < host.max_drain_ms,
       onError: (error, step) => {
         failed.push(step);
         host.warn(failure(error, step));
