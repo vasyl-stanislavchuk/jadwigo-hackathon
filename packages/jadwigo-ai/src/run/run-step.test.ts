@@ -2228,7 +2228,10 @@ describe("a failed lesson check cannot become a readiness claim (dl-hin8.30)", (
         .filter((event) => event.type === "message")
         .filter((event) => event.payload.from === "agent")
         .map((event) => event.payload.text),
-    ).toEqual([expect.stringContaining("pozostaje szkicem")]);
+    ).toEqual([
+      // It names no version: the card says the state, and no number reaches the parent (dl-vxjv2 C5).
+      "Lekcja jest jeszcze szkicem: nie przeszła sprawdzenia, więc nie jest gotowa do użycia.",
+    ]);
     expect((await t.run(run)).status).toBe("completed");
     expect(t.muse.calls).toHaveLength(4);
   });

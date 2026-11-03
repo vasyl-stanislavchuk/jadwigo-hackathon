@@ -302,18 +302,13 @@ describe.each(ORDERS)("in %s", (_order, order) => {
       expect(now[0]?.startedAt).toBe(lastAt(events) - 2000);
     });
 
-    it("stops with the version that stands (S15, s14)", () => {
+    it("stops saying whether the turn changed the lesson, never a version (S15, s14, dl-vxjv2)", () => {
       expect(spineOf(upTo("cancel-during-a-verb"), null, 0).foot).toEqual({
         kind: "stopped",
         changed: true,
-        versionStands: 1,
       });
       const nothing = parsed("cancel-during-a-verb").filter((e) => e.type !== "lesson_revision");
-      expect(spineOf(nothing, null, 0, { priorRevision: 4 }).foot).toEqual({
-        kind: "stopped",
-        changed: false,
-        versionStands: 4,
-      });
+      expect(spineOf(nothing, null, 0).foot).toEqual({ kind: "stopped", changed: false });
     });
 
     it("marks the running stage stopped", () => {

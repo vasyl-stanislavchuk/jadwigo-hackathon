@@ -66,12 +66,6 @@ const MIN_STAGES = 3;
 /** The title's longest clause (§2 item 1). */
 const TITLE_MAX = 60;
 
-/** What the page knows beside the turn's own log. */
-export interface SpineContext {
-  /** The lesson's revision before this turn: what stands when a stop changed nothing (S15). */
-  priorRevision?: number;
-}
-
 /** No stage: a line made before the plan, or in a turn without one. */
 const LOOSE = -1;
 /**
@@ -145,7 +139,6 @@ export function spineOf(
   events: readonly RunEvent[],
   phase: RunPhase | null,
   now: number,
-  context: SpineContext = {},
 ): TurnSpine {
   const log = mergeLive(events, [], 0);
   const first = log[0];
@@ -453,7 +446,7 @@ export function spineOf(
   }
 
   const title = agent.find((m) => m !== reply && titleOf(m.text) !== "");
-  const foot = footOf(kind, Math.max(1, tries), revisions, context);
+  const foot = footOf(kind, Math.max(1, tries), revisions);
   return {
     phase: kind,
     title:
@@ -549,17 +542,17 @@ function summaryOf(
   return last === undefined ? {} : { summary: { copyKey: last.copyKey, values: last.values } };
 }
 
-/** The card's foot: failed with its tries, stalled, or stopped with the version that stands (D7, S11, S15). */
+/**
+ * The card's foot: failed with its tries, stalled, or stopped with whether the turn changed the
+ * lesson before it stopped (D7, S11, S15). No version: versions are never shown (dl-vxjv2, C5).
+ */
 function footOf(
   phase: SpinePhase,
   tries: number,
   revisions: readonly { revision: number }[],
-  context: SpineContext,
 ): SpineFoot | null {
   if (phase === "failed") return { kind: "failed", tries };
   if (phase === "stalled") return { kind: "stalled" };
   if (phase !== "cancelled") return null;
-  const changed = revisions.length > 0;
-  const stands = changed ? Math.max(...revisions.map((r) => r.revision)) : context.priorRevision;
-  return { kind: "stopped", changed, ...(stands === undefined ? {} : { versionStands: stands }) };
+  return { kind: "stopped", changed: revisions.length > 0 };
 }

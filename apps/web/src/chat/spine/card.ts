@@ -7,6 +7,7 @@
  */
 
 import type { RunEvent } from "@jadwigo/contracts/run";
+import type { CopyKey } from "@jadwigo/copy";
 import { type ChatItem, foldRun } from "@jadwigo/core";
 import { lessonFacts, positionOf } from "./lessonFile.ts";
 import { checkOf } from "./lines.ts";
@@ -36,6 +37,48 @@ const LEVEL_WORDS: Readonly<Record<string, Words>> = {
 };
 
 /**
+ * What each lesson_check rule means for a parent (dl-uukj.47.71.31), by the rule's name. The rules
+ * come from lesson-import's check (check.ts, compile.ts) and jadwigo-ai's harsh-word review. The
+ * engine's own text and fix are English and never shown (S3); an unknown rule says its level.
+ */
+export const RULE_WORDS: Readonly<Record<string, CopyKey>> = {
+  schema: "chat_finding_schema",
+  json: "chat_finding_json",
+  "no-question": "chat_finding_no_question",
+  "explain-first": "chat_finding_explain_first",
+  contract: "chat_finding_contract",
+  "unknown-field": "chat_finding_unknown_field",
+  "skill-id": "chat_finding_skill_id",
+  "skill-id-collision": "chat_finding_skill_id_collision",
+  "question-type-family": "chat_finding_question_type_family",
+  "twin-of-twin": "chat_finding_twin_of_twin",
+  "empty-rung": "chat_finding_empty_rung",
+  "unknown-mistake-class": "chat_finding_unknown_mistake_class",
+  "twin-representation": "chat_finding_twin_representation",
+  "twin-same-picture": "chat_finding_twin_same_picture",
+  "key-in-say": "chat_finding_key_in_say",
+  "key-grades": "chat_finding_key_grades",
+  "harsh-word": "chat_finding_harsh_word",
+};
+
+/** A finding's words: its rule's, else its level's; null for a level the card does not know. */
+function findingWords(rule: string, level: string): Words | null {
+  const key = RULE_WORDS[rule];
+  return key === undefined ? (LEVEL_WORDS[level] ?? null) : { copyKey: key, values: {} };
+}
+
+/**
+ * A finding's question number: its step's place, a twin's (`s02t`) under its own question's, null
+ * for the lesson as a whole; undefined when the step is not in the file, so the finding is dropped.
+ */
+function stepOf(file: unknown, step_id: string | null): number | null | undefined {
+  if (step_id === null) return null;
+  const own = positionOf(file, step_id);
+  if (own !== null) return own;
+  return step_id.endsWith("t") ? (positionOf(file, step_id.slice(0, -1)) ?? undefined) : undefined;
+}
+
+/**
  * One turn's card, or null when the turn wrote no lesson (none, or only the parent's own edit).
  * Without `context` the turn is taken as the conversation's newest, as a lone turn is.
  */
@@ -60,11 +103,14 @@ export function cardStateOf(
   const findings =
     read === null || rewritten
       ? []
-      : read.findings.flatMap((f) => {
-          const step = f.step_id === null ? null : positionOf(file, f.step_id);
-          const words = LEVEL_WORDS[f.level];
-          return step === null || words === undefined ? [] : [{ step, words }];
-        });
+      : read.findings
+          .flatMap((f) => {
+            const step = stepOf(file, f.step_id);
+            const words = findingWords(f.rule, f.level);
+            return step === undefined || words === null ? [] : [{ step, words }];
+          })
+          // As a parent reads the lesson: the lesson as a whole first, then by question.
+          .sort((a, b) => (a.step ?? 0) - (b.step ?? 0));
   if (read === null || rewritten || !read.publishable || facts.count === 0)
     return { ...base, kind: "fix", count: facts.count, preview: facts.preview, findings };
   return { ...base, kind: "ready", count: facts.count, preview: facts.preview };

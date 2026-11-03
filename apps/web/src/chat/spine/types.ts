@@ -64,8 +64,6 @@ export interface SpineFoot {
   kind: "failed" | "stalled" | "stopped";
   /** Failed: how many times Jadwigo tried. */
   tries?: number;
-  /** Stopped: the lesson version that stands. */
-  versionStands?: number;
   /** Stopped: whether the stopped turn changed the lesson before it stopped. */
   changed?: boolean;
 }
@@ -113,7 +111,8 @@ export type LessonCardState =
   | (CardBase &
       CardContent & {
         kind: "fix";
-        findings: readonly { step: number; words: Words }[];
+        /** Each finding in plain words; `step` null for the lesson as a whole (no "Zadanie {n}."). */
+        findings: readonly { step: number | null; words: Words }[];
       })
   | (CardBase & CardContent & { kind: "working" })
   | (CardBase & { kind: "superseded" });
