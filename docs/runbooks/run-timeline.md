@@ -37,6 +37,14 @@ words. A refusal's reason is cut to 300 characters, because it can quote a lesso
 - **`REFUSED`** is a verb's refusal. The model reads it and goes on, so the run can still pass. The
   chat's generic failure line appears only for a refusal nothing recovered.
 
+## When the idle alarm fires
+
+The `step-wait` alarm mails when a ready step waited 10 s or more for a runner (`max_wait_s` on the
+drain line). The usual causes are a lost wake-up, all 5 runner slots busy, or a run past the drain's
+time limit. Look for a drain line with a high `max_wait_s`, and check the function's concurrency: if
+every slot is busy, raise `reserved_concurrency` in `infra/terraform/modules/runner`, within the
+pooler's limit.
+
 ## The drain lines in CloudWatch
 
 Each runner invocation logs one JSON line with ids, counts and outcomes, and never a message or a
