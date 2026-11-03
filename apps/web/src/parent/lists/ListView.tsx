@@ -36,7 +36,7 @@ import { parentPath } from "../route.ts";
 import { NO_CHILD } from "./filter.ts";
 import { usePhone } from "./usePhone.ts";
 
-export const PER_PAGE = 20;
+const PER_PAGE = 20;
 
 /** One facet of the list: its options, and whether a row shows under one picked value. */
 export interface ListFacet<T> {
