@@ -122,18 +122,18 @@ for (const [width, height] of [
   });
 }
 
-test("1440: Daj lekcję from the widget gives the lesson as one link to copy or open", async ({
-  page,
-}) => {
+test("1440: Daj lekcję from the widget gives the lesson and opens it here", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/playground/workspace");
   const card = cardOf(page);
   await expect(card).toBeVisible({ timeout: 20_000 });
-  // Bez dziecka: no dialog, the link at once. The playground's give answers a made-up assignment.
+  // Bez dziecka: Daj lekcję offers this computer or paper.
   await card.locator("[data-give]").click();
-  await expect(card.locator("[data-given-url]")).toHaveValue(/\/play\/asg_/);
-  await expect(card.locator("[data-given-link]")).toHaveAttribute("href", /^\/play\/asg_/);
-  await expect(card.locator("[data-given-copy]")).toBeVisible();
+  const choices = page.locator("[data-give-dialog]");
+  await expect(choices).toBeVisible();
+  await choices.locator("[data-give-here]").click();
+  // The playground's give answers a made-up assignment, and the player opens on it.
+  await expect(page).toHaveURL(/\/play\/asg_/);
 });
 
 // The turn that ends in the lesson-ready card scrolls only the message list (dl-uukj.47.68): the

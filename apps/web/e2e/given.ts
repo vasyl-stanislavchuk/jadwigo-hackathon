@@ -78,15 +78,8 @@ async function draftAndCheck(
   }
 }
 
-/**
- * Gives `lesson` (a lesson file) as a new parent: to their new child, or with `toChild: false` to
- * nobody in particular. Returns the play path the app shows for it.
- */
-export async function giveLesson(
-  page: Page,
-  lesson: unknown,
-  { toChild = true }: { readonly toChild?: boolean } = {},
-): Promise<string> {
+/** Gives `lesson` (a lesson file) to a new child of a new parent; returns the child's play path. */
+export async function giveLesson(page: Page, lesson: unknown): Promise<string> {
   await signIn(page);
   const me = await asParent<{ pod: { id: string } }>(page, "GET", "/api/v1/me");
   await asParent(page, "PATCH", `/api/v1/pods/${me.pod.id}`, { ai_consented: true });
@@ -112,16 +105,9 @@ export async function giveLesson(
     page,
     "POST",
     `/api/v1/conversations/${conversation}/lessons`,
-    toChild ? { learner_id: learner } : {},
+    { learner_id: learner },
   );
-  return toChild
-    ? `/play/${given.assignment.id}?learner=${learner}`
-    : `/play/${given.assignment.id}`;
-}
-
-/** Past a given lesson's first screen, as the child the link names. */
-export async function confirmChild(page: Page): Promise<void> {
-  await page.locator("[data-intro-yes]").click();
+  return `/play/${given.assignment.id}?learner=${learner}`;
 }
 
 /** Past a given lesson's first screen, as the child the link names. */

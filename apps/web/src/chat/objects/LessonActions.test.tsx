@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
 /**
  * The lesson card's actions (dl-uukj.47.55), the footer's before #740 (dl-z5ja.108.1.1). Daj
- * lekcję gives at once, with or without a child, and shows one link to copy or open. "Drukuj" draws
- * the lesson's print sheet and asks the browser to print. Not ready, nothing happens.
+ * lekcję: with no child it opens a dialog with 2 choices;
+ * "Drukuj" draws the lesson's print sheet and asks the browser to print; "Otwórz na tym
+ * komputerze" is quiet with its reason until a route opens the lesson for the player. With a child
+ * the primary is "Pokaż {imię}". Not ready, nothing opens.
  */
 
 import { type Learner, LearnerId } from "@jadwigo/contracts";
@@ -110,27 +112,15 @@ describe("giving and printing only a checked lesson (steward on #747)", () => {
     ).toBe("Dawanie lekcji zadziała po zalogowaniu.");
   });
 
-  it("shows the given link to copy or open, and why when it was refused", async () => {
-    const writeText = vi.fn(async () => undefined);
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+  it("says where the lesson waits once given, and why when it was refused", () => {
     footer({
       child: ola,
       given: { kind: "given", name: "Ola", href: "/play/asg_x?learner=lrn_y" },
     });
-    const url = `${window.location.origin}/play/asg_x?learner=lrn_y`;
-    expect(document.querySelector("[data-given]")?.textContent).toContain("Lekcja czeka na: Ola.");
-    expect((document.querySelector("[data-given-url]") as HTMLInputElement).value).toBe(url);
-    const open = screen.getByRole("link", { name: "Otwórz lekcję" });
-    expect(open.getAttribute("href")).toBe("/play/asg_x?learner=lrn_y");
-    expect(open.getAttribute("target")).toBe("_blank");
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Kopiuj" })));
-    expect(writeText).toHaveBeenCalledExactlyOnceWith(url);
-    expect(screen.getByRole("button", { name: "Skopiowano" })).toBeTruthy();
-    cleanup();
-    // With no child, the same link, and it says anyone may play.
-    footer({ given: { kind: "given", name: null, href: "/play/asg_x" } });
-    expect(document.querySelector("[data-given]")?.textContent).toContain(
-      "Każdy, kto ma ten link, może zagrać",
+    const state = document.querySelector("[data-give-state]");
+    expect(state?.textContent).toBe("Lekcja czeka na: Ola. Link do lekcji");
+    expect(screen.getByRole("link", { name: "Link do lekcji" }).getAttribute("href")).toBe(
+      "/play/asg_x?learner=lrn_y",
     );
     cleanup();
     footer({ child: ola, given: { kind: "refused", reason: "changed" } });
@@ -146,36 +136,24 @@ describe("giving and printing only a checked lesson (steward on #747)", () => {
 });
 
 describe("Daj lekcję (dl-z5ja.108.1.1)", () => {
-  it("gives at once with or without a child, with no dialog; not ready, nothing happens", async () => {
-    const none = footer();
+  it("with no child opens a dialog with the 2 choices", async () => {
+    footer();
     await act(async () => fireEvent.click(give()));
-    expect(none.onGive).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole("dialog")).toBeNull();
-    cleanup();
-    const child = footer({ child: ola });
-    await act(async () => fireEvent.click(give()));
-    expect(child.onGive).toHaveBeenCalledTimes(1);
-    cleanup();
-    const quiet = footer({ ready: false });
-    await act(async () => fireEvent.click(give()));
-    expect(quiet.onGive).not.toHaveBeenCalled();
+    const dialog = screen.getByRole("dialog", { name: "Jak dać lekcję?" });
+    expect(dialog).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Otwórz na tym komputerze" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Drukuj" })).toBeTruthy();
   });
 
-  it("with no way to give, it is quiet with its reason, child or no child", () => {
-    footer({ onGive: undefined });
-    expect(give().getAttribute("aria-disabled")).toBe("true");
-    expect(
-      document.getElementById(give().getAttribute("aria-describedby") ?? "")?.textContent,
-    ).toBe("Dawanie lekcji zadziała po zalogowaniu.");
-  });
-
-  it("Drukuj draws the sheet of every step with no answer, and prints", async () => {
+  it("Drukuj closes the dialog, draws the sheet of every step with no answer, and prints", async () => {
     vi.spyOn(window, "requestAnimationFrame").mockImplementation((go) => {
       go(0);
       return 0;
     });
     const props = footer();
-    await act(async () => fireEvent.click(document.querySelector("[data-print]") as HTMLElement));
+    await act(async () => fireEvent.click(give()));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Drukuj" })));
+    expect(screen.queryByRole("dialog")).toBeNull();
     expect(props.print).toHaveBeenCalledTimes(1);
     const sheet = document.querySelector("[data-print-sheet]");
     expect(sheet?.parentElement).toBe(document.body);
@@ -190,5 +168,33 @@ describe("Daj lekcję (dl-z5ja.108.1.1)", () => {
     await act(async () => window.dispatchEvent(new Event("afterprint")));
     expect(document.querySelector("[data-print-sheet]")).toBeNull();
     expect(document.body.hasAttribute("data-printing")).toBe(false);
+  });
+
+  it("Otwórz na tym komputerze is quiet with its reason until it can open the lesson", async () => {
+    const onOpenHere = vi.fn();
+    footer();
+    await act(async () => fireEvent.click(give()));
+    const here = screen.getByRole("button", { name: "Otwórz na tym komputerze" });
+    expect(here.getAttribute("aria-disabled")).toBe("true");
+    const reason = document.getElementById(here.getAttribute("aria-describedby") ?? "");
+    expect(reason?.textContent).toBe("Otwieranie lekcji na komputerze jest w drodze.");
+    cleanup();
+    footer({ onOpenHere });
+    await act(async () => fireEvent.click(give()));
+    await act(async () =>
+      fireEvent.click(screen.getByRole("button", { name: "Otwórz na tym komputerze" })),
+    );
+    expect(onOpenHere).toHaveBeenCalledTimes(1);
+  });
+
+  it("with a child the primary is Pokaż and opens no dialog; not ready, nothing opens", async () => {
+    const props = footer({ child: ola });
+    await act(async () => fireEvent.click(give()));
+    expect(props.onGive).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    cleanup();
+    footer({ ready: false });
+    await act(async () => fireEvent.click(give()));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

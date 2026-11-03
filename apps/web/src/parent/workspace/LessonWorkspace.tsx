@@ -38,6 +38,7 @@ import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/r
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
+import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { playPath } from "../../play/route.ts";
 import { CATEGORY, pageLang } from "../adult.ts";
@@ -149,35 +150,25 @@ export function LessonWorkspace({
   const summary = lessonSummary(lesson.shown);
   const child = learners.find((l) => l.id === forLearner) ?? null;
 
-  // Daj lekcję (dl-uukj.47.55): the revision the parent sees, given to the Dla child or to nobody
-  // in particular, as one link to send or open. The route refuses a revision no check passed
-  // (harsh words included) or that is no longer the latest, and a child outside the family.
+  // Daj lekcję (dl-uukj.47.55): the latest checked revision, given to the Dla child, who plays it
+  // from its ?learner= link; with no child, given to nobody in particular and opened here. The route
+  // refuses a revision no check passed (harsh words included) and a child outside the family.
   const [given, setGiven] = useState<GiveState>({ kind: "idle" });
-  const shownRevision = lesson.shown?.revision;
-  // A link is for one child and one revision: either changing takes it off the card, and a reply
-  // still on its way for the old pair says nothing.
-  const giveFor = `${forLearner}:${shownRevision}`;
-  const giveForNow = useRef(giveFor);
-  giveForNow.current = giveFor;
-  useEffect(() => setGiven({ kind: "idle" }), [giveFor]);
   const giveTo = async (to: Learner | null): Promise<void> => {
     if (engine.give === null || !lesson.ready) return;
-    const asked = giveFor;
     setGiven({ kind: "giving" });
     try {
-      const { assignment } = await engine.give.giveLesson(conversation, {
-        ...(shownRevision === undefined ? {} : { revision: shownRevision }),
-        ...(to === null ? {} : { learner_id: to.id }),
-      });
-      if (giveForNow.current !== asked) return;
-      const search = to === null ? "" : `?${new URLSearchParams({ learner: to.id })}`;
-      setGiven({
-        kind: "given",
-        name: to?.first_name ?? null,
-        href: `${playPath(assignment.id)}${search}`,
-      });
+      const { assignment } = await engine.give.giveLesson(
+        conversation,
+        to === null ? {} : { learner_id: to.id },
+      );
+      if (to === null) {
+        navigate(playPath(assignment.id));
+        return;
+      }
+      const href = `${playPath(assignment.id)}?${new URLSearchParams({ learner: to.id })}`;
+      setGiven({ kind: "given", name: to.first_name, href });
     } catch (error) {
-      if (giveForNow.current !== asked) return;
       const type = error instanceof ApiError ? error.type : null;
       setGiven({
         kind: "refused",
@@ -238,6 +229,7 @@ export function LessonWorkspace({
         ? {}
         : {
             onGive: () => void giveTo(child),
+            onOpenHere: () => void giveTo(null),
           })}
     />
   );
