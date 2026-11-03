@@ -373,6 +373,19 @@ describe("the engine's limits in plain words (dl-z5ja.28, dl-z5ja.83)", () => {
     expect(document.querySelector("[data-row='error'] p")?.textContent).toBe("Ponowna próba.");
   });
 
+  it("a turn whose every try failed says so plainly, with the turn's retry under it (dl-hin8.28)", () => {
+    const turn = withError(RUN_ERROR_TYPE.stepFailed, false);
+    turn.view.status = "failed";
+    pane({ turns: [turn] });
+    const row = document.querySelector("[data-row='error'] p");
+    expect(row?.textContent).toBe("Jadwigo nie dała rady dokończyć tej prośby, mimo kilku prób.");
+    expect(row?.textContent).not.toContain("every try");
+    const retry = document.querySelector("[data-row='retry-turn']") as HTMLElement;
+    expect(within(retry).getByRole("button", { name: "Spróbuj ponownie" })).toBeTruthy();
+    // The turn ended: no spinner, and the status says it did not finish.
+    expect(status().getAttribute("data-status")).toBe("failed");
+  });
+
   it("any other problem keeps its message", () => {
     pane({ turns: [withError("unknown-draft", false)] });
     expect(document.querySelector("[data-row='error'] p")?.textContent).toBe(

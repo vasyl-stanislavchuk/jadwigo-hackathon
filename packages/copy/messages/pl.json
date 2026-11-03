@@ -743,6 +743,7 @@
   "chat_queued": "W kolejce, do wysłania po tej turze",
   "chat_problem": "Coś się zacięło: {message}",
   "chat_problem_retrying": "Ponowna próba.",
+  "chat_problem_failed": "Jadwigo nie dała rady dokończyć tej prośby, mimo kilku prób.",
   "chat_copy_details": "Kopiuj szczegóły",
   "chat_copied": "Skopiowano",
   "chat_restoring": "Przywracanie rozmowy…",

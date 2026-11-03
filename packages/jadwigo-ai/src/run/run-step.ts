@@ -31,7 +31,7 @@ import {
   type MuseResponse,
 } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
-import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
+import { MAX_READS, type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import { mergePatch } from "../verbs/input.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
@@ -1217,6 +1217,30 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
 }
 
 /**
+ * Ends a turn whose step failed on every delivery, or was dead-lettered (dl-hin8.28): an `error`
+ * event the chat words as "Jadwigo could not finish this", then the turn fails, so its spinner
+ * stops at once rather than at `max_deadline_at`.
+ */
+async function endAfterFailures(w: Writer, attempt: number, now: Date): Promise<void> {
+  await w.append([
+    {
+      type: "error",
+      run_id: w.run,
+      event_id: await w.id("error", "failed"),
+      payload: {
+        error: {
+          type: RUN_ERROR_TYPE.stepFailed,
+          message: "the step failed on every try, so the turn ended",
+        },
+        attempt,
+        retryable: false,
+      },
+    },
+  ]);
+  await endTurn(w, "failed", now);
+}
+
+/**
  * Closes a turn past its idle deadline (dl-z5ja.94): an `error` event the page's idle limit line
  * reads, then the turn completes. Retryable: the lesson so far stands.
  */
@@ -1659,9 +1683,34 @@ export async function drain(
         msg_id: queued.msg_id,
         read_ct: queued.read_ct,
       });
+      // Its last delivery failed too: the run ends failed now, and the step leaves the queue, rather
+      // than wait in the dead letter for the deadline sweep (dl-hin8.28).
+      // A fault in failing it (the store itself down) leaves the step for the dead letter's path.
+      if (
+        queued.read_ct >= MAX_READS &&
+        (await failRun(deps, queued.message.run_id).catch(() => false))
+      )
+        await deps.queue.archive(queued.msg_id);
     }
   }
+  // A step that never came back to throw (its host died with it) is dead-lettered by the queue on
+  // its next read: its run ends failed too, once, the next time anything drains.
+  for (const dead of await deps.queue.deadLetters())
+    await failRun(deps, dead.message.run_id).catch(() => false);
   return outputs;
+}
+
+/**
+ * Ends a run failed because its step could not finish (dl-hin8.28), through the sweep's own close,
+ * so a step still running goes stale. False when the run is gone, already ended, or another claim
+ * won it.
+ */
+async function failRun(deps: EngineDeps, run_id: RunId): Promise<boolean> {
+  const pod = await deps.store.findRunPod(run_id);
+  if (!pod) return false;
+  const run = await deps.store.getRun(pod, run_id);
+  if (isEnded(run.status)) return true;
+  return (await closeDue(deps.store, pod, run, "failed", deps.now())) !== null;
 }
 
 /**
@@ -1727,7 +1776,7 @@ async function closeDue(
   store: Store,
   pod: PodId,
   run: Run,
-  due: "idle" | "max",
+  due: "idle" | "max" | "failed",
   now: Date,
 ): Promise<{ events: number } | null> {
   // One unit, the run's row locked first: the claim, the take and the end land together, so a
@@ -1743,11 +1792,9 @@ async function closeDue(
     try {
       await takeInbox(store, w);
       await applyPatches(w);
-      if (due === "max") {
-        await endPastMax(w, run.attempt, now);
-      } else {
-        await endPastIdle(w, run.attempt, now);
-      }
+      if (due === "max") await endPastMax(w, run.attempt, now);
+      else if (due === "failed") await endAfterFailures(w, run.attempt, now);
+      else await endPastIdle(w, run.attempt, now);
     } catch (error) {
       if (error instanceof StaleAttempt) return null;
       throw error;

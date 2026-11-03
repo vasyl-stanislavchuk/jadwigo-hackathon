@@ -727,6 +727,7 @@
   "chat_queued": "Queued, sent after this turn",
   "chat_problem": "Something went off track: {message}",
   "chat_problem_retrying": "Trying again.",
+  "chat_problem_failed": "Jadwigo could not finish this request, even after a few tries.",
   "chat_copy_details": "Copy details",
   "chat_copied": "Copied",
   "chat_restoring": "Restoring the conversation…",

@@ -806,6 +806,7 @@ export const COPY_KEYS = [
   "chat_queued",
   "chat_problem",
   "chat_problem_retrying",
+  "chat_problem_failed",
   "chat_copy_details",
   "chat_copied",
   "chat_restoring",

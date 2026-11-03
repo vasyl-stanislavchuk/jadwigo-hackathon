@@ -274,6 +274,9 @@ function problemOf(error: RunError, retryable: boolean, language: Language): str
   // An idle close (dl-z5ja.94): the turn is completed, so no retry; the parent writes what next.
   if (error.type === RUN_ERROR_TYPE.runIdle) return say("chat_limit_idle");
   if (error.type === RUN_ERROR_TYPE.stepTimedOut) return say("chat_problem_retrying");
+  // Every try failed (dl-hin8.28): said plainly, never the engine's own words; the turn's
+  // "Tej tury nie udało się dokończyć" line and its retry follow under it.
+  if (error.type === RUN_ERROR_TYPE.stepFailed) return say("chat_problem_failed");
   const line = say("chat_problem", { message: error.message });
   return retryable ? `${line} ${say("chat_problem_retrying")}` : line;
 }

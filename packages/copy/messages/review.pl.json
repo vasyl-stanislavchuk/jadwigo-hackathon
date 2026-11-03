@@ -524,6 +524,7 @@
   "chat_queued": false,
   "chat_problem": false,
   "chat_problem_retrying": false,
+  "chat_problem_failed": false,
   "chat_copy_details": false,
   "chat_copied": false,
   "chat_restoring": false,
