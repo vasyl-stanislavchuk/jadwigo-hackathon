@@ -10,7 +10,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { judge } from "../../../../core/src/index.ts";
-import { codeJudge, type E7Fixtures, type ModelJudgement, overallOf, score } from "./e7-judge.ts";
+import {
+  codeJudge,
+  type E7Fixtures,
+  type ModelJudgement,
+  overallOf,
+  score,
+  wonderTextOf,
+  wonderUsageOf,
+} from "./e7-judge.ts";
 import { buildReport, type JudgementsFile } from "./e7-report.ts";
 import { wordCount } from "./model.ts";
 
@@ -103,6 +111,35 @@ describe("E7 model judges: the committed run", () => {
       }
     });
   }
+
+  it("wonder usage and text come from the exec run's own trace events", () => {
+    const jsonl = [
+      JSON.stringify({
+        payload_type: "run.output.delta",
+        payload: { text: '[{"answer":' },
+      }),
+      JSON.stringify({
+        payload_type: "run.usage",
+        payload: {
+          models: [{ input_tokens: 100, cached_tokens: 5, output_tokens: 40 }],
+        },
+      }),
+      JSON.stringify({
+        payload_type: "run.terminal.completed",
+        payload: { text: '[{"answer":"a1"}]' },
+      }),
+    ].join("\n");
+    expect(wonderUsageOf(jsonl)).toEqual({
+      input_tokens: 100,
+      cached_tokens: 5,
+      output_tokens: 40,
+    });
+    expect(wonderTextOf(jsonl)).toBe('[{"answer":"a1"}]');
+    const full = run as JudgementsFile;
+    expect(full.wonder.tokens.input).toBeGreaterThan(0);
+    expect(full.wonder.tokens.output).toBeGreaterThan(0);
+    expect(full.wonder.usage_source).toContain("run.usage");
+  });
 
   it("the docs report carries the same scores and both cost sources", () => {
     const report = buildReport(fixtures, run, "test");

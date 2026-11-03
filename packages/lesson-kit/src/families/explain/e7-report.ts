@@ -26,12 +26,17 @@ export interface JudgementsFile {
     usd: number;
     judgements: ModelJudgement[];
   };
-  wonder: { model: string; calls: number; judgements: ModelJudgement[] };
+  wonder: {
+    model: string;
+    calls: number;
+    tokens: { input: number; output: number };
+    usage_source: string;
+    judgements: ModelJudgement[];
+  };
   code: { task: string; answer: string; verdict: string }[];
 }
 
-/** Muse trace totals for the 8 wonder exec calls of the committed run (2026-11-03). */
-const WONDER_TOKENS = { input: 251_396, output: 16_237 };
+/** Wonder tokens come from the run itself: e7-judge.ts sums each exec call's run.usage. */
 
 function disagreements(fixtures: E7Fixtures, judgements: readonly ModelJudgement[]) {
   const out: {
@@ -84,8 +89,8 @@ export function buildReport(fixtures: E7Fixtures, run: JudgementsFile, commit: s
     model: `${run.spark.model} + ${WONDER_MODEL}`,
     calls: run.spark.calls + run.wonder.calls,
     tokens: {
-      input: run.spark.usage.input_tokens + WONDER_TOKENS.input,
-      output: run.spark.usage.output_tokens + WONDER_TOKENS.output,
+      input: run.spark.usage.input_tokens + run.wonder.tokens.input,
+      output: run.spark.usage.output_tokens + run.wonder.tokens.output,
     },
     usd: run.spark.usd,
     cost_source: "muse-trace",
@@ -149,7 +154,7 @@ export function buildReport(fixtures: E7Fixtures, run: JudgementsFile, commit: s
         wonder: {
           model: WONDER_MODEL,
           calls: run.wonder.calls,
-          tokens: WONDER_TOKENS,
+          tokens: run.wonder.tokens,
           usd: null,
           cost_source:
             "muse-trace (session logs of the 8 muse exec calls; ~31k input tokens per call is Muse session overhead; subscription-billed, no USD)",

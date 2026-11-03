@@ -253,20 +253,69 @@ function execText(argv: string[], input: string): Promise<string> {
   });
 }
 
-/** One wonder call per task through the Muse CLI, prompt on a file. */
+/** The final answer text of a `muse exec --json` run: its terminal event's text. */
+export function wonderTextOf(jsonl: string): string {
+  let text = "";
+  let deltas = "";
+  for (const line of jsonl.split("\n")) {
+    if (!line.startsWith("{")) continue;
+    try {
+      const e = JSON.parse(line) as {
+        payload_type?: string;
+        payload?: { text?: string };
+      };
+      if (e.payload_type === "run.terminal.completed" && typeof e.payload?.text === "string")
+        text = e.payload.text;
+      if (e.payload_type === "run.output.delta" && typeof e.payload?.text === "string")
+        deltas += e.payload.text;
+    } catch {
+      // not a JSON event line
+    }
+  }
+  return text || deltas;
+}
+
+/** The token usage of a `muse exec --json` run, from its run.usage event (muse trace). */
+export function wonderUsageOf(jsonl: string): Usage {
+  const usage: Usage = { input_tokens: 0, cached_tokens: 0, output_tokens: 0 };
+  for (const line of jsonl.split("\n")) {
+    if (!line.startsWith("{")) continue;
+    try {
+      const e = JSON.parse(line) as {
+        payload_type?: string;
+        payload?: {
+          models?: { input_tokens?: number; cached_tokens?: number; output_tokens?: number }[];
+        };
+      };
+      if (e.payload_type !== "run.usage") continue;
+      for (const m of e.payload?.models ?? []) {
+        usage.input_tokens += m.input_tokens ?? 0;
+        usage.cached_tokens += m.cached_tokens ?? 0;
+        usage.output_tokens += m.output_tokens ?? 0;
+      }
+    } catch {
+      // not a JSON event line
+    }
+  }
+  return usage;
+}
+
+/** One wonder call per task through the Muse CLI, prompt on a file, usage from its trace. */
 async function judgeWithWonder(
   task: E7Task,
   promptFile: string,
-): Promise<{ judgements: ModelJudgement[]; raw: string }> {
+): Promise<{ judgements: ModelJudgement[]; raw: string; usage: Usage }> {
   writeFileSync(promptFile, judgeBatchPrompt(task));
-  const raw = await execText(
-    ["muse", "exec", "--model", WONDER_MODEL, "--prompt-file", promptFile],
+  const jsonl = await execText(
+    ["muse", "exec", "--json", "--model", WONDER_MODEL, "--prompt-file", promptFile],
     "",
   );
+  const raw = wonderTextOf(jsonl);
   const value = jsonOf(raw);
   const rows = Array.isArray(value) ? value : [];
   return {
     raw,
+    usage: wonderUsageOf(jsonl),
     judgements: task.answers.map((a) =>
       asJudgement(
         task,
@@ -370,9 +419,18 @@ async function main(): Promise<void> {
     }
   }
   const wonder: ModelJudgement[] = [];
+  let wonderUsage: Usage = { input_tokens: 0, cached_tokens: 0, output_tokens: 0 };
   for (const task of fixtures.tasks) {
-    const { judgements } = await judgeWithWonder(task, join(tmpdir(), "e7.wonder-prompt.txt"));
+    const { judgements, usage } = await judgeWithWonder(
+      task,
+      join(tmpdir(), "e7.wonder-prompt.txt"),
+    );
     wonder.push(...judgements);
+    wonderUsage = {
+      input_tokens: wonderUsage.input_tokens + usage.input_tokens,
+      cached_tokens: wonderUsage.cached_tokens + usage.cached_tokens,
+      output_tokens: wonderUsage.output_tokens + usage.output_tokens,
+    };
     process.stdout.write(`wonder ${task.id} done\n`);
   }
   const out = {
@@ -385,7 +443,16 @@ async function main(): Promise<void> {
       usd: sparkCost(sparkUsage),
       judgements: spark,
     },
-    wonder: { model: WONDER_MODEL, calls: fixtures.tasks.length, judgements: wonder },
+    wonder: {
+      model: WONDER_MODEL,
+      calls: fixtures.tasks.length,
+      tokens: {
+        input: wonderUsage.input_tokens,
+        output: wonderUsage.output_tokens,
+      },
+      usage_source: "muse exec --json run.usage events, summed per call (muse trace)",
+      judgements: wonder,
+    },
     code: fixtures.tasks.flatMap((t) =>
       t.answers.map((a) => ({ task: t.id, answer: a.id, verdict: codeJudge(t, a.text) })),
     ),

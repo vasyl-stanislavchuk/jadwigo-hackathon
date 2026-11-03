@@ -1,15 +1,15 @@
 {
-  "ran_at": "2026-11-03T11:49:39.519Z",
-  "wall_s": 1242,
+  "ran_at": "2026-11-03T23:58:14.688Z",
+  "wall_s": 1137,
   "spark": {
     "model": "muse-spark-1.3-contributor",
     "calls": 80,
     "usage": {
       "input_tokens": 21299,
-      "cached_tokens": 7269,
-      "output_tokens": 109103
+      "cached_tokens": 7864,
+      "output_tokens": 108623
     },
-    "usd": 0.023238138000000002,
+    "usd": 0.023083828,
     "judgements": [
       {
         "task": "mult-as-groups",
@@ -23,10 +23,10 @@
           {
             "id": "c2",
             "met": true,
-            "reason": "Używa poprawnie '3 grupy po 4' i '4 i 4 i 4 to razem 12' zgodnie z 3 × 4."
+            "reason": "Poprawnie używa 3 i 4: '3 grupy po 4' i '4 i 4 i 4 to razem 12'."
           }
         ],
-        "feedback": "Świetnie pokazałeś, że to 3 grupy po 4! Bardzo dobrze dodałeś, że to razem 12."
+        "feedback": "Świetnie to wyjaśniłeś! Dobrze pokazałeś 3 grupy po 4."
       },
       {
         "task": "mult-as-groups",
@@ -35,15 +35,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze 'trzy razy i dodajesz do siebie', czyli o dodawaniu tej samej liczby."
+            "reason": "pisze „bierzesz czwórkę trzy razy i dodajesz”, czyli o dodawaniu tej samej liczby."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Pisze 'czwórkę trzy razy', czyli 3 grupy po 4 zgodnie z działaniem."
+            "reason": "„czwórkę trzy razy” to 3 grupy po 4, zgodnie z działaniem 3 × 4."
           }
         ],
-        "feedback": "Świetnie to wyjaśniłeś – czwórka wzięta trzy razy to właśnie 3 × 4!"
+        "feedback": "Świetnie to wyjaśniłeś, widać że rozumiesz mnożenie jako dodawanie!"
       },
       {
         "task": "mult-as-groups",
@@ -52,15 +52,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Fraza \"3 razy 4 to 12\" podaje tylko wynik, nie mówi o równych grupach ani o dodawaniu tej samej liczby."
+            "reason": "W słowach '3 razy 4 to 12' jest tylko wynik, nie ma mowy o równych grupach ani o dodawaniu tej samej liczby."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Fraza \"3 razy 4 to 12\" nie pokazuje 3 grup po 4 ani dodawania 4+4+4."
+            "reason": "Słowa '3 razy 4 to 12' nie pokazują 3 grup po 4 ani zapisu 4+4+4."
           }
         ],
-        "feedback": "Świetnie, że znasz wynik! Spróbuj jeszcze pokazać, co znaczy 3 razy 4, na przykład jako 3 grupy po 4."
+        "feedback": "Świetnie, że wiesz, że wynik to 12! Dopisz jeszcze, jak to policzyć grupami, na przykład 4 + 4 + 4."
       },
       {
         "task": "mult-as-groups",
@@ -69,15 +69,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Child writes 'dodawanie tej samej liczby kilka razy', which is adding the same number."
+            "reason": "Dziecko pisze 'dodawanie tej samej liczby kilka razy', co mówi o dodawaniu tej samej liczby."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Answer does not use 3 and 4, no '4+4+4' or groups."
+            "reason": "Dziecko nie używa liczb 3 i 4, pisze tylko ogólnie 'kilka razy'."
           }
         ],
-        "feedback": "Świetnie, że pamiętasz o dodawaniu tej samej liczby! Spróbuj dopisać, jaką liczbę i ile razy dodajesz w 3 × 4."
+        "feedback": "Świetnie, że pamiętasz o dodawaniu tej samej liczby! Dopisz proszę, jak to wygląda dla 3 × 4."
       },
       {
         "task": "mult-as-groups",
@@ -86,15 +86,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "napisał „3 grupy po 4 klocki”, czyli o równych grupach."
+            "reason": "Napisane '3 grupy po 4 klocki' to opis równych grup."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "użył 3 i 4 poprawnie jako „3 grupy po 4” z wynikiem „dwanaście”."
+            "reason": "Używa '3 grupy po 4' z wynikiem 'dwanaście', zgodnie z 3 × 4."
           }
         ],
-        "feedback": "Super, że pokazałeś 3 grupy po 4 klocki i policzyłeś je razem!"
+        "feedback": "Świetnie pokazałeś 3 grupy po 4 klocki!"
       },
       {
         "task": "mult-as-groups",
@@ -103,15 +103,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Pisze ‘dodajesz 3 i 4’, czyli dodaje dwie różne liczby; nie ma równych grup ani dodawania tej samej liczby."
+            "reason": "Dziecko pisze o 'dodajesz 3 i 4', bez równych grup i bez dodawania tej samej liczby."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Używa liczb jako ‘3 i 4 i wychodzi 7’, czyli 3+4, a nie 3 grupy po 4 ani 4+4+4."
+            "reason": "Dziecko liczy 'wychodzi 7', czyli 3+4 zamiast 3 grup po 4 albo 4+4+4."
           }
         ],
-        "feedback": "Ładnie, że wyjaśniłeś to własnymi słowami! Spróbuj narysować 3 grupy po 4 kropki i je policzyć."
+        "feedback": "Super, że napisałeś wyjaśnienie własnymi słowami! Spróbuj policzyć, ile to 4 + 4 + 4?"
       },
       {
         "task": "mult-as-groups",
@@ -120,15 +120,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Słowa 'Lubię mnożenie, bo jest łatwe i pani je lubi' nie mówią o równych grupach ani o dodawaniu tej samej liczby."
+            "reason": "W słowach „Lubię mnożenie, bo jest łatwe i pani je lubi” nie ma mowy o równych grupach ani o dodawaniu."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Tekst nie używa w ogóle liczb 3 i 4, więc nie pokazuje 3 grup po 4."
+            "reason": "W słowach „Lubię mnożenie, bo jest łatwe i pani je lubi” nie użyto liczb 3 i 4."
           }
         ],
-        "feedback": "Super, że lubisz mnożenie! Spróbuj następnym razem napisać, co znaczy 3 × 4."
+        "feedback": "Fajnie, że lubisz mnożenie! Spróbuj napisać, co znaczy 3 × 4, na przykład ile to grup po ile."
       },
       {
         "task": "mult-as-groups",
@@ -137,15 +137,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Słowo „Grupy.\" samo nie mówi o równych grupach ani o dodawaniu tej samej liczby."
+            "reason": "Wrote only 'Grupy.' – no mention of equal groups or adding the same number."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W odpowiedzi „Grupy.\" nie ma liczb 3 i 4 ani opisu 3 grup po 4."
+            "reason": "Word 'Grupy.' does not use numbers 3 and 4 at all."
           }
         ],
-        "feedback": "Dobry początek — zauważyłeś grupy! Dopisz, ile jest grup i ile jest w każdej grupie."
+        "feedback": "Fajnie, że pomyślałeś o grupach! Dopisz jeszcze, ile jest grup i po ile w każdej."
       },
       {
         "task": "mult-as-groups",
@@ -154,15 +154,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "pisze '4 grupy po 3', czyli mówi o równych grupach."
+            "reason": "Dziecko pisze „4 grupy po 3”, czyli mówi o równych grupach."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "używa odwrotnie '4 grupy po 3' ale dodaje uzasadnienie 'kolejność nie ma znaczenia, wynik ten sam'."
+            "reason": "Używa odwrócenia „4 grupy po 3”, ale dodaje uzasadnienie „kolejność nie ma znaczenia, wynik ten sam”."
           }
         ],
-        "feedback": "Świetnie, że opisałeś równe grupy i zauważyłeś, że kolejność nie zmienia wyniku!"
+        "feedback": "Super, że pokazałeś równe grupy i zauważyłeś, że kolejność nie zmienia wyniku!"
       },
       {
         "task": "mult-as-groups",
@@ -171,15 +171,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Odpowiedź jest pusta – nie ma słów dziecka o grupach ani dodawaniu."
+            "reason": "pusta odpowiedź - brak słów o równych grupach lub dodawaniu tej samej liczby"
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Odpowiedź jest pusta – nie ma słów dziecka z liczbami 3 i 4."
+            "reason": "pusta odpowiedź - brak słów z liczbami 3 i 4"
           }
         ],
-        "feedback": "Dziękuję za podjęcie próby! Spróbuj następnym razem napisać własnymi słowami, co znaczy 3 × 4."
+        "feedback": "Dziękuję, że jesteś. Spróbuj napisać swoimi słowami, co to znaczy 3 grupy po 4."
       },
       {
         "task": "even-number",
@@ -188,12 +188,12 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze „dzieli się na dwie równe części”, więc odwołuje się do dzielenia na 2 równe części."
+            "reason": "Pisze 'dzieli się na dwie równe części' – odwołanie do podziału na 2 równe części."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Stosuje to do 14 pisząc „po 7, nic nie zostaje”, czyli 14 to 7 i 7."
+            "reason": "Stosuje do 14: 'po 7, nic nie zostaje' – czyli 7 i 7."
           }
         ],
         "feedback": "Świetnie wyjaśniłeś, że 14 to 7 i 7 bez reszty!"
@@ -213,7 +213,7 @@
             "reason": "Stosuje zasadę do 14: 'Kończy się na 4'."
           }
         ],
-        "feedback": "Świetnie! Dobrze zauważyłeś, że 14 kończy się na 4."
+        "feedback": "Świetnie zauważyłeś końcówkę 4! Bardzo ładnie to wyjaśniłeś."
       },
       {
         "task": "even-number",
@@ -222,15 +222,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze tylko 'jest większa od 10', nie wspomina o dzieleniu na 2, parach ani o cyfrach 0, 2, 4, 6, 8."
+            "reason": "Pisze tylko 'jest większa od 10', nie wspomina o dzieleniu na 2, parach ani o cyfrach 0, 2, 4, 6, 8."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Dziecko nie pokazuje, że 14 to 7 i 7 ani że kończy się na 4, tylko że 'jest większa od 10'."
+            "reason": "Nie pokazuje zasady dla 14 – nie pisze o 7 i 7 ani o końcówce na 4."
           }
         ],
-        "feedback": "Fajnie, że spróbowałeś wyjaśnić! Pomyśl, czy 14 da się podzielić na dwie równe części."
+        "feedback": "Ładnie, że próbowałeś wyjaśnić! Sprawdź, czy 14 można podzielić na dwie równe części."
       },
       {
         "task": "even-number",
@@ -239,15 +239,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Używa słów „podzielić na pary”, co odwołuje się do par."
+            "reason": "napisało „można ją podzielić na pary”, co odwołuje się do par."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Pisze tylko „ją”, nie pokazuje jak dla 14 – brak „7 i 7” ani „kończy się na 4”."
+            "reason": "nie pokazało zasady na liczbie 14, np. że to 7 i 7 albo kończy się na 4, jest tylko ogólne „ją”."
           }
         ],
-        "feedback": "Świetnie, że pamiętasz o parach! Dopisz jeszcze, że 14 to 7 i 7."
+        "feedback": "Super, że pamiętasz o parach! Dopisz następnym razem, na jakie dwie równe części dzieli się 14."
       },
       {
         "task": "even-number",
@@ -256,15 +256,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Dziecko pisze 'siedem par, każda para ma po 2' i 'nic nie zostaje samo', czyli odwołuje się do par."
+            "reason": "Pisze 'siedem par, każda para ma po 2, i nic nie zostaje samo' - odwołanie do par."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Odnosi to do 14: '14 to siedem par' i nic nie zostaje samo."
+            "reason": "Odnosi to do 14: '14 to siedem par' - poprawne zastosowanie zasady."
           }
         ],
-        "feedback": "Pięknie to wyjaśniłeś! Dobrze pokazałeś, że 14 dzieli się na pary."
+        "feedback": "Świetnie wyjaśniłeś, że 14 to siedem par i nic nie zostaje samo!"
       },
       {
         "task": "even-number",
@@ -273,15 +273,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Słowa '1 i 4 to razem 5' nie mówią o dzieleniu na 2 równe części, parach ani o ostatniej cyfrze."
+            "reason": "Dziecko pisze '1 i 4 to razem 5' i nie odwołuje się do dzielenia na 2 równe części, par ani ostatniej cyfry."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Dziecko pisze '14 nie jest parzysta' i nie pokazuje, że 14 to 7 i 7 ani że kończy się na 4."
+            "reason": "Dziecko nie pokazuje, że 14 to 7 i 7 ani że kończy się na 4, tylko pisze '14 nie jest parzysta, bo 1 i 4 to razem 5'."
           }
         ],
-        "feedback": "Fajnie, że próbowałeś użyć cyfr 1 i 4 do wyjaśnienia. Pomyśl, czy 14 klocków da się podzielić na dwie równe kupki?"
+        "feedback": "Fajnie, że zauważyłeś cyfry 1 i 4 w liczbie 14. Spróbuj sprawdzić, czy 14 da się podzielić na dwie równe części."
       },
       {
         "task": "even-number",
@@ -290,15 +290,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Child only says 'moja ulubiona liczba, bo tyle mam kredek' - no mention of dividing into 2 equal parts, pairs, or last digit 0,2,4,6,8."
+            "reason": "Dziecko pisze tylko 'moja ulubiona liczba, bo tyle mam kredek' i nie wspomina o dzieleniu na 2 równe części, parach ani o cyfrze 0, 2, 4, 6, 8."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Child does not apply rule to 14 as 7 and 7 or ending in 4, only says 'tyle mam kredek'."
+            "reason": "Dziecko nie stosuje zasady do 14 – pisze tylko 'tyle mam kredek', a nie że 14 to 7 i 7 ani że kończy się na 4."
           }
         ],
-        "feedback": "Miło, że napisałaś o swoich kredkach! Spróbuj pomyśleć, czy 14 da się podzielić na dwie równe części."
+        "feedback": "Fajnie, że opowiadasz o swoich kredkach! Spróbuj następnym razem dopisać, czy 14 można podzielić na dwie równe części."
       },
       {
         "task": "even-number",
@@ -307,15 +307,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Słowa 'Bo tak.' nie odwołują się do dzielenia na 2, par ani ostatniej cyfry 0, 2, 4, 6, 8."
+            "reason": "The words 'Bo tak.' do not mention equal parts, pairs, or digits 0, 2, 4, 6, 8."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Słowa 'Bo tak.' nie pokazują zasady dla 14, np. 7 i 7 albo końcówki na 4."
+            "reason": "The words 'Bo tak.' do not apply the rule to 14, e.g. 7 and 7 or ending in 4."
           }
         ],
-        "feedback": "Dziękuję, że spróbowałeś! Następnym razem spróbuj napisać, jak podzielić 14 na dwie równe części."
+        "feedback": "Dziękuję, że spróbowałeś odpowiedzieć! Pomyśl, co się stanie, gdy podzielisz 14 na dwie równe części."
       },
       {
         "task": "even-number",
@@ -324,15 +324,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Pisze tylko 'idą co drugą: 2, 4, 6...', nie wspomina o dzieleniu na 2 równe części, parach ani ostatniej cyfrze 0, 2, 4, 6, 8."
+            "reason": "Pisze tylko „idą co drugą: 2, 4, 6, 8...”, nie wspomina o dzieleniu na 2 równe części, parach ani o ostatniej cyfrze."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Dopisał '14' na końcu listy, ale nie pokazał, że 14 to 7 i 7 ani że kończy się na 4."
+            "reason": "Dopisał „14” na końcu listy, ale nie napisał, że 14 to 7 i 7 ani że kończy się na 4."
           }
         ],
-        "feedback": "Ładnie pokazałeś kolejność liczb parzystych! Dopisz jeszcze, że 14 kończy się na 4 albo dzieli się na 7 i 7."
+        "feedback": "Ładnie wypisałeś parzyste liczby aż do 14! Dopisz jeszcze, że 14 kończy się na 4."
       },
       {
         "task": "even-number",
@@ -341,15 +341,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze tylko 'jest w tabliczce mnożenia przez 3', nie wspomina o dzieleniu na 2 równe części, parach ani o cyfrze 0, 2, 4, 6, 8."
+            "reason": "Słowa 'jest w tabliczce mnożenia przez 3' nie mówią o dzieleniu na 2 równe części, parach ani o cyfrze 0, 2, 4, 6, 8."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie pokazuje, że 14 to 7 i 7 ani że kończy się na 4; podaje tylko 'tabliczkę mnożenia przez 3'."
+            "reason": "Słowa 'jest w tabliczce mnożenia przez 3' nie pokazują, że 14 to 7 i 7 ani że 14 kończy się na 4."
           }
         ],
-        "feedback": "Dziękuję za Twoją odpowiedź! Sprawdź, czy 14 można podzielić na dwie równe części."
+        "feedback": "Dobra próba wyjaśnienia! Pomyśl, czy 14 da się podzielić na 7 i 7."
       },
       {
         "task": "regrouping-add",
@@ -358,15 +358,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Podaje wynik słowami „to 42”, co jest poprawne."
+            "reason": "Dziecko pisze na końcu „to 42”, czyli podaje poprawny wynik 42."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Opisuje dodawanie częściami: „27 i 10 to 37, a jeszcze 5”. "
+            "reason": "Dziecko opisuje dodawanie częściami: „27 i 10 to 37, a jeszcze 5” – rozkłada 15 na 10 i 5."
           }
         ],
-        "feedback": "Świetnie policzyłeś, najpierw dodałeś 10, a potem 5!"
+        "feedback": "Świetnie, że dodałeś najpierw 10, a potem 5! Bardzo jasno to wyjaśniłeś."
       },
       {
         "task": "regrouping-add",
@@ -375,15 +375,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze „Razem 42”, czyli podaje poprawny wynik."
+            "reason": "Podaje 'Razem 42', czyli poprawny wynik."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Opisuje rozkład: „Dodaję dziesiątki: 20 i 10 to 30. Jedności: 7 i 5 to 12”."
+            "reason": "Opisuje rozkład: 'Dodaję dziesiątki: 20 i 10 to 30. Jedności: 7 i 5 to 12'."
           }
         ],
-        "feedback": "Świetnie rozłożyłeś liczby na dziesiątki i jedności! Bardzo jasno to wyjaśniłeś."
+        "feedback": "Świetnie wyjaśniłeś krok po kroku, jak dodajesz dziesiątki i jedności!"
       },
       {
         "task": "regrouping-add",
@@ -392,15 +392,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Dziecko napisało „42”, czyli podaje poprawny wynik."
+            "reason": "Dziecko napisało '42', czyli poprawny wynik."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Odpowiedź to tylko „42.”, brak opisu sposobu liczenia."
+            "reason": "Odpowiedź zawiera tylko '42', brak opisu sposobu liczenia."
           }
         ],
-        "feedback": "Super, że wynik 42 jest poprawny! Dopisz jeszcze, jak to policzyłeś krok po kroku."
+        "feedback": "Brawo, wynik 42 jest poprawny! Dopisz jeszcze, jak liczyłaś krok po kroku."
       },
       {
         "task": "regrouping-add",
@@ -409,15 +409,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Dziecko napisało 'Wychodzi 42', więc podało poprawny wynik."
+            "reason": "Dziecko napisało „Wychodzi 42”, czyli podało poprawny wynik."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Dziecko napisało tylko 'zawsze dodaję 15 do każdej liczby', co nie opisuje rozkładu ani dodawania częściami."
+            "reason": "Słowa „zawsze dodaję 15 do każdej liczby” nie pokazują rozkładu na dziesiątki i jedności ani dodawania częściami."
           }
         ],
-        "feedback": "Super, że wynik 42 jest poprawny! Następnym razem pokaż krok po kroku, jak dodajesz dziesiątki i jedności."
+        "feedback": "Super, że wynik 42 jest poprawny! Następnym razem pokaż, jak dodajesz najpierw dziesiątki, a potem jedności."
       },
       {
         "task": "regrouping-add",
@@ -426,15 +426,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze 'więc 312', a nie 42."
+            "reason": "pisze 'więc 312' zamiast 42"
           },
           {
             "id": "c2",
-            "met": true,
-            "reason": "Dziecko pisze '7 i 5 to 12' i '2 i 1 to 3', czyli dzieli na jedności i dziesiątki."
+            "met": false,
+            "reason": "liczy '7 i 5 to 12' i '2 i 1 to 3', ale łączy je w '312' zamiast dodać 30 i 12"
           }
         ],
-        "feedback": "Fajnie, że rozdzieliłeś jedności i dziesiątki osobno. Spróbuj teraz połączyć 30 i 12."
+        "feedback": "Dobrze, że dodałeś osobno jedności i dziesiątki! Spróbuj teraz połączyć 30 i 12, ile to razem?"
       },
       {
         "task": "regrouping-add",
@@ -443,15 +443,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Child ends with 'to 43', not 42."
+            "reason": "Podaje wynik w słowach 'plus 5 to 43', a nie 42."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Child shows adding in parts with '27 + 10 = 37, plus 5'."
+            "reason": "Dodaje częściami: najpierw '27 + 10 = 37', potem 'plus 5'."
           }
         ],
-        "feedback": "Świetnie podzieliłeś 15 na 10 i 5! Policz jeszcze raz, ile to 37 + 5."
+        "feedback": "Świetnie, że rozbiłeś 15 na 10 i 5! Sprawdź jeszcze, ile to 37 + 5."
       },
       {
         "task": "regrouping-add",
@@ -460,15 +460,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Napisał „jest 42”, czyli podał poprawny wynik."
+            "reason": "Pisze 'jest 42', czyli podaje poprawny wynik."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Napisał „27 + 3 = 30, potem dodaje reszte 12”, czyli opisał dopełnienie do pełnej dziesiątki."
+            "reason": "Opisuje dopełnienie do dziesiątki: '27 + 3 = 30, potem dodaje reszte 12'."
           }
         ],
-        "feedback": "Świetnie pokazałeś, jak najpierw dojść do 30! Bardzo ładnie to wyjaśniłeś."
+        "feedback": "Świetnie to wyjaśniłeś! Bardzo ładnie uzupełniłeś do 30 i dodałeś resztę."
       },
       {
         "task": "regrouping-add",
@@ -477,15 +477,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Tekst 'Nie lubię dodawania, wolę odejmowanie.' nie zawiera wyniku 42."
+            "reason": "Tekst 'Nie lubię dodawania, wolę odejmowanie.' nie podaje wyniku 42."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Tekst 'wolę odejmowanie' nie opisuje żadnego sposobu dodawania 27+15."
+            "reason": "Zdanie 'wolę odejmowanie' nie opisuje sposobu dodawania 27 + 15."
           }
         ],
-        "feedback": "Dziękuję, że napisałeś, co myślisz. Spróbuj teraz policzyć 27 + 15 krok po kroku."
+        "feedback": "Dziękuję, że szczerze napisałeś, co lubisz. Następnym razem spróbuj policzyć 27 + 15 krok po kroku."
       },
       {
         "task": "regrouping-add",
@@ -499,10 +499,10 @@
           {
             "id": "c2",
             "met": false,
-            "reason": "Dziecko pisze tylko 'bo 7 + 5 to 2', bez sensownego rozkładu na dziesiątki i jedności."
+            "reason": "Pisze tylko 'bo 7 + 5 to 2', bez poprawnego rozkładu na dziesiątki i jedności ani dodawania częściami."
           }
         ],
-        "feedback": "Świetnie, że spojrzałeś na jedności 7 i 5. Policz 7+5 jeszcze raz i nie zapomnij o dziesiątkach."
+        "feedback": "Super, że próbowałeś dodać jedności osobno! Policz jeszcze raz, ile to 7 + 5 i dodaj też dziesiątki."
       },
       {
         "task": "regrouping-add",
@@ -511,15 +511,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "W słowach „Liczyłem na palcach.” nie ma wyniku 42."
+            "reason": "W słowach 'Liczyłem na palcach.' nie ma wyniku 42."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Słowa „Liczyłem na palcach.” nie opisują rozkładu na dziesiątki i jedności ani dodawania częściami."
+            "reason": "Słowa 'Liczyłem na palcach' nie opisują rozkładu na dziesiątki i jedności ani dodawania częściami."
           }
         ],
-        "feedback": "Fajnie, że spróbowałeś policzyć! Następnym razem napisz wynik i pokaż kroki dodawania."
+        "feedback": "Fajnie, że liczyłeś samodzielnie. Spróbuj następnym razem zapisać wynik i pokazać, jak dodajesz dziesiątki i jedności."
       },
       {
         "task": "half-meaning",
@@ -528,15 +528,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Dziecko pisze 'przecięta na dwie części' – mówi o podziale na 2."
+            "reason": "Pisze, że pizza jest 'przecięta na dwie... części'."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Dziecko pisze 'dwie równe części' – zaznacza, że części są równe."
+            "reason": "Dodaje, że to 'dwie równe części'."
           }
         ],
-        "feedback": "Świetnie to wyjaśniłeś! Pamiętasz o podziale na dwie równe części."
+        "feedback": "Świetnie to wyjaśniłeś! Dobrze pamiętałeś o dwóch równych częściach."
       },
       {
         "task": "half-meaning",
@@ -545,15 +545,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze 'jeden z dwóch kawałków pizzy', czyli mówi o podziale na 2 części."
+            "reason": "napisał 'jeden z dwóch kawałków pizzy', czyli opisuje całość podzieloną na 2 części"
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie pisze, że kawałki muszą być równe, tylko że są 'dwa kawałki'."
+            "reason": "napisał tylko 'dwóch kawałków', nie dodał że części muszą być równe/takie same"
           }
         ],
-        "feedback": "Świetnie, że wiesz, że połowa to jeden z dwóch kawałków! Dopisz następnym razem, że te kawałki muszą być równe."
+        "feedback": "Świetnie, że wiesz, że połowa to jeden z dwóch kawałków! Dopowiedz jeszcze, czy te dwa kawałki muszą być takie same?"
       },
       {
         "task": "half-meaning",
@@ -567,10 +567,10 @@
           {
             "id": "c2",
             "met": false,
-            "reason": "Pisze 'mniejszy niż reszta', więc nie mówi, że części muszą być równe."
+            "reason": "Pisze 'mniejszy niż reszta', więc nie zaznacza, że części muszą być równe."
           }
         ],
-        "feedback": "Ładnie próbujesz to wyjaśnić! Pomyśl, na ile równych części dzielimy pizzę, żeby dostać połowę?"
+        "feedback": "Ładnie, że próbujesz to wyjaśnić! Pamiętaj, że połowa to jeden z dwóch równych kawałków."
       },
       {
         "task": "half-meaning",
@@ -579,15 +579,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze 'podzielisz pizzę ... między dwie osoby', czyli o podziale na 2 części."
+            "reason": "Pisze 'podzielisz pizzę... między dwie osoby', czyli o podziale całości na 2 części."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Pisze 'sprawiedliwie', co znaczy, że obie części są równe."
+            "reason": "Słowo 'sprawiedliwie' znaczy, że obie części są równe."
           }
         ],
-        "feedback": "Świetnie to wyjaśniłeś, sprawiedliwy podział to bardzo dobry przykład połowy!"
+        "feedback": "Świetnie wyjaśniłeś, że połowa to sprawiedliwy podział pizzy na dwie osoby!"
       },
       {
         "task": "half-meaning",
@@ -596,15 +596,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze 'jedna z dwuh ... czenści', czyli wskazuje na 2 części całości."
+            "reason": "napisał „jedna z dwuh ... czenści”, czyli mówi o jednej z dwóch części całości."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Pisze 'takich samyh', czyli zaznacza, że części są równe."
+            "reason": "napisał „takich samyh”, czyli zaznacza, że części są równe."
           }
         ],
-        "feedback": "Świetnie to wyjaśniłeś! Pamiętałeś o dwóch takich samych częściach."
+        "feedback": "Świetnie! Dobrze wyjaśniłeś, że połowa to jedna z dwóch takich samych części."
       },
       {
         "task": "half-meaning",
@@ -613,15 +613,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Tekst 'Najlepsza pizza jest z serem i pieczarkami' nie mówi nic o dzieleniu na 2 części."
+            "reason": "Tekst 'Najlepsza pizza jest z serem i pieczarkami' nie mówi nic o podziale na 2 części."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Tekst 'Najlepsza pizza jest z serem i pieczarkami' nie wspomina, że części mają być równe."
+            "reason": "W zdaniu o serze i pieczarkach nie ma nic o tym, że części muszą być równe."
           }
         ],
-        "feedback": "Fajnie, że napisałeś o swojej ulubionej pizzy! Pomyśl jeszcze, co się dzieje, gdy dzielimy pizzę na dwie równe części."
+        "feedback": "Fajnie, że napisałeś o swojej ulubionej pizzy! Następnym razem spróbuj wyjaśnić, co się dzieje, gdy dzielimy pizzę na dwie równe części."
       },
       {
         "task": "half-meaning",
@@ -630,15 +630,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "W słowach 'To 50 procent pizzy' nie ma mowy o podziale całości na 2 części."
+            "reason": "W odpowiedzi 'To 50 procent pizzy' nie ma mowy o podziale całości na 2 części."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W słowach 'To 50 procent pizzy' nie ma zaznaczenia, że części muszą być równe."
+            "reason": "W słowach '50 procent pizzy' nie ma zaznaczenia, że części muszą być równe."
           }
         ],
-        "feedback": "Fajnie, że znasz procenty! Spróbuj dopisać, że pizza jest podzielona na 2 równe części."
+        "feedback": "Świetnie, że znasz procenty! Dopowiedz jeszcze, że połowa to podział na 2 równe części."
       },
       {
         "task": "half-meaning",
@@ -647,15 +647,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Słowo 'Pół.' nie opisuje dzielenia całości na 2 części."
+            "reason": "Słowo 'Pół.' nie mówi o podziale całości na 2 części."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Słowo 'Pół.' nie mówi, że części muszą być równe."
+            "reason": "Słowo 'Pół.' nie zaznacza, że części muszą być równe."
           }
         ],
-        "feedback": "Dziękuję za próbę! Dopowiedz proszę, na ile części dzielimy pizzę i jakie muszą być te części?"
+        "feedback": "Dziękuję za próbę! Spróbuj dopisać, na ile równych części dzielimy pizzę."
       },
       {
         "task": "half-meaning",
@@ -664,15 +664,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze 'Dwie połowy razem dają całą pizzę', czyli całość składa się z 2 części."
+            "reason": "Pisze „Dwie połowy razem dają całą pizzę”, czyli całość składa się z 2 części."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Pisze 'obie muszą być takie same', czyli części są równe."
+            "reason": "Pisze „obie muszą być takie same”, czyli części są równe."
           }
         ],
-        "feedback": "Świetnie wyjaśniłeś, że dwie połowy tworzą całą pizzę i muszą być takie same!"
+        "feedback": "Świetnie wyjaśniłeś, że dwie takie same części tworzą całą pizzę!"
       },
       {
         "task": "half-meaning",
@@ -681,15 +681,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze o 'przecięta na 4 kawałki', a nie o podziale na 2 części."
+            "reason": "Child writes 'przecięta na 4 kawałki', which is a split into 4, not 2."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W słowach 'przecięta na 4 kawałki' nie ma nic o tym, że części muszą być równe."
+            "reason": "Child writes 'przecięta na 4 kawałki' but does not say the parts must be equal."
           }
         ],
-        "feedback": "Fajnie, że pomyślałeś o dzieleniu pizzy na kawałki! Połowa to kiedy dzielimy całość na 2 równe części."
+        "feedback": "Fajnie, że zauważyłeś, że pizzę kroimy na kawałki! Pamiętaj, że połowa to podział na 2 równe części."
       },
       {
         "task": "spelling-rz",
@@ -698,15 +698,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Dziecko pisze 'rz piszemy po spółgłosce', co odwołuje się do zasady."
+            "reason": "Pisze „rz piszemy po spółgłosce”, czyli podaje zasadę."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Dziecko pisze 'przed rz jest d', wskazując d w słowie."
+            "reason": "Pisze „przed rz jest d”, czyli łączy zasadę ze słowem drzewo."
           }
         ],
-        "feedback": "Świetnie wyjaśniłeś zasadę i wskazałeś literę d przed rz!"
+        "feedback": "Świetnie wyjaśniłeś zasadę i wskazałeś literę d!"
       },
       {
         "task": "spelling-rz",
@@ -715,15 +715,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "dziecko pisze „zasada z rz po spółgłoskach”, czyli przywołuje zasadę rz po spółgłoskach."
+            "reason": "Dziecko pisze \"zasada z rz po spółgłoskach\", czyli przywołuje wymaganą zasadę."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "dziecko podaje tylko ogólną zasadę, nie wskazuje litery d w słowie drzewo ani słowa pokrewnego."
+            "reason": "Dziecko nie wskazuje litery d przed rz ani słowa pokrewnego, nie łączy zasady ze słowem drzewo."
           }
         ],
-        "feedback": "Świetnie, że pamiętasz zasadę o rz po spółgłoskach! Dopisz jeszcze, że w słowie drzewo chodzi o literę d przed rz."
+        "feedback": "Świetnie, że pamiętasz zasadę o rz! Dopisz jeszcze, jaka spółgłoska stoi przed rz w słowie drzewo."
       },
       {
         "task": "spelling-rz",
@@ -732,15 +732,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze tylko „bo drzewo rośnie w lesie” – nie wspomina o pisowni rz po spółgłosce ani o wymianie na r."
+            "reason": "Dziecko pisze tylko 'bo drzewo rośnie w lesie' – nie wspomina o zasadzie rz po spółgłosce ani o wymianie na r."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie wskazuje litery d przed rz ani słowa pokrewnego, tylko pisze że „rośnie w lesie”."
+            "reason": "Nie wskazuje litery 'd' przed rz ani słowa pokrewnego, tylko że 'drzewo rośnie w lesie'."
           }
         ],
-        "feedback": "Ładnie napisałeś całe zdanie! Spróbuj przypomnieć sobie, jaka litera stoi przed rz w słowie drzewo."
+        "feedback": "Ładnie napisałeś całe zdanie. Pomyśl, jaka litera stoi przed rz w słowie drzewo?"
       },
       {
         "task": "spelling-rz",
@@ -749,15 +749,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Pisze tylko 'słychać ż, więc piszemy rz', nie wspomina o pisowni po spółgłosce ani o wymianie na r."
+            "reason": "Pisze tylko 'słychać ż, więc piszemy rz', nie przywołuje zasady o spółgłosce/d ani o wymianie na r."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie wskazuje litery d przed rz w 'drzewo' ani nie podaje słowa pokrewnego."
+            "reason": "Nie wskazuje litery d przed rz ani słowa pokrewnego do 'drzewo', powołuje się tylko na brzmienie."
           }
         ],
-        "feedback": "Fajnie, że uważnie słuchasz dźwięków w słowie. Sprawdź, jaka litera stoi przed rz w słowie drzewo."
+        "feedback": "Fajnie, że zauważyłeś, jak brzmi to słowo! Pomyśl jeszcze, jaka litera stoi przed rz w słowie drzewo?"
       },
       {
         "task": "spelling-rz",
@@ -766,15 +766,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze 'Psze spułgłosce d zawsze jest rz', czyli przywołuje zasadę rz po spółgłosce d."
+            "reason": "Dziecko pisze „Psze spułgłosce d zawsze jest rz”, czyli podaje zasadę o rz po spółgłosce d."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Wskazuje literę 'd' przed rz i łączy ze słowem w 'tak jak w drzewie'."
+            "reason": "Dziecko dodaje „tak jak w drzewie”, czyli łączy zasadę ze słowem drzewo."
           }
         ],
-        "feedback": "Świetnie zauważyłeś literę d przed rz w słowie drzewo!"
+        "feedback": "Świetnie zauważyłeś, że po d piszemy rz! Pięknie to wyjaśniłeś na przykładzie drzewa."
       },
       {
         "task": "spelling-rz",
@@ -783,15 +783,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Słowa 'są zielone i dają cień latem' nie mówią o zasadzie rz po spółgłosce ani o wymianie na r."
+            "reason": "Dziecko pisze że drzewa są zielone i dają cień, nie wspomina zasady rz po spółgłosce ani wymiany na r."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Słowo 'Drzewa' jest tylko początkiem opisu, nie wskazuje litery d przed rz ani słowa pokrewnego z r."
+            "reason": "W słowach Drzewa są zielone... nie wskazuje litery d przed rz ani słowa pokrewnego do drzewo."
           }
         ],
-        "feedback": "Ładnie napisałeś, że drzewa są zielone i dają cień! Teraz spróbuj dopisać, po jakiej literze stoi rz w słowie drzewo."
+        "feedback": "Ładnie napisałeś zdanie o drzewach latem! Spróbuj teraz przypomnieć, dlaczego w słowie drzewo po literze d piszemy rz."
       },
       {
         "task": "spelling-rz",
@@ -800,15 +800,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze tylko „Bo tak się pisze” i nie odwołuje się do zasady o rz po spółgłosce ani do wymiany na r."
+            "reason": "Słowa 'Bo tak się pisze' nie podają zasady o rz po spółgłosce ani wymiany na r."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Dziecko pisze tylko „Bo tak się pisze” i nie wskazuje litery d przed rz ani słowa pokrewnego do drzewo."
+            "reason": "Wypowiedź 'Bo tak się pisze' nie wskazuje litery d ani słowa pokrewnego do 'drzewo'."
           }
         ],
-        "feedback": "Dzięki, że spróbowałeś odpowiedzieć! Pomyśl następnym razem, jaka litera stoi przed rz w słowie drzewo."
+        "feedback": "Dziękuję za odpowiedź! Spróbuj przypomnieć sobie, jaka litera stoi przed rz w słowie drzewo."
       },
       {
         "task": "spelling-rz",
@@ -817,15 +817,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Dziecko pisze 'Po literach takich jak d, b, p, t piszemy rz', czyli podaje zasadę pisowni rz po spółgłoskach."
+            "reason": "Podaje zasadę słowami 'Po literach takich jak d, b, p, t piszemy rz'."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Dziecko pisze 'a drzewo ma d', czyli wskazuje literę d przed rz w słowie drzewo."
+            "reason": "Łączy zasadę z wyrazem słowami 'a drzewo ma d'."
           }
         ],
-        "feedback": "Świetnie! Bardzo dobrze wskazałeś literę d przed rz w słowie drzewo."
+        "feedback": "Świetnie to wyjaśniłeś! Dobrze wskazałeś literę d przed rz."
       },
       {
         "task": "spelling-rz",
@@ -834,15 +834,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze 'wymienia się na sz', a nie o wymianie rz na r ani o pisowni po spółgłosce d."
+            "reason": "Dziecko pisze o wymianie „na sz, jak w słowie drzesz”, a nie o wymianie na r ani o pisowni po spółgłosce d."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie wskazuje d przed rz w słowie 'drzewo', a podaje 'drzesz', które nie pokazuje wymiany na r."
+            "reason": "Nie wskazuje litery d w słowie drzewo, a „drzesz” nie jest poprawnym słowem pokrewnym do drzewo."
           }
         ],
-        "feedback": "Świetnie, że próbujesz użyć wymiany do wyjaśnienia! Poszukaj słowa bliskiego do drzewo, w którym słychać samo r."
+        "feedback": "Świetnie, że próbujesz użyć zasady wymiany! Pamiętaj, że w słowie drzewo rz stoi po literze d."
       },
       {
         "task": "spelling-rz",
@@ -851,15 +851,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze tylko 'jest d, a po nim rz', opisuje kolejność liter, ale nie podaje zasady dlaczego po spółgłosce piszemy rz ani wymiany."
+            "reason": "Dziecko pisze tylko „jest d, a po nim rz” – opisuje kolejność liter, ale nie podaje zasady, że po spółgłosce piszemy rz, ani wymiany na r."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Wskazuje w słowie 'd, a po nim rz', czyli pokazuje literę d przed rz w 'drzewie'."
+            "reason": "Dziecko wskazuje w słowie „drzewie” literę „d, a po nim rz”, czyli d przed rz."
           }
         ],
-        "feedback": "Świetnie zauważyłeś d przed rz! Dopisz jeszcze zasadę, że po spółgłosce piszemy rz."
+        "feedback": "Świetnie zauważyłeś d przed rz! Spróbuj dopisać, że po spółgłoskach piszemy rz."
       },
       {
         "task": "word-problem-plan",
@@ -868,20 +868,20 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze wprost 'Połowa z 24 to 12'."
+            "reason": "Napisano 'Połowa z 24 to 12', więc podano połowę z 24."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Pisze 'Zostało 12, plus 5 to 17', co pokazuje odjęcie połowy i dodanie 5."
+            "reason": "Napisano 'Zostało 12, plus 5', więc pokazano odjęcie połowy i dodanie 5."
           },
           {
             "id": "c3",
             "met": true,
-            "reason": "Podaje wynik słowami 'plus 5 to 17'."
+            "reason": "Napisano 'to 17', więc podano poprawny wynik 17."
           }
         ],
-        "feedback": "Świetnie wyjaśniłeś każdy krok liczenia!"
+        "feedback": "Świetnie policzyłeś krok po kroku! Bardzo jasno to wyjaśniłeś."
       },
       {
         "task": "word-problem-plan",
@@ -890,20 +890,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "W słowach 'Teraz jest 17 jabłek' nie ma liczenia połowy z 24 ani liczby 12."
+            "reason": "W słowach Teraz jest 17 jabłek nie ma policzenia połowy z 24 czyli 12."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W słowach 'Teraz jest 17 jabłek' nie ma odjęcia połowy ani dodania 5."
+            "reason": "W słowach Teraz jest 17 jabłek nie ma odejmowania połowy i dodania 5."
           },
           {
             "id": "c3",
             "met": true,
-            "reason": "Słowa 'Teraz jest 17 jabłek' podają poprawny wynik 17."
+            "reason": "W słowach Teraz jest 17 jabłek podaje poprawny wynik 17."
           }
         ],
-        "feedback": "Super, że podałeś dobry wynik 17! Następnym razem dopisz, jak liczyłeś połowę i dodawanie."
+        "feedback": "Brawo, wynik 17 jest poprawny! Następnym razem napisz krok po kroku, jak liczyłeś połowę i dodawanie."
       },
       {
         "task": "word-problem-plan",
@@ -912,20 +912,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dziecko pisze '24 + 5 to 29', nie liczy połowy z 24 czyli 12."
+            "reason": "Dziecko nie liczy połowy z 24, pisze 'połowa z 29' i nie podaje 12."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Dziecko najpierw dodaje 5, a potem bierze 'połowa z 29' zamiast odjąć połowę od 24 i dodać 5."
+            "reason": "Dziecko robi odwrotnie: '24 + 5 to 29', zamiast odjąć połowę i dodać 5."
           },
           {
             "id": "c3",
             "met": false,
-            "reason": "Dziecko podaje 'niecałe 15' zamiast poprawnego wyniku 17."
+            "reason": "Dziecko podaje 'niecałe 15' zamiast 17."
           }
         ],
-        "feedback": "Fajnie, że umiesz dodać i policzyć połowę! Spróbuj najpierw policzyć połowę z 24, a potem dodać 5."
+        "feedback": "Ładnie, że zapisujesz swoje obliczenia! Spróbuj najpierw policzyć połowę z 24, a potem dodać 5."
       },
       {
         "task": "word-problem-plan",
@@ -934,20 +934,20 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Dziecko napisało „połowa z 24 to 12”, czyli policzyło połowę z 24."
+            "reason": "Writes 'połowa z 24 to 12', so gives half of 24."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Dziecko napisało „i tyle zostało”, ale nie napisało nic o dołożeniu 5."
+            "reason": "Says 'i tyle zostało' but never mentions adding 5."
           },
           {
             "id": "c3",
             "met": false,
-            "reason": "Dziecko nie podało wyniku 17, napisało tylko że zostało 12."
+            "reason": "Ends with 12 as final, not 17."
           }
         ],
-        "feedback": "Świetnie policzyłeś, że połowa z 24 to 12! Następnym krokiem dodaj jeszcze 5 jabłek."
+        "feedback": "Świetnie policzyłeś połowę z 24! Spróbuj dopisać, ile będzie po dodaniu 5 jabłek."
       },
       {
         "task": "word-problem-plan",
@@ -956,17 +956,17 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze 'Oddali 12, bo to połowa', czyli podaje połowę z 24."
+            "reason": "Dziecko pisze 'Oddali 12, bo to połowa', czyli liczy połowę z 24."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Pisze 'zostało 12, dołożyli 5', czyli pokazuje odjęcie i dodanie."
+            "reason": "Dziecko pisze 'zostało 12, dołożyli 5', czyli pokazuje odjęcie i dodanie 5."
           },
           {
             "id": "c3",
             "met": true,
-            "reason": "Pisze 'wyszło 17', czyli podaje wynik 17."
+            "reason": "Dziecko pisze 'wyszło 17', czyli podaje poprawny wynik 17."
           }
         ],
         "feedback": "Świetnie wyjaśniłeś każdy krok liczenia!"
@@ -978,20 +978,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "W słowach '24 - 5 to 19 jabłek' nie ma połowy z 24 ani liczby 12."
+            "reason": "Dziecko pisze tylko '24 - 5 to 19' i nie liczy połowy z 24, nie ma 12."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Dziecko pisze tylko '24 - 5', nie odejmuje połowy od 24 i nie dodaje 5 do 12."
+            "reason": "Zamiast odjąć połowę i dodać 5, dziecko liczy '24 - 5'."
           },
           {
             "id": "c3",
             "met": false,
-            "reason": "Dziecko podaje wynik '19 jabłek' zamiast 17."
+            "reason": "Dziecko podaje '19 jabłek', a nie 17."
           }
         ],
-        "feedback": "Dobrze, że zapisałeś działanie z wynikiem. Spróbuj najpierw policzyć, ile to połowa z 24."
+        "feedback": "Fajnie, że zapisałeś działanie z odpowiedzią. Spróbuj najpierw policzyć, ile to połowa z 24."
       },
       {
         "task": "word-problem-plan",
@@ -1000,20 +1000,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "W słowach „Jabłka są zdrowe i mają witaminy” nie ma liczenia połowy z 24."
+            "reason": "Dziecko pisze tylko 'Jabłka są zdrowe i mają witaminy' i nie liczy połowy z 24."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W słowach „Jabłka są zdrowe i mają witaminy” nie ma odejmowania i dodawania 5."
+            "reason": "W słowach 'Jabłka są zdrowe i mają witaminy' nie ma odejmowania i dodawania 5."
           },
           {
             "id": "c3",
             "met": false,
-            "reason": "W słowach „Jabłka są zdrowe i mają witaminy” nie ma wyniku 17."
+            "reason": "W odpowiedzi 'Jabłka są zdrowe i mają witaminy' nie ma wyniku 17."
           }
         ],
-        "feedback": "Świetnie, że napisałeś coś o jabłkach! Spróbuj teraz policzyć, ile to połowa z 24 i co będzie dalej."
+        "feedback": "Fajnie, że wiesz, że jabłka są zdrowe! Spróbuj teraz policzyć, ile to połowa z 24."
       },
       {
         "task": "word-problem-plan",
@@ -1022,20 +1022,20 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "napisał '24 : 2 = 12', więc policzył połowę z 24."
+            "reason": "Napisał '24 : 2 = 12', więc policzył połowę z 24."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "napisał '24 - 12 = 12' i '12 + 5', więc odjął połowę i dodał 5."
+            "reason": "Napisał '24 - 12 = 12' i '12 + 5', więc odjął połowę i dodał 5."
           },
           {
             "id": "c3",
             "met": false,
-            "reason": "podał wynik '16' w zapisie '12 + 5 = 16' zamiast 17."
+            "reason": "Napisał na końcu '16' zamiast 17."
           }
         ],
-        "feedback": "Świetnie pokazałeś kolejne kroki obliczeń! Sprawdź jeszcze raz, ile wynosi 12 + 5."
+        "feedback": "Świetnie rozdzieliłeś zadanie na kroki! Sprawdź jeszcze, ile to jest 12 + 5."
       },
       {
         "task": "word-problem-plan",
@@ -1044,20 +1044,20 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Dziecko pisze 'znika połowa, czyli 12' – liczy połowę z 24."
+            "reason": "Pisze 'Z 24 znika połowa, czyli 12'."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Dziecko pisze 'W koszyku jest 12, a po dołożeniu pięciu jest 17' – zostaje 12 i dodaje 5."
+            "reason": "Pisze 'W koszyku jest 12, a po dołożeniu pięciu jest 17', czyli 24-12 i +5."
           },
           {
             "id": "c3",
             "met": true,
-            "reason": "Dziecko pisze 'jest 17' – podaje poprawny wynik końcowy."
+            "reason": "Pisze na końcu 'jest 17'."
           }
         ],
-        "feedback": "Świetnie wyjaśniłeś każdy krok liczenia!"
+        "feedback": "Świetnie wyjaśniłeś po kolei swoje liczenie!"
       },
       {
         "task": "word-problem-plan",
@@ -1066,20 +1066,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "W odpowiedzi jest tylko „17.”, nie ma policzenia połowy z 24 czyli 12."
+            "reason": "Answer contains only '17.' - no mention of half of 24 as 12."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W „17.” nie pokazano odejmowania połowy od 24 ani dodawania 5."
+            "reason": "Answer contains only '17.' - does not show subtracting half and adding 5."
           },
           {
             "id": "c3",
             "met": true,
-            "reason": "Dziecko napisało „17.”, czyli poprawny wynik końcowy."
+            "reason": "Child wrote '17.', which is the correct final result."
           }
         ],
-        "feedback": "Super, że Twój wynik 17 jest poprawny! Następnym razem dopisz, jak liczysz połowę i dodawanie."
+        "feedback": "Brawo, wynik 17 jest poprawny! Następnym razem dopisz krok po kroku, jak liczysz połowę i dodawanie."
       },
       {
         "task": "en-past-tense",
@@ -1088,15 +1088,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Points to change with 'Played has -ed at the end'."
+            "reason": "Child writes 'Played has -ed at the end' pointing to the ending."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Says '-ed means it already happened' and 'Play is for now' for past vs now."
+            "reason": "Child says '-ed means it already happened' and 'Play is for now'."
           }
         ],
-        "feedback": "Great work spotting the -ed ending and explaining what it means!"
+        "feedback": "Great work noticing the -ed ending and explaining what it means!"
       },
       {
         "task": "en-past-tense",
@@ -1105,15 +1105,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Wrote 'played is about the past' but did not point to the -ed ending as the change."
+            "reason": "says 'played is about the past' but never names the -ed ending as the change"
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Said 'played is about the past' but said nothing about 'play' for now or usually."
+            "reason": "says 'played is about the past' but says nothing about 'play' for now or usually"
           }
         ],
-        "feedback": "You spotted that 'played' is about the past — great! Can you add what 'play' tells us and what -ed adds?"
+        "feedback": "You spotted that 'played' is about the past - well done! Can you add what the -ed on the end does?"
       },
       {
         "task": "en-past-tense",
@@ -1122,15 +1122,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Says 'Played is longer' but does not point to the -ed ending as the change."
+            "reason": "Says 'Played is longer' but does not name the -ed ending as the change."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Says played is 'about a longer time ago' for the past, but does not say plain 'play' is for now or usually."
+            "reason": "Says played is 'about a longer time ago' for past, but does not say play is for now."
           }
         ],
-        "feedback": "Good noticing that played talks about the past! Look closely at the -ed at the end that shows yesterday."
+        "feedback": "Nice thinking about time ago! Look at the end of played - what two letters were added to play?"
       },
       {
         "task": "en-past-tense",
@@ -1139,15 +1139,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Writes 'The ed at the end' pointing to the -ed ending."
+            "reason": "says 'The ed at the end' pointing to the ending."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Says ed means 'finisht, not now' for past but does not say what 'I play' means."
+            "reason": "says ed 'shows it is finisht, not now' for past but does not say the plain 'play' is for now or usually."
           }
         ],
-        "feedback": "Great spot that -ed at the end matters! Can you add what 'I play' tells us?"
+        "feedback": "Well spotted that the -ed at the end shows it is finished! Can you add what 'I play' without it means?"
       },
       {
         "task": "en-past-tense",
@@ -1156,15 +1156,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Child says 'spelled nicer' but never points to the -ed ending as the change."
+            "reason": "says 'spelled nicer' but does not point to the -ed ending as the change."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Child says 'They mean the same', so does not say played is past and play is for now."
+            "reason": "says 'They mean the same' and does not say -ed is past and plain is now."
           }
         ],
-        "feedback": "Nice spotting that played looks different! Next think which word shows it already happened yesterday?"
+        "feedback": "Good looking closely at the spelling! Next, check the little -ed at the end and what time it tells us about."
       },
       {
         "task": "en-past-tense",
@@ -1173,15 +1173,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Uses only 'I play' and never points to -ed as the change to played."
+            "reason": "The words 'I play football every Saturday with my friends' do not mention -ed or an ending change."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Shows I play every Saturday with my friends but says nothing about played being for yesterday or already done."
+            "reason": "The words show 'I play' for 'every Saturday' but do not say 'played' is for yesterday or the past."
           }
         ],
-        "feedback": "Great example with every Saturday for I play! Can you add what makes played mean yesterday?"
+        "feedback": "Great example with 'I play football every Saturday'! Can you add what the -ed in 'played' tells us?"
       },
       {
         "task": "en-past-tense",
@@ -1190,15 +1190,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Child wrote 'The ed', which names the -ed ending."
+            "reason": "Child wrote 'The ed', naming the -ed ending."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "The words 'The ed' do not say the past/yesterday vs now meaning."
+            "reason": "Answer 'The ed' says nothing about past/yesterday or now."
           }
         ],
-        "feedback": "Well spotted the 'ed'! Can you add if it means yesterday or now?"
+        "feedback": "Good spotting the -ed! Next tell when we use it."
       },
       {
         "task": "en-past-tense",
@@ -1215,7 +1215,7 @@
             "reason": "Says -ed is for 'done and finished' and without it 'happens now or every day'."
           }
         ],
-        "feedback": "Great work! You explained so clearly how -ed shows the past."
+        "feedback": "Great work! You explained the -ed ending so clearly."
       },
       {
         "task": "en-past-tense",
@@ -1224,15 +1224,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Does not point to -ed; only says 'I played means I will play tomorrow.'"
+            "reason": "Does not mention the -ed ending, only says 'will play tomorrow'."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Says 'will play tomorrow' which is future, not past/already done, and says nothing about 'I play' for now."
+            "reason": "Says 'played' means 'will play tomorrow' instead of already done, and does not say 'play' is for now."
           }
         ],
-        "feedback": "Thank you for trying with time words! Look again at the end of 'played' and think about yesterday."
+        "feedback": "Good try thinking about time! Next look at the -ed ending — it often means it already happened."
       },
       {
         "task": "en-past-tense",
@@ -1241,15 +1241,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Writes 'Play' and 'played' but does not point to '-ed' as the extra part."
+            "reason": "Shows 'Play' vs 'played' but never names the -ed ending as the change."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Says 'Play is now' but says 'played is not now' without saying past, yesterday or already done."
+            "reason": "Says 'Play is now' for now, but only says 'played is not now' without saying past / yesterday / already done."
           }
         ],
-        "feedback": "You did well to show play is for now! Next, tell what the -ed at the end adds for yesterday."
+        "feedback": "Good thinking that play is now! Can you tell what the -ed at the end tells us?"
       },
       {
         "task": "en-why-plants",
@@ -1266,7 +1266,7 @@
             "reason": "Child says plants 'need light to stay green and grow'."
           }
         ],
-        "feedback": "Great explaining! You showed that plants need light to stay green and grow."
+        "feedback": "Great job! You explained clearly why light keeps plants green and growing."
       },
       {
         "task": "en-why-plants",
@@ -1275,15 +1275,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Child writes 'it was dark', which means missing daylight/light."
+            "reason": "Says 'dark in the cupboard', which means missing daylight."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Child says only 'dark in the cupboard' and does not link light to staying green, growing or making food."
+            "reason": "Only says 'dark' and does not link light to staying green and growing."
           }
         ],
-        "feedback": "Good spotting that the cupboard was dark! Can you add what light gives the windowsill plant to keep it green and tall?"
+        "feedback": "Good spotting it was dark in the cupboard! Can you add how light helps the plant stay green?"
       },
       {
         "task": "en-why-plants",
@@ -1292,15 +1292,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Says 'cupboards are for plates, not plants' but never names light, sun or daylight."
+            "reason": "Does not name light; only says 'cupboards are for plates, not plants'."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Does not link light to staying green, growing or making food."
+            "reason": "Does not link light to staying green; only says 'cupboards are for plates, not plants'."
           }
         ],
-        "feedback": "You noticed plants don't belong in cupboards! What does the sunny windowsill have that the dark cupboard is missing?"
+        "feedback": "You noticed plants don't belong in cupboards! Can you think what sunlight on the windowsill gives the plant?"
       },
       {
         "task": "en-why-plants",
@@ -1309,15 +1309,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "says 'With no sun' naming sunlight as missing"
+            "reason": "Says 'With no sun' – names sunlight as what is missing."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "says 'cannot make its food, so it goes yellow and weak' linking light to food and staying healthy"
+            "reason": "Says 'cannot make its food, so it goes yellow and weak' – links light to making food and staying healthy."
           }
         ],
-        "feedback": "Great work! You explained clearly that the plant needs sun to make food and stay green."
+        "feedback": "Great thinking! You explained so well that the plant needs sun to make food."
       },
       {
         "task": "en-why-plants",
@@ -1326,15 +1326,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "says 'sad and missed the other plants' and does not name light, sun or daylight"
+            "reason": "Child says 'sad and missed the other plants' and does not name light, sun or daylight."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "says only 'was sad' with no link of light helping it stay green and grow"
+            "reason": "Child says plant was 'sad' but does not link light to staying green, growing or making food."
           }
         ],
-        "feedback": "You gave the plant kind feelings. Next think: what does the light do to help it stay green?"
+        "feedback": "You had a kind idea about how the plant feels! Next think: what does the sunshine give the plant on the windowsill?"
       },
       {
         "task": "en-why-plants",
@@ -1343,15 +1343,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Says 'it has red flowers' and does not mention light, sun or daylight."
+            "reason": "Answer only says 'it has red flowers' and does not name light/sun/daylight."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Says only about 'red flowers' and does not link light to staying green or growing."
+            "reason": "Answer mentions 'a plant at home' but does not link light to staying green and growing."
           }
         ],
-        "feedback": "I like that you told me about your plant with red flowers! Next think what the plant in the cupboard is missing."
+        "feedback": "I love that you told me about your plant with red flowers! Next think about what sunlight does to help a plant stay green."
       },
       {
         "task": "en-why-plants",
@@ -1360,15 +1360,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "writes 'No lite in the cuboard' naming missing light"
+            "reason": "Writes 'No lite in the cuboard' naming light as missing."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "writes 'plants need lite to be green' linking light to staying green"
+            "reason": "Writes 'plants need lite to be green' linking light to staying green."
           }
         ],
-        "feedback": "Well done! You explained there is no light in the cupboard and plants need it to stay green."
+        "feedback": "Great work spotting that plants need light! You explained the green colour so clearly."
       },
       {
         "task": "en-why-plants",
@@ -1377,15 +1377,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Child says 'nobody watered it' and does not mention light, sun or daylight."
+            "reason": "Child says 'nobody watered it' and does not name light, sun or daylight."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Answer talks only about water and does not link light to staying green, growing or making food."
+            "reason": "Child only mentions watering, does not link light to staying green and growing."
           }
         ],
-        "feedback": "Good thinking about what a plant needs! Can you compare the light on the windowsill and in the dark cupboard?"
+        "feedback": "Good thinking — plants do need water! What does the windowsill plant get from the sun that the cupboard plant misses?"
       },
       {
         "task": "en-why-plants",
@@ -1394,15 +1394,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Says 'No sun', naming sunlight as missing."
+            "reason": "Child wrote 'No sun', naming sunlight as the missing thing."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Says only 'No sun', with no link to staying green, growing or making food."
+            "reason": "Says only 'No sun' without linking light to staying green and growing."
           }
         ],
-        "feedback": "Good spotting that it needs sun! Can you add how sun helps it stay green and grow tall?"
+        "feedback": "Good spotting that it needs sun! Can you tell what the sun helps the plant do?"
       },
       {
         "task": "en-why-plants",
@@ -1411,21 +1411,26 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Answer says 'autumn colour' and never names light, sun or daylight as missing."
+            "reason": "The answer says 'autumn colour' and never names light, sun or daylight as missing."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Answer says 'it happens to every plant' but does not link light to staying green, growing or making food."
+            "reason": "The answer says 'it happens to every plant' and does not link light to staying green and growing."
           }
         ],
-        "feedback": "Good thinking about why plants can turn yellow! Next, compare what the windowsill has that the dark cupboard does not."
+        "feedback": "Nice idea thinking about autumn! Can you compare the bright windowsill to the dark cupboard?"
       }
     ]
   },
   "wonder": {
     "model": "muse-wonder-full-1.0",
     "calls": 8,
+    "tokens": {
+      "input": 251449,
+      "output": 14980
+    },
+    "usage_source": "muse exec --json run.usage events, summed per call (muse trace)",
     "judgements": [
       {
         "task": "mult-as-groups",
@@ -1434,15 +1439,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi '3 grupy po 4' i '4 i 4 i 4', czyli o równych grupach."
+            "reason": "Mówi '3 grupy po 4' i '4 i 4 i 4', czyli równe grupy."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Używa '3 grupy po 4' i 'razem 12' zgodnie z 3 × 4."
+            "reason": "Używa '3 grupy po 4', zgodnie z 3 × 4."
           }
         ],
-        "feedback": "Świetnie! Dobrze pokazałeś grupy i dodawanie."
+        "feedback": "Świetnie to wyjaśniłeś na grupach. Tak trzymaj!"
       },
       {
         "task": "mult-as-groups",
@@ -1451,15 +1456,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi 'czwórkę trzy razy i dodajesz', czyli o dodawaniu tej samej liczby."
+            "reason": "Mówi 'czwórkę trzy razy i dodajesz', czyli dodawanie tej samej liczby."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Używa czwórki 'trzy razy', zgodnie z 3 × 4."
+            "reason": "'Czwórkę trzy razy' poprawnie używa liczb 4 i 3."
           }
         ],
-        "feedback": "Bardzo dobrze! Ładnie wyjaśniłeś to własnymi słowami."
+        "feedback": "Bardzo dobrze, czwórka trzy razy to jasne wyjaśnienie."
       },
       {
         "task": "mult-as-groups",
@@ -1468,15 +1473,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Podaje tylko '3 razy 4 to 12', bez grup ani dodawania tej samej liczby."
+            "reason": "Pisze tylko '3 razy 4 to 12', bez grup ani dodawania."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie pokazuje 3 grup po 4 ani 4 + 4 + 4, tylko wynik '12'."
+            "reason": "Powtarza '3 razy 4', ale nie pokazuje grup ani 4 + 4 + 4."
           }
         ],
-        "feedback": "Dobrze znasz wynik. Spróbuj jeszcze powiedzieć, ile grup po ile to jest."
+        "feedback": "Dobrze znasz wynik 12. Następnym krokiem dopisz, jak wyglądają grupy."
       },
       {
         "task": "mult-as-groups",
@@ -1490,10 +1495,10 @@
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie używa liczb 3 i 4, mówi tylko 'tej samej liczby'."
+            "reason": "Nie używa liczb 3 i 4 z działania."
           }
         ],
-        "feedback": "Dobrze powiedziałeś o dodawaniu tej samej liczby. Dopisz jeszcze, jaką liczbę i ile razy dodajemy w 3 × 4."
+        "feedback": "Dobry pomysł z dodawaniem tej samej liczby. Dopisz teraz liczby 3 i 4."
       },
       {
         "task": "mult-as-groups",
@@ -1502,15 +1507,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi '3 grupy po 4 klocki', czyli o równych grupach."
+            "reason": "Mówi '3 grupy po 4 klocki', czyli równe grupy."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Używa '3 grupy po 4' i 'dwanaście' zgodnie z 3 × 4."
+            "reason": "'3 grupy po 4' zgadza się z działaniem 3 × 4."
           }
         ],
-        "feedback": "Bardzo dobrze! Klasa z klockami to świetny przykład."
+        "feedback": "Świetnie pokazałeś to na klockach. Twoje wyjaśnienie jest bardzo jasne!"
       },
       {
         "task": "mult-as-groups",
@@ -1519,15 +1524,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi 'dodajesz 3 i 4', a to nie są równe grupy ani ta sama liczba."
+            "reason": "Mówi 'dodajesz 3 i 4', a to nie są równe grupy."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Liczy '3 i 4' jako '7', a nie 3 grupy po 4."
+            "reason": "Liczy '3 i 4 i wychodzi 7', czyli 3 + 4 zamiast 3 grup po 4."
           }
         ],
-        "feedback": "Spróbuj jeszcze raz: pomyśl o 3 grupach po 4, a nie o 3 plus 4."
+        "feedback": "Próbowałeś dodać liczby, dobry start. Pomyśl jeszcze o 3 grupach po 4."
       },
       {
         "task": "mult-as-groups",
@@ -1536,7 +1541,7 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi 'Lubię mnożenie', ale nie o grupach ani dodawaniu."
+            "reason": "Mówi 'Lubię mnożenie', bez grup ani dodawania."
           },
           {
             "id": "c2",
@@ -1544,7 +1549,7 @@
             "reason": "Nie używa liczb 3 i 4."
           }
         ],
-        "feedback": "Fajnie, że lubisz mnożenie! Teraz spróbuj wyjaśnić, co znaczy 3 × 4."
+        "feedback": "Miło, że lubisz mnożenie. Spróbuj jeszcze napisać, co znaczy 3 × 4."
       },
       {
         "task": "mult-as-groups",
@@ -1553,15 +1558,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi tylko 'Grupy.', nie pokazuje, że są równe."
+            "reason": "Samo słowo 'Grupy' nie mówi, że są równe."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie używa liczb 3 i 4."
+            "reason": "Nie ma liczb 3 i 4."
           }
         ],
-        "feedback": "Masz dobry początek ze słowem grupy. Dopisz, ile jest grup i po ile w każdej."
+        "feedback": "Dobre słowo na początek. Dopisz, ile jest grup i po ile."
       },
       {
         "task": "mult-as-groups",
@@ -1570,15 +1575,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi '4 grupy po 3', czyli o równych grupach."
+            "reason": "Mówi '4 grupy po 3', czyli o grupach."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Odwraca liczby i uzasadnia: 'kolejność nie ma znaczenia, wynik ten sam'."
+            "reason": "Odwraca kolejność, ale uzasadnia: 'kolejność nie ma znaczenia'."
           }
         ],
-        "feedback": "Świetnie! Dobrze uzasadniłeś, dlaczego kolejność daje ten sam wynik."
+        "feedback": "Świetnie pomyślałeś o kolejności. To bardzo mądre wyjaśnienie!"
       },
       {
         "task": "mult-as-groups",
@@ -1587,15 +1592,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Brak tekstu o grupach albo dodawaniu."
+            "reason": "Odpowiedź jest pusta, bez opisu grup."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Brak liczb 3 i 4 w wyjaśnieniu."
+            "reason": "Odpowiedź jest pusta, bez liczb 3 i 4."
           }
         ],
-        "feedback": "Spróbuj napisać jedno zdanie: ile grup i po ile to jest."
+        "feedback": "Nic nie szkodzi, spróbuj jeszcze raz. Możesz zacząć od słów '3 grupy po...'."
       },
       {
         "task": "even-number",
@@ -1604,15 +1609,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze o „dwóch równych częściach”. "
+            "reason": "Mówi „dzieli się na dwie równe części”, czyli odwołuje się do dzielenia na 2 równe części."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Stosuje to do 14: „po 7, nic nie zostaje”."
+            "reason": "Stosuje zasadę do 14, pisząc „14 dzieli się na dwie równe części po 7”."
           }
         ],
-        "feedback": "Świetnie wyjaśniłeś, że 14 to dwie równe części po 7. Dobra robota!"
+        "feedback": "Świetnie wyjaśniłeś: 14 to 7 i 7, więc nic nie zostaje. Tak trzymaj!"
       },
       {
         "task": "even-number",
@@ -1621,15 +1626,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Odwołuje się do ostatniej cyfry: „kończące się na 4”."
+            "reason": "Mówi „Kończy się na 4”, czyli odwołuje się do ostatniej cyfry 4."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Wskazuje, że ta liczba „kończy się na 4”."
+            "reason": "Odnośni tę zasadę do 14, bo mówi, że „kończy się na 4”, a liczby kończące się na 4 są parzyste."
           }
         ],
-        "feedback": "Dobrze zauważyłeś, że 14 kończy się na 4. To dobry sposób na sprawdzenie parzystości!"
+        "feedback": "Dobrze zauważyłeś ostatnią cyfrę 4. To jasne wyjaśnienie!"
       },
       {
         "task": "even-number",
@@ -1638,15 +1643,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Powodem jest „większa od 10”, a nie pary, równe części ani ostatnia cyfra."
+            "reason": "Mówi tylko „większa od 10”, bez dzielenia na równe części, par ani ostatniej cyfry."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie pokazuje dla 14 równych części ani ostatniej cyfry."
+            "reason": "Nie pokazuje zasady dla 14, na przykład 7 i 7 albo zakończenia na 4; opiera się na „większa od 10”."
           }
         ],
-        "feedback": "Spróbuj sprawdzić, czy 14 da się podzielić na dwie równe części. Możesz też spojrzeć na ostatnią cyfrę."
+        "feedback": "Próbowałeś podać powód, to dobrze. Następny krok: sprawdź, czy 14 dzieli się na dwie równe części."
       },
       {
         "task": "even-number",
@@ -1655,15 +1660,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi o dzieleniu „na pary”."
+            "reason": "Mówi „podzielić na pary”, czyli odwołuje się do par."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie pokazuje, ile par powstaje z 14 ani że nic nie zostaje."
+            "reason": "Podaje tylko ogólne „można ją podzielić na pary”, bez pokazania dla 14, ile jest par albo że nic nie zostaje."
           }
         ],
-        "feedback": "Dobry pomysł z parami! Dopisz jeszcze, ile par zrobisz z 14."
+        "feedback": "Dobry pomysł z parami. Dopisz jeszcze, ile par powstanie z 14."
       },
       {
         "task": "even-number",
@@ -1672,15 +1677,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Odwołuje się do par: „każda para ma po 2”."
+            "reason": "Mówi o parach: „każda para ma po 2”, czyli odwołuje się do par."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Stosuje to do 14: „14 to siedem par” i „nic nie zostaje samo”."
+            "reason": "Stosuje zasadę do 14, pisząc „14 to siedem par” i „nic nie zostaje samo”."
           }
         ],
-        "feedback": "Świetnie! Pokazałeś siedem par i to, że nic nie zostaje samo."
+        "feedback": "Bardzo ładnie pokazałeś siedem par i to, że nic nie zostaje samo. Brawo!"
       },
       {
         "task": "even-number",
@@ -1689,15 +1694,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Dodaje cyfry „1 i 4”, zamiast sprawdzić pary, równe części lub ostatnią cyfrę."
+            "reason": "Mówi „1 i 4 to razem 5”, bez dzielenia na równe części, par ani zasady ostatniej cyfry."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Wyciąga wniosek „14 nie jest parzysta” bez zastosowania właściwej zasady."
+            "reason": "Nie stosuje do 14 podanej zasady, lecz dodaje cyfry „1 i 4”, i twierdzi, że „14 nie jest parzysta”."
           }
         ],
-        "feedback": "Sprawdź ostatnią cyfrę liczby 14. Pomoże ci to zdecydować, czy jest parzysta."
+        "feedback": "Policzyłeś 1 i 4, to ciekawa próba. Spróbuj teraz ułożyć 14 w pary i zobaczyć, czy coś zostanie."
       },
       {
         "task": "even-number",
@@ -1706,15 +1711,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi tylko, że 14 to „ulubiona liczba” i liczba kredek."
+            "reason": "Mówi „moja ulubiona liczba, bo tyle mam kredek”, bez dzielenia, par ani ostatniej cyfry."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie dzieli 14 na pary ani równe części i nie patrzy na ostatnią cyfrę."
+            "reason": "Nie pokazuje dla 14 żadnej zasady parzystości; odnosi się tylko do liczby kredek."
           }
         ],
-        "feedback": "Fajnie, że napisałeś o swoich kredkach! Teraz ułóż 14 kredek w pary i zobacz, czy coś zostanie."
+        "feedback": "Miło, że opowiedziałeś o swoich kredkach. Ułóż 14 kredek w pary — to pokaże, dlaczego 14 jest parzysta."
       },
       {
         "task": "even-number",
@@ -1723,15 +1728,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Odpowiedź „Bo tak” nie podaje żadnej zasady."
+            "reason": "Mówi tylko „Bo tak”, bez odwołania do dzielenia, par ani ostatniej cyfry."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie pokazuje niczego o liczbie 14."
+            "reason": "W słowach „Bo tak” nie ma zastosowania żadnej zasady do liczby 14."
           }
         ],
-        "feedback": "Spróbuj dodać powód. Możesz napisać, na jakie dwie równe części podzielisz 14."
+        "feedback": "To dopiero początek odpowiedzi. Dodaj powód, na przykład o parach albo o ostatniej cyfrze 4."
       },
       {
         "task": "even-number",
@@ -1740,15 +1745,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Wymienia liczby „co drugą”, bez par, równych części ani ostatniej cyfry."
+            "reason": "Wymienia „2, 4, 6, 8, 10, 12, 14” i „co drugą”, ale nie mówi o dzieleniu na 2 równe części, parach ani ostatniej cyfrze."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Choć lista kończy się na „14”, nie zastosowano do niej zasady z c1."
+            "reason": "Choć lista kończy się na „14”, nie stosuje do 14 zasady równych części, par ani ostatniej cyfry."
           }
         ],
-        "feedback": "Ładnie policzyłeś co dwa aż do 14! Dodaj jeszcze, że 14 kończy się na 4."
+        "feedback": "Dobrze wypisałeś liczby co drugą aż do 14. Następny krok: dodaj, że 14 kończy się na 4 albo tworzy pary."
       },
       {
         "task": "even-number",
@@ -1757,15 +1762,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Powołuje się na „tabliczkę mnożenia przez 3”, a nie na wymaganą zasadę."
+            "reason": "Mówi „w tabliczce mnożenia przez 3”, bez dzielenia na 2 równe części, par ani ostatniej cyfry."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie pokazuje podziału 14 na równe części ani jej ostatniej cyfry."
+            "reason": "Nie stosuje zasady parzystości do 14; powołuje się na „tabliczkę mnożenia przez 3”."
           }
         ],
-        "feedback": "Sprawdź liczbę 14 w inny sposób: spójrz na jej ostatnią cyfrę. To ci pomoże!"
+        "feedback": "Szukasz powodu w tabliczce mnożenia — dobry kierunek myślenia. Sprawdź tabliczkę mnożenia przez 2 dla liczby 14."
       },
       {
         "task": "regrouping-add",
@@ -1774,15 +1779,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Podaje „to 42” na końcu."
+            "reason": "Podaje wynik w zdaniu 'jeszcze 5 to 42'."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Dodaje częściami: „27 i 10 to 37, a jeszcze 5”."
+            "reason": "Dodaje częściami: '27 i 10 to 37, a jeszcze 5'."
           }
         ],
-        "feedback": "Świetnie dodałeś częściami, najpierw 10, potem 5. Tak trzymaj!"
+        "feedback": "Świetnie, dodałaś/dodałeś najpierw 10, a potem 5 i otrzymałeś 42!"
       },
       {
         "task": "regrouping-add",
@@ -1791,15 +1796,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Na końcu pisze „Razem 42”."
+            "reason": "Na końcu pisze: 'Razem 42'."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Rozkłada na dziesiątki „20 i 10 to 30” i jedności „7 i 5 to 12”."
+            "reason": "Rozkłada liczby: '20 i 10 to 30' oraz '7 i 5 to 12'."
           }
         ],
-        "feedback": "Bardzo dobrze rozdzieliłeś dziesiątki i jedności. To jasny sposób liczenia!"
+        "feedback": "Bardzo dobrze rozłożyłaś/rozłożyłeś liczby na dziesiątki i jedności!"
       },
       {
         "task": "regrouping-add",
@@ -1808,15 +1813,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Podaje sam wynik „42”."
+            "reason": "Podaje sam wynik: '42'."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Jest tylko „42”, bez opisu sposobu liczenia."
+            "reason": "W tekście '42' nie ma opisania sposobu liczenia."
           }
         ],
-        "feedback": "Dobrze, masz poprawny wynik 42. Następnym razem dopisz, jak do niego doszedłeś."
+        "feedback": "Dobrze, masz wynik 42. Następnym razem dopisz, jak do niego doszłaś/doszłeś."
       },
       {
         "task": "regrouping-add",
@@ -1825,15 +1830,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Pisze „Wychodzi 42”."
+            "reason": "Pisze: 'Wychodzi 42'."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Wyjaśnienie „zawsze dodaję 15 do każdej liczby” nie opisuje rozkładu ani dodawania częściami."
+            "reason": "Wyjaśnienie 'zawsze dodaję 15 do każdej liczby' nie opisuje rozkładu ani dodawania częściami."
           }
         ],
-        "feedback": "Masz wynik 42, to dobrze. Spróbuj pokazać kroki, na przykład najpierw dodaj 10, potem 5."
+        "feedback": "Masz dobry wynik 42. Spróbuj pokazać, jak możesz dodać najpierw 10, a potem 5."
       },
       {
         "task": "regrouping-add",
@@ -1842,15 +1847,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Podaje wynik „312”, a nie 42."
+            "reason": "Podaje wynik '312', a nie 42."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Łączy „7 i 5 to 12” oraz „2 i 1 to 3” w „312”, co nie jest sensownym złożeniem dziesiątek i jedności."
+            "reason": "Łączy części '7 i 5 to 12, 2 i 1 to 3' w '312', co nie jest poprawnym złożeniem dziesiątek i jedności."
           }
         ],
-        "feedback": "Dobry początek z liczeniem 7 i 5. Teraz spróbuj dodać 30 i 12, aby otrzymać całość."
+        "feedback": "Dobrze zauważyłaś/zauważyłeś, że 7 i 5 to 12. Teraz spróbuj dodać 30 i 12."
       },
       {
         "task": "regrouping-add",
@@ -1859,15 +1864,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Na końcu podaje „to 43”, a nie 42."
+            "reason": "Podaje wynik '43', a nie 42."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Dodaje częściami: „27 + 10 = 37, plus 5”."
+            "reason": "Dodaje częściami: '27 + 10 = 37, plus 5'."
           }
         ],
-        "feedback": "Twój sposób dodawania częściami jest bardzo dobry. Sprawdź jeszcze raz ostatni krok: 37 plus 5."
+        "feedback": "Twój sposób dodawania częściami jest dobry. Sprawdź jeszcze raz ostatni krok: 37 plus 5."
       },
       {
         "task": "regrouping-add",
@@ -1876,15 +1881,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Na końcu pisze „jest 42”."
+            "reason": "Na końcu pisze: 'jest 42'."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Dopełnia do pełnej dziesiątki: „27 + 3 = 30, potem dodaje reszte 12”."
+            "reason": "Dopełnia do dziesiątki: '27 + 3 = 30, potem dodaje reszte 12'."
           }
         ],
-        "feedback": "Świetny pomysł z dopełnieniem do 30. Twoje wyjaśnienie jest jasne!"
+        "feedback": "Świetnie dopełniłaś/dopełniłeś do 30, a potem dodałaś/dodałeś resztę!"
       },
       {
         "task": "regrouping-add",
@@ -1893,15 +1898,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Nie podaje wyniku, pisze tylko „Nie lubię dodawania”."
+            "reason": "W zdaniu 'Nie lubię dodawania' nie podaje wyniku 42."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Zdanie „wolę odejmowanie” nie opisuje sposobu dodania 27 i 15."
+            "reason": "Nie opisuje sposobu dodania 27 + 15."
           }
         ],
-        "feedback": "Rozumiem, że wolisz odejmowanie. Spróbuj tu najpierw dodać 10 do 27, a potem jeszcze 5."
+        "feedback": "Spróbuj dodać najpierw 10 do 27, a potem jeszcze 5. Dasz radę!"
       },
       {
         "task": "regrouping-add",
@@ -1910,15 +1915,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Podaje „27 + 15 to 32”, a nie 42."
+            "reason": "Podaje wynik '32', a nie 42."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Wyjaśnienie „7 + 5 to 2” nie jest sensownym sposobem liczenia."
+            "reason": "Wyjaśnienie '7 + 5 to 2' nie pokazuje poprawnego rozkładu ani dodawania częściami."
           }
         ],
-        "feedback": "Próbowałeś wyjaśnić swój krok, to dobrze. Policz jeszcze raz 7 plus 5 i sprawdź wynik."
+        "feedback": "Próbujesz dodać jedności, to dobry początek. Sprawdź jeszcze raz, ile to jest 7 + 5."
       },
       {
         "task": "regrouping-add",
@@ -1927,15 +1932,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Nie podaje wyniku, pisze tylko „Liczyłem na palcach”."
+            "reason": "W zdaniu 'Liczyłem na palcach' nie podaje wyniku 42."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Samo „Liczyłem na palcach” nie opisuje rozkładu na dziesiątki i jedności ani dodawania częściami."
+            "reason": "Samo 'Liczyłem na palcach' nie opisuje rozkładu, dopełniania ani dodawania częściami."
           }
         ],
-        "feedback": "Liczenie na palcach może pomagać na start. Dopisz wynik i pokaż kroki, na przykład 27 plus 10, a potem plus 5."
+        "feedback": "Liczenie na palcach to twój pomysł na start. Zapisz proszę wynik i pokazuj kroki, na przykład najpierw dodaj 10."
       },
       {
         "task": "half-meaning",
@@ -1944,15 +1949,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi: 'przecięta na dwie ... części'."
+            "reason": "Mówi: „przecięta na dwie części”."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Mówi: 'dwie równe części'."
+            "reason": "Mówi: „dwie równe części”."
           }
         ],
-        "feedback": "Świetnie to wyjaśniłaś/wyjaśniłeś. Pokazałaś/pokazałeś dwie równe części."
+        "feedback": "Pięknie wyjaśniłeś, że części są dwie i równe. Tak trzymaj!"
       },
       {
         "task": "half-meaning",
@@ -1961,15 +1966,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi: 'jeden z dwóch kawałków'."
+            "reason": "Mówi: „jeden z dwóch kawałków”."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W zdaniu 'jeden z dwóch kawałków' brakuje informacji, że kawałki są równe."
+            "reason": "Przy „dwóch kawałków” nie dodaje, że muszą być równe."
           }
         ],
-        "feedback": "Dobry start, bo mówisz o dwóch kawałkach. Dodaj jeszcze, że te kawałki muszą być równe."
+        "feedback": "Dobry początek, wspominasz dwa kawałki. Dodaj jeszcze, że oba kawałki muszą być równe."
       },
       {
         "task": "half-meaning",
@@ -1978,15 +1983,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi tylko 'mały kawałek', bez podziału całości na 2 części."
+            "reason": "Mówi „mały kawałek”, ale nie o podziale na 2 części."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Słowa 'mniejszy niż reszta' nie pokazują równych części."
+            "reason": "Pisze „mniejszy niż reszta”, a połowy muszą być równe."
           }
         ],
-        "feedback": "Spróbuj jeszcze raz. Pomyśl, jak podzielić całą pizzę na 2 równe części."
+        "feedback": "Próbujesz opisać wielkość kawałka. Pomyśl: połowy powstają, gdy całość dzieli się na 2 równe części."
       },
       {
         "task": "half-meaning",
@@ -1995,15 +2000,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi: 'podzielisz pizzę ... między dwie osoby'."
+            "reason": "Mówi: „podzielisz pizzę między dwie osoby”."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Słowo 'sprawiedliwie' pokazuje równy podział między dwie osoby."
+            "reason": "Słowo „sprawiedliwie” znaczy tu podział na równe części."
           }
         ],
-        "feedback": "Świetny przykład. Sprawiedliwy podział na dwie osoby dobrze pokazuje połowę."
+        "feedback": "Świetny przykład ze sprawiedliwym podziałem między dwie osoby. Dobrze to wymyśliłeś!"
       },
       {
         "task": "half-meaning",
@@ -2012,15 +2017,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi: 'jedna z dwuh ... czenści'."
+            "reason": "Mówi: „jedna z dwuh części”, mimo błędów w zapisie."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Mówi: 'takich samyh czenści', czyli części są równe."
+            "reason": "Mówi: „takich samyh części”, czyli równych."
           }
         ],
-        "feedback": "Bardzo dobrze. Jedna z dwóch takich samych części to właśnie połowa."
+        "feedback": "Brawo, dobrze wyjaśniłeś dwie takie same części. Twoja myśl jest jasna!"
       },
       {
         "task": "half-meaning",
@@ -2029,15 +2034,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi o pizzy 'z serem i pieczarkami', bez podziału na 2 części."
+            "reason": "Mówi o „serem i pieczarkami”, nie o podziale na 2 części."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W zdaniu o 'serem i pieczarkami' brakuje równych części."
+            "reason": "Nie wspomina o równych częściach, tylko o składnikach pizzy."
           }
         ],
-        "feedback": "Lubisz taką pizzę, to miły szczegół. Teraz dopisz, jak podzielić ją na 2 równe części."
+        "feedback": "Pizza z serem brzmi pysznie. Teraz napisz, na ile równych części ją dzielimy, żeby powstała połowa."
       },
       {
         "task": "half-meaning",
@@ -2046,15 +2051,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi tylko '50 procent pizzy', bez podziału całości na 2 części."
+            "reason": "Podaje tylko „50 procent”, bez opisu podziału całości na 2 części."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W '50 procent pizzy' brakuje informacji o 2 równych częściach."
+            "reason": "Sam zapis „50 procent” nie wyjaśnia, że części muszą być równe."
           }
         ],
-        "feedback": "Dobry pomysł z liczbą. Dodaj jeszcze wyjaśnienie o 2 równych częściach."
+        "feedback": "Dobrze wiesz, że połowa to 50 procent. Dodaj jeszcze wyjaśnienie o dwóch równych częściach."
       },
       {
         "task": "half-meaning",
@@ -2063,15 +2068,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Samo słowo 'Pół.' nie opisuje podziału całości na 2 części."
+            "reason": "Samo słowo „Pół” nie mówi o podziale na 2 części."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Samo słowo 'Pół.' nie mówi, że części są równe."
+            "reason": "Samo słowo „Pół” nie mówi, że części są równe."
           }
         ],
-        "feedback": "To krótki start. Dopisz jedno zdanie o podziale pizzy na 2 równe części."
+        "feedback": "Zacząłeś od dobrego słowa. Dopisz: całość dzieli się na 2 równe części."
       },
       {
         "task": "half-meaning",
@@ -2080,15 +2085,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi: 'Dwie połowy razem dają całą pizzę'."
+            "reason": "Mówi: „Dwie połowy razem dają całą pizzę”."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Mówi: 'obie muszą być takie same'."
+            "reason": "Mówi: „obie muszą być takie same”."
           }
         ],
-        "feedback": "Świetnie to wyjaśniłaś/wyjaśniłeś. Dwie takie same części razem dają całość."
+        "feedback": "Bardzo dobrze to ująłeś: dwie połowy razem dają całość i są równe. Brawo!"
       },
       {
         "task": "half-meaning",
@@ -2097,15 +2102,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi: 'przecięta na 4 kawałki', a nie na 2 części."
+            "reason": "Mówi o „4 kawałki”, a połowa to podział na 2 części."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "W 'na 4 kawałki' brakuje informacji o 2 równych częściach."
+            "reason": "Przy „4 kawałki” nie mówi, że części muszą być równe."
           }
         ],
-        "feedback": "Dobrze, że mówisz o cięciu pizzy. Przy połowie pomyśl o 2 równych częściach, nie o 4."
+        "feedback": "Dobrze, że myślisz o krojeniu pizzy. Dla połowy pokrój ją na 2 równe części, nie na 4."
       },
       {
         "task": "spelling-rz",
@@ -2114,15 +2119,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi, że 'rz piszemy po spółgłosce'."
+            "reason": "Mówi „rz piszemy po spółgłosce”."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Wskazuje, że 'w drzewie przed rz jest d'."
+            "reason": "Dodaje „w drzewie przed rz jest d”."
           }
         ],
-        "feedback": "Świetnie! Dobrze pokazałeś zasadę i literę d w słowie drzewo."
+        "feedback": "Świetnie! Dobrze podałaś zasadę i pokazałaś literę d w słowie drzewo."
       },
       {
         "task": "spelling-rz",
@@ -2131,15 +2136,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Wspomina o 'zasada z rz po spółgłoskach'."
+            "reason": "Mówi o „zasada z rz po spółgłoskach”."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie wskazuje litery d w słowie 'drzewo' ani słowa pokrewnego."
+            "reason": "Nie wskazuje d ani słowa pokrewnego w słowie drzewo."
           }
         ],
-        "feedback": "Dobrze pamiętasz zasadę o rz po spółgłoskach. Dopisz jeszcze, że w słowie drzewo przed rz jest d."
+        "feedback": "Dobrze, że pamiętasz zasadę. Dopisz jeszcze, jaka spółgłoska jest przed rz w słowie drzewo."
       },
       {
         "task": "spelling-rz",
@@ -2148,58 +2153,7 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi tylko, że 'drzewo rośnie w lesie', bez zasady pisowni rz."
-          },
-          {
-            "id": "c2",
-            "met": false,
-            "reason": "Nie wskazuje litery d przed rz ani słowa pokrewnego w słowie 'drzewo'."
-          }
-        ],
-        "feedback": "Ładnie piszesz o drzewie. Spróbuj teraz spojrzeć, jaka litera stoi w tym słowie tuż przed rz."
-      },
-      {
-        "task": "spelling-rz",
-        "answer": "a4",
-        "criteria": [
-          {
-            "id": "c1",
-            "met": false,
-            "reason": "Tłumaczy pisownię tym, że 'słychać ż', a nie zasadą rz po spółgłosce lub wymiany na r."
-          },
-          {
-            "id": "c2",
-            "met": false,
-            "reason": "Nie wskazuje litery d w słowie 'drzewo' ani słowa pokrewnego."
-          }
-        ],
-        "feedback": "Dobrze zauważyłeś, jak słychać tę głoskę. Teraz sprawdź, jaka spółgłoska stoi przed rz w słowie drzewo."
-      },
-      {
-        "task": "spelling-rz",
-        "answer": "a5",
-        "criteria": [
-          {
-            "id": "c1",
-            "met": true,
-            "reason": "Mimo potknięć w pisowni mówi, że po 'spułgłosce d zawsze jest rz'."
-          },
-          {
-            "id": "c2",
-            "met": true,
-            "reason": "Łączy to ze słowem, pisząc 'tak jak w drzewie'."
-          }
-        ],
-        "feedback": "Bardzo dobrze! Dobrze zauważyłeś literę d i rz w słowie drzewo."
-      },
-      {
-        "task": "spelling-rz",
-        "answer": "a6",
-        "criteria": [
-          {
-            "id": "c1",
-            "met": false,
-            "reason": "Opisuje, że drzewa 'są zielone i dają cień', bez zasady pisowni rz."
+            "reason": "Mówi tylko, że „drzewo rośnie w lesie”, bez zasady o rz."
           },
           {
             "id": "c2",
@@ -2207,7 +2161,58 @@
             "reason": "Nie wskazuje litery d przed rz ani słowa pokrewnego."
           }
         ],
-        "feedback": "Ładny opis drzew. Spróbuj jeszcze napisać, jaka litera stoi przed rz w słowie drzewo."
+        "feedback": "Ładnie opisałaś drzewo. Teraz pomyśl, jaka litera stoi w tym słowie tuż przed rz."
+      },
+      {
+        "task": "spelling-rz",
+        "answer": "a4",
+        "criteria": [
+          {
+            "id": "c1",
+            "met": false,
+            "reason": "Powołuje się na „słychać ż”, a nie na zasadę o spółgłoskach lub wymianę na r."
+          },
+          {
+            "id": "c2",
+            "met": false,
+            "reason": "Nie wskazuje litery d przed rz ani słowa pokrewnego."
+          }
+        ],
+        "feedback": "Dobrze słuchasz dźwięków. Sprawdź jeszcze, jaka spółgłoska jest przed rz w słowie drzewo."
+      },
+      {
+        "task": "spelling-rz",
+        "answer": "a5",
+        "criteria": [
+          {
+            "id": "c1",
+            "met": true,
+            "reason": "Mówi, że po „spułgłosce d zawsze jest rz”."
+          },
+          {
+            "id": "c2",
+            "met": true,
+            "reason": "Łączy to ze słowem: „tak jak w drzewie”."
+          }
+        ],
+        "feedback": "Bardzo dobrze! Trafiłaś w zasadę o rz po spółgłosce d."
+      },
+      {
+        "task": "spelling-rz",
+        "answer": "a6",
+        "criteria": [
+          {
+            "id": "c1",
+            "met": false,
+            "reason": "Mówi tylko, że „Drzewa są zielone”, bez zasady o rz."
+          },
+          {
+            "id": "c2",
+            "met": false,
+            "reason": "Nie wskazuje litery d przed rz ani słowa pokrewnego."
+          }
+        ],
+        "feedback": "Ładnie opisałaś drzewa. Teraz zobacz, jaka litera jest na początku słowa drzewo, tuż przed rz."
       },
       {
         "task": "spelling-rz",
@@ -2216,15 +2221,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi tylko 'bo tak się pisze', bez zasady rz po spółgłosce lub wymiany na r."
+            "reason": "Mówi tylko „Bo tak się pisze”, bez zasady."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Nie wskazuje litery d w słowie 'drzewo' ani słowa pokrewnego."
+            "reason": "Nie wskazuje litery d przed rz ani słowa pokrewnego."
           }
         ],
-        "feedback": "To dobry początek. Dodaj jeszcze zasadę: rz piszemy po spółgłosce, a tu tą spółgłoską jest d."
+        "feedback": "Rozumiem, że tak pamiętasz to słowo. Pomocna podpowiedź: po spółgosce d piszemy rz."
       },
       {
         "task": "spelling-rz",
@@ -2233,15 +2238,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi, że 'po literach takich jak d, b, p, t piszemy rz'."
+            "reason": "Mówi „Po literach takich jak d, b, p, t piszemy rz”."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Dodaje, że 'drzewo ma d'."
+            "reason": "Dodaje „a drzewo ma d”."
           }
         ],
-        "feedback": "Świetnie! Dobrze podałeś przykłady liter i pokazałeś d w słowie drzewo."
+        "feedback": "Świetnie! Dobrze wymieniłaś spółgłoski i pokazałaś d w słowie drzewo."
       },
       {
         "task": "spelling-rz",
@@ -2250,15 +2255,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Mówi o wymianie 'rz' na 'sz', a nie o zasdzie rz po spółgłosce ani wymianie rz na r."
+            "reason": "Mówi, że „rz wymienia się na sz”, a zasada dotyczy wymiany na r lub rz po spółgłosce."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Słowo 'drzesz' nie pokazuje litery d przed rz w słowie 'drzewo' ani pokrewnego słowa z r."
+            "reason": "Słowo „drzesz” nie jest pokrewne słowu drzewo i nie wskazuje d przed rz w tym słowie."
           }
         ],
-        "feedback": "Dobrze, że myślisz o wymianie głosek. Spróbuj teraz sprawdzić literę stojącą przed rz w słowie drzewo."
+        "feedback": "Próbujesz szukać wymiany liter, to dobry pomysł. Przy słowie drzewo lepiej pomoże spółgłoska d przed rz."
       },
       {
         "task": "spelling-rz",
@@ -2267,15 +2272,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Opisuje, że 'jest d, a po nim rz', ale nie podaje ogólnej zasady rz po spółgłoskach ani wymiany na r."
+            "reason": "Opisuje tylko „jest d, a po nim rz”, bez ogólnej zasady o rz po spółgłoskach."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Wskazuje w słowie 'w drzewie jest d, a po nim rz'."
+            "reason": "Wskazuje w słowie drzewo literę d stojącą przed rz."
           }
         ],
-        "feedback": "Dobrze zauważyłeś literę d w słowie drzewo. Dopisz jeszcze zasadę, że rz piszemy po spółgłoskach."
+        "feedback": "Dobrze zauważyłaś literę d przed rz. Dopisz jeszcze zasadę, że rz piszemy po spółgłoskach."
       },
       {
         "task": "word-problem-plan",
@@ -2294,10 +2299,10 @@
           {
             "id": "c3",
             "met": true,
-            "reason": "Podaje wynik „to 17”."
+            "reason": "Podaje wynik: „to 17”."
           }
         ],
-        "feedback": "Świetnie liczysz krok po kroku. Tak trzymaj!"
+        "feedback": "Świetnie liczysz krok po kroku. Twój wynik jest poprawny."
       },
       {
         "task": "word-problem-plan",
@@ -2306,20 +2311,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Nie pokazuje połowy z 24, tylko „Teraz jest 17 jabłek”."
+            "reason": "Podaje tylko „17 jabłek”, bez połowy z 24."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Brak odejmowania połowy i dodania 5 w tekście „Teraz jest 17 jabłek”."
+            "reason": "Podaje tylko „17 jabłek”, bez odejmowania i dodawania 5."
           },
           {
             "id": "c3",
             "met": true,
-            "reason": "Podaje wynik „17 jabłek”."
+            "reason": "Mówi: „Teraz jest 17 jabłek”."
           }
         ],
-        "feedback": "Dobrze, podałeś dobry wynik. Następnym razem dopisz, jak liczysz połowę."
+        "feedback": "Dobry wynik. Następnym razem napisz też, jak do niego doszłaś lub doszedłeś."
       },
       {
         "task": "word-problem-plan",
@@ -2328,20 +2333,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Liczy „połowa z 29”, a nie połowę z 24 równą 12."
+            "reason": "Liczy „połowa z 29”, a nie połowa z 24 równa 12."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Najpierw robi „24 + 5”, zamiast odjąć połowę i potem dodać 5."
+            "reason": "Najpierw robi „24 + 5”, a nie odejmuje połowy i potem dodaje 5."
           },
           {
             "id": "c3",
             "met": false,
-            "reason": "Podaje „niecałe 15”, a nie 17."
+            "reason": "Mówi „niecałe 15”, nie podaje 17."
           }
         ],
-        "feedback": "Dobry pomysł z liczeniem połowy. Spróbuj najpierw policzyć połowę z 24."
+        "feedback": "Dobrze, że pokazujesz swoje liczenie. Spróbuj zacząć od połowy z 24."
       },
       {
         "task": "word-problem-plan",
@@ -2350,20 +2355,20 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi: „Najpierw połowa z 24 to 12”."
+            "reason": "Mówi: „połowa z 24 to 12”."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Kończy na „tyle zostało” i nie dodaje 5."
+            "reason": "Mówi „tyle zostało”, ale nie dodaje potem 5."
           },
           {
             "id": "c3",
             "met": false,
-            "reason": "Podaje 12, a nie końcowe 17."
+            "reason": "Kończy na „12”, nie podaje 17."
           }
         ],
-        "feedback": "Świetnie policzyłeś połowę. Teraz dodaj jeszcze 5 jabłek."
+        "feedback": "Dobry początek z połową. Zrób jeszcze jeden krok i dodaj 5."
       },
       {
         "task": "word-problem-plan",
@@ -2382,10 +2387,10 @@
           {
             "id": "c3",
             "met": true,
-            "reason": "Podaje: „wyszło 17”."
+            "reason": "Mówi: „wyszło 17”."
           }
         ],
-        "feedback": "Bardzo ładnie wyjaśniłeś wszystkie kroki. Tak trzymaj!"
+        "feedback": "Świetne wyjaśnienie krok po kroku. Twój wynik jest poprawny."
       },
       {
         "task": "word-problem-plan",
@@ -2394,7 +2399,7 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Liczy „24 - 5” i nie pokazuje połowy z 24."
+            "reason": "Liczy „24 - 5”, bez połowy z 24 równej 12."
           },
           {
             "id": "c2",
@@ -2404,10 +2409,10 @@
           {
             "id": "c3",
             "met": false,
-            "reason": "Podaje „19 jabłek”, a nie 17."
+            "reason": "Podaje „19 jabłek”, nie 17."
           }
         ],
-        "feedback": "Dobrze, że próbujesz odejmować. Najpierw policz, ile to połowa z 24."
+        "feedback": "Próbujesz liczyć, to ważne. Zacznij od połowy z 24."
       },
       {
         "task": "word-problem-plan",
@@ -2416,20 +2421,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Pisze „Jabłka są zdrowe”, bez połowy z 24."
+            "reason": "Mówi „Jabłka są zdrowe”, bez połowy z 24."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Brak odejmowania połowy i dodania 5; pisze o witaminach."
+            "reason": "Mówi „mają witaminy”, bez odejmowania i dodawania 5."
           },
           {
             "id": "c3",
             "met": false,
-            "reason": "Nie podaje wyniku 17, pisze: „mają witaminy”."
+            "reason": "Nie podaje liczby 17, tylko „mają witaminy”."
           }
         ],
-        "feedback": "Ładne zdanie o jabłkach. Spróbuj teraz policzyć, ile jabłek zostało w koszyku."
+        "feedback": "To prawda, że jabłka są zdrowe. Teraz policz, ile ich zostało w koszyku."
       },
       {
         "task": "word-problem-plan",
@@ -2448,10 +2453,10 @@
           {
             "id": "c3",
             "met": false,
-            "reason": "Podaje „12 + 5 = 16”, a nie 17."
+            "reason": "Podaje „= 16”, nie 17."
           }
         ],
-        "feedback": "Świetnie pokazałeś kolejne działania. Sprawdź jeszcze raz ostatnie dodawanie."
+        "feedback": "Bardzo dobre kroki liczenia. Sprawdź jeszcze dodawanie na końcu."
       },
       {
         "task": "word-problem-plan",
@@ -2460,7 +2465,7 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Mówi: „połowa, czyli 12” z 24."
+            "reason": "Mówi: „połowa, czyli 12”."
           },
           {
             "id": "c2",
@@ -2470,10 +2475,10 @@
           {
             "id": "c3",
             "met": true,
-            "reason": "Podaje: „jest 17”."
+            "reason": "Mówi: „jest 17”."
           }
         ],
-        "feedback": "Bardzo dobrze wyjaśniłeś, jak liczysz. Tak trzymaj!"
+        "feedback": "Świetnie wyjaśnione. Twój wynik jest poprawny."
       },
       {
         "task": "word-problem-plan",
@@ -2482,20 +2487,20 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Pisze tylko „17.”, bez połowy z 24."
+            "reason": "Podaje tylko „17.”, bez połowy z 24."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Pisze tylko „17.”, bez odejmowania połowy i dodania 5."
+            "reason": "Podaje tylko „17.”, bez odejmowania i dodawania 5."
           },
           {
             "id": "c3",
             "met": true,
-            "reason": "Podaje wynik „17.”."
+            "reason": "Podaje wynik: „17.”."
           }
         ],
-        "feedback": "Dobrze, wynik się zgadza. Dopisz następnym razem, jak go policzyłeś."
+        "feedback": "Dobry wynik. Następnym razem napisz też, jak liczysz."
       },
       {
         "task": "en-past-tense",
@@ -2512,7 +2517,7 @@
             "reason": "Says '-ed means it already happened' and 'Play is for now'."
           }
         ],
-        "feedback": "Great explanation! You spotted the -ed ending and said what it means."
+        "feedback": "Great job! You explained that -ed shows it already happened and play is for now."
       },
       {
         "task": "en-past-tense",
@@ -2526,10 +2531,10 @@
           {
             "id": "c2",
             "met": false,
-            "reason": "Says played is 'about the past' but does not say play is for now or usually."
+            "reason": "Says 'played is about the past' but does not say play is for now or usually."
           }
         ],
-        "feedback": "Good start with the past! Next, look at the -ed ending and say what 'play' means too."
+        "feedback": "Good idea that played is about the past. Next, tell what play means and point to the -ed."
       },
       {
         "task": "en-past-tense",
@@ -2543,10 +2548,10 @@
           {
             "id": "c2",
             "met": false,
-            "reason": "Says 'a longer time ago' but does not explain done in the past versus now or usually."
+            "reason": "Says 'longer time ago' because it is longer, and does not say play is for now."
           }
         ],
-        "feedback": "Good try looking at the word! Next, look closely at the letters at the end of 'played'."
+        "feedback": "You noticed played is longer. Next, look at the -ed at the end and what it tells us."
       },
       {
         "task": "en-past-tense",
@@ -2555,15 +2560,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Points to 'The ed at the end'."
+            "reason": "Says 'The ed at the end', pointing to the ending."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Says it is 'finisht, not now' for the -ed form, but does not say the plain form is for now or usually."
+            "reason": "Says ed 'shows it is finisht, not now' for played, but does not say play is for now or usually."
           }
         ],
-        "feedback": "Well spotted, the 'ed' shows it is finished! Next, add what 'play' without it means."
+        "feedback": "Well done spotting the ed and that it shows something finished. Next, add what play without ed means."
       },
       {
         "task": "en-past-tense",
@@ -2577,10 +2582,10 @@
           {
             "id": "c2",
             "met": false,
-            "reason": "Says 'They mean the same', so it does not explain past versus now."
+            "reason": "Says 'They mean the same', so does not show played is past and play is now."
           }
         ],
-        "feedback": "Good try comparing the words! Next, look at the -ed at the end and think about when it happened."
+        "feedback": "You looked at the spelling. Next, check the -ed at the end of played and think about when it happened."
       },
       {
         "task": "en-past-tense",
@@ -2589,15 +2594,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Gives an example with 'I play football' but does not mention the -ed ending."
+            "reason": "Gives 'I play football every Saturday' but does not mention the -ed ending."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Talks about 'every Saturday' as an example but does not explain past versus now for the two forms."
+            "reason": "Gives an example with 'play' but does not explain played for the past and play for now."
           }
         ],
-        "feedback": "Nice sentence about football! Next, explain how 'played' with -ed is different."
+        "feedback": "Nice sentence about playing football. Next, explain how played with -ed is different from play."
       },
       {
         "task": "en-past-tense",
@@ -2606,15 +2611,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Points to 'The ed' as the difference."
+            "reason": "Says 'The ed', pointing to the -ed ending."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Only says 'The ed' and does not say it means already done or that play is for now."
+            "reason": "Only says 'The ed', with no words about past, now, or usually."
           }
         ],
-        "feedback": "Great spotting of the 'ed'! Next, tell us what that 'ed' means about time."
+        "feedback": "Good spot — you found the ed. Next, tell what the ed tells us about when it happened."
       },
       {
         "task": "en-past-tense",
@@ -2628,10 +2633,10 @@
           {
             "id": "c2",
             "met": true,
-            "reason": "Says -ed is for 'done and finished' and without it, 'it happens now or every day'."
+            "reason": "Says 'done and finished we add -ed' and 'Without it, it happens now or every day'."
           }
         ],
-        "feedback": "Great explanation! You explained both -ed for finished things and play for now."
+        "feedback": "Great explaining! You showed -ed is for finished things and the plain word is for now or every day."
       },
       {
         "task": "en-past-tense",
@@ -2640,15 +2645,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Does not mention the -ed ending in 'I played means I will play tomorrow'."
+            "reason": "Says 'I played means I will play tomorrow' but does not mention the -ed ending."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Says played means 'I will play tomorrow', not already done in the past versus now."
+            "reason": "Says played means 'tomorrow', not already done, and does not say play is for now."
           }
         ],
-        "feedback": "Good try thinking about time! Remember, -ed is for something already finished, not tomorrow."
+        "feedback": "You thought about time. Next, remember played with -ed is for something already done, not tomorrow."
       },
       {
         "task": "en-past-tense",
@@ -2657,7 +2662,7 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Compares 'Play is now, played is not now' but does not mention the -ed ending."
+            "reason": "Says 'Play is now, played is not now' but does not mention the -ed ending."
           },
           {
             "id": "c2",
@@ -2665,7 +2670,7 @@
             "reason": "Says 'Play is now' but 'played is not now' does not say it is already done or in the past."
           }
         ],
-        "feedback": "Good start, 'play is now' is helpful! Next, say that 'played' is already finished and spot the -ed."
+        "feedback": "Good — you showed play is for now. Next, point to the -ed and say played already happened."
       },
       {
         "task": "en-why-plants",
@@ -2674,7 +2679,7 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Says 'got no light' for the cupboard plant."
+            "reason": "Says the cupboard plant 'got no light'."
           },
           {
             "id": "c2",
@@ -2682,7 +2687,7 @@
             "reason": "Says plants 'need light to stay green and grow'."
           }
         ],
-        "feedback": "Great explanation! You said the plant needs light to stay green and grow."
+        "feedback": "Great explanation! You said plants need light to stay green and grow."
       },
       {
         "task": "en-why-plants",
@@ -2690,16 +2695,16 @@
         "criteria": [
           {
             "id": "c1",
-            "met": true,
-            "reason": "Says 'it was dark in the cupboard', pointing to no light."
+            "met": false,
+            "reason": "Only says 'it was dark' and does not name light or the sun as missing."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Does not say light helps the plant stay green or grow."
+            "reason": "Does not link light to staying green, growing, or making food."
           }
         ],
-        "feedback": "Good start — you noticed it was dark. Now add why light helps a plant stay green."
+        "feedback": "Good start with 'dark'. Next, say plants need light to stay green."
       },
       {
         "task": "en-why-plants",
@@ -2708,15 +2713,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Talks about 'cupboards are for plates', not missing light."
+            "reason": "Talks about 'plates, not plants' and does not mention light or the sun."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Does not link light to staying green or growing."
+            "reason": "Does not link light to staying green, growing, or making food."
           }
         ],
-        "feedback": "Good try! Think about what the plant gets on the windowsill but not in the cupboard."
+        "feedback": "Nice try. Next, think about what light a plant gets on a windowsill."
       },
       {
         "task": "en-why-plants",
@@ -2725,15 +2730,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Says 'With no sun' the plant struggles."
+            "reason": "Says 'With no sun', naming sunlight as missing."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Says it 'cannot make its food, so it goes yellow and weak'."
+            "reason": "Says the plant 'cannot make its food, so it goes yellow and weak'."
           }
         ],
-        "feedback": "Lovely explanation! You linked no sun to the plant not making food."
+        "feedback": "Great job! You explained that the plant needs the sun to make its food."
       },
       {
         "task": "en-why-plants",
@@ -2742,15 +2747,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Says the plant 'was sad', not that it missed light."
+            "reason": "Says the plant 'was sad' and does not mention light or the sun."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Does not link light to staying green or growing."
+            "reason": "Does not link light to staying green, growing, or making food."
           }
         ],
-        "feedback": "Nice idea! Now think about what sunshine does for a plant."
+        "feedback": "That is a kind idea. Next, think about light the plant is missing in the cupboard."
       },
       {
         "task": "en-why-plants",
@@ -2759,15 +2764,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Talks about a plant at home with 'red flowers', not missing light."
+            "reason": "Talks about a plant with 'red flowers' and does not mention light or the sun."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Does not link light to staying green or growing."
+            "reason": "Does not link light to staying green, growing, or making food."
           }
         ],
-        "feedback": "Your plant sounds pretty! Now tell why the cupboard plant turned yellow."
+        "feedback": "Your plant at home sounds pretty! Next, say why the cupboard plant turned yellow."
       },
       {
         "task": "en-why-plants",
@@ -2776,15 +2781,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Says 'No lite in the cuboard', meaning no light."
+            "reason": "Says 'No lite in the cuboard', naming light as missing despite spelling slips."
           },
           {
             "id": "c2",
             "met": true,
-            "reason": "Says 'plants need lite to be green'."
+            "reason": "Says 'plants need lite to be green', linking light to staying green."
           }
         ],
-        "feedback": "Well done! You said plants need light to be green."
+        "feedback": "Great job! You said plants need light to be green."
       },
       {
         "task": "en-why-plants",
@@ -2793,15 +2798,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Guesses 'nobody watered it', not missing light."
+            "reason": "Suggests 'nobody watered it' and does not mention light or the sun."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Does not link light to staying green or growing."
+            "reason": "Does not link light to staying green, growing, or making food."
           }
         ],
-        "feedback": "Good thinking about what plants need! Now think about light in the dark cupboard."
+        "feedback": "Water is important too. Next, think about the light in a dark cupboard."
       },
       {
         "task": "en-why-plants",
@@ -2810,15 +2815,15 @@
           {
             "id": "c1",
             "met": true,
-            "reason": "Says 'No sun'."
+            "reason": "Says 'No sun', naming sunlight as missing."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Does not say sun helps it stay green or grow."
+            "reason": "Stops at 'No sun' without linking it to staying green, growing, or making food."
           }
         ],
-        "feedback": "Good start — you found the missing sun! Now add why sun helps it stay green."
+        "feedback": "Good start with 'No sun'. Next, add why plants need the sun to stay green."
       },
       {
         "task": "en-why-plants",
@@ -2827,15 +2832,15 @@
           {
             "id": "c1",
             "met": false,
-            "reason": "Says yellow is 'its autumn colour', not missing light."
+            "reason": "Calls yellow its 'autumn colour' and does not mention light or the sun."
           },
           {
             "id": "c2",
             "met": false,
-            "reason": "Does not link light to staying green or growing."
+            "reason": "Does not link light to staying green, growing, or making food."
           }
         ],
-        "feedback": "Good try! Compare the sunny windowsill with the dark cupboard and what is different."
+        "feedback": "Good thinking about seasons. Next, compare the light on the windowsill and in the cupboard."
       }
     ]
   },

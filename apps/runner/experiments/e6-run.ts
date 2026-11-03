@@ -24,6 +24,7 @@
  * Writes apps/docs/src/data/experiments/e6.json and /tmp/e6-raw-<worksheet>.json.
  */
 
+import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -387,7 +388,7 @@ async function main(): Promise<void> {
     usd: Math.round(results.reduce((n, r) => n + r.usd, 0) * 1e6) / 1e6,
     cost_source: "ledger",
     wall_s: Math.round(results.reduce((n, r) => n + r.wall_s, 0) * 10) / 10,
-    commit: process.argv.find((a) => /^[0-9a-f]{40}$/.test(a)) ?? "unknown",
+    commit: execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim(),
     commands: [
       "sh apps/runner/experiments/render.sh",
       "set -a; . ~/.config/jadwigo-bank/muse.env; . ~/.config/jadwigo-bank/bank.env; set +a; LOCAL_DATABASE_URL=postgresql://localhost:5433/jadwigo JADWIGO_MUSE_CAP_USD=500 JADWIGO_API_URL=$JW_API_URL JADWIGO_BANK_READ_TOKEN=$JW_BANK_READ_TOKEN bun apps/runner/experiments/e6-run.ts",
