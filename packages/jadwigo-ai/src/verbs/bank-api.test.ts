@@ -15,6 +15,7 @@ import {
   maxBodyReads,
 } from "./bank-api.ts";
 import { createVerbs } from "./index.ts";
+import { VerbError } from "./types.ts";
 
 // Made-up sets and questions only: no bank content, no Khan item (fence 8).
 
@@ -423,6 +424,15 @@ describe("httpBankReads", () => {
     expect(sent.map((s) => [s.method, s.url, s.search, s.auth])).toEqual([
       ["GET", ROUTES.questionTypes.path, "?grade=1&language=pl", "Bearer t0ken"],
     ]);
+  });
+
+  it("tells the model the bank cannot list its types when the route is not deployed (dl-hin8.27)", async () => {
+    const { send } = fakeFetch({ [ROUTES.questionTypes.path]: { status: 404, body: {} } });
+    const reads = httpBankReads({ base: "https://api.example.test", token: "t0ken", fetch: send });
+    const refused = reads.types({ grade: "1", language: "pl" });
+    await expect(refused).rejects.toBeInstanceOf(VerbError);
+    await expect(refused).rejects.toMatchObject({ type: "unavailable" });
+    await expect(refused).rejects.toThrow(/draw without question_types/);
   });
 
   it("answers undefined for a 404 and rejects any other failure without the token", async () => {

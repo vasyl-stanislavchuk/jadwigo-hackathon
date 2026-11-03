@@ -309,7 +309,13 @@ export function httpBankReads({
       if (asked.language !== undefined) query.set("language", asked.language);
       const path = `${ROUTES.questionTypes.path}${query.size > 0 ? `?${query}` : ""}`;
       const counts = await call(ROUTES.questionTypes.method, path);
-      if (counts === undefined) throw new Error(`the bank route ${path} answered 404`);
+      // A bank behind the engine (prod's api before #741) has no such route: the model is told, and
+      // draws without question_types, rather than the step retrying to the dead-letter queue (dl-hin8.27).
+      if (counts === undefined)
+        throw new VerbError(
+          "unavailable",
+          "question_types: the bank cannot list its question types yet; draw without question_types",
+        );
       return QuestionTypeCounts.parse(counts);
     },
   };
