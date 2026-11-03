@@ -503,7 +503,13 @@ function settled(entries: readonly { status: string }[]): string[] | null {
  * only when all 3 hold: it comes right before the turn's end status (`endTurn` writes them
  * together); it is exactly `settlePlan` of the plan before it; and it is not the move a verb's
  * result ends its stage with, which comes right after that result or its revision (`runTool`). The
- * last keeps a check that failed and was then stopped (done, done, failed, no settle written) failed.
+ * last keeps a check that failed and was then stopped (done, done, failed, no settle written) failed:
+ * by content alone it is the settle of (done, done, in_progress).
+ *
+ * Depends on the engine's write order: `runTool` in packages/jadwigo-ai/src/run/run-step.ts appends
+ * a verb's result, its revision and its plan end move together in one unit, so nothing comes between
+ * them. If that order changes, so must this. Once `settlePlan` leaves unreached stages pending
+ * rather than failed (dl-hin8.32), only a stage under way changes at the end, and this can simplify.
  */
 function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
   const found = new Set<number>();
