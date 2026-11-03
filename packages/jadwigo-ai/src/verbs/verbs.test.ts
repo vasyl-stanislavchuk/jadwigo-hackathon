@@ -322,6 +322,60 @@ describe("lesson_check", () => {
   });
 });
 
+describe("lesson_edit, a twin's problem the question's own error hid (dl-hin8.34)", () => {
+  /** s01 with a boost compile refuses, which hides a twin of another family behind it. */
+  async function hidden() {
+    const { verbs, run, lesson_file } = await drafted();
+    const file = structuredClone(lesson_file) as {
+      script: { parts: { steps: { question: Record<string, unknown> }[] }[] };
+    };
+    const question = file.script.parts[0]?.steps[0]?.question;
+    if (question === undefined) throw new Error("the draft has no s01");
+    const help = question["help"] as { boost: unknown; twin: Record<string, unknown> };
+    help.boost = { text: 5 };
+    help.twin["family"] = question["family"] === "choose" ? "enter" : "choose";
+    const at = (call_id: string) =>
+      contextFor(run, call_id, { revision: 1, lesson_file: file as never });
+    return { verbs, run, at };
+  }
+
+  it("takes a patch that only fixes the question, and answers the twin's problem as a finding", async () => {
+    const { verbs, run, at } = await hidden();
+    const effect = await verbs.lesson_edit.run(at("call_boost"), {
+      draft_id: run,
+      names: [],
+      step_id: "s01",
+      why: "the parent's ask",
+      patch: { question: { help: { boost: { text: "Policz jeszcze raz." } } } },
+    });
+
+    expect(effect.lesson_file).toBeDefined();
+    expect(effect.output).toMatchObject({
+      ok: false,
+      publishable: false,
+      findings: expect.arrayContaining([
+        expect.objectContaining({ step_id: "s01t", rule: "question-type-family" }),
+      ]),
+    });
+  });
+
+  it("still refuses a patch that writes the twin into another family", async () => {
+    const { verbs, run, lesson_file } = await drafted();
+    const at = contextFor(run, "call_twin", { revision: 1, lesson_file });
+    const step = stepsOf(lesson_file)[0] as { question: { family: string } };
+    const other = step.question.family === "choose" ? "enter" : "choose";
+    await expect(
+      verbs.lesson_edit.run(at, {
+        draft_id: run,
+        names: [],
+        step_id: "s01",
+        why: "the parent's ask",
+        patch: { question: { help: { twin: { family: other } } } },
+      }),
+    ).rejects.toThrow(/nothing changed/);
+  });
+});
+
 describe("lesson_edit", () => {
   it("refuses removing the copied help or a copied rung without why, and changes nothing", async () => {
     const { verbs, run, at } = await drafted();
