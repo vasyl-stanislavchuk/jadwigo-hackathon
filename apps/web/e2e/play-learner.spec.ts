@@ -125,7 +125,7 @@ test("a lesson given to one child plays from its ?learner= link to the results, 
     `/api/v1/conversations/${conversation}/lessons`,
     { learner_id: learner },
   );
-  expect(given.assignment.audience).toBe("learners");
+  expect(given.assignment.audience).toBe("anyone");
 
   // The child's link: the attempt starts as that learner, and plays to the results.
   const started = page.waitForResponse((r) =>
