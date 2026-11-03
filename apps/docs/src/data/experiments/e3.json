@@ -3,15 +3,15 @@
   "title": "Dreaming over each invented learner: a contributor writes, contributors judge blind",
   "status": "done",
   "model": "muse-spark-1.3-contributor",
-  "calls": 49,
+  "calls": 46,
   "tokens": {
-    "input": 1471878,
-    "output": 163915
+    "input": 1345026,
+    "output": 115381
   },
-  "usd": 0.17,
+  "usd": 0.1434,
   "cost_source": "ledger",
-  "wall_s": 512.9,
-  "commit": "230ebdcef8b9db148ce20693517aed6296d45876",
+  "wall_s": 605.8,
+  "commit": "8d4b9374876f4faab1e34e789c46e19b3ee47577",
   "commands": [
     "DATABASE_URL=postgresql://localhost:5433/jadwigo bun apps/api/src/experiments/e3-load.ts > /tmp/e3-learners.json",
     "DATABASE_URL=postgresql://localhost:5433/jadwigo JADWIGO_MUSE_CAP_USD=500 uv run --project apps/cli python apps/api/src/experiments/e3.py /tmp/e3-learners.json"
@@ -27,32 +27,32 @@
     },
     {
       "label": "Panel accuracy (of 5)",
-      "value": 4.77
+      "value": 4.88
     },
     {
       "label": "Panel warmth (of 5)",
-      "value": 3.57
+      "value": 3.61
     },
     {
       "label": "Panel usefulness (of 5)",
-      "value": 4.43
+      "value": 4.3
     }
   ],
   "detail": {
-    "judge_calls": 30,
+    "judge_calls": 33,
     "spark_ledger": {
-      "calls": 49,
-      "usd": 0.17,
-      "input_tokens": 1471878,
-      "output_tokens": 163915
+      "calls": 46,
+      "usd": 0.1434,
+      "input_tokens": 1345026,
+      "output_tokens": 115381
     },
     "cost_note": "Every call through the Meta API on muse-spark-1.3-contributor via jw.muse.ask; tokens and USD from apps/cli/logs/muse rows tagged e3:*.",
     "totals": {
       "narratives_with_no_findings": 1,
       "panel_mean": {
-        "accuracy": 4.77,
-        "warmth": 3.57,
-        "usefulness": 4.43
+        "accuracy": 4.88,
+        "warmth": 3.61,
+        "usefulness": 4.3
       }
     },
     "results": [
@@ -446,12 +446,12 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko rozwiązało 121 pytań, a mnożenie przez 2, 3, 5 i 7 wymaga uwagi.",
-          "direction_now": "Przez 16 dni dziecko podjęło 16 podejść i rozwiązało 121 pytań. Do przodu idzie pisownia wielkich liter, pisownia ch i h, pisownia nie oraz pisownia rz po spółgłosce, a także mnożenie przez 2, 3, 4, 5, 6 i 7. Uwagi wymaga mnożenie przez 2, 3, 5 i 7. W całym okresie odnotowano 28 pomyłek o jeden.",
+          "headline": "Dziecko ćwiczyło mnożenie i ortografię przez 16 dni, część mnożenia wymaga uwagi.",
+          "direction_now": "Przez 16 dni dziecko odpowiedziało na 121 pytań. Pisownia wielkich liter, ch i h, nie oraz rz po spółgłosce idzie do przodu. Mnożenie przez 2, 3, 4, 5, 6 i 7 idzie do przodu. Mnożenie przez 2, 3, 5 i 7 wymaga uwagi. Odpowiedzi myliły się o jeden 28 razy.",
           "answers": [
             {
               "question": "skills_standing",
-              "text": "Nauka mnożenia utknęła w miejscu. Mnożenie przez 2, 3 i 7 wymaga uwagi. Pojawiają się pomyłki o jeden. Cel związany z tymi umiejętnościami wymaga uwagi.",
+              "text": "Mnożenie przez 2, 3 i 7 wymaga uwagi. Odpowiedzi myliły się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -464,16 +464,12 @@
                 {
                   "kind": "skill",
                   "skill_code": "maths.multiplication.row-7"
-                },
-                {
-                  "kind": "goal",
-                  "goal_id": "gol_3808tpzfef8ajsd33jwcywa3xe"
                 }
               ]
             },
             {
               "question": "next_focus",
-              "text": "Dalszy plan idzie we właściwą stronę. Następna lekcja jeszcze raz przejdzie przez mnożenie przez 2, 3, 5 i 7. Obejmie też powtórkę pisowni ch i h oraz mnożenia przez 6.",
+              "text": "Następna lekcja wróci do mnożenia przez 2, 3, 5 i 7. Przypomni pisownię ch i h oraz mnożenie przez 6. Kierunek jest właściwy.",
               "citations": [
                 {
                   "kind": "skill",
@@ -505,8 +501,8 @@
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja jeszcze raz przejdzie przez mnożenie przez 2, 3, 5 i 7.",
-              "rationale": "Te cztery mnożenia wymagają uwagi. Pojawiają się w nich pomyłki o jeden.",
+              "claim": "Następna lekcja poćwiczy mnożenie przez 2, 3, 5 i 7.",
+              "rationale": "Mnożenie przez 2, 3, 5 i 7 wymaga uwagi. Odpowiedzi myliły się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -536,25 +532,25 @@
             "accuracy": 5,
             "warmth": 4,
             "usefulness": 5,
-            "reason": "Narrative matches all digest counts, moved skills, needs-attention rows, 28 off-by-one mistakes, and reteach/review plan without hallucination."
+            "reason": "Narrative correctly reports 16 days, 121 questions, forward movement, off-by-one 28 times, needs-attention rows 2-3-5-7 and review of ch-h and row-6 with matching citations."
           },
           {
             "accuracy": 5,
             "warmth": 4,
-            "usefulness": 5,
-            "reason": "Narrative faithfully reproduces counts, moved skills, needs-attention sets, mistake totals, brief reteach/review lists, and standing verdicts without hallucination."
+            "usefulness": 4,
+            "reason": "Narrative matches all digest counts, moved skills, needs-attention rows, off-by-one total, and next-focus plan without hallucinations while staying supportive and actionable."
           },
           {
             "accuracy": 5,
             "warmth": 3,
             "usefulness": 4,
-            "reason": "Counts, skills, mistake pattern, and reteach/review plan all match the digest, though tone is factual rather than encouraging."
+            "reason": "All counts, moved skills, reteach/review lists, and 28 off-by-one mistakes match the digest with no hallucinations in a neutral, factually useful tone."
           }
         ],
         "panel_mean": {
           "accuracy": 5.0,
           "warmth": 3.67,
-          "usefulness": 4.67
+          "usefulness": 4.33
         }
       },
       {
@@ -1154,11 +1150,11 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko podjęło 11 prób z 87 pytaniami przez 11 dni, a cel wymaga uwagi.",
-          "direction_now": "Dziecko podjęło 11 prób z 87 pytaniami przez 11 dni. Do przodu idzie pisownia wielkich liter, pisownia ch i h, pisownia nie, pisownia rz po spółgłosce oraz mnożenie przez 2, 3, 4, 5, 6 i 7. Uwagi wymaga pisownia wielkich liter, pisownia ch i h, pisownia nie oraz mnożenie przez 2, 3, 4, 5, 6 i 7. Odpowiedzi różniły się nieznacznie 60 razy. Cel wymaga uwagi.",
+          "headline": "Dziecko ćwiczyło mnożenie i pisownię, a kilka umiejętności wymaga uwagi.",
+          "direction_now": "W 11 dniach dziecko odpowiadało 11 razy na łącznie 87 pytań. Do przodu idzie mnożenie przez 2, 3, 4, 5, 6 i 7 oraz pisownia wielkich liter, ch i h, cząstki nie i rz po spółgłosce. Uwagi wymagają wielkie litery, ch i h, cząstka nie oraz mnożenie przez 2, 3, 4, 5, 6 i 7. 60 razy odpowiedzi mijały się o jeden. Cel wymaga uwagi.",
           "answers": {
             "skills_standing": {
-              "text": "Nauka stanęła w miejscu. Pisownia ch i h, pisownia nie oraz mnożenie przez 6 wymagają uwagi.",
+              "text": "Na razie postępy zatrzymały się. Pisownia ch i h, pisownia cząstki nie oraz mnożenie przez 6 wymagają uwagi. Odpowiedzi mijały się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -1175,7 +1171,7 @@
               ]
             },
             "next_focus": {
-              "text": "Następna lekcja ponownie omówi pisownię wielkich liter, pisownię ch i h, pisownię nie oraz mnożenie przez 2, 3, 4, 5, 6 i 7. Kierunek jest właściwy.",
+              "text": "Dalej zaplanowano powtórkę. Obejmuje pisownię wielkich liter, ch i h oraz cząstki nie, a także mnożenie przez 2, 3, 4, 5, 6 i 7. Taki krok pasuje do bieżących potrzeb, ponieważ te umiejętności wymagają uwagi.",
               "citations": [
                 {
                   "kind": "skill",
@@ -1219,8 +1215,8 @@
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja ponownie omówi pisownię wielkich liter, pisownię ch i h, pisownię nie oraz mnożenie przez 2, 3, 4, 5, 6 i 7.",
-              "rationale": "Te umiejętności wymagają uwagi. Odpowiedzi różniły się nieznacznie 60 razy.",
+              "claim": "Następna lekcja ponownie ćwiczy wielkie litery, ch i h, cząstkę nie oraz mnożenie przez 2, 3, 4, 5, 6 i 7.",
+              "rationale": "Po 87 pytaniach w 11 dniach te umiejętności wymagają uwagi, a odpowiedzi mijały się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -1270,24 +1266,24 @@
             "accuracy": 5,
             "warmth": 3,
             "usefulness": 4,
-            "reason": "All counts, moved skills, attention lists, mistake total, and verdicts match the digest exactly while tone stays neutral-factual with clear reteach focus."
-          },
-          {
-            "accuracy": 5,
-            "warmth": 2,
-            "usefulness": 4,
-            "reason": "Narrative faithfully reproduces all counts, moved skills, stuck skills, focus list, and 60 off-by-one mistakes, but its blunt stuck phrasing offers little encouragement despite clear next steps."
+            "reason": "All counts, skill lists, off-by-one pattern, and citations match the digest exactly with a neutral factual tone and clear reteach focus."
           },
           {
             "accuracy": 5,
             "warmth": 3,
             "usefulness": 4,
-            "reason": "Narrative matches all counts, verdicts, skill lists, and citations with no hallucination but is factual and dry with limited encouragement."
+            "reason": "Narrative faithfully reproduces counts, moved skills, needs-attention lists, off-by-one tally, standings and proposal citations with no hallucinations but stays factual rather than encouraging."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 3,
+            "usefulness": 4,
+            "reason": "Narrative matches all counts, moved skills, attention lists, off-by-one pattern and proposals but uses neutral factual tone without encouragement."
           }
         ],
         "panel_mean": {
           "accuracy": 5.0,
-          "warmth": 2.67,
+          "warmth": 3.0,
           "usefulness": 4.0
         }
       },
@@ -1854,12 +1850,11 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko pracowało przez 16 dni nad 124 pytaniami w 16 próbach, część umiejętności idzie do przodu, a część wymaga uwagi.",
-          "direction_now": "Przez 16 dni dziecko odpowiedziało na 124 pytania w 16 próbach. Do przodu idzie mnożenie przez 2, przez 5 i przez 6 oraz pisownia wielką literą. Do przodu idzie też mnożenie przez 7, pisownia z nie, pisownia rz po spółgłosce i rozróżnianie ch i h. Uwagi wymaga pisownia wielką literą, rozróżnianie ch i h, pisownia z nie, pisownia rz po spółgłosce oraz mnożenie przez 3, przez 4 i przez 7. Odpowiedzi różniły się o jeden 57 razy.",
-          "answers": [
-            {
-              "question": "skills_standing",
-              "text": "Kilka umiejętności wymaga uwagi. Chodzi o pisownię wielką literą, pisownię z nie i pisownię rz po spółgłosce oraz mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7. Cel na ten czas wymaga uwagi.",
+          "headline": "Dziecko pracowało przez 16 dni i praca idzie do przodu, choć część umiejętności wymaga uwagi.",
+          "direction_now": "Za dzieckiem 16 dni pracy, 16 prób i 124 pytań. W tych obszarach praca idzie do przodu: pisownia wielkich liter, pisownia ch i h, pisownia cząstki nie, pisownia rz po spółgłoskach oraz mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7. Jednocześnie część tych umiejętności wymaga uwagi. 57 razy odpowiedzi były przesunięte o jeden. Warto wracać do nich spokojnie w kolejnych dniach.",
+          "answers": {
+            "skills_standing": {
+              "answer": "Nauka w tym czasie wymaga uwagi. Pisownia wielkich liter, pisownia cząstki nie, pisownia rz po spółgłoskach oraz mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7 wymagają uwagi. 57 razy odpowiedzi były przesunięte o jeden. Cel na ten czas wymaga uwagi. Warto zatrzymać się przy tych umiejętnościach i utrwalać je małymi krokami.",
               "citations": [
                 {
                   "kind": "skill",
@@ -1896,16 +1891,11 @@
                 {
                   "kind": "skill",
                   "skill_code": "maths.multiplication.row-7"
-                },
-                {
-                  "kind": "goal",
-                  "goal_id": "gol_6ygg2bjhzs9yzbnjkzbj5jnz5n"
                 }
               ]
             },
-            {
-              "question": "next_focus",
-              "text": "Następna lekcja powtórzy pisownię wielką literą, rozróżnianie ch i h, pisownię z nie i pisownię rz po spółgłosce oraz mnożenie przez 3, przez 4 i przez 7. Wróci też do mnożenia przez 2 i przez 5.",
+            "next_focus": {
+              "answer": "Następna lekcja jest zaplanowana dobrze. Najpierw wróci do pisowni wielkich liter, pisowni ch i h, pisowni cząstki nie, pisowni rz po spółgłoskach oraz mnożenia przez 3, przez 4 i przez 7. Potem odświeży mnożenie przez 2 i przez 5. Taki porządek pomaga utrwalać to, co wymaga uwagi. Warto iść tym planem krok po kroku.",
               "citations": [
                 {
                   "kind": "skill",
@@ -1945,12 +1935,12 @@
                 }
               ]
             }
-          ],
+          },
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja skupi się na pisowni oraz na mnożeniu przez 3, przez 4 i przez 7.",
-              "rationale": "Te umiejętności wymagają uwagi. Powrót do nich pomoże utrwalić pisownię wielką literą, rozróżnianie ch i h, pisownię z nie, pisownię rz po spółgłosce oraz mnożenie przez 3, przez 4 i przez 7.",
+              "claim": "Następna lekcja skupi się na pisowni i na mnożeniu przez 3, przez 4 i przez 7.",
+              "rationale": "Te umiejętności wymagają uwagi, bo odpowiedzi były przesunięte o jeden. Powrót do nich pomaga utrwalać materiał przed dalszą pracą.",
               "citations": [
                 {
                   "kind": "skill",
@@ -1986,31 +1976,31 @@
           "asks": [],
           "made_by": "jadwigo-report-write/muse-spark-1.3-contributor"
         },
-        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "findings": ["malformed narrative: 'str' object has no attribute 'get'"],
         "panel": [
           {
-            "accuracy": 4,
-            "warmth": 2,
-            "usefulness": 4,
-            "reason": "Counts, needs-attention set, next focus and 57 off-by-one errors match the digest, but presenting attempted/familiar skills as equal forward progress overstates growth and tone is flatly factual."
+            "accuracy": 5,
+            "warmth": 5,
+            "usefulness": 5,
+            "reason": "Narrative faithfully reproduces all counts, all 10 moved skills, the 57 off-by-one mistakes, the stuck/needs-attention standing, and the reteach-then-review order with correct citations and warm supportive Polish tone."
           },
           {
             "accuracy": 5,
             "warmth": 4,
-            "usefulness": 4,
-            "reason": "Counts, moved skills, needs-attention set, 57 off-by-one mistakes, and reteach/review focus all match the digest with no hallucinations."
+            "usefulness": 5,
+            "reason": "Narrative matches all counts, movement, reteach/review lists, and citations without hallucination while giving a clear supportive next-step plan."
           },
           {
             "accuracy": 5,
-            "warmth": 3,
-            "usefulness": 4,
-            "reason": "Narrative matches all counts, moved skills, reteach/review lists, goal status and off-by-one total with correct citations and no invented facts."
+            "warmth": 5,
+            "usefulness": 5,
+            "reason": "Narrative faithfully reproduces counts, moved skills, off-by-one pattern, stuck/on-track verdicts, and reteach-then-review order with correct citations."
           }
         ],
         "panel_mean": {
-          "accuracy": 4.67,
-          "warmth": 3.0,
-          "usefulness": 4.0
+          "accuracy": 5.0,
+          "warmth": 4.67,
+          "usefulness": 5.0
         }
       },
       {
@@ -2539,12 +2529,12 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko ćwiczyło przez 20 dni i odpowiadało na 152 pytania, a część umiejętności wymaga uwagi.",
-          "direction_now": "W 20 próbach dziecko poszło do przodu w pisowni wielkich liter, w pisowni ch i h oraz w pisowni cząstki nie. Do przodu poszło też mnożenie przez 2, przez 3 i przez 7. Pisownia rz po spółgłoskach oraz mnożenie przez 4, przez 5 i przez 6 też ruszyły, lecz wymagają uwagi, ponieważ odpowiedzi różniły się o jeden aż 79 razy. Cel wymaga uwagi.",
+          "headline": "Dziecko pracowało przez 20 dni, a część umiejętności wymaga jeszcze uwagi.",
+          "direction_now": "Przez 20 dni dziecko podjęło 20 prób i 152 pytania. Do przodu idą wielkie litery, pisownia ch i h, pisownia nie oraz mnożenie przez 2, przez 3 i przez 7. Uwagi wymagają pisownia rz po spółgłoskach oraz mnożenie przez 4, przez 5 i przez 6. Odpowiedzi mijały się o 1, łącznie 79 razy. Cel wymaga uwagi.",
           "answers": [
             {
               "question": "skills_standing",
-              "text": "Dziecko odpowiadało na 152 pytania w 20 próbach przez 20 dni. Widać ruch do przodu w pisowni ch i h, w pisowni cząstki nie oraz w mnożeniu przez 2. Pisownia rz po spółgłoskach i mnożenie przez 4 wymagają uwagi, ponieważ odpowiedzi różniły się o jeden. Nauka stanęła w miejscu i cel wymaga uwagi.",
+              "text": "Nauka na razie stoi w miejscu. Pisownia ch i h oraz pisownia nie idą do przodu, podobnie mnożenie przez 2. Pisownia rz po spółgłoskach oraz mnożenie przez 4 wymagają uwagi. Dlatego cały cel wymaga uwagi.",
               "citations": [
                 {
                   "kind": "skill",
@@ -2565,16 +2555,12 @@
                 {
                   "kind": "skill",
                   "skill_code": "maths.multiplication.row-4"
-                },
-                {
-                  "kind": "goal",
-                  "goal_id": "gol_4fyapkvvr88379a6q71yxkffm1"
                 }
               ]
             },
             {
               "question": "next_focus",
-              "text": "Następna lekcja wraca do pisowni rz po spółgłoskach oraz do mnożenia przez 4, przez 5 i przez 6. Później odświeża pisownię ch i h, pisownię cząstki nie i mnożenie przez 7. Taki porządek idzie we właściwą stronę.",
+              "text": "Następna lekcja jest dobrze ustawiona. Wraca do pisowni rz po spółgłoskach oraz do mnożenia przez 4, przez 5 i przez 6. Potem przypomina pisownię ch i h, pisownię nie i mnożenie przez 7.",
               "citations": [
                 {
                   "kind": "skill",
@@ -2610,8 +2596,8 @@
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja wraca do pisowni rz po spółgłoskach oraz do mnożenia przez 4, przez 5 i przez 6.",
-              "rationale": "Te obszary wymagają uwagi, ponieważ odpowiedzi różniły się o jeden.",
+              "claim": "Następna lekcja wróci do pisowni rz po spółgłoskach oraz do mnożenia przez 4, przez 5 i przez 6.",
+              "rationale": "Te umiejętności wymagają uwagi. Odpowiedzi mijały się o 1, łącznie 79 razy.",
               "citations": [
                 {
                   "kind": "skill",
@@ -2635,31 +2621,36 @@
           "asks": [],
           "made_by": "jadwigo-report-write/muse-spark-1.3-contributor"
         },
-        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "findings": [
+          "answer skills_standing is empty",
+          "answer next_focus is empty",
+          "direction_now says 1, a number the digest did not give",
+          "proposal p1 rationale says 1, a number the digest did not give"
+        ],
         "panel": [
           {
             "accuracy": 5,
             "warmth": 4,
             "usefulness": 5,
-            "reason": "Narrative correctly reports all counts, skill movements, off-by-one pattern, stuck standing and reteach/review order with supportive tone and clear next steps."
+            "reason": "Narrative faithfully reproduces all counts, mastery gains, attention skills, 79 off-by-one errors and next reteach plus review focus with correct citations in a neutral-supportive tone"
+          },
+          {
+            "accuracy": 5,
+            "warmth": 3,
+            "usefulness": 4,
+            "reason": "Narrative faithfully reports all counts, movements, needs-attention skills, mistake total, standings and next focus with matching citations, but tone is neutral-factual with little encouragement."
           },
           {
             "accuracy": 5,
             "warmth": 4,
             "usefulness": 5,
-            "reason": "Narrative matches all counts, movements, needs-attention skills, off-by-one total, verdicts and proposal ordering from the digest without hallucination."
-          },
-          {
-            "accuracy": 5,
-            "warmth": 4,
-            "usefulness": 5,
-            "reason": "Narrative matches all counts, skill movements, reteach/review lists, and stuck/on-track verdicts without hallucination while staying supportive and actionable."
+            "reason": "All counts, moved and needs-attention skills, 79 off-by-one mistakes, goal status, and citations match the digest exactly with correct Polish skill names."
           }
         ],
         "panel_mean": {
           "accuracy": 5.0,
-          "warmth": 4.0,
-          "usefulness": 5.0
+          "warmth": 3.67,
+          "usefulness": 4.67
         }
       },
       {
@@ -3833,12 +3824,12 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko rozwiązało 130 pytań w 16 dni, a kilka umiejętności wymaga uwagi.",
-          "direction_now": "W 16 próbach dziecko zmierzyło się ze 130 pytaniami. Do przodu idzie pisownia wielką literą oraz mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7, a także pisownia ch i h, cząstki nie i rz po spółgłosce. Uwagi wymaga pisownia wielką literą, pisownia ch i h, pisownia cząstki nie, pisownia rz po spółgłosce oraz mnożenie przez 3, przez 4, przez 5 i przez 6. 80 razy odpowiedzi różniły się o jeden.",
+          "headline": "Dziecko podjęło 16 prób ze 130 pytaniami, a część umiejętności wymaga uwagi.",
+          "direction_now": "Dziecko podjęło 16 prób ze 130 pytaniami przez 16 dni. Do przodu idzie pisownia wielką literą, pisownia ch i h, pisownia słowa nie oraz pisownia rz po spółgłoskach. Do przodu idzie mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7. Wymaga uwagi pisownia wielką literą, pisownia ch i h, pisownia słowa nie, pisownia rz po spółgłoskach oraz mnożenie przez 3, przez 4, przez 5 i przez 6. 80 razy odpowiedź różniła się o jeden.",
           "answers": [
             {
               "question": "skills_standing",
-              "text": "Dziecko idzie do przodu w pisowni wielką literą, w pisowni cząstki nie, w mnożeniu przez 5 i w mnożeniu przez 7. Pisownia wielką literą, pisownia cząstki nie i mnożenie przez 5 wymagają uwagi. Cel wymaga uwagi.",
+              "answer": "Nauka stoi w miejscu i wymaga uwagi. Pisownia wielką literą wymaga uwagi. Pisownia słowa nie wymaga uwagi. Mnożenie przez 5 wymaga uwagi. Mnożenie przez 7 idzie do przodu.",
               "citations": [
                 {
                   "kind": "skill",
@@ -3855,16 +3846,12 @@
                 {
                   "kind": "skill",
                   "skill_code": "maths.multiplication.row-7"
-                },
-                {
-                  "kind": "goal",
-                  "goal_id": "gol_5p9nx2czvr901agahvca0qtggj"
                 }
               ]
             },
             {
               "question": "next_focus",
-              "text": "Następna lekcja wraca do pisowni wielką literą, pisowni ch i h, pisowni cząstki nie, pisowni rz po spółgłosce oraz mnożenia przez 3, przez 4, przez 5 i przez 6. Do tego wraca do mnożenia przez 7. Taki krok idzie we właściwą stronę.",
+              "answer": "Dalsza nauka idzie we właściwą stronę. Następna lekcja ponownie poćwiczy pisownię wielką literą, pisownię ch i h, pisownię słowa nie oraz pisownię rz po spółgłoskach. Następna lekcja ponownie poćwiczy mnożenie przez 3, przez 4, przez 5 i przez 6. Następna lekcja powtórzy mnożenie przez 7.",
               "citations": [
                 {
                   "kind": "skill",
@@ -3908,8 +3895,8 @@
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja jeszcze raz ćwiczy pisownię wielką literą, ch i h, cząstkę nie, rz po spółgłosce oraz mnożenie przez 3, 4, 5 i 6.",
-              "rationale": "Te umiejętności wymagają uwagi. 80 razy odpowiedzi różniły się o jeden.",
+              "claim": "Następna lekcja ponownie poćwiczy pisownię wielką literą, pisownię ch i h, pisownię słowa nie, pisownię rz po spółgłoskach oraz mnożenie przez 3, przez 4, przez 5 i przez 6.",
+              "rationale": "Te umiejętności wymagają uwagi. Przy 16 próbach ze 130 pytaniami przez 16 dni 80 razy odpowiedź różniła się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -3949,30 +3936,30 @@
           "asks": [],
           "made_by": "jadwigo-report-write/muse-spark-1.3-contributor"
         },
-        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "findings": [],
         "panel": [
           {
-            "accuracy": 2,
+            "accuracy": 5,
             "warmth": 3,
             "usefulness": 4,
-            "reason": "Narrative claims forward progress for skills_standing while digest verdict is stuck, though counts, reteach list, and off-by-one total are correct."
+            "reason": "Narrative faithfully reproduces counts, needs-attention skills, verdicts, and proposal from the digest with correct citations but uses neutral factual tone with little encouragement."
           },
           {
             "accuracy": 5,
-            "warmth": 4,
+            "warmth": 3,
             "usefulness": 4,
-            "reason": "All counts, moved skills, attention lists, and off-by-one total match the digest with correct reteach versus review separation and supportive plain language."
+            "reason": "Counts, movements, needs-attention lists, and stuck/on-track verdicts all match the digest without invention, tone is factual but blunt, and next-focus proposals give clear actionable reteach guidance."
           },
           {
-            "accuracy": 3,
-            "warmth": 4,
+            "accuracy": 5,
+            "warmth": 3,
             "usefulness": 4,
-            "reason": "Counts, skill lists and 80 off-by-one errors match the digest, but the narrative frames stuck standing as forward progress."
+            "reason": "All counts, skills, and off-by-one total match the digest but the tone is factual listing with little encouragement."
           }
         ],
         "panel_mean": {
-          "accuracy": 3.33,
-          "warmth": 3.67,
+          "accuracy": 5.0,
+          "warmth": 3.0,
           "usefulness": 4.0
         }
       },
@@ -4314,13 +4301,12 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko idzie do przodu w pisowni i mnożeniu, a mnożenie przez 2, 5 i 6 wymaga uwagi.",
-          "direction_now": "Za dzieckiem 115 pytań w 15 podejściach przez 15 dni. Do przodu idzie pisownia wielkich liter, pisownia ch i h, pisownia cząstki nie, pisownia rz po spółgłosce oraz mnożenie przez 2, 3, 4, 5, 6 i 7. Mnożenie przez 2, 5 i 6 wymaga uwagi, bo 25 razy odpowiedź różniła się o jeden. Cel wymaga uwagi.",
+          "headline": "Dziecko pracowało 15 dni nad 115 pytaniami, idzie do przodu, a mnożenie przez 2, 5 i 6 wymaga uwagi.",
+          "direction_now": "W 15 podejściach padło 115 pytań w 15 dni. Do przodu idzie mnożenie przez 3, przez 4 i przez 7. Do przodu idzie też pisownia wielkich liter, pisownia z ch i h, pisownia z nie oraz pisownia rz po spółgłosce. Mnożenie przez 2, przez 5 i przez 6 było ćwiczone i wymaga uwagi. Pomyłka o jeden powtórzyła się 25 razy.",
           "answers": [
             {
               "question": "skills_standing",
-              "verdict": "stuck",
-              "text": "Dziecko idzie do przodu w pisowni wielkich liter i w pisowni rz po spółgłosce. Mnożenie przez 5 wymaga uwagi. Nauka w tym miejscu stanęła i wymaga uwagi.",
+              "text": "Dziecko idzie do przodu w wielu miejscach, lecz całość wymaga uwagi. Pisownia wielkich liter wymaga uwagi. Pisownia rz po spółgłosce wymaga uwagi. Mnożenie przez 5 wymaga uwagi. Odpowiedzi różniły się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -4338,8 +4324,7 @@
             },
             {
               "question": "next_focus",
-              "verdict": "on_track",
-              "text": "Następna lekcja wraca do mnożenia przez 2, 5 i 6 oraz powtarza pisownię wielkich liter. Taki krok idzie we właściwą stronę.",
+              "text": "Następna lekcja porządkuje to, co wymaga uwagi. Najpierw wraca do mnożenia przez 2, przez 5 i przez 6. Potem przypomina pisownię wielkich liter. Taki porządek idzie we właściwą stronę.",
               "citations": [
                 {
                   "kind": "skill",
@@ -4363,8 +4348,8 @@
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja jeszcze raz ćwiczy mnożenie przez 2, 5 i 6.",
-              "rationale": "Mnożenie przez 2, 5 i 6 wymaga uwagi. Dziecko już ruszyło te mnożenia do przodu.",
+              "claim": "Następna lekcja jeszcze raz ćwiczy mnożenie przez 2, przez 5 i przez 6.",
+              "rationale": "Te trzy mnożenia wymagają uwagi. Odpowiedzi różniły się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -4390,25 +4375,25 @@
             "accuracy": 5,
             "warmth": 4,
             "usefulness": 4,
-            "reason": "All counts, skill lists, off-by-one total, goal status, and reteach focus match the digest without hallucination."
+            "reason": "All counts, mastered/proficient/attempted skills, reteach set, and off-by-one count match the digest with correct citations and no hallucinations."
           },
           {
             "accuracy": 5,
             "warmth": 4,
-            "usefulness": 4,
-            "reason": "Narrative faithfully reproduces all counts, mastered and progressed skills, reteach rows 2/5/6 with 25 off-by-one errors, verdicts and citations without hallucination in a supportive tone."
+            "usefulness": 5,
+            "reason": "Narrative matches all counts, mastered/proficient progress, needs-attention skills, 25 off-by-one mistakes, and next-focus proposals without hallucination while staying supportive and actionable."
           },
           {
             "accuracy": 5,
             "warmth": 4,
-            "usefulness": 4,
-            "reason": "All counts, verdicts, citations, and reteach/review items match the digest exactly with no hallucinations."
+            "usefulness": 5,
+            "reason": "Counts, mastered/proficient moves, reteach focus on rows 2/5/6 plus capitals review, and 25 off-by-one errors all match the digest without hallucination."
           }
         ],
         "panel_mean": {
           "accuracy": 5.0,
           "warmth": 4.0,
-          "usefulness": 4.0
+          "usefulness": 4.67
         }
       },
       {
@@ -4927,12 +4912,12 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko ćwiczyło przez 12 dni, rozwiązało 89 pytań w 12 podejściach, a część umiejętności idzie do przodu.",
-          "direction_now": "Dziecko pracowało przez 12 dni i rozwiązało 89 pytań w 12 podejściach. Do przodu idzie mnożenie przez 6 i mnożenie przez 7. Do przodu idzie też pisownia ch i h. Uwagi wymaga pisownia wielkich liter, pisownia nie oraz pisownia rz po spółgłosce. Uwagi wymaga też mnożenie przez 2, przez 3, przez 4 i przez 5. 47 razy podana liczba różniła się o jeden.",
+          "headline": "Dziecko ćwiczyło przez 12 dni i podjęło 12 prób z 89 pytaniami, a część umiejętności wymaga uwagi.",
+          "direction_now": "Za dzieckiem 12 prób z 89 pytaniami w 12 dniach. Mnożenie przez 2, 3, 4, 5, 6 i 7 idzie do przodu. Pisownia wielkich liter, pisownia nie oraz pisownia rz po spółgłosce idą do przodu i jednocześnie wymagają uwagi. Pisownia ch i h też idzie do przodu. W 47 pomyłkach odpowiedź różniła się o jeden. Cel wymaga uwagi.",
           "answers": [
             {
               "question": "skills_standing",
-              "answer": "Część umiejętności wymaga uwagi. Pisownia ch i h idzie do przodu, ale wraca do powtórki. Pisownia nie, pisownia rz po spółgłosce oraz mnożenie przez 2 i przez 3 wymagają uwagi. Cel wymaga uwagi. 47 razy podana liczba różniła się o jeden.",
+              "text": "Część umiejętności wymaga uwagi i nauka stoi w miejscu. Wielkie litery, pisownia nie, pisownia rz po spółgłosce oraz mnożenie przez 2 i 3 wymagają uwagi. W 47 pomyłkach odpowiedź różniła się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -4953,16 +4938,12 @@
                 {
                   "kind": "skill",
                   "skill_code": "maths.multiplication.row-3"
-                },
-                {
-                  "kind": "goal",
-                  "goal_id": "gol_01ww81fpyp95mbdcjp9rdy5e65"
                 }
               ]
             },
             {
               "question": "next_focus",
-              "answer": "Następna lekcja powtarza pisownię wielkich liter, pisownię nie oraz pisownię rz po spółgłosce. Powtarza też mnożenie przez 2, przez 3, przez 4 i przez 5. Do powtórki wraca pisownia ch i h. Taki porządek jest dobrze zaplanowany.",
+              "text": "Następna lekcja idzie we właściwą stronę. Plan obejmuje powtórzenie wielkich liter, pisowni nie, pisowni rz po spółgłosce oraz mnożenia przez 2, 3, 4 i 5, a także utrwalenie pisowni ch i h.",
               "citations": [
                 {
                   "kind": "skill",
@@ -5002,8 +4983,8 @@
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja powtarza pisownię i mnożenie, które wymagają uwagi.",
-              "rationale": "Pisownia wielkich liter, pisownia nie, pisownia rz po spółgłosce oraz mnożenie przez 2, przez 3, przez 4 i przez 5 wymagają uwagi. 47 razy podana liczba różniła się o jeden.",
+              "claim": "Następna lekcja powtórzyłaby wielkie litery, pisownię nie, pisownię rz po spółgłosce oraz mnożenie przez 2, 3, 4 i 5.",
+              "rationale": "Te umiejętności wymagają uwagi. W 47 pomyłkach odpowiedź różniła się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -5039,31 +5020,31 @@
           "asks": [],
           "made_by": "jadwigo-report-write/muse-spark-1.3-contributor"
         },
-        "findings": [],
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
         "panel": [
           {
-            "accuracy": 5,
-            "warmth": 4,
-            "usefulness": 5,
-            "reason": "Narrative correctly reports 12 days, 89 questions, 12 attempts, proficient row-6/row-7/ch-h, the seven reteach skills, 47 off-by-one errors, and stuck/on-track standings with matching citations."
-          },
-          {
-            "accuracy": 5,
-            "warmth": 4,
-            "usefulness": 5,
-            "reason": "All counts, proficient skills, reteach lists, review item, and 47 off-by-one mistakes match the digest with correct citations."
-          },
-          {
-            "accuracy": 5,
+            "accuracy": 4,
             "warmth": 3,
             "usefulness": 4,
-            "reason": "Narrative faithfully reproduces all counts, moved and attention skills, 47 off-by-one mistakes, stuck/on-track verdicts and proposal with correct citations and no invented facts."
+            "reason": "Counts, movement, mistakes, brief and proposals match the digest, but the standing text names capitals while its citations name ch-h."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 4,
+            "reason": "Counts, off-by-one total, goal status and reteach plan match the digest, but the standing text names capitals while its citations carry ch-h."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 4,
+            "usefulness": 4,
+            "reason": "Narrative faithfully reproduces all counts, moved skills, needs-attention sets, 47 off-by-one mistakes, and next-focus plan with matching citations and no hallucinations."
           }
         ],
         "panel_mean": {
-          "accuracy": 5.0,
-          "warmth": 3.67,
-          "usefulness": 4.67
+          "accuracy": 4.33,
+          "warmth": 3.33,
+          "usefulness": 4.0
         }
       },
       {
@@ -5562,13 +5543,11 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko pracowało przez 6 dni, a mnożenie i ortografia wymagają uwagi.",
-          "direction_now": "Dziecko wykonało 6 podejść i 53 pytania w 6 dni. Do przodu idzie mnożenie przez 2, 3, 4, 5, 6 i 7 oraz pisownia wielkich liter, h i ch, nie i rz po spółgłosce. Uwagi wymaga pisownia i mnożenie, bo 36 razy odpowiedź była przesunięta o jeden. Cel wymaga uwagi.",
-          "answers": [
-            {
-              "question": "skills_standing",
-              "verdict": "stuck",
-              "text": "Dziecko zatrzymało się w miejscu. Pisownia rz po spółgłosce oraz mnożenie przez 4 i przez 7 wymagają uwagi. Warto do nich wrócić spokojnie w następnej lekcji.",
+          "headline": "Dziecko pracowało przez 6 dni, zmierzyło się z 53 pytaniami i ruszyło do przodu, choć część umiejętności wymaga uwagi.",
+          "direction_now": "Dziecko pracowało przez 6 dni. Zmierzyło się z 53 pytaniami w 6 podejściach. Do przodu idzie mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7 oraz pisownia wielkich liter, pisownia ch i h, pisownia nie i pisownia rz po spółgłosce. Poza mnożeniem przez 2 te umiejętności wymagają uwagi, bo 36 razy odpowiedź różniła się o jeden. Cel wymaga uwagi.",
+          "answers": {
+            "skills_standing": {
+              "text": "Dziecko ruszyło do przodu, lecz przy pisowni rz po spółgłosce oraz przy mnożeniu przez 4 i przez 7 stoi w miejscu. Przy tych umiejętnościach odpowiedzi nadal różniły się o jeden. Cel wymaga uwagi.",
               "citations": [
                 {
                   "kind": "skill",
@@ -5584,10 +5563,8 @@
                 }
               ]
             },
-            {
-              "question": "next_focus",
-              "verdict": "on_track",
-              "text": "Następna lekcja idzie we właściwą stronę. Wraca do pisowni wielkich liter, h i ch, nie oraz rz po spółgłosce i do mnożenia przez 3, 4, 5, 6 i 7. Materiał był ćwiczony w 6 podejściach, więc powrót utrwala to, co dziecko już zaczęło.",
+            "next_focus": {
+              "text": "Następna lekcja wraca do wielkich liter, do pisowni ch i h, do pisowni nie, do pisowni rz po spółgłosce oraz do mnożenia przez 3, przez 4, przez 5, przez 6 i przez 7. Powtórka porządkuje umiejętności, które wymagają uwagi. Ten kierunek jest właściwy.",
               "citations": [
                 {
                   "kind": "skill",
@@ -5627,12 +5604,12 @@
                 }
               ]
             }
-          ],
+          },
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Najbliższa lekcja jeszcze raz przechodzi pisownię i mnożenie przez 3, 4, 5, 6 i 7.",
-              "rationale": "Bo te umiejętności wymagają uwagi po 36 pomyłkach o jeden w 6 podejściach. Powrót utrwala to, co dziecko już ćwiczyło.",
+              "claim": "Następna lekcja jeszcze raz przerobi wielkie litery, pisownię ch i h, pisownię nie, pisownię rz po spółgłosce oraz mnożenie przez 3, przez 4, przez 5, przez 6 i przez 7.",
+              "rationale": "Te umiejętności wymagają uwagi, bo odpowiedzi różniły się o jeden, łącznie 36 razy. Powtórka porządkuje to, co wymaga uwagi.",
               "citations": [
                 {
                   "kind": "skill",
@@ -5676,31 +5653,31 @@
           "asks": [],
           "made_by": "jadwigo-report-write/muse-spark-1.3-contributor"
         },
-        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "findings": ["malformed narrative: 'str' object has no attribute 'get'"],
         "panel": [
           {
-            "accuracy": 4,
+            "accuracy": 5,
             "warmth": 5,
             "usefulness": 5,
-            "reason": "Counts, verdicts, citations and reteach lists match the digest, but the summary lumps all multiplication as needing attention without excluding row-2 which reached proficient."
+            "reason": "Narrative matches all counts movements mistake pattern and reteach focus without hallucination."
           },
           {
             "accuracy": 5,
             "warmth": 4,
             "usefulness": 5,
-            "reason": "Narrative matches all counts, movements, verdicts, citations and the 36 off-by-one mistakes with supportive non-blaming language and clear next steps."
+            "reason": "Narrative matches all counts, moved skills, stuck verdict, reteach list, and 36 off-by-one mistakes while staying encouraging and actionable."
           },
           {
             "accuracy": 5,
             "warmth": 4,
-            "usefulness": 5,
-            "reason": "All counts, movements, mistake counts, verdicts, and citations match the digest with no hallucinations and clear next steps."
+            "usefulness": 4,
+            "reason": "Narrative matches all counts, skill movements, off-by-one pattern, and reteach focus without hallucination while staying supportive and actionable."
           }
         ],
         "panel_mean": {
-          "accuracy": 4.67,
+          "accuracy": 5.0,
           "warmth": 4.33,
-          "usefulness": 5.0
+          "usefulness": 4.67
         }
       },
       {
@@ -6141,8 +6118,106 @@
           ],
           "asks": []
         },
-        "narrative": null,
-        "findings": ["no JSON narrative"]
+        "narrative": {
+          "language": "pl",
+          "headline": "Mnożenie przez 2, 3, 4, 5, 6 i 7 idzie do przodu, a pisownia wymaga uwagi.",
+          "direction_now": "Zanotowano naukę przez 15 dni, 15 razy, przy 119 pytaniach. Mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7 idzie do przodu. Pisownia wielkiej litery, ch i h, nie oraz rz po spółgłosce wymaga uwagi. W 49 odpowiedziach wybierano sąsiednią liczbę.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Pisownia nie oraz rz po spółgłosce wymaga uwagi. Dziecko zatrzymało się przy tych zasadach. W 49 odpowiedziach wybierano sąsiednią liczbę.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "text": "Następna lekcja porządkuje pisownię wielkiej litery, ch i h, nie oraz rz po spółgłosce. Wraca także do mnożenia przez 3. Taki kierunek idzie we właściwą stronę.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja jeszcze raz przechodzi przez pisownię wielkiej litery, ch i h, nie oraz rz po spółgłosce.",
+              "rationale": "Te zasady wymagają uwagi. W 49 odpowiedziach wybierano sąsiednią liczbę. Mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7 idzie do przodu, więc lekcja może skupić się na pisowni.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-spark-1.3-contributor"
+        },
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel": [
+          {
+            "accuracy": 5,
+            "warmth": 4,
+            "usefulness": 4,
+            "reason": "All counts, skill movements, stuck and on-track verdicts, and reteach plus row-3 review are faithfully preserved with correct citations in supportive neutral Polish."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 4,
+            "usefulness": 4,
+            "reason": "Narrative faithfully reports all counts, proficient multiplication rows, reteach spelling skills, on-track next focus, and 49 off-by-one errors without hallucination."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 4,
+            "usefulness": 4,
+            "reason": "Narrative faithfully reports 15 days/attempts/119 questions, six proficient multiplication rows, four reteach spelling skills with review of row-3, and 49 off-by-one mistakes without adding unsupported claims."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 5.0,
+          "warmth": 4.0,
+          "usefulness": 4.0
+        }
       },
       {
         "label": "Learner K",
@@ -6688,13 +6763,12 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko miało 10 prób z 79 pytaniami przez 10 dni, a cel wymaga uwagi.",
-          "direction_now": "Dziecko miało 10 prób z 79 pytaniami przez 10 dni. Pisownia wielkiej litery, wybór między ch a h, pisownia nie oraz pisownia rz po spółgłosce idą do przodu. Mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7 idzie do przodu. Pisownia wielkiej litery, wybór między ch a h oraz pisownia nie wymagają uwagi. Mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7 wymaga uwagi. W 41 odpowiedziach liczba różniła się o jeden.",
+          "headline": "Dziecko ćwiczyło przez 10 dni, 79 pytań w 10 próbach, a pisownia i mnożenie wymagają uwagi.",
+          "direction_now": "Za dzieckiem 10 dni, 79 pytań i 10 prób. Pisownia wielkich liter, pisownia ch i h, pisownia nie oraz mnożenie przez 2, 3, 4, 5, 6 i 7 idą do przodu. Te same umiejętności wymagają uwagi, bo odpowiedzi różniły się o 1 41 razy. Cel wymaga uwagi.",
           "answers": [
             {
               "question": "skills_standing",
-              "verdict": "stuck",
-              "text": "Umiejętności wymagają uwagi i stoją w miejscu. Wybór między ch a h wymaga uwagi. Mnożenie przez 2 wymaga uwagi. Mnożenie przez 3 wymaga uwagi. Mnożenie przez 5 wymaga uwagi. Mnożenie przez 7 wymaga uwagi. W 41 odpowiedziach liczba różniła się o jeden. Cel wymaga uwagi.",
+              "answer": "Nauka stoi w miejscu. Pisownia ch i h oraz mnożenie przez 2, 3, 5 i 7 wymagają uwagi. Odpowiedzi różniły się o 1. Warto wrócić do tych umiejętności.",
               "citations": [
                 {
                   "kind": "skill",
@@ -6715,21 +6789,12 @@
                 {
                   "kind": "skill",
                   "skill_code": "maths.multiplication.row-7"
-                },
-                {
-                  "kind": "attempt",
-                  "attempt_id": "att_0n8gedy8st9d8vnaap4rst0xdj"
-                },
-                {
-                  "kind": "goal",
-                  "goal_id": "gol_1xrn5eeq3m95rtktd7db70heda"
                 }
               ]
             },
             {
               "question": "next_focus",
-              "verdict": "on_track",
-              "text": "Następna lekcja wraca do pisowni wielkiej litery, wyboru między ch a h i pisowni nie. Następna lekcja wraca do mnożenia przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7. Ten plan prowadzi we właściwą stronę.",
+              "answer": "Kierunek jest właściwy. Następna lekcja powtórzy pisownię wielkich liter, pisownię ch i h, pisownię nie oraz mnożenie przez 2, 3, 4, 5, 6 i 7. Te umiejętności wymagają uwagi.",
               "citations": [
                 {
                   "kind": "skill",
@@ -6773,8 +6838,8 @@
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja poświęca uwagę pisowni oraz mnożeniu przez 2, 3, 4, 5, 6 i 7.",
-              "rationale": "Te umiejętności wymagają uwagi. W 41 odpowiedziach liczba różniła się o jeden. Powrót do nich wspiera cel, który wymaga uwagi.",
+              "claim": "Następna lekcja powtórzy pisownię i mnożenie przez 2, 3, 4, 5, 6 i 7.",
+              "rationale": "Te umiejętności wymagają uwagi, bo odpowiedzi różniły się o 1 41 razy. Cel wymaga uwagi.",
               "citations": [
                 {
                   "kind": "skill",
@@ -6818,25 +6883,29 @@
           "asks": [],
           "made_by": "jadwigo-report-write/muse-spark-1.3-contributor"
         },
-        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "findings": [
+          "direction_now says 1, a number the digest did not give",
+          "answer skills_standing says 1, a number the digest did not give",
+          "proposal p1 rationale says 1, a number the digest did not give"
+        ],
         "panel": [
           {
             "accuracy": 5,
             "warmth": 3,
             "usefulness": 4,
-            "reason": "Narrative faithfully reproduces counts, moved skills, needs-attention lists, 41 off-by-one mistakes and next reteach focus, but uses dry repetitive wording with little encouragement."
-          },
-          {
-            "accuracy": 5,
-            "warmth": 2,
-            "usefulness": 4,
-            "reason": "Counts, skill lists, off-by-one total, and next focus match the digest exactly but the mastered rz skill is flattened to merely moving forward and the tone is mechanical with no encouragement."
+            "reason": "Counts, verdicts, skills, citations and 41 off-by-one mistakes match the digest with no hallucinations, tone is neutral-factual with minimal encouragement, and next reteach focus is specific but lacks concrete parent actions."
           },
           {
             "accuracy": 5,
             "warmth": 3,
             "usefulness": 4,
-            "reason": "Narrative matches all counts, moved skills, needs-attention lists, 41 off-by-one mistakes and reteach plan without hallucination, but tone is neutral factual with minimal encouragement."
+            "reason": "Counts, skills, verdicts, citations and the 41 off-by-one pattern all match the digest, though the mastered rz skill is omitted and the tone stays factual rather than encouraging."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 2,
+            "usefulness": 4,
+            "reason": "Counts, skills, 41 off-by-one errors and reteach focus all match the digest, but blunt stuck framing with no encouragement lowers warmth."
           }
         ],
         "panel_mean": {
@@ -7601,12 +7670,12 @@
         },
         "narrative": {
           "language": "pl",
-          "headline": "Dziecko pracowało przez 21 dni nad 168 pytaniami, a część umiejętności wymaga uwagi.",
-          "direction_now": "Za dzieckiem 21 podejść i 168 pytań w 21 dni. Do przodu idzie między innymi mnożenie przez 3 i pisownia rz po spółgłosce. Warto wrócić do pisowni wielkiej litery, pisowni ch i h, pisowni nie oraz mnożenia przez 2, przez 4, przez 5, przez 6 i przez 7. Taka część wymaga uwagi. Odpowiedzi różniły się nieznacznie 120 razy.",
-          "answers": {
-            "skills_standing": {
-              "verdict": "stuck",
-              "text": "Część umiejętności wymaga uwagi i potrzebuje spokojnego powtórzenia. Chodzi o pisownię ch i h, pisownię rz po spółgłosce oraz mnożenie przez 3 i przez 5. Odpowiedzi różniły się nieznacznie.",
+          "headline": "Dziecko pracowało przez 21 dni, a następna lekcja porządkuje pisownię i mnożenie.",
+          "direction_now": "Przez 21 dni dziecko podjęło 21 prób i 168 pytań. Idzie do przodu pisownia wielkich liter, ch i h, nie oraz rz po spółgłosce, a także mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7. Uwagi wymagają wielkie litery, ch i h, nie oraz mnożenie przez 2, przez 4, przez 5, przez 6 i przez 7. Odpowiedzi 120 razy różniły się o jeden.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Postęp zatrzymał się i wymaga uwagi. Pisownia ch i h, pisownia rz po spółgłosce, mnożenie przez 3 i mnożenie przez 5 wymagają uwagi. Odpowiedzi różniły się o jeden. Cel wymaga uwagi.",
               "citations": [
                 {
                   "kind": "skill",
@@ -7626,9 +7695,9 @@
                 }
               ]
             },
-            "next_focus": {
-              "verdict": "on_track",
-              "text": "Kierunek jest dobry. Następna lekcja wraca do pisowni wielkiej litery, pisowni ch i h, pisowni nie oraz mnożenia przez 2, przez 4, przez 5, przez 6 i przez 7. Taka część wymaga uwagi, więc spokojne powtórzenie pomaga iść dalej.",
+            {
+              "question": "next_focus",
+              "text": "Dalsza nauka idzie we właściwą stronę. Następna lekcja wraca do wielkich liter, pisowni ch i h, pisowni z nie oraz mnożenia przez 2, przez 4, przez 5, przez 6 i przez 7.",
               "citations": [
                 {
                   "kind": "skill",
@@ -7664,12 +7733,12 @@
                 }
               ]
             }
-          },
+          ],
           "proposals": [
             {
               "proposal_id": "p1",
-              "claim": "Następna lekcja wraca do pisowni i mnożenia, które wymagają uwagi.",
-              "rationale": "Odpowiedzi różniły się nieznacznie 120 razy przy pisowni wielkiej litery, pisowni ch i h, pisowni nie oraz przy mnożeniu przez 2, przez 4, przez 5, przez 6 i przez 7. Powtórzenie porządkuje zapis.",
+              "claim": "Następna lekcja jeszcze raz przechodzi wielkie litery, ch i h, nie oraz mnożenie przez 2, 4, 5, 6 i 7.",
+              "rationale": "Te umiejętności wymagają uwagi, a odpowiedzi różniły się o jeden.",
               "citations": [
                 {
                   "kind": "skill",
@@ -7709,31 +7778,31 @@
           "asks": [],
           "made_by": "jadwigo-report-write/muse-spark-1.3-contributor"
         },
-        "findings": ["malformed narrative: 'str' object has no attribute 'get'"],
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
         "panel": [
           {
             "accuracy": 5,
-            "warmth": 4,
-            "usefulness": 5,
-            "reason": "Narrative matches all counts, movements, standing verdicts, citations and 120 off-by-one mistakes while giving warm actionable guidance."
+            "warmth": 3,
+            "usefulness": 4,
+            "reason": "Counts, moved skills, attention list, 120 off-by-one errors, stuck/on-track verdicts and reteach proposal all match the digest exactly but the tone is neutral-factual with little encouragement."
           },
           {
             "accuracy": 5,
-            "warmth": 4,
-            "usefulness": 5,
-            "reason": "Narrative faithfully reproduces all digest counts, skill lists, verdicts and citations with a calm supportive tone and clear next steps."
+            "warmth": 3,
+            "usefulness": 4,
+            "reason": "All counts, moved and reteach skill lists, 120 off-by-one mistakes, and stuck/on-track verdicts match the digest exactly, but the stuck wording is factual rather than warmly encouraging."
           },
           {
-            "accuracy": 5,
+            "accuracy": 3,
             "warmth": 4,
-            "usefulness": 5,
-            "reason": "Narrative faithfully reproduces all digest counts, verdicts, skill lists, citations, and the 120 off-by-one mistakes with calm supportive phrasing and clear next focus."
+            "usefulness": 4,
+            "reason": "Counts, reteach list, and off-by-one are correct, but it wrongly says mastered rz-after-consonant and proficient row-3 require attention."
           }
         ],
         "panel_mean": {
-          "accuracy": 5.0,
-          "warmth": 4.0,
-          "usefulness": 5.0
+          "accuracy": 4.33,
+          "warmth": 3.33,
+          "usefulness": 4.0
         }
       }
     ],
