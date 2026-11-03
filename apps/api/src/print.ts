@@ -94,7 +94,7 @@ export function printMediaSrc(src: string, media: string): string {
 }
 
 /** The sheet's id: the sha256 of its JSON, which the builder writes in one fixed key order. */
-export function printIdOf(sheet: PrintSheet): PrintId {
+function printIdOf(sheet: PrintSheet): PrintId {
   return createHash("sha256").update(JSON.stringify(sheet)).digest("hex");
 }
 
