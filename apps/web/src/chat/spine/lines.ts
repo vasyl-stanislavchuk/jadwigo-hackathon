@@ -57,7 +57,7 @@ export interface LineContext {
   chosen?: (call_id: string) => readonly (string | null)[] | undefined;
 }
 
-export interface Sentence {
+interface Sentence {
   key: CopyKey;
   vars: Record<string, string>;
 }
