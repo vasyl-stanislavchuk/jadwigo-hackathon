@@ -1902,6 +1902,8 @@ describe("a parent's patch (dl-z5ja.76)", () => {
         [
           { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
           { calls: [{ verb: "lesson_check", input: { draft_id: "not-this-run", names: [] } }] },
+          // The answer check refuses a claim on a refused check, and asks once more.
+          { text: "Gotowe." },
           { text: "Gotowe." },
         ],
         real(),
