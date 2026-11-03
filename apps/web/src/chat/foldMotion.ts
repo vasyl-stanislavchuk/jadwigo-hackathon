@@ -7,7 +7,7 @@
 import { type RefObject, useEffect, useLayoutEffect, useRef } from "react";
 
 /** How long the card takes to fold to its summary row (§6). */
-export const FOLD_MS = 240;
+const FOLD_MS = 240;
 
 const reduced = (): boolean =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;

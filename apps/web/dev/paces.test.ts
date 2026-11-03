@@ -91,12 +91,13 @@ describe("the dev engine's paces (dl-uukj.47.71.7)", () => {
     expect(events.length).toBeGreaterThan(0);
   });
 
-  it("s14: s03 stopped by the parent ends cancelled", async () => {
+  it("s14: the check held, then stopped by the parent, ends cancelled with the lesson kept", async () => {
     const p = await play("s14");
-    await p.until((e) => callsOf(e, "lesson_draft").length === 1);
+    await p.until((e) => callsOf(e, "lesson_check").length === 1);
     await p.send({ kind: "cancel" });
     const events = await p.until(ended);
     expect(statusOf(events)).toBe("cancelled");
+    expect(events.some((e) => e.type === "lesson_revision")).toBe(true);
   });
 
   it("s06: the check running a second time, held there", async () => {

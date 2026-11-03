@@ -131,13 +131,19 @@ const recovered = (words: Words): ScriptedReply[] => [
   ...followUps(words),
 ];
 
-/** A turn whose last check fails (s16): a harsh word in a step, which the check finds. */
+/**
+ * A turn whose last check fails (s16): a harsh word in a step, which the check finds. The engine
+ * asks the model again after a check that is not publishable, so every reply after it is words
+ * only: an edit there would make the card read the check as stale and drop its findings.
+ */
 const needsFixing = (words: Words): ScriptedReply[] => [
   { tool_calls: [draft(words)], cost_usd: 0.02 },
   { tool_calls: [edit("s01", "Źle! Policz jeszcze raz.")], cost_usd: 0.02 },
   { tool_calls: [check], cost_usd: 0.02 },
-  { text: "Lekcja ma jedno zadanie do poprawy.", cost_usd: 0.01 },
-  ...followUps(words),
+  ...Array.from({ length: FOLLOW_UPS }, () => ({
+    text: "Lekcja ma jedno zadanie do poprawy.",
+    cost_usd: 0.01,
+  })),
 ];
 
 const NORMAL: PacePlay = { script: happy, think_ms: THINK_MS };
@@ -153,7 +159,7 @@ const DRAFTING: PacePlay = {
 const LONG: PacePlay = { script: long, think_ms: THINK_MS };
 
 /** Each pace's play; `null` is the page with no `?pace=`. */
-export const PLAYS: Readonly<Record<Pace | "normal", PacePlay>> = {
+const PLAYS: Readonly<Record<Pace | "normal", PacePlay>> = {
   normal: NORMAL,
   slow: SLOW,
   stall: STALL,
@@ -176,8 +182,8 @@ export const PLAYS: Readonly<Record<Pace | "normal", PacePlay>> = {
   },
   s12: { script: recovered, think_ms: THINK_MS, refuseOnce: "lesson_edit" },
   s13: FAIL,
-  // s14 is s03 stopped by the parent's Esc.
-  s14: DRAFTING,
+  // s14: the lesson drafted, its check running, then stopped by the parent's Esc.
+  s14: { script: planned, think_ms: THINK_MS, hold: { verb: "lesson_check", call: 1 } },
   s15: NORMAL,
   s16: { script: needsFixing, think_ms: THINK_MS },
   s17: SLOW,
