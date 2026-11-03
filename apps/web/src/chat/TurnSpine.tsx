@@ -159,9 +159,11 @@ function Line({
   if (line.kind === "steer")
     return (
       <li className="flex flex-col gap-0.5" data-line="steer">
-        <span className="text-jw-page-micro font-medium text-jw-placeholder">
-          {copy(language, "chat_steer_label", {}, "adult")}
-        </span>
+        {line.afterTurn === true ? null : (
+          <span className="text-jw-page-micro font-medium text-jw-placeholder">
+            {copy(language, "chat_steer_label", {}, "adult")}
+          </span>
+        )}
         <span className="text-jw-page-small text-jw-ink">
           {line.quote === undefined ? say(language, line) : `„${line.quote}”`}
         </span>
