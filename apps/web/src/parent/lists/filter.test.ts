@@ -1,45 +1,30 @@
-import { LearnerId } from "@jadwigo/contracts";
+import type { Learner } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import { folded, shows } from "./filter.ts";
+import { childSlugs, inPreset } from "./filter.ts";
 
-const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
-const TYMEK = LearnerId.parse("lrn_7qre3atahx8cpak6xbjtz73var");
+const learner = (id: string, first_name: string) => ({ id, first_name }) as unknown as Learner;
 
-const ola = { learner: OLA, words: ["Odejmowanie przez 10", "Ola"] };
-const nobody = { learner: null, words: ["Żółw liczy kroki"] };
+describe("the lists' facets", () => {
+  // Wednesday 2026-11-04, noon local time.
+  const now = new Date(2026, 10, 4, 12);
 
-describe("the tables' filter", () => {
-  it("shows every row under Wszystkie", () => {
-    expect(shows(ola, "all", "")).toBe(true);
-    expect(shows(nobody, "all", "")).toBe(true);
+  it("holds today, this week from Monday and this month", () => {
+    const at = (d: number, h = 9) => new Date(2026, 10, d, h).toISOString();
+    expect(inPreset(at(4), "dzis", now)).toBe(true);
+    expect(inPreset(at(3, 23), "dzis", now)).toBe(false);
+    expect(inPreset(at(2), "tydzien", now)).toBe(true);
+    expect(inPreset(new Date(2026, 10, 1, 23).toISOString(), "tydzien", now)).toBe(false);
+    expect(inPreset(at(1), "miesiac", now)).toBe(true);
+    expect(inPreset(new Date(2026, 9, 31, 23).toISOString(), "miesiac", now)).toBe(false);
   });
 
-  it("shows only that child's rows under a child", () => {
-    expect(shows(ola, OLA, "")).toBe(true);
-    expect(shows(ola, TYMEK, "")).toBe(false);
-    expect(shows(nobody, OLA, "")).toBe(false);
-  });
-
-  it("shows only the rows with no child under Bez dziecka", () => {
-    expect(shows(nobody, "none", "")).toBe(true);
-    expect(shows(ola, "none", "")).toBe(false);
-  });
-});
-
-describe("the tables' search", () => {
-  it("finds a word in any of the row's words, without case or accents", () => {
-    expect(shows(ola, "all", "odejm")).toBe(true);
-    expect(shows(ola, "all", "OLA")).toBe(true);
-    expect(shows(nobody, "all", "zolw")).toBe(true);
-    expect(shows(nobody, "all", "  kroki ")).toBe(true);
-    expect(shows(ola, "all", "mnożenie")).toBe(false);
-  });
-
-  it("narrows within the filter's pick", () => {
-    expect(shows(nobody, OLA, "zolw")).toBe(false);
-  });
-
-  it("folds Polish letters to plain ones", () => {
-    expect(folded("Łódź ŻÓŁW")).toBe("lodz zolw");
+  it("names each child by the folded first name, or the id when names clash", () => {
+    const slugs = childSlugs([
+      learner("lrn_a", "Żółw Ola"),
+      learner("lrn_b", "Kuba"),
+      learner("lrn_c", "kuba"),
+      learner("lrn_d", "Bez"),
+    ]);
+    expect([...slugs.values()]).toEqual(["zolw-ola", "lrn_b", "lrn_c", "lrn_d"]);
   });
 });

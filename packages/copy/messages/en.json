@@ -1058,6 +1058,91 @@
   "parent_col_result": "Result",
   "parent_list_no_match": "Nothing here matches.",
   "parent_lesson_untitled": "Untitled lesson",
+  "parent_list_for": "For",
+  "parent_list_date": "Date",
+  "parent_list_today": "Today",
+  "parent_list_week": "This week",
+  "parent_list_month": "This month",
+  "parent_list_last": "Last",
+  "parent_list_when": "When",
+  "parent_list_clear_choice": "Clear choice",
+  "parent_list_chosen": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "{n} chosen",
+        "n_noun=other": "{n} chosen"
+      }
+    }
+  ],
+  "parent_list_clear": "Clear",
+  "parent_list_filters": "Filters",
+  "parent_list_filters_count": "Filters ({n})",
+  "parent_list_close": "Close",
+  "parent_list_show": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "Show {n} lesson",
+        "n_noun=other": "Show {n} lessons"
+      }
+    }
+  ],
+  "parent_list_view": "View",
+  "parent_list_columns": "Columns",
+  "parent_list_density": "Density",
+  "parent_list_comfortable": "Comfortable",
+  "parent_list_compact": "Compact",
+  "parent_list_sort": "Sort",
+  "parent_list_sort_newest": "Last, newest first",
+  "parent_list_sort_oldest": "Last, oldest first",
+  "parent_list_sort_title": "Lesson, A–Z",
+  "parent_list_sort_best": "Result, best first",
+  "parent_list_sort_when_newest": "When, newest first",
+  "parent_list_sort_when_oldest": "When, oldest first",
+  "parent_list_select_all": "Select all",
+  "parent_list_select_row": "Select: {title}",
+  "parent_list_selected": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "{n} selected",
+        "n_noun=other": "{n} selected"
+      }
+    }
+  ],
+  "parent_list_unselect": "Clear selection",
+  "parent_list_more": "More: {title}",
+  "parent_list_open": "Open",
+  "parent_list_range": "{from}–{to} of {total}",
+  "parent_list_page": "Page {page} of {pages}",
+  "parent_list_pages": "Pages",
+  "parent_list_previous": "Previous page",
+  "parent_list_next": "Next page",
+  "parent_list_load_more": "Show more",
+  "parent_list_first_title": "Your lessons will be here",
+  "parent_list_first_line": "Write what your child is learning, or add a photo of the homework.",
+  "parent_list_history_first_title": "History will be here",
+  "parent_list_filtered_title": "Nothing matches the filters",
+  "parent_list_clear_filters": "Clear filters",
+  "parent_list_failed_lessons": "Couldn't load the lessons",
+  "parent_list_failed_history": "Couldn't load the history",
+  "parent_list_failed_line": "Check your connection. Your lessons are safe.",
+  "parent_list_retry": "Try again",
+  "parent_list_score": "{right} of {total}",
+  "parent_list_archive_title": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "Archive this lesson?",
+        "n_noun=other": "Archive {n} lessons?"
+      }
+    }
+  ],
   "parent_expand_all": "Expand all",
   "parent_collapse_all": "Collapse all",
   "parent_step_coming": "Another step on its way",
