@@ -24,7 +24,8 @@ test("1440: one scripted turn, the message and the lesson card in the chat alone
   await expect(page.locator("[data-chat-band] [data-status]")).toHaveText("Gotowe", {
     timeout: 20_000,
   });
-  await expect(page.locator("[data-chat-band] [data-live]")).toHaveText("Jadwigo AI: gotowe");
+  // The one live region speaks the live words only (handoff §3, dl-uukj.47.71.10).
+  await expect(page.locator("[data-chat-band] [data-live]")).toHaveText("Gotowe");
   await expect(chat.getByText("Lekcja jest gotowa.", { exact: true })).toBeVisible();
   await expect(cardOf(page)).toBeVisible();
   // The chat is the only view (dl-1eieq.1): no column, no Pokaż lekcję, no tabs.

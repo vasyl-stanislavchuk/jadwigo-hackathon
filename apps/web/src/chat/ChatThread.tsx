@@ -59,18 +59,8 @@ const eventsOf = (turn: Turn): readonly RunEvent[] => turn.events ?? [];
  * The spine of one turn. The foot follows the page's own phase when the fold gives none: a stall
  * is only known to the page's clock, and a turn that ended badly always says so in its card (D7).
  */
-function spineFor(
-  turn: Turn,
-  phase: RunPhase | null,
-  now: number,
-  priorRevision: number | undefined,
-): Spine {
-  const spine = spineOf(
-    eventsOf(turn),
-    phase,
-    now,
-    priorRevision === undefined ? {} : { priorRevision },
-  );
+function spineFor(turn: Turn, phase: RunPhase | null, now: number): Spine {
+  const spine = spineOf(eventsOf(turn), phase, now);
   if (spine.foot !== undefined) return spine;
   if (spine.phase === "stalled") return { ...spine, foot: { kind: "stalled" } };
   if (spine.phase === "failed") return { ...spine, foot: { kind: "failed" } };
@@ -148,6 +138,42 @@ const living = (card: NonNullable<ReturnType<typeof cardOf>>, newest: boolean): 
 /** The newest finished turn that wrote the lesson: the one whose card carries the actions. */
 function newestCard(turns: readonly Turn[]): Turn | undefined {
   return turns.findLast((t) => !isOpen(t) && t.view.lesson !== null && wroteLesson(t.view));
+}
+
+/** How long the opened thread holds the bottom while its rows settle (S19). */
+const HOLD_MS = 2_000;
+
+/**
+ * Keeps `box` at its bottom while its rows grow (a ResizeObserver on each row, the rows added, and
+ * the web fonts once loaded), until `HOLD_MS` pass or the parent scrolls away (`atBottom` turns
+ * false). Answers the function that stops it.
+ */
+function holdBottom(box: HTMLElement, atBottom: () => boolean): () => void {
+  let on = true;
+  const pin = () => {
+    if (on && atBottom()) box.scrollTop = box.scrollHeight;
+  };
+  const resized = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(pin);
+  for (const row of box.children) resized?.observe(row);
+  const added =
+    typeof MutationObserver === "undefined"
+      ? null
+      : new MutationObserver((records) => {
+          for (const record of records)
+            for (const node of record.addedNodes)
+              if (node instanceof Element) resized?.observe(node);
+          pin();
+        });
+  added?.observe(box, { childList: true });
+  void document.fonts?.ready.then(pin);
+  const stop = () => {
+    on = false;
+    resized?.disconnect();
+    added?.disconnect();
+    clearTimeout(timer);
+  };
+  const timer = setTimeout(stop, HOLD_MS);
+  return stop;
 }
 
 /** The calendar day of an instant, by the page's clock: "2026-11-03". */
@@ -321,12 +347,20 @@ function shownWidgets(turn: Turn, language: Language, context: LineContext) {
  * answer, an error's own message (it can quote input), nor the plan's words (the model's prose may
  * name the child). Only these fields are read, so nothing new in the log can leak in.
  */
+/**
+ * An error's type as support reads it: a code such as `bank-busy` or `StepFailed`. The contract
+ * types it as any string, so one that is not code-shaped (a sentence a verb put there) is `other`.
+ */
+const CODE = /^[A-Za-z][\w-]{0,39}$/;
+const codeOf = (type: string): string => (CODE.test(type) ? type : "other");
+
 function supportDetails(turn: Turn): string {
   const events = eventsOf(turn);
   const errors = events.flatMap((e) => {
-    if (e.type === "error") return [`${e.payload.error.type} (attempt ${e.payload.attempt})`];
+    if (e.type === "error")
+      return [`${codeOf(e.payload.error.type)} (attempt ${e.payload.attempt})`];
     if (e.type === "tool_result" && e.payload.error !== null)
-      return [`${e.payload.verb} ${e.payload.error.type}`];
+      return [`${e.payload.verb} ${codeOf(e.payload.error.type)}`];
     return [];
   });
   const plan = events.findLast((e) => e.type === "plan");
@@ -409,8 +443,22 @@ export function ChatThread({
     const box = list.current;
     box?.scrollTo?.({ top: box.scrollHeight, behavior });
   };
+  // S19: the thread opens at the bottom. The first scroll is instant (a smooth one aims at the height
+  // it started from, and its own scroll events read as the parent leaving the bottom), and the
+  // bottom is held while the rows settle: the web font swapping in, a card's image, a late row.
+  const shown = useRef(false);
+  const hold = useRef<(() => void) | null>(null);
+  useEffect(() => () => hold.current?.(), []);
   useEffect(() => {
-    if ((rowCount > 0 || pending !== null) && atBottom.current) toBottom(scrollBehavior());
+    const box = list.current;
+    if (box === null || !(rowCount > 0 || pending !== null) || !atBottom.current) return;
+    if (shown.current) {
+      toBottom(scrollBehavior());
+      return;
+    }
+    shown.current = true;
+    toBottom("auto");
+    hold.current = holdBottom(box, () => atBottom.current);
   }, [follow]);
   const multiDay = new Set(turns.map((t) => dayOf(Date.parse(t.run.created_at)))).size > 1;
   const newest = newestCard(turns);
@@ -421,10 +469,7 @@ export function ChatThread({
   const turnEntries = (turn: Turn, index: number): ReactElement[] => {
     const last = index === turns.length - 1;
     const id = turn.run.id;
-    // The lesson's version before this turn: a stopped turn's foot names the one that stands (S15).
-    const prior =
-      Math.max(0, ...turns.slice(0, index).map((t) => t.view.lesson?.revision ?? 0)) || undefined;
-    const spine = spineFor(turn, last ? (phase ?? null) : null, now, prior);
+    const spine = spineFor(turn, last ? (phase ?? null) : null, now);
     const reply = replyOf(turn, spine);
     const entries: ReactElement[] = [];
     const at = Date.parse(turn.run.created_at);
@@ -452,6 +497,7 @@ export function ChatThread({
     const actions: SpineActions = {
       onRetry: last && spine.foot?.kind === "stalled" ? onRetry : retryOf(turn, resend),
       onCopyDetails: copyDetails(turn, language),
+      noLesson: !turns.slice(0, index + 1).some((t) => t.view.lesson !== null),
     };
     entries.push(
       <li

@@ -1,0 +1,16 @@
+sequenceDiagram
+  participant AI as Parent's AI app
+  participant API as Jadwigo API, /api/mcp
+  participant AUTH as Supabase Auth, OAuth 2.1
+  participant P as Parent
+  AI->>API: POST /api/mcp, no token
+  API-->>AI: 401, WWW-Authenticate names the metadata
+  AI->>API: GET /.well-known/oauth-protected-resource/api/mcp
+  API-->>AI: resource, authorization_servers
+  AI->>AUTH: authorization request
+  AUTH->>P: sign in, then /oauth/consent
+  P-->>AUTH: yes
+  AUTH-->>AI: access token, at most 1 hour
+  AI->>API: POST /api/mcp, tools/call, Bearer token
+  API->>API: authorize the member, 1 unit per call
+  API-->>AI: the tool's result, only this pod's data
