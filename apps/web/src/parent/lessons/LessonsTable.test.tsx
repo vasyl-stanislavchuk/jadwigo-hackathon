@@ -134,10 +134,10 @@ describe("LessonsTable", () => {
       .map((box) => box.getAttribute("aria-label") ?? box.textContent);
     expect(names.at(-1)).toContain("Bez dziecka");
     fireEvent.click(within(group).getByRole("checkbox", { name: /Ola/ }));
-    expect(params()).toBe("?dziecko=ola");
+    expect(params()).toBe(`?dziecko=${OLA.id}`);
     expect(rows()).toHaveLength(0);
     fireEvent.click(within(group).getByRole("checkbox", { name: /Bez dziecka/ }));
-    expect(params()).toBe("?dziecko=ola%2Cbez");
+    expect(params()).toBe(`?dziecko=${OLA.id}%2Cbez`);
     expect(rows()).toHaveLength(1);
   });
 
@@ -165,7 +165,7 @@ describe("LessonsTable", () => {
   });
 
   it("names the filters when nothing matches, and clears them", async () => {
-    window.history.replaceState(null, "", "/parent/lessons?data=dzis&dziecko=ola");
+    window.history.replaceState(null, "", `/parent/lessons?data=dzis&dziecko=${OLA.id}`);
     render(
       <Wired list={listOf([conversation(1, "Odejmowanie przez 10")])} learners={[OLA, TYMEK]} />,
     );

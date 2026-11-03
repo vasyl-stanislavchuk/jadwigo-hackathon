@@ -22,29 +22,11 @@ export function inPreset(at: string, preset: string, now: Date): boolean {
   return new Date(at) >= start;
 }
 
-/** Lower case, accents off, anything else a dash: "Żółw Ola" is "zolw-ola". */
-function folded(text: string): string {
-  return text
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .replace(/[łŁ]/g, "l")
-    .toLocaleLowerCase("pl")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
 /**
- * Each child's value in `?dziecko=`: the first name folded, so a link reads "dziecko=marta,ola", or
- * the id when two names fold alike, or a name folds to nothing or to "bez".
+ * Each child's value in `?dziecko=`: the learner id, never a name (the #765 review, dl-uukj.47.67.31).
+ * A URL lands in the browser's history, a bookmark and analytics' page views, and a child's name must
+ * reach none of them (AGENTS.md, house rules); an id also stays the same through a rename.
  */
 export function childSlugs(learners: readonly Learner[]): Map<LearnerId, string> {
-  const names = learners.map((learner) => folded(learner.first_name));
-  return new Map(
-    learners.map((learner, i) => {
-      const name = names[i] ?? "";
-      const unique =
-        name !== "" && name !== NO_CHILD && names.indexOf(name) === names.lastIndexOf(name);
-      return [learner.id, unique ? name : learner.id];
-    }),
-  );
+  return new Map(learners.map((learner) => [learner.id, learner.id]));
 }
