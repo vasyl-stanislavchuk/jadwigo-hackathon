@@ -337,8 +337,17 @@ export function spineOf(
     }
   }
 
-  // Said after the last call: it stays in the stage worked on last, else the first.
-  place(current ?? 0);
+  const stillRunning = running();
+  const all = [...calls.values()];
+  const kind = phase === null ? phaseFromLog(log, all, now) : PHASE[phase.kind];
+  const ended = ENDED.has(kind);
+  // The open stage: between calls, the one work goes on in (`openStage`), the stage the model's
+  // sentence leads into; once the turn ended, the stage worked on last.
+  const here =
+    (!ended && !stillRunning ? openStage() : current) ?? (entries.length > 0 ? 0 : LOOSE);
+  // Said after the last call (a steer, a retry, a sentence): it is in the open stage, the one the
+  // parent sees under way, never a folded stage before it.
+  place(here < 0 ? 0 : here);
   // One quiet retry line per stage (S5), however many deliveries timed out.
   const firstRetry = new Map<number, Placed>();
   for (const p of placed)
@@ -354,11 +363,6 @@ export function spineOf(
     if (name !== undefined)
       p.line = { kind: "retry", copyKey: "chat_line_retry", values: { stage: name } };
   }
-  const stillRunning = running();
-
-  const all = [...calls.values()];
-  const kind = phase === null ? phaseFromLog(log, all, now) : PHASE[phase.kind];
-  const ended = ENDED.has(kind);
 
   // Done lines: one per verb per stage visit, merged (S2), placed where the last one landed, so a
   // check that passed after a refusal reads after it (dl-uukj.47.71.45).
@@ -423,10 +427,6 @@ export function spineOf(
     });
 
   // The open stage's tail: the now line, the waiting line, the slow line.
-  // Between calls the open stage is the one work goes on in (`openStage`): the model's sentence leads
-  // into it. Once the turn ended, the stage worked on last.
-  const here =
-    (!ended && !stillRunning ? openStage() : current) ?? (entries.length > 0 ? 0 : LOOSE);
   const tail: SpineLine[] = [];
   if (!ended && kind !== "awaiting_input") {
     const now_ = nowLine(agent, all);
@@ -511,7 +511,7 @@ function settled(entries: readonly { status: string }[]): string[] | null {
  * The seqs of the plan events that are the engine's end-of-turn settle (dl-uukj.47.71.37). The
  * settle says nothing about the stages, so the fold reads the plan before it. A plan event is one
  * only when all 3 hold: it comes right before the turn's end status (`endTurn` writes them
- * together); it is exactly `settlePlan` of the plan before it; and it is not the move a verb's
+ * together); it is exactly `settlePlan` of the plan before it; and it is not the move a staged verb's
  * result ends its stage with, which comes right after that result or its revision (`runTool`). The
  * last keeps a check that failed and was then stopped (done, done, failed, no settle written) failed:
  * by content alone it is the settle of (done, done, in_progress).
@@ -523,6 +523,11 @@ function settled(entries: readonly { status: string }[]): string[] | null {
  */
 function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
   const found = new Set<number>();
+  const verbOf = new Map(
+    log.flatMap((e) =>
+      e.type === "tool_call" ? [[e.payload.call_id, e.payload.verb] as const] : [],
+    ),
+  );
   let before: readonly { status: string }[] | null = null;
   log.forEach((e, i) => {
     if (e.type !== "plan") return;
@@ -530,7 +535,15 @@ function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
     const prior = log[i - 1];
     const atEnd =
       next?.type === "status" && ["completed", "failed", "cancelled"].includes(next.payload.status);
-    const afterResult = prior?.type === "tool_result" || prior?.type === "lesson_revision";
+    // The end move follows a result (or its revision) of a verb the plan stages; an unstaged verb
+    // (a read, an edit) writes none, so a settle may come right after its result.
+    const verb =
+      prior?.type === "tool_result"
+        ? prior.payload.verb
+        : prior?.type === "lesson_revision"
+          ? verbOf.get(prior.payload.call_id)
+          : undefined;
+    const afterResult = verb !== undefined && PLAN_STAGE_OF[verb] !== undefined;
     const expected = before === null ? null : settled(before);
     const same =
       expected !== null &&
@@ -621,7 +634,9 @@ function stageStatus(
     case "cancelled":
       if (running || plan === "in_progress") return "stopped";
       if (plan === "failed") return "failed";
-      return plan === "done" || visited ? "done" : "todo";
+      if (plan === "done") return "done";
+      // Work had entered it (a read before its verb ran): stopped there.
+      return visited ? "stopped" : "todo";
     case "failed":
       if (plan === "done" && !running) return "done";
       return visited || plan === "in_progress" ? "failed" : "todo";

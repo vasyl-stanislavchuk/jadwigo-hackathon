@@ -609,6 +609,32 @@ describe("the engine's own sequences", () => {
     expect(spine.reply).toBe("Lekcja jest gotowa.");
   });
 
+  it("puts a steer said between stages, before any call, in the open stage (s18, the steward's input)", () => {
+    const events = append(start(), ...searchedAndDrafted.slice(0, 5), {
+      type: "steer",
+      payload: { text: "Dodaj jeszcze 2 zadania.", source: "chat" },
+    });
+    const spine = spineOf(events, null, lastAt(events));
+    expect(spine.stages.map((s) => s.status)).toEqual(["done", "active", "todo"]);
+    expect(spine.stages[0]?.lines.some((l) => l.kind === "steer")).toBe(false);
+    expect(spine.stages[1]?.lines.map((l) => l.kind)).toContain("steer");
+  });
+
+  it("reads a settle right after an unstaged verb's result as the settle: no failed stage on a stop (the steward's input)", () => {
+    // lesson_show moves no stage, so runTool writes no end move after it, and the settle follows it.
+    const events = append(
+      start(),
+      ...searchedAndDrafted,
+      say("Zajrzę do lekcji."),
+      call("call_9", "lesson_show", {}),
+      result("call_9", "lesson_show", { steps: [] }),
+      ...ending("cancelled", "done", "done", "failed"),
+    );
+    const spine = spineOf(events, null, 0);
+    expect(spine.stages.map((s) => s.status)).toEqual(["done", "done", "stopped"]);
+    expect(spine.stages.some((s) => s.summary?.copyKey === "chat_stage_failed_sum")).toBe(false);
+  });
+
   it("keeps the plan's own end move before a stop: a check that finished reads done (the steward's input)", () => {
     // A stop asked for while the check ran: runTool writes the result and the plan's end move, the
     // next step finds the cancel, and endTurn writes no settle, since every stage is done.
