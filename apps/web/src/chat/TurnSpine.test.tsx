@@ -227,20 +227,20 @@ describe("the spine, one state at a time", () => {
     clean();
   });
 
-  it("stopped (s14): the square, 'zatrzymane · {t}', and the foot names the version that stands", () => {
+  it("stopped (s14): the square, 'zatrzymane · {t}', and the foot says the lesson is unchanged, with no version", () => {
     draw(
       spine({
         phase: "cancelled",
         endedAt: T0 + 31_000,
         stages: [SEARCH, { ...DRAFT("stopped"), summary: words("chat_stage_stopped_sum") }, CHECK],
-        foot: { kind: "stopped", versionStands: 2, changed: false },
+        foot: { kind: "stopped", changed: false },
       }),
       T0 + 90_000,
     );
     expect(mark()).toBe("stopped");
     expect(meta()).toBe("zatrzymane · 31 s");
     expect(document.querySelector("[data-foot='stopped']")?.textContent).toBe(
-      "Zatrzymane. Lekcja została w wersji 2, nic w niej nie zmieniłam.",
+      "Zatrzymane. Lekcja została bez zmian.",
     );
     clean();
   });
