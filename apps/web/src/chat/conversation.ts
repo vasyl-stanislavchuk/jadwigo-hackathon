@@ -284,6 +284,11 @@ export interface Turn {
    * patch steer (dl-z5ja.111); null before a revision. Absent where a test builds the turn by hand.
    */
   writer?: string | null;
+  /**
+   * The run's log in seq order, for what the fold does not keep: the spine (`spineOf`) and
+   * Kopiuj szczegóły dla pomocy. Absent where a test builds the turn by hand; read it as [].
+   */
+  events?: readonly RunEvent[];
 }
 
 /** The `call_id` of the highest `lesson_revision` in a run's log, or null before one. */
@@ -296,7 +301,12 @@ function writerOf(events: readonly RunEvent[]): string | null {
 }
 
 export const turnsOf = (state: ConversationState): Turn[] =>
-  state.runs.map((r) => ({ run: r.run, view: foldRun(r.events), writer: writerOf(r.events) }));
+  state.runs.map((r) => ({
+    run: r.run,
+    view: foldRun(r.events),
+    writer: writerOf(r.events),
+    events: r.events,
+  }));
 
 /** A turn is open from its run's creation until `turn_complete`, or its row says it ended. */
 export function isOpen(turn: Turn): boolean {
