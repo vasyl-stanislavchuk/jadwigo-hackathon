@@ -854,6 +854,21 @@ describe("runStep and drain", () => {
     });
   });
 
+  it("says how long a fresh step sat ready, and no wait for a redelivery (dl-hin8.52)", async () => {
+    const t = await setup([{ text: "Done." }]);
+    await t.say("Go.");
+    t.tick(7_000);
+    const waits: (number | null)[] = [];
+    const failing: EngineDeps = {
+      ...t.deps,
+      muse: { respond: () => Promise.reject(new Error("made up")) },
+    };
+    await drain(failing, { onRead: (_run, waited) => waits.push(waited) });
+    t.tick(STEP_VISIBILITY_S * 1000);
+    await drain(t.deps, { onRead: (_run, waited) => waits.push(waited) });
+    expect(waits).toEqual([7, null]);
+  });
+
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
     // lesson_check names the run's draft, known once the parent has spoken.
     const check: Record<string, unknown> = { help: {}, names: [] };
@@ -1873,6 +1888,74 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     ],
   });
   const real = () => createVerbs({ bank: fixtureBank() });
+
+  describe("a lesson nobody checked (dl-uukj.47.71.48)", () => {
+    const passes = (events: readonly RunEvent[]) =>
+      events.flatMap((e) =>
+        e.type === "tool_result" && e.payload.verb === "lesson_check"
+          ? [(e.payload.output as { ok?: unknown }).ok]
+          : [],
+      );
+
+    it("is checked when the model stops short, with no model call", async () => {
+      const t = await setup(
+        [{ calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] }, { text: "Gotowe." }],
+        real(),
+      );
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      const events = await t.log(run);
+      expect(t.muse.calls).toHaveLength(2);
+      expect(passes(events)).toEqual([true]);
+      expect((await t.run(run)).status).toBe("completed");
+      const order = events.map((e) => e.type);
+      expect(order.lastIndexOf("tool_result")).toBeLessThan(order.lastIndexOf("turn_complete"));
+    });
+
+    it("is checked when the model's own check was refused", async () => {
+      const t = await setup(
+        [
+          { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
+          { calls: [{ verb: "lesson_check", input: { draft_id: "not-this-run", names: [] } }] },
+          // The answer check refuses a claim on a refused check, and asks once more.
+          { text: "Gotowe." },
+          { text: "Gotowe." },
+        ],
+        real(),
+      );
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      const results = (await t.log(run)).flatMap((e) =>
+        e.type === "tool_result" && e.payload.verb === "lesson_check"
+          ? [e.payload.error?.type ?? "ok"]
+          : [],
+      );
+      expect(results).toEqual(["unknown-draft", "ok"]);
+    });
+
+    it("is not checked twice when the model already checked it", async () => {
+      const t = await setup([drafting(), { text: "Gotowe." }], real());
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      expect(passes(await t.log(run))).toHaveLength(1);
+    });
+
+    it("is checked after a parent edits it on a finished turn", async () => {
+      const t = await setup([drafting(), { text: "Gotowe." }], real());
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      const before = (await t.log(run)).filter((e) => e.type === "lesson_revision");
+      const last = before.at(-1);
+      if (last?.type !== "lesson_revision") throw new Error("no revision");
+      await t.send(steer({ title: "Moja lekcja" }, last.payload.revision));
+      await drain(t.deps);
+
+      const events = await t.log(run);
+      expect(t.muse.calls).toHaveLength(2);
+      expect(events.some((e) => e.type === "patch_resolved" && e.payload.applied)).toBe(true);
+      expect(passes(events)).toEqual([true, true]);
+    });
+  });
 
   it("is resolved no_lesson with no model call, and told when a call is made", async () => {
     let t: Awaited<ReturnType<typeof setup>>;

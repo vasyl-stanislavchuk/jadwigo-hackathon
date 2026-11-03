@@ -1,6 +1,24 @@
 import type { RunEvent } from "@jadwigo/contracts/run";
 import { review } from "../verbs/review.ts";
 
+/**
+ * Whether the latest revision of this log has no check of its own: never checked, or changed after
+ * its last check. A check that ran and failed counts: its findings stand. A refused one found
+ * nothing, so it does not.
+ */
+export function uncheckedRevision(log: readonly RunEvent[]): boolean {
+  const revision = log.filter((event) => event.type === "lesson_revision").at(-1);
+  if (revision === undefined || !("script" in revision.payload.lesson_file)) return false;
+  const checked = log
+    .filter((event) => event.type === "tool_result")
+    .filter((event) => event.payload.verb === "lesson_check" && event.payload.error === null)
+    .at(-1);
+  return (
+    checked === undefined ||
+    (checked.seq < revision.seq && checked.payload.call_id !== revision.payload.call_id)
+  );
+}
+
 /** The latest revision needs its own successful check; old checks never approve new edits. */
 export function lessonValidationIssue(
   log: readonly RunEvent[],

@@ -410,10 +410,11 @@ function FixFoot({
   questions: number;
   onFix: (() => void) | undefined;
 }): ReactElement {
-  // Questions but nothing listed: the lesson changed after its last check (a later edit, a
-  // parent's own change) or was never checked, so no question is named as wrong (#802's case).
+  // Questions but nothing listed: no check stands on this version (a turn that was stopped, a check
+  // that could not run), so no question is named as wrong. Nothing is on its way either: a turn
+  // that ends checks its lesson by itself, so never ask the parent to wait (dl-uukj.47.71.48).
   const reason =
-    findings === 0 && questions > 0 ? say("parent_give_refused_changed") : say("card_fix_reason");
+    findings === 0 && questions > 0 ? say("card_unchecked_reason") : say("card_fix_reason");
   return (
     <div
       className="flex flex-wrap items-center gap-2 border-t-jw border-jw-line bg-jw-side px-4 py-2.5"

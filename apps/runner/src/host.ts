@@ -66,6 +66,8 @@ export interface HostReport {
   /** Steps that threw in this invoke: they stay queued, and come back after their visibility. */
   failed: readonly FailedStep[];
   dead_letters: number | null;
+  /** The longest a fresh step sat ready before this invoke read it, in seconds; null with none. */
+  max_wait_s: number | null;
   /** The runs this invoke read a step of, once each. */
   runs: readonly RunId[];
   /** The calls verbs refused, counted by run, verb and type. The run went on: not a failure. */
@@ -105,6 +107,7 @@ export function createHost(
     }
     const failed: FailedStep[] = [];
     const runs = new Set<RunId>();
+    let max_wait_s: number | null = null;
     const refused = new Map<string, RefusalCount>();
     const engine: EngineDeps = {
       ...host.engine,
@@ -122,7 +125,10 @@ export function createHost(
         failed.push(step);
         host.warn(failure(error, step));
       },
-      onRead: (run_id) => runs.add(run_id),
+      onRead: (run_id, waited_s) => {
+        runs.add(run_id);
+        if (waited_s !== null) max_wait_s = Math.max(max_wait_s ?? 0, waited_s);
+      },
     });
     const stuck = host.stuck ? await host.stuck() : null;
     if (stuck) reportStuck(stuck, host.warn);
@@ -140,6 +146,7 @@ export function createHost(
       stuck,
       failed,
       dead_letters,
+      max_wait_s,
       runs: [...runs],
       refused: [...refused.values()],
     };
