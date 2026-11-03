@@ -1,13 +1,106 @@
 ---
 title: The story
-description: "How Jadwigo came to be what it is: the dated decisions behind it, from 2026-10-24 to the demo."
+description: How Jadwigo was decided between 2026-10-24 and 2026-11-04, day by day, each step cited by its decision slug.
 ---
 
-This page is for a judge who wants the story behind the product: the decisions that shaped it,
-taken between 2026-10-24 and the 4 November demo, each cited by its slug so it can be checked.
-This page is being written for the 4 November demo.
+import Diagram from "../../components/Diagram.astro";
+
+This page is for a judge who wants to know why Jadwigo looks the way it does. Every product call
+was recorded as a dated decision before the code was written. This is that record, in order. Each
+decision is cited by slug in the table at the end. Names of family members never appear.
+
+<Diagram name="story-timeline" />
+
+## 2026-10-24: one repo, one model family
+
+The 6 founding decisions of this day predate the `jadwigo-hackathon` record, so they are told
+here without slugs. Every later decision is cited in the table at the end.
+
+Jadwigo got 1 new monorepo for the hackathon build.
+The service is TypeScript on Lambda.
+Every AI workflow runs on Meta's API.
+The question bank is never committed to the repo,
+and it embeds with OpenAI `text-embedding-3-large`.
+Agents ship fast: squash-merge after CI and a light automatic review.
+
+## 2026-10-26 to 10-27: 1 board, 6 workstreams
+
+The build runs as 1 meta project and 6 workstream projects on 1 shared board.
+Each workstream builds where its code lives.
+Voice stayed out of scope until the core worked.
+A parent may set many goals for 1 child, and 1 sitting may mix subjects.
+
+## 2026-10-29 to 10-31: lessons, curriculum, the dream
+
+Parents never see Khan's level names, and Khan questions keep their credits.
+The first `lesson_draft` read item bodies from the local bank and played on jadwigo-dev.
+The curriculum is shared across pods, and skills live in each pod.
+The dream, a report over a learner's results, runs on demand: code computes the digest and AI
+writes only the narrative.
+A pod's edited copy of a shared skill is never offered back to the shared catalogue.
+
+## 2026-11-01: the chat, and learner data by design
+
+The parent's chat lives in a side panel and a full screen.
+A learner's data, names included, may reach any Meta model for the parent's own request about
+their own child.
+Lessons may be English, with the language taken from the goal.
+A break after a merge is fixed forward at once, never reverted.
+
+## 2026-11-02: chat-first, and the parent's own AI
+
+The parent app became chat-first: account in the top bar, lesson on demand, no footer.
+A play link with a learner in it starts as that child with no sign-in.
+A parent's own AI app connects by OAuth 2.1, with Supabase Auth as the authorization server.
+Through it, the parent's AI writes the lesson and Jadwigo's verbs draft, check, and keep it.
+The parent's yes in their own AI chat is the confirmation for `lesson_publish`.
+A lesson holds at most 20 questions, however it was made.
+PostHog runs after consent, with session replay and inputs masked.
+
+## 2026-11-03: the demo cut
+
+Until the 4 November demo the goal is the parent happy path: photo, lesson, share, the child
+plays. Learner knowledge waits as product work.
+Printing joined the demo scope as a server-side PDF,
+rendered natively from paper-first HTML and CSS with WeasyPrint.
+The lesson opens in a preview modal from the chat card, not in a column.
+These docs show the vision beside what is live, each part labelled.
+
+## 2026-11-04: demo day
+
+No decision is recorded for demo day yet. The site you are reading is the record so far.
+
+## Every decision cited
+
+| Date | Decision |
+| --- | --- |
+| 2026-10-26 | `jadwigo-hackathon/decisions/2026-10-26-jadwigo-s-hackathon-runs-as-one-meta-project-and-six-workstream` |
+| 2026-10-26 | `jadwigo-hackathon/decisions/2026-10-26-each-workstream-builds-where-its-code-lives-four-in-the-jadwigo` |
+| 2026-10-26 | `jadwigo-hackathon/decisions/2026-10-26-voice-is-out-of-scope-until-the-core-works-well-children-answer` |
+| 2026-10-27 | `jadwigo-hackathon/decisions/2026-10-27-a-parent-sets-many-goals-for-one-child-and-one-sitting-may-mix-s` |
+| 2026-10-29 | `jadwigo-hackathon/decisions/2026-10-29-parents-never-see-khan-s-level-names-khan-questions-keep-their-c` |
+| 2026-10-29 | `jadwigo-hackathon/decisions/2026-10-29-the-first-lesson-draft-reads-item-bodies-from-the-local-bank-che` |
+| 2026-10-29 | `jadwigo-hackathon/decisions/2026-10-29-the-curriculum-is-shared-across-pods-and-tags-every-lesson-skill` |
+| 2026-10-30 | `jadwigo-hackathon/decisions/2026-10-30-the-dream-runs-on-demand-now-a-make-target-and-a-post-route-work` |
+| 2026-10-31 | `jadwigo-hackathon/decisions/2026-10-31-a-pod-s-edited-copy-of-a-shared-skill-is-never-offered-back-to-t` |
+| 2026-11-01 | `jadwigo-hackathon/decisions/2026-11-01-the-parent-s-chat-lives-in-a-side-panel-and-a-full-screen` |
+| 2026-11-01 | `jadwigo-hackathon/decisions/2026-11-01-a-learner-s-data-names-included-may-reach-any-meta-model-the-con` |
+| 2026-11-01 | `jadwigo-hackathon/decisions/2026-11-01-the-meta-s-polish-only-lessons-decision-is` |
+| 2026-11-01 | `jadwigo-hackathon/decisions/2026-11-01-a-break-after-a-merge-is-fixed-forward-at-once-never-waited-on-a` |
+| 2026-11-02 | `jadwigo-hackathon/decisions/2026-11-02-the-parent-app-is-chat-first-account-in-the-top-bar-lesson-on-de` |
+| 2026-11-02 | `jadwigo-hackathon/decisions/2026-11-02-a-play-link-with-a-learner-in-it-starts-as-that-child-with-no-si` |
+| 2026-11-02 | `jadwigo-hackathon/decisions/2026-11-02-a-parent-s-own-ai-app-connects-jadwigo-s-remote-mcp-by-oauth-2-1` |
+| 2026-11-02 | `jadwigo-hackathon/decisions/2026-11-02-through-the-remote-mcp-the-parent-s-own-ai-writes-the-lesson-and` |
+| 2026-11-02 | `jadwigo-hackathon/decisions/2026-11-02-a-parent-s-yes-in-their-own-ai-chat-is-the-confirmation-lesson-p` |
+| 2026-11-02 | `jadwigo-hackathon/decisions/2026-11-02-a-lesson-holds-at-most-20-questions-however-it-was-made` |
+| 2026-11-02 | `jadwigo-hackathon/decisions/2026-11-02-posthog-runs-on-the-site-and-in-the-app-with-session-replay-afte` |
+| 2026-11-03 | `jadwigo-hackathon/decisions/2026-11-03-until-the-4-november-demo-the-goal-is-the-parent-happy-path-phot` |
+| 2026-11-03 | `jadwigo-hackathon/decisions/2026-11-03-printing-is-in-the-demo-scope-a-server-side-pdf-that-renders-eve` |
+| 2026-11-03 | `jadwigo-hackathon/decisions/2026-11-03-the-print-pdf-is-rendered-natively-from-paper-first-html-and-css` |
+| 2026-11-03 | `jadwigo-hackathon/decisions/2026-11-03-the-lesson-opens-in-a-preview-modal-from-an-expand-button-on-the` |
+| 2026-11-03 | `jadwigo-hackathon/decisions/2026-11-03-docs-jadwigo-pl-shows-jadwigo-s-vision-beside-what-is-live-each` |
 
 ## Next
 
-- [Vision](/vision/): where the story goes next.
-- [Experiments](/experiments/): the runs that show the vision working.
+- [Vision](/vision/): what the decisions point at next.
+- [Building with agents](/architecture/building-with-agents/): how the work itself was run.

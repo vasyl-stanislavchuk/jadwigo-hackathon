@@ -1,4 +1,4 @@
-import { ROUTE_TAGS, ROUTES } from "@jadwigo/contracts";
+import { MCP_PATH, ROUTE_TAGS, ROUTES } from "@jadwigo/contracts";
 
 /** Where the API reference lives in the docs: starlight-openapi's `base` (astro.config.mjs). */
 export const API_REFERENCE_BASE = "api";
@@ -24,8 +24,12 @@ const API_PATH = /\/api\/[A-Za-z0-9_\-{}$.…/]*/g;
 /** A link into the docs' own /api/ pages: a markdown target, an href or a hero action's `link:`. */
 const DOCS_LINK = /(?:\]\(|href="|^\s*link: )(\/api\/[^)"#\s]*)/gm;
 
+/** The remote MCP's path, outside `ROUTES` by design: a page may name it as it names a route. */
+const BESIDE_ROUTES: ReadonlySet<string> = new Set([MCP_PATH]);
+
 /** True when `written` (with `{x}`, `$X` or `…` for a segment) is a path in ROUTES. */
 function isRoutePath(written: string): boolean {
+  if (BESIDE_ROUTES.has(written)) return true;
   const parts = written.split("/");
   return Object.values(ROUTES).some((route) => {
     const segments = route.path.split("/");

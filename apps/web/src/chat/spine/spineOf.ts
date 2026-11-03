@@ -15,6 +15,7 @@ import type { RunPhase } from "../phase.ts";
 import { SLOW_MS, STALL_MS } from "../phase.ts";
 import { stepIds } from "./lessonFile.ts";
 import {
+  checkOf,
   type DoneCall,
   emptyMerge,
   type Merge,
@@ -65,12 +66,6 @@ const PHASE_WORDS: Readonly<Record<SpinePhase, CopyKey>> = {
 const MIN_STAGES = 3;
 /** The title's longest clause (§2 item 1). */
 const TITLE_MAX = 60;
-
-/** What the page knows beside the turn's own log. */
-export interface SpineContext {
-  /** The lesson's revision before this turn: what stands when a stop changed nothing (S15). */
-  priorRevision?: number;
-}
 
 /** No stage: a line made before the plan, or in a turn without one. */
 const LOOSE = -1;
@@ -139,7 +134,6 @@ export function spineOf(
   events: readonly RunEvent[],
   phase: RunPhase | null,
   now: number,
-  context: SpineContext = {},
 ): TurnSpine {
   const log = mergeLive(events, [], 0);
   const first = log[0];
@@ -242,7 +236,12 @@ export function spineOf(
         const words = e.payload.text.trim();
         const line: SpineLine =
           e.payload.source === "lesson_edit"
-            ? { kind: "steer", copyKey: "chat_steered_edit", values: {} }
+            ? {
+                kind: "steer",
+                copyKey: "chat_steered_edit",
+                values: {},
+                ...(endedAt === undefined ? {} : { afterTurn: true }),
+              }
             : { kind: "steer", ...sayWords(words), steerLabel: true, quote: words };
         if (e.payload.source === "lesson_edit" || words !== "")
           placed.push({ seq: e.seq, stage: activeStage(), line });
@@ -281,7 +280,8 @@ export function spineOf(
   const kind = phase === null ? phaseFromLog(log, all, now) : PHASE[phase.kind];
   const ended = ENDED.has(kind);
 
-  // Done lines: one per verb per stage visit, merged (S2), placed where the first one landed.
+  // Done lines: one per verb per stage visit, merged (S2), placed where the last one landed, so a
+  // check that passed after a refusal reads after it (dl-uukj.47.71.45).
   const merges = new Map<string, { seq: number; stage: number; merge: Merge }>();
   const finished = all
     .filter((c) => c.result !== undefined && !c.result.failed)
@@ -293,6 +293,7 @@ export function spineOf(
       stage: call.stage,
       merge: emptyMerge(call.verb),
     };
+    slot.seq = call.seq;
     merges.set(key, slot);
     mergeCall(slot.merge, doneCall(call, revisions, reads));
   }
@@ -301,7 +302,8 @@ export function spineOf(
     placed.push({ seq, stage, line: { kind: "done", ...words, ...(tags ? { tags } : {}) } });
   }
 
-  // A failed call shows only once the turn is over, in plain words (S5, S13, §2 item 6).
+  // A failed call shows only once the turn is over, in plain words (S5, S13, §2 item 6). One the
+  // agent then fixed shows nothing: it did not go on without it (dl-uukj.47.71.45).
   if (ended)
     for (const call of all) {
       if (call.result?.failed !== true) continue;
@@ -309,6 +311,7 @@ export function spineOf(
       const recovered = all.some(
         (c) => c.result !== undefined && !c.result.failed && c.result.seq > failedAt,
       );
+      if (call.verb !== "question_types" && fixedLater(call, all)) continue;
       placed.push({
         seq: failedAt,
         stage: call.stage,
@@ -375,7 +378,7 @@ export function spineOf(
   }
 
   const title = agent.find((m) => m !== reply && titleOf(m.text) !== "");
-  const foot = footOf(kind, Math.max(1, tries), revisions, context);
+  const foot = footOf(kind, Math.max(1, tries), revisions);
   return {
     phase: kind,
     title:
@@ -390,6 +393,19 @@ export function spineOf(
     ...(foot ? { foot } : {}),
     ...(reply ? { reply: reply.text } : {}),
   };
+}
+
+/**
+ * Whether a refused call was made good later: the same verb on the same step went through, or a
+ * lesson check passed. Another step's edit going through fixes nothing.
+ */
+function fixedLater(call: Call, all: readonly Call[]): boolean {
+  const failedAt = call.result?.seq ?? 0;
+  return all.some((c) => {
+    if (c.result === undefined || c.result.failed || c.result.seq <= failedAt) return false;
+    if (c.verb === "lesson_check" && checkOf(c.result.output)?.publishable === true) return true;
+    return c.verb === call.verb && c.input["step_id"] === call.input["step_id"];
+  });
 }
 
 /** A finished call with the lesson around it: what it wrote, what stood before, the known steps. */
@@ -471,17 +487,17 @@ function summaryOf(
   return last === undefined ? {} : { summary: { copyKey: last.copyKey, values: last.values } };
 }
 
-/** The card's foot: failed with its tries, stalled, or stopped with the version that stands (D7, S11, S15). */
+/**
+ * The card's foot: failed with its tries, stalled, or stopped with whether the turn changed the
+ * lesson before it stopped (D7, S11, S15). No version: versions are never shown (dl-vxjv2, C5).
+ */
 function footOf(
   phase: SpinePhase,
   tries: number,
   revisions: readonly { revision: number }[],
-  context: SpineContext,
 ): SpineFoot | null {
   if (phase === "failed") return { kind: "failed", tries };
   if (phase === "stalled") return { kind: "stalled" };
   if (phase !== "cancelled") return null;
-  const changed = revisions.length > 0;
-  const stands = changed ? Math.max(...revisions.map((r) => r.revision)) : context.priorRevision;
-  return { kind: "stopped", changed, ...(stands === undefined ? {} : { versionStands: stands }) };
+  return { kind: "stopped", changed: revisions.length > 0 };
 }

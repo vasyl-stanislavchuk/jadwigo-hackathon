@@ -6,11 +6,12 @@ jadwigo-bank checkout and draws with jw.draw. With --judge, a panel of 3
 muse-spark-1.3-contributor judges rates each draw for fit. Every model call
 goes through the Meta API via jw.muse.ask and its ledger (owner decision,
 2026-11-03). The first run's muse-wonder panel, made before that rule, is kept
-under detail.wonder_comparison when its recorded extract is passed after
---wonder-panel. Writes apps/docs/src/data/experiments/e2.json.
+under detail.wonder_comparison: its recorded extract is committed beside this
+script (e2-wonder-panel.json) and read by default, or named with --wonder-panel.
+Writes apps/docs/src/data/experiments/e2.json.
 
 Run:
-  JADWIGO_BANK_DIR=~/projects/jadwigo-bank JADWIGO_MUSE_CAP_USD=500 uv run python experiments/e2.py --judge [--wonder-panel <file>]
+  JADWIGO_BANK_DIR=~/projects/jadwigo-bank JADWIGO_MUSE_CAP_USD=500 uv run python experiments/e2.py --judge
 
 Only item ids, set ids, skills and reasons are written out: no bank question
 text enters this repo. Bank search here is a local page scan by skill code, so
@@ -170,7 +171,14 @@ def run_judge(prompt: str) -> dict[str, Any]:
         return {"fit": None, "reason": "judge reply was not JSON"}
 
 
-def ledger_spend() -> dict[str, Any]:
+def panel_mean(panel: list[dict[str, Any]]) -> float | None:
+    """The panel's mean fit, ignoring judges that gave none; None when none did."""
+    fits = [p["fit"] for p in panel if isinstance(p.get("fit"), (int, float))]
+    return round(sum(fits) / len(fits), 2) if fits else None
+
+
+def ledger_spend(since: str) -> dict[str, Any]:
+    """This run's ledger rows only: e2-tagged, completed, at or after `since` (an ISO instant)."""
     total = {"calls": 0, "usd": 0.0, "input_tokens": 0, "output_tokens": 0}
     for path in sorted((ROOT / "apps/cli/logs/muse").glob("*.jsonl")):
         for line in path.read_text(encoding="utf-8").splitlines():
@@ -178,7 +186,11 @@ def ledger_spend() -> dict[str, Any]:
                 row = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if str(row.get("tag", "")).startswith("e2:") and row.get("terminal") == "completed":
+            if (
+                str(row.get("tag", "")).startswith("e2:")
+                and row.get("terminal") == "completed"
+                and str(row.get("at", "")) >= since
+            ):
                 usage = row.get("usage") or {}
                 total["calls"] += 1
                 total["usd"] += float(usage.get("usd") or 0)
@@ -188,7 +200,14 @@ def ledger_spend() -> dict[str, Any]:
     return total
 
 
+RUN_STARTED = ""
+
+
 def main() -> int:
+    global RUN_STARTED
+    import datetime as dt
+
+    RUN_STARTED = dt.datetime.now(dt.timezone.utc).isoformat()
     judge = "--judge" in sys.argv
     t0 = time.time()
     cohort = json.loads(COHORT.read_text(encoding="utf-8"))["detail"]
@@ -204,10 +223,9 @@ def main() -> int:
         judge_calls = len(verdicts)
         for i, result in enumerate(results):
             panel = verdicts[i * 3 : i * 3 + 3]
-            fits = [p["fit"] for p in panel if isinstance(p.get("fit"), (int, float))]
             result["panel"] = panel
-            result["panel_mean_fit"] = round(sum(fits) / len(fits), 2) if fits else None
-    ledger = ledger_spend()
+            result["panel_mean_fit"] = panel_mean(panel)
+    ledger = ledger_spend(RUN_STARTED)
     drawn = sum(r["questions_drawn"] for r in results)
     empty = sum(1 for r in results if r["questions_drawn"] == 0)
     fits = [r["panel_mean_fit"] for r in results if r.get("panel_mean_fit") is not None]
@@ -249,10 +267,13 @@ def main() -> int:
             "results": results,
         },
     }
-    if "--wonder-panel" in sys.argv:
-        wonder = Path(sys.argv[sys.argv.index("--wonder-panel") + 1])
-        if wonder.exists():
-            out["detail"]["wonder_comparison"] = json.loads(wonder.read_text(encoding="utf-8"))
+    wonder = (
+        Path(sys.argv[sys.argv.index("--wonder-panel") + 1])
+        if "--wonder-panel" in sys.argv
+        else Path(__file__).resolve().parent / "e2-wonder-panel.json"
+    )
+    if wonder.exists():
+        out["detail"]["wonder_comparison"] = json.loads(wonder.read_text(encoding="utf-8"))
     OUT.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {OUT}: {len(results)} learners, {judge_calls} judge calls")
     return 0

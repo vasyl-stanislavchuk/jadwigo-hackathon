@@ -26,6 +26,11 @@ export interface RunQueue {
   send(message: RunStepInput, delay_s?: number): Promise<number>;
   /** Up to `qty` visible steps, each hidden for `vt_s` and its `read_ct` counted. */
   read(vt_s: number, qty: number): Promise<readonly QueuedStep[]>;
+  /**
+   * A step still running: hides it for `vt_s` more from now, and counts no read. Not an error when
+   * the step is gone. Both queues a drain reads have it; a queue that only sends needs none.
+   */
+  extend?(msg_id: number, vt_s: number): Promise<void>;
   /** Done with a step: it is never delivered again. */
   archive(msg_id: number): Promise<void>;
   /** The steps read more than `MAX_READS` times, which no read delivers again. */

@@ -1,6 +1,7 @@
 flowchart TB
   child(["Child<br/>plays a lesson, no login"])
   parent(["Parent<br/>signs in, adds a child, reads results"])
+  aiapp(["Parent's own AI app<br/>connects by OAuth 2.1"])
   agent(["Lesson author or agent<br/>searches the question bank"])
 
   subgraph aws ["AWS, eu-central-1"]
@@ -8,7 +9,11 @@ flowchart TB
       web["Web app<br/><i>React, static files in a private S3 bucket</i>"]
       gateway["HTTP API<br/><i>API Gateway: the API paths, throttled, JWT check on parent routes</i>"]
     end
-    api["API<br/><i>one Lambda, Node 24: router, authorize(), routes</i>"]
+    api["API<br/><i>one Lambda, Node 24: router, authorize(), routes, /api/mcp</i>"]
+    runner["Runner<br/><i>2nd Lambda: drains agent_step as jadwigo_runner</i>"]
+    schedule["EventBridge schedule<br/><i>pokes the runner every minute</i>"]
+    converter["Converter<br/><i>Lambda: a PDF, DOCX or HEIC becomes page JPEGs</i>"]
+    uploads[("Uploads bucket<br/><i>S3: a message's photos, per pod</i>")]
     content[("Content bucket<br/><i>S3: questions, converted Khan items</i>")]
     bankFn["Question bank search<br/><i>a Lambda of its own, invoked through its live alias</i>"]
     site["jadwigo.pl<br/><i>marketing site, static, CloudFront + S3</i>"]
@@ -17,9 +22,10 @@ flowchart TB
 
   subgraph supabase ["Supabase, Frankfurt"]
     db[("Postgres<br/><i>records, row-level security per pod</i>")]
-    auth["Supabase Auth<br/><i>6-digit email code, RS256 tokens</i>"]
+    auth["Supabase Auth<br/><i>6-digit email code, RS256 tokens, OAuth 2.1 server</i>"]
   end
 
+  muse["Meta Muse API<br/><i>/v1/responses</i>"]
   jw["jw and its MCP server<br/><i>Python CLI on the author's machine</i>"]
 
   child --> web
@@ -27,8 +33,17 @@ flowchart TB
   web -- "HTTPS JSON, same origin" --> gateway
   web -- "sign-in" --> auth
   gateway --> api
+  aiapp -- "/api/mcp, Bearer token" --> gateway
+  aiapp -- "OAuth 2.1" --> auth
   api -- "one transaction per request" --> db
   api -- "read questions" --> content
   api -- "invoke search" --> bankFn
+  api -. "async poke after commit" .-> runner
+  schedule -. "every minute" .-> runner
+  runner -- "drains agent_step" --> db
+  runner -- "invoke with S3 keys" --> converter
+  converter -- "page JPEGs" --> uploads
+  runner -- "reads photos" --> uploads
+  runner -- "1 call per step" --> muse
   agent --> jw
   jw -- "HTTPS JSON + bank read token" --> gateway

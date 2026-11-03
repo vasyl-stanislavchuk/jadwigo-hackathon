@@ -272,18 +272,13 @@ describe("the run's states", () => {
     expect(now[0]?.startedAt).toBe(lastAt(events) - 2000);
   });
 
-  it("stops with the version that stands (S15, s14)", () => {
+  it("stops saying whether the turn changed the lesson, never a version (S15, s14, dl-vxjv2)", () => {
     expect(spineOf(upTo("cancel-during-a-verb"), null, 0).foot).toEqual({
       kind: "stopped",
       changed: true,
-      versionStands: 1,
     });
     const nothing = parsed("cancel-during-a-verb").filter((e) => e.type !== "lesson_revision");
-    expect(spineOf(nothing, null, 0, { priorRevision: 4 }).foot).toEqual({
-      kind: "stopped",
-      changed: false,
-      versionStands: 4,
-    });
+    expect(spineOf(nothing, null, 0).foot).toEqual({ kind: "stopped", changed: false });
   });
 
   it("marks the running stage stopped", () => {
@@ -299,7 +294,93 @@ describe("the run's states", () => {
   });
 });
 
+describe("a refused call the agent fixed (dl-uukj.47.71.45)", () => {
+  type Verb = "lesson_check" | "lesson_edit";
+  const PASSED = { publishable: true, findings: [] };
+  const call = (id: string, verb: Verb, step_id?: string) =>
+    ({
+      type: "tool_call",
+      payload: { call_id: id, verb, input: step_id === undefined ? {} : { step_id } },
+    }) as const;
+  const ok = (id: string, verb: Verb, output: Record<string, unknown>) =>
+    ({ type: "tool_result", payload: { call_id: id, verb, output, error: null } }) as const;
+  const refused = (id: string, verb: Verb) =>
+    ({
+      type: "tool_result",
+      payload: { call_id: id, verb, output: null, error: { type: "edit", message: "no" } },
+    }) as const;
+
+  it("shows no skip line, and the check that passed reads last", () => {
+    // The order of the prod run that showed 4 skip lines above a passing check.
+    const events = complete(
+      append(
+        [],
+        call("a", "lesson_check"),
+        refused("a", "lesson_check"),
+        call("b", "lesson_edit", "s01"),
+        refused("b", "lesson_edit"),
+        call("c", "lesson_check"),
+        ok("c", "lesson_check", PASSED),
+        call("d", "lesson_edit", "s01"),
+        refused("d", "lesson_edit"),
+        call("e", "lesson_edit", "s01"),
+        ok("e", "lesson_edit", { changed_step_ids: ["s01"] }),
+        call("f", "lesson_edit", "s02"),
+        refused("f", "lesson_edit"),
+        call("g", "lesson_check"),
+        ok("g", "lesson_check", PASSED),
+      ),
+    );
+    const lines = linesOf(spineOf(events, null, 0));
+    expect(lines.filter((l) => l.kind === "skip")).toEqual([]);
+    expect(lines.filter((l) => l.kind === "done").at(-1)).toMatchObject({
+      copyKey: "chat_line_check_ok",
+    });
+  });
+
+  it("keeps the skip line when only another step's edit went through", () => {
+    const events = complete(
+      append(
+        [],
+        call("a", "lesson_edit", "s01"),
+        refused("a", "lesson_edit"),
+        call("b", "lesson_edit", "s02"),
+        ok("b", "lesson_edit", { changed_step_ids: ["s02"] }),
+      ),
+    );
+    expect(linesOf(spineOf(events, null, 0))).toContainEqual({
+      kind: "skip",
+      copyKey: "chat_line_failed_generic",
+      values: {},
+    });
+  });
+
+  it("keeps the skip line when a later check did not pass", () => {
+    const events = complete(
+      append(
+        [],
+        call("a", "lesson_edit", "s01"),
+        refused("a", "lesson_edit"),
+        call("b", "lesson_check"),
+        ok("b", "lesson_check", { publishable: false, findings: [] }),
+      ),
+    );
+    expect(linesOf(spineOf(events, null, 0)).filter((l) => l.kind === "skip")).toHaveLength(1);
+  });
+});
+
 describe("steers (S17)", () => {
+  it("marks a parent's lesson edit made after the turn ended", () => {
+    const steer = {
+      type: "steer" as const,
+      payload: { text: "I changed it.", source: "lesson_edit" as const, question_ids: ["s02"] },
+    };
+    const during = linesOf(spineOf(append(upTo("happy-turn", 7), steer), null, 0));
+    const after = linesOf(spineOf(append(complete(upTo("happy-turn", 7)), steer), null, 0));
+    expect(during.find((l) => l.kind === "steer")?.afterTurn).toBeUndefined();
+    expect(after.find((l) => l.kind === "steer")?.afterTurn).toBe(true);
+  });
+
   it("draws a chat steer in quotes and a lesson-pane steer by its label (s18)", () => {
     const steers = linesOf(spineOf(upTo("steer-kept", 9), null, 0)).filter(
       (l) => l.kind === "steer",

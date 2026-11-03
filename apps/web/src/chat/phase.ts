@@ -127,25 +127,26 @@ export const elapsedSeconds = (p: RunPhase | null, now: number): number | null =
   p?.since == null ? null : Math.max(0, Math.floor((now - p.since) / 1000));
 
 /**
- * What the polite live region says: only when a turn ends, needs the parent or stalls, never each
- * step, so a screen reader is not read every tool line. Quiet while the page reconnects.
+ * What the page's one polite live region says (handoff dl-uukj.47.71 §3, dl-uukj.47.71.10): only
+ * the 6 live words, never a line. "Jadwigo pracuje" holds through a turn's queue, thinking, tools
+ * and a slow spell, so a screen reader hears it once per turn, not once per step. Quiet while the
+ * page reconnects.
  */
-export function phaseAnnouncement(p: RunPhase | null): CopyKey | null {
-  switch (p?.kind) {
-    case "done":
-      return "chat_announce_done";
-    case "cancelled":
-      return "chat_announce_stopped";
-    case "failed":
-      return "chat_turn_unfinished";
-    case "awaiting_input":
-      return "chat_announce_needs_you";
-    case "stalled":
-      return "chat_phase_stalled";
-    default:
-      return null;
-  }
-}
+const LIVE_KEY: Readonly<Record<PhaseKind, CopyKey | null>> = {
+  connecting: null,
+  queued: "live_working",
+  thinking: "live_working",
+  tool: "live_working",
+  slow: "live_working",
+  awaiting_input: "live_waiting",
+  stalled: "live_stalled",
+  done: "live_done",
+  failed: "live_failed",
+  cancelled: "live_stopped",
+};
+
+export const phaseAnnouncement = (p: RunPhase | null): CopyKey | null =>
+  p === null ? null : LIVE_KEY[p.kind];
 
 /** A span of time as the spine says it (§4.1): "0 s", "41 s", "1 min 04 s"; tabular in view. */
 export function durationWords(ms: number): string {

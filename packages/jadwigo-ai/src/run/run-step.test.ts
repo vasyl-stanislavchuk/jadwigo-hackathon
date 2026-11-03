@@ -699,6 +699,161 @@ describe("runStep and drain", () => {
     expect(revisions).toEqual([1, 2]);
   });
 
+  it("runs several lesson_edit calls of one response in order, each on the one before, past a refused one (dl-hin8.36)", async () => {
+    const seen: (number | null)[] = [];
+    const t = await setup(
+      [
+        { calls: [{ verb: "lesson_draft" }] },
+        {
+          calls: [
+            { verb: "lesson_edit", input: { step_id: "s01" } },
+            { verb: "lesson_edit", input: { step_id: "refused" } },
+            { verb: "lesson_edit", input: { step_id: "s03" } },
+          ],
+        },
+        { text: "ok" },
+      ],
+      fakeVerbs({
+        lesson_edit: async (context, input) => {
+          seen.push(context.lesson?.revision ?? null);
+          if (input["step_id"] === "refused") throw new VerbError("edit", "nothing changed");
+          return { output: {}, lesson_file: { id: "made-up", parts: [] } };
+        },
+      }),
+    );
+    const run = await t.say("Go.");
+    await drain(t.deps);
+
+    const log = await t.log(run);
+    expect(seen).toEqual([1, 2, 2]);
+    expect(log.flatMap((e) => (e.type === "lesson_revision" ? [e.payload.revision] : []))).toEqual([
+      1, 2, 3,
+    ]);
+    expect(
+      log.flatMap((e) =>
+        e.type === "tool_result" && e.payload.verb === "lesson_edit"
+          ? [e.payload.error?.type ?? "ok"]
+          : [],
+      ),
+    ).toEqual(["ok", "edit", "ok"]);
+    // The 3 edits cost 1 model call, and the next one reads all 3 results.
+    expect(t.muse.calls).toHaveLength(3);
+  });
+
+  it("takes the tools away at 60 tool calls, and ignores a call the model still names (dl-hin8.38)", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    const t = await setup(
+      [...Array.from({ length: 60 }, () => show), show, { text: "Here is what I have so far." }],
+      fakeVerbs(),
+    );
+    const run = await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    const log = await t.log(run);
+    expect(log.filter((e) => e.type === "tool_result")).toHaveLength(60);
+    expect(t.muse.calls[59]?.tools.length).toBeGreaterThan(0);
+    expect(t.muse.calls[59]?.instructions).not.toContain("all the tool calls");
+    expect(t.muse.calls[60]?.tools).toEqual([]);
+    expect(t.muse.calls[60]?.instructions).toContain("all the tool calls");
+  });
+
+  it("after the limit the turn ends completed, with the model's closing words (dl-hin8.42)", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    const t = await setup(
+      [...Array.from({ length: 60 }, () => show), { text: "Here is what I have so far." }],
+      fakeVerbs(),
+    );
+    const run = await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect((await t.run(run)).status).toBe("completed");
+    expect(t.muse.calls[60]?.instructions).toContain("never say you are doing or will do");
+    const said = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(said.at(-1)).toBe("Here is what I have so far.");
+  });
+
+  it("lets one response's batch pass the limit, then closes", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    const batch = { calls: Array.from({ length: 5 }, () => ({ verb: "lesson_show" as const })) };
+    const t = await setup(
+      [...Array.from({ length: 59 }, () => show), batch, { text: "Closing." }],
+      fakeVerbs(),
+    );
+    const run = await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect((await t.log(run)).filter((e) => e.type === "tool_result")).toHaveLength(64);
+    expect(t.muse.calls[60]?.tools).toEqual([]);
+  });
+
+  it("gives the tools back when the parent speaks after the limit", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    let shows = 0;
+    let say: (text: string) => Promise<unknown> = () => Promise.resolve();
+    const t = await setup(
+      [...Array.from({ length: 60 }, () => show), { text: "Done." }],
+      fakeVerbs({
+        lesson_show: async () => {
+          shows += 1;
+          if (shows === 60) await say("One more thing.");
+          return { output: {} };
+        },
+      }),
+    );
+    say = (text) => t.say(text);
+    await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect(t.muse.calls[60]?.tools.length).toBeGreaterThan(0);
+  });
+
+  describe("a step that outlasts its visibility (dl-hin8.44)", () => {
+    /** A model call that takes `seconds`, beating once half way if `beats`, and what a read saw. */
+    async function longCall(beats: boolean) {
+      const t = await setup([{ text: "Done." }]);
+      let beat = () => {};
+      let stopped = 0;
+      const seenMidCall: number[] = [];
+      const inner = t.deps.muse;
+      const deps: EngineDeps = {
+        ...t.deps,
+        muse: {
+          respond: async (request) => {
+            t.tick(50_000);
+            if (beats) beat();
+            t.tick(50_000);
+            seenMidCall.push((await t.queue.read(STEP_VISIBILITY_S, 5)).length);
+            return inner.respond(request);
+          },
+        },
+      };
+      await t.say("Go.");
+      await drain(deps, {
+        keepAlive: (b) => {
+          beat = b;
+          return () => {
+            stopped += 1;
+          };
+        },
+      });
+      return { seenMidCall, stopped, t };
+    }
+
+    it("stays hidden while its host beats, and stops beating when it ends", async () => {
+      const { seenMidCall, stopped, t } = await longCall(true);
+      expect(seenMidCall).toEqual([0]);
+      expect(stopped).toBe(1);
+      expect(await t.queue.read(STEP_VISIBILITY_S, 5)).toEqual([]);
+    });
+
+    it("comes back when no beat arrived, as when the host died", async () => {
+      const { seenMidCall } = await longCall(false);
+      expect(seenMidCall).toEqual([1]);
+    });
+  });
+
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
     // lesson_check names the run's draft, known once the parent has spoken.
     const check: Record<string, unknown> = { help: {}, names: [] };
@@ -927,7 +1082,7 @@ describe("runStep and drain", () => {
     for (const call of t.muse.calls) {
       expect(call.instructions).toContain(CARD_RULE);
       // A new instructions text, a new cache key: no call reads a prefix cached without the rule.
-      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:4");
+      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:6");
     }
     expect(CARD_RULE).toMatch(/never list or repeat the lesson's questions/);
   });
@@ -2228,7 +2383,10 @@ describe("a failed lesson check cannot become a readiness claim (dl-hin8.30)", (
         .filter((event) => event.type === "message")
         .filter((event) => event.payload.from === "agent")
         .map((event) => event.payload.text),
-    ).toEqual([expect.stringContaining("pozostaje szkicem")]);
+    ).toEqual([
+      // It names no version: the card says the state, and no number reaches the parent (dl-vxjv2 C5).
+      "Lekcja jest jeszcze szkicem: nie przeszła sprawdzenia, więc nie jest gotowa do użycia.",
+    ]);
     expect((await t.run(run)).status).toBe("completed");
     expect(t.muse.calls).toHaveLength(4);
   });

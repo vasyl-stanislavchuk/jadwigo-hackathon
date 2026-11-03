@@ -21,6 +21,7 @@
  * only when the system allows motion (chat.css).
  */
 
+import type { AttachmentId } from "@jadwigo/contracts";
 import type { RunId, RunRatingCreate } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { cn, RegisterProvider } from "@jadwigo/ui";
@@ -28,6 +29,7 @@ import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "
 import type { ChooseAnswers } from "./ChooseForm.tsx";
 import "./chat.css";
 import type { ReadAttachment } from "./attachments/ThreadAttachments.tsx";
+import type { UploadDeps } from "./attachments/upload.ts";
 import { ChatThread, lessMotion } from "./ChatThread.tsx";
 import { Composer, openChoose } from "./Composer.tsx";
 import { ComposerLines } from "./ComposerLines.tsx";
@@ -46,7 +48,8 @@ export interface ChatPaneProps {
   sendFailed: boolean;
   /** Which message limit refused the last send: its own line, no retry (dl-z5ja.100). */
   sendLimit?: SendLimit | null;
-  onSend(text: string): void;
+  /** Sends a message: its words, and its photos' ids when the composer uploaded any. */
+  onSend(text: string, attachmentIds?: readonly AttachmentId[]): void;
   onStop(): void;
   /**
    * Rates a completed turn by its run (dl-z5ja.63); Good, Bad and Try again show under each
@@ -101,11 +104,18 @@ export interface ChatPaneProps {
   onOpen?: ((object: ObjectRef) => void) | undefined;
   /** The lesson's actions (dl-uukj.47.55), in the foot of the newest lesson card only. */
   lessonActions?: ReactNode;
+  /** Saves a new title from the living lesson card (dl-1eieq.16). */
+  onRenameLesson?: ((title: string) => Promise<CopyKey | null>) | undefined;
   /**
    * Reads a sent photo's link (dl-z5ja.11.6): with it, a parent's message shows what Jadwigo
    * received under the bubble.
    */
   readAttachment?: ReadAttachment | undefined;
+  /**
+   * What a photo's upload runs on (dl-uukj.47.71.8): with it, the parent's composer has its photo
+   * button, and a message may carry photos, or be photos alone.
+   */
+  uploadDeps?: UploadDeps | undefined;
 }
 
 export function ChatPane({
@@ -134,7 +144,9 @@ export function ChatPane({
   lessonObject,
   onOpen,
   lessonActions,
+  onRenameLesson,
   readAttachment,
+  uploadDeps,
 }: ChatPaneProps): ReactElement {
   /** The choose forms answered on this page, by call: their recap shows until the log has one. */
   const [chosen, setChosen] = useState<Readonly<Record<string, ChooseAnswers>>>({});
@@ -163,11 +175,13 @@ export function ChatPane({
   const open = last !== undefined && isOpen(last);
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
-  const send = (text: string) => {
+  const send = (text: string, attachmentIds: readonly AttachmentId[] = []) => {
     const trimmed = text.trim();
-    if (trimmed === "") return;
-    onSend(trimmed);
-    setLastSent(trimmed);
+    if (trimmed === "" && attachmentIds.length === 0) return;
+    if (attachmentIds.length === 0) onSend(trimmed);
+    else onSend(trimmed, attachmentIds);
+    // A retry after a failed send repeats the words; the photos went with the first try.
+    if (trimmed !== "") setLastSent(trimmed);
     setDraft("");
   };
   /** Sends words again, leaving whatever the parent is typing alone. */
@@ -206,6 +220,7 @@ export function ChatPane({
         lessonObject={lessonObject}
         onOpen={onOpen}
         lessonActions={lessonActions}
+        onRenameLesson={onRenameLesson}
         readAttachment={readAttachment}
         stop={{ running: open, stopping, onStop }}
       />
@@ -247,6 +262,7 @@ export function ChatPane({
         onStop={onStop}
         composerLead={composerLead}
         textarea={composer}
+        uploadDeps={uploadDeps}
       />
     </section>
   );

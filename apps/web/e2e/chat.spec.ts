@@ -24,7 +24,8 @@ test("1440: one scripted turn, the message and the lesson card in the chat alone
   await expect(page.locator("[data-chat-band] [data-status]")).toHaveText("Gotowe", {
     timeout: 20_000,
   });
-  await expect(page.locator("[data-chat-band] [data-live]")).toHaveText("Jadwigo AI: gotowe");
+  // The one live region speaks the live words only (handoff §3, dl-uukj.47.71.10).
+  await expect(page.locator("[data-chat-band] [data-live]")).toHaveText("Gotowe");
   await expect(chat.getByText("Lekcja jest gotowa.", { exact: true })).toBeVisible();
   await expect(cardOf(page)).toBeVisible();
   // The chat is the only view (dl-1eieq.1): no column, no Pokaż lekcję, no tabs.
@@ -121,18 +122,18 @@ for (const [width, height] of [
   });
 }
 
-test("1440: Daj lekcję from the widget gives the lesson and opens it here", async ({ page }) => {
+test("1440: Daj lekcję from the widget gives the lesson as one link to copy or open", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/playground/workspace");
   const card = cardOf(page);
   await expect(card).toBeVisible({ timeout: 20_000 });
-  // Bez dziecka: Daj lekcję offers this computer or paper.
+  // Bez dziecka: no dialog, the link at once. The playground's give answers a made-up assignment.
   await card.locator("[data-give]").click();
-  const choices = page.locator("[data-give-dialog]");
-  await expect(choices).toBeVisible();
-  await choices.locator("[data-give-here]").click();
-  // The playground's give answers a made-up assignment, and the player opens on it.
-  await expect(page).toHaveURL(/\/play\/asg_/);
+  await expect(card.locator("[data-given-url]")).toHaveValue(/\/play\/asg_/);
+  await expect(card.locator("[data-given-link]")).toHaveAttribute("href", /^\/play\/asg_/);
+  await expect(card.locator("[data-given-copy]")).toBeVisible();
 });
 
 // The turn that ends in the lesson-ready card scrolls only the message list (dl-uukj.47.68): the

@@ -8,7 +8,7 @@
  *   band     the run's state in words, and the polite live region that speaks when a turn ends or
  *            needs the parent
  *   preview  over the chat, from the lesson card's expand button (dl-1eieq.1): the latest
- *            revision (LessonPane), its changed steps marked, Cofnij and step edits, with the
+ *            revision (LessonPane), its changed steps marked, Zmień ten krok on each, with the
  *            card's actions in its foot; or, when `?open` names another thing, that thing's panel
  *            (the inspector, dl-uukj.47.58)
  *   (no footer: giving the lesson, and when, happen in the chat; design review 2026-11-02)
@@ -26,6 +26,7 @@ import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef, useState } from "react";
 import type { ReadAttachment } from "../../chat/attachments/ThreadAttachments.tsx";
+import type { UploadDeps } from "../../chat/attachments/upload.ts";
 import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { addedSteps, LessonPane } from "../../chat/LessonPane.tsx";
@@ -37,7 +38,6 @@ import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/r
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
-import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { playPath } from "../../play/route.ts";
 import { CATEGORY, pageLang } from "../adult.ts";
@@ -57,6 +57,7 @@ export function LessonWorkspace({
   onAddChild,
   api = null,
   readAttachment = null,
+  uploadDeps = null,
 }: {
   language: Language;
   /** The server's conversation: the route's id. */
@@ -73,6 +74,8 @@ export function LessonWorkspace({
   api?: ParentClient | null;
   /** Reads a sent photo's link for the thread (dl-z5ja.11.6); none shows no photos. */
   readAttachment?: ReadAttachment | null;
+  /** What a photo's upload runs on (dl-uukj.47.71.8): the chat's composer adds photos with it. */
+  uploadDeps?: UploadDeps | null;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string | number> = {}): string =>
     copy(language, key, vars, CATEGORY);
@@ -102,14 +105,14 @@ export function LessonWorkspace({
     consented,
     refetch,
     retry,
-    next,
+    nextRows,
     sendNow,
     takeNext,
     contextClosed,
     closeContext,
     resend,
   } = useConversation(engine.transport, conversation, owner, engine.owner);
-  const lesson = useLessonWiring(state, edit);
+  const lesson = useLessonWiring(state);
   const { turns } = lesson;
   const restoring = state.connection === "restoring";
   const { ratings } = engine;
@@ -146,31 +149,56 @@ export function LessonWorkspace({
   const summary = lessonSummary(lesson.shown);
   const child = learners.find((l) => l.id === forLearner) ?? null;
 
-  // Daj lekcję (dl-uukj.47.55): the latest checked revision, given to the Dla child, who plays it
-  // from its ?learner= link; with no child, given to nobody in particular and opened here. The route
-  // refuses a revision no check passed (harsh words included) and a child outside the family.
+  // Daj lekcję (dl-uukj.47.55): the revision the parent sees, given to the Dla child or to nobody
+  // in particular, as one link to send or open. The route refuses a revision no check passed
+  // (harsh words included) or that is no longer the latest, and a child outside the family.
   const [given, setGiven] = useState<GiveState>({ kind: "idle" });
+  const shownRevision = lesson.shown?.revision;
+  // A link is for one child and one revision: either changing takes it off the card, and a reply
+  // still on its way for the old pair says nothing.
+  const giveFor = `${forLearner}:${shownRevision}`;
+  const giveForNow = useRef(giveFor);
+  giveForNow.current = giveFor;
+  useEffect(() => setGiven({ kind: "idle" }), [giveFor]);
   const giveTo = async (to: Learner | null): Promise<void> => {
     if (engine.give === null || !lesson.ready) return;
+    const asked = giveFor;
     setGiven({ kind: "giving" });
     try {
-      const { assignment } = await engine.give.giveLesson(
-        conversation,
-        to === null ? {} : { learner_id: to.id },
-      );
-      if (to === null) {
-        navigate(playPath(assignment.id));
-        return;
-      }
-      const href = `${playPath(assignment.id)}?${new URLSearchParams({ learner: to.id })}`;
-      setGiven({ kind: "given", name: to.first_name, href });
+      const { assignment } = await engine.give.giveLesson(conversation, {
+        ...(shownRevision === undefined ? {} : { revision: shownRevision }),
+        ...(to === null ? {} : { learner_id: to.id }),
+      });
+      if (giveForNow.current !== asked) return;
+      const search = to === null ? "" : `?${new URLSearchParams({ learner: to.id })}`;
+      setGiven({
+        kind: "given",
+        name: to?.first_name ?? null,
+        href: `${playPath(assignment.id)}${search}`,
+      });
     } catch (error) {
+      if (giveForNow.current !== asked) return;
       const type = error instanceof ApiError ? error.type : null;
       setGiven({
         kind: "refused",
         reason:
           type === "LessonNotPublishable" ? "changed" : type === "NotFound" ? "child" : "failed",
       });
+    }
+  };
+
+  // A new title from the card (dl-1eieq.16): the route checks it, so the lesson stays ready. Its
+  // revision comes back through the conversation's own read.
+  const renameLesson = async (title: string): Promise<CopyKey | null> => {
+    if (engine.give === null) return "parent_title_failed";
+    try {
+      await engine.give.renameLesson(conversation, { title });
+      refetch();
+      return null;
+    } catch (error) {
+      const type = error instanceof ApiError ? error.type : null;
+      if (type === "LessonNotPublishable") return "parent_title_refused";
+      return type === "AnswerConflict" ? "parent_title_busy" : "parent_title_failed";
     }
   };
 
@@ -210,7 +238,6 @@ export function LessonWorkspace({
         ? {}
         : {
             onGive: () => void giveTo(child),
-            onOpenHere: () => void giveTo(null),
           })}
     />
   );
@@ -238,7 +265,10 @@ export function LessonWorkspace({
       sendFailed={state.sendFailed}
       sendLimit={state.sendLimit}
       // Each message carries Dla as its page, as the first one did, so the run reads that child.
-      onSend={(text) => send(text, forLearner === null ? undefined : { learner_id: forLearner })}
+      onSend={(text, attachmentIds) =>
+        send(text, forLearner === null ? undefined : { learner_id: forLearner }, attachmentIds)
+      }
+      uploadDeps={uploadDeps ?? undefined}
       composerLead={
         <DlaSelect
           language={language}
@@ -255,7 +285,7 @@ export function LessonWorkspace({
       pending={state.pending?.text ?? null}
       onRetry={retry}
       nameOf={(id) => learners.find((l) => l.id === id)?.first_name ?? null}
-      next={next}
+      next={nextRows}
       onSendNow={sendNow}
       onTakeNext={takeNext}
       contextClosed={contextClosed}
@@ -265,6 +295,7 @@ export function LessonWorkspace({
       onOpen={inspector.open}
       // How and when to give the lesson live in its card (dl-uukj.47.55, decision dl-hz9ks).
       lessonActions={actions}
+      onRenameLesson={engine.give === null ? undefined : renameLesson}
     />
   );
 
@@ -304,13 +335,9 @@ export function LessonWorkspace({
                       lesson={lesson.shown}
                       changed={lesson.changed}
                       added={addedSteps(lesson.turns, lesson.changed)}
-                      onUndo={lesson.onUndo}
-                      undoRefused={lesson.undoRefused}
-                      undoPending={lesson.undoPending}
                       onEdit={edit}
                       ghosts={lesson.ghosts}
                       withChild={child !== null}
-                      outcomeOf={lesson.outcomeOf}
                       bare
                     />
                   ),

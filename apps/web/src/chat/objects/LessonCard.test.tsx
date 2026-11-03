@@ -1,12 +1,14 @@
 import type { Run } from "@jadwigo/contracts/run";
 import { RunEvent, RunId } from "@jadwigo/contracts/run";
+import type { CopyKey } from "@jadwigo/copy";
 import type { RunView } from "@jadwigo/core";
-import { RUN_LOGS } from "@jadwigo/testing";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { LESSON_FILES, RUN_LOGS } from "@jadwigo/testing";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatPane } from "../ChatPane.tsx";
 import type { Turn } from "../conversation.ts";
-import { addedSteps } from "../LessonPane.tsx";
+import { addedSteps, LessonPane } from "../LessonPane.tsx";
+import { cardStateOf } from "../spine/card.ts";
 import type { LessonCardState } from "../spine/types.ts";
 import { LessonCard, lessonChanging, wroteLesson } from "./LessonCard.tsx";
 import type { ObjectRef } from "./ref.ts";
@@ -152,7 +154,8 @@ function drawn(state: LessonCardState, more: Partial<Parameters<typeof LessonCar
 const BASE = { lessonId: LESSON.id, version: 2, title: "Mnożenie przez 2 i 5" };
 
 describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)", () => {
-  const PREVIEW = ["Ile to 2 × 3?", "Ile to 5 × 4?", "Uzupełnij: 2, 4, 6, …"];
+  const PROMPTS = ["Ile to 2 × 3?", "Ile to 5 × 4?", "Uzupełnij: 2, 4, 6, …"];
+  const PREVIEW = PROMPTS.map((prompt, i) => ({ place: i + 1, prompt }));
 
   it("ready: the title first, {n} zadań, 3 prompts, +{n} więcej, the Gotowa tag, the actions", () => {
     drawn({ ...BASE, kind: "ready", count: 4, preview: PREVIEW });
@@ -161,7 +164,7 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     expect(card()?.querySelector("[data-card-facts]")?.textContent).toBe("4 zadania");
     expect(
       [...(card()?.querySelectorAll("[data-card-prompt]") ?? [])].map((p) => p.textContent),
-    ).toEqual(PREVIEW);
+    ).toEqual(PROMPTS);
     expect(card()?.querySelector("[data-card-more]")?.textContent).toBe("+1 więcej");
     expect(card()?.querySelector("[data-card-tag]")?.textContent).toBe("Gotowa");
     expect(card()?.querySelector("[data-card-actions] [data-test-actions]")).not.toBeNull();
@@ -169,13 +172,39 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     expect(card()?.textContent).not.toMatch(/Lekcja gotowa|Na początek|wersj/i);
   });
 
+  it("numbers each row by its question, never by its place in the list (dl-uukj.47.71.32)", () => {
+    drawn({
+      ...BASE,
+      kind: "ready",
+      count: 4,
+      preview: [
+        { place: 1, prompt: "Ile to 2 × 3?" },
+        { place: 3, prompt: "Ile to 5 × 4?" },
+      ],
+    });
+    expect(
+      [...document.querySelectorAll("[data-card-row]")].map((r) => r.getAttribute("data-card-row")),
+    ).toEqual(["1", "3"]);
+    expect(document.querySelector("[data-card-row='3']")?.textContent).toBe("3Ile to 5 × 4?");
+  });
+
   it("lists at most 3 prompts, and +{n} więcej only when there are more than 3", () => {
     drawn({ ...BASE, kind: "ready", count: 3, preview: PREVIEW });
     expect(card()?.querySelector("[data-card-more]")).toBeNull();
     cleanup();
-    drawn({ ...BASE, kind: "ready", count: 12, preview: [...PREVIEW, "Czwarte"] });
+    drawn({
+      ...BASE,
+      kind: "ready",
+      count: 12,
+      preview: [...PREVIEW, { place: 4, prompt: "Czwarte" }],
+    });
     expect(card()?.querySelectorAll("[data-card-prompt]").length).toBe(3);
     expect(card()?.querySelector("[data-card-more]")?.textContent).toBe("+9 więcej");
+    cleanup();
+    // 5 questions, 2 with words to show: the other 3 are "+3 więcej", never "+2" (steward on #808).
+    drawn({ ...BASE, kind: "ready", count: 5, preview: PREVIEW.slice(0, 2) });
+    expect(card()?.querySelectorAll("[data-card-prompt]").length).toBe(2);
+    expect(card()?.querySelector("[data-card-more]")?.textContent).toBe("+3 więcej");
   });
 
   it("writes its state only in the tag; the tile is always the book; it alone is raised", () => {
@@ -227,6 +256,37 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     expect(props.onFix).toHaveBeenCalledTimes(1);
   });
 
+  it("fix: a finding about the whole lesson names no question (dl-uukj.47.71.31)", () => {
+    drawn({
+      ...BASE,
+      kind: "fix",
+      count: 4,
+      preview: PREVIEW,
+      findings: [
+        { step: null, words: { copyKey: "chat_finding_no_question", values: {} } },
+        { step: 3, words: { copyKey: "chat_finding_key_in_say", values: {} } },
+      ],
+    });
+    expect([...document.querySelectorAll("[data-finding]")].map((f) => f.textContent)).toEqual([
+      "W lekcji nie ma jeszcze żadnego pytania.",
+      "Zadanie 3. Pytanie zdradza odpowiedź.",
+    ]);
+  });
+
+  it("fix with questions and no findings says the lesson changed since its check (#802's case)", () => {
+    drawn({ ...BASE, kind: "fix", count: 4, preview: PREVIEW, findings: [] });
+    const reason = card()?.querySelector("[data-fix-reason]")?.textContent ?? "";
+    expect(reason).toBe(
+      "Lekcja zmieniła się od ostatniego sprawdzenia. Poczekaj, aż Jadwigo ją sprawdzi, i spróbuj znowu.",
+    );
+    // It names no question to fix, since none is listed.
+    expect(reason).not.toMatch(/zadania będą poprawione|poprawić/);
+    const give = card()?.querySelector("[data-give]") as HTMLElement;
+    expect(document.getElementById(give.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      reason,
+    );
+  });
+
   it("fix with no step to show never says 0 zadań; without onFix there is no Popraw za mnie", () => {
     drawn({ ...BASE, kind: "fix", count: 0, preview: [], findings: [] }, { onFix: undefined });
     expect(card()?.textContent).not.toMatch(/0 zadań|Gotowa/);
@@ -245,7 +305,7 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
   it("superseded: one flat row, jest nowsza wersja, no actions or expand; Otwórz tę wersję when given", () => {
     drawn({ ...BASE, kind: "superseded" });
     expect(card()?.getAttribute("data-card-state")).toBe("superseded");
-    expect(card()?.textContent).toBe("Mnożenie przez 2 i 5jest nowsza wersja");
+    expect(card()?.textContent).toBe("Mnożenie przez 2 i 5· jest nowsza wersja");
     expect(card()?.classList.contains("shadow-card")).toBe(false);
     expect(card()?.querySelector("[data-test-actions]")).toBeNull();
     expect(card()?.querySelector("[data-expand]")).toBeNull();
@@ -333,5 +393,164 @@ describe("what the preview says while the lesson changes (S20)", () => {
       v.previous_lesson = null;
     });
     expect(addedSteps([alone], new Set(["s99"])).size).toBe(0);
+  });
+});
+
+/** happy-turn carrying `file` and a lesson_check that found `findings` on it. */
+function checked(file: Record<string, unknown>, findings: Record<string, unknown>[]): RunEvent[] {
+  const log = RUN_LOGS.find((l) => l.name === "happy-turn");
+  if (log === undefined) throw new Error("no golden log happy-turn");
+  return log.events
+    .map((e) => RunEvent.parse(e))
+    .map((e) =>
+      e.type === "lesson_revision"
+        ? ({ ...e, payload: { ...e.payload, lesson_file: file } } as RunEvent)
+        : e.type === "tool_result" && e.payload.verb === "lesson_check"
+          ? ({
+              ...e,
+              payload: { ...e.payload, output: { publishable: false, findings } },
+            } as RunEvent)
+          : e,
+    );
+}
+
+/** multiplication-times-four: s06 is its 6th step and 3rd question (s01, s04, s05 are narration). */
+function timesFour(change: (steps: Record<string, unknown>[]) => void = () => {}) {
+  const file = structuredClone(
+    LESSON_FILES.find((f) => (f as { id: string }).id === "multiplication-times-four"),
+  ) as { script: { parts: { steps: Record<string, unknown>[] }[] } };
+  change(file.script.parts.flatMap((p) => p.steps));
+  return file as unknown as Record<string, unknown>;
+}
+
+const finding = (step_id: string) => ({
+  step_id,
+  path: "",
+  level: "warn",
+  rule: "key-in-say",
+  text: "x",
+  fix: "y",
+});
+
+describe("one question number everywhere: the card, its findings and the preview modal (dl-uukj.47.71.32)", () => {
+  /** The number the card's findings give a step, its card row's, and the modal's row for it. */
+  function numbers(file: Record<string, unknown>, step_id: string) {
+    const state = cardStateOf(checked(file, [finding(step_id), finding(`${step_id}t`)]));
+    if (state?.kind !== "fix") throw new Error("expected a fix card");
+    drawn(state);
+    const row = (prompt: string) =>
+      [...document.querySelectorAll("[data-card-row]")]
+        .find((r) => r.textContent?.endsWith(prompt))
+        ?.getAttribute("data-card-row");
+    const cardRow = row(
+      state.preview.find((p) => p.prompt.startsWith("Ile jest kwiatków"))?.prompt ?? "",
+    );
+    cleanup();
+    const lesson = { revision: 1, lesson_file: file } as NonNullable<RunView["lesson"]>;
+    render(<LessonPane language="pl" lesson={lesson} />);
+    const paneRow = document.querySelector(`[data-step='${step_id}'] .tabular-nums`)?.textContent;
+    cleanup();
+    return { findings: state.findings.map((f) => f.step), cardRow, paneRow };
+  }
+
+  it("a question after narration steps, and its twin, carry its modal row number", () => {
+    const { findings, cardRow, paneRow } = numbers(timesFour(), "s06");
+    expect(paneRow).toBe("3");
+    expect(cardRow).toBe("3");
+    expect(findings).toEqual([3, 3]);
+  });
+
+  it("a step that cannot be drawn yet keeps its row, so nothing after it renumbers (steward on #814)", () => {
+    const file = timesFour((steps) => {
+      const s03 = steps.find((s) => s["id"] === "s03");
+      if (s03 !== undefined) (s03["question"] as Record<string, unknown>)["family"] = "nope";
+    });
+    const { findings, cardRow, paneRow } = numbers(file, "s06");
+    expect(paneRow).toBe("3");
+    expect(cardRow).toBe("3");
+    expect(findings).toEqual([3, 3]);
+    // A finding on the step that cannot be drawn reads its own row's number, 2.
+    const state = cardStateOf(checked(file, [finding("s03")]));
+    expect(state?.kind === "fix" ? state.findings.map((f) => f.step) : null).toEqual([2]);
+    render(
+      <LessonPane
+        language="pl"
+        lesson={{ revision: 1, lesson_file: file } as NonNullable<RunView["lesson"]>}
+      />,
+    );
+    expect(document.querySelector("[data-step='s03'] .tabular-nums")?.textContent).toBe("2");
+  });
+
+  it("an empty prompt before it renumbers nothing", () => {
+    const file = timesFour((steps) => {
+      const s03 = steps.find((s) => s["id"] === "s03");
+      if (s03 !== undefined) s03["say"] = { pl: "", uk: "", en: "" };
+    });
+    const { findings, cardRow, paneRow } = numbers(file, "s06");
+    expect(paneRow).toBe("3");
+    expect(cardRow).toBe("3");
+    expect(findings).toEqual([3, 3]);
+  });
+});
+
+describe("the ready card's title (dl-1eieq.16)", () => {
+  const ready = {
+    lessonId: "les_1",
+    version: 1,
+    title: "Dodawanie",
+    count: 3,
+    preview: [{ place: 1, prompt: "2 + 2" }],
+    kind: "ready",
+  } as const;
+  const object = { kind: "lesson", id: "les_1" } as never;
+  function card(onRename: (title: string) => Promise<CopyKey | null>) {
+    render(
+      <LessonCard
+        state={ready}
+        object={object}
+        language="pl"
+        onOpen={() => {}}
+        onRename={onRename}
+      />,
+    );
+    fireEvent.click(document.querySelector("[data-card-title]") as HTMLElement);
+    return document.querySelector("[data-card-title-field]") as HTMLInputElement;
+  }
+
+  it("saves on Enter and shows the new words at once", async () => {
+    const onRename = vi.fn(async () => null);
+    const field = card(onRename);
+    fireEvent.change(field, { target: { value: " Dodawanie do 20 " } });
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    expect(onRename).toHaveBeenCalledExactlyOnceWith("Dodawanie do 20");
+    expect(document.querySelector("[data-card-title]")?.textContent).toBe("Dodawanie do 20");
+  });
+
+  it("keeps the title on Esc, or when nothing changed or nothing is left", async () => {
+    const onRename = vi.fn(async () => null);
+    const field = card(onRename);
+    fireEvent.change(field, { target: { value: "Inne" } });
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(document.querySelector("[data-card-title]")?.textContent).toBe("Dodawanie");
+    fireEvent.click(document.querySelector("[data-card-title]") as HTMLElement);
+    const again = document.querySelector("[data-card-title-field]") as HTMLInputElement;
+    fireEvent.change(again, { target: { value: "   " } });
+    fireEvent.blur(again);
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it("puts the old words back and says why when it is refused", async () => {
+    const field = card(async () => "parent_title_refused");
+    fireEvent.change(field, { target: { value: "Inne" } });
+    await act(async () => fireEvent.blur(field));
+    expect(document.querySelector("[data-card-title]")?.textContent).toBe("Dodawanie");
+    expect(document.querySelector("[data-card-title-problem]")?.textContent).toBe(
+      "Tego tytułu nie możemy użyć. Spróbuj innych słów.",
+    );
+  });
+
+  it("is plain words on a card that is not ready, or with nothing to save through", () => {
+    render(<LessonCard state={ready} object={object} language="pl" onOpen={() => {}} />);
+    expect(document.querySelector("[data-card-title]")?.tagName).toBe("SPAN");
   });
 });

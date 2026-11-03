@@ -2,9 +2,10 @@
 // terraform, aws, bun and curl in a throwaway repo with its own origin, so nothing reaches AWS or
 // Supabase. It refuses an agent and a shell with no terminal, previews before its one question,
 // stops before the question on a plan that destroys, and after one typed prod runs every step with
-// JW_RELEASE_CONFIRMED=prod, the api and its health check before the runner, the web, site and docs,
+// JW_RELEASE_CONFIRMED=prod, the api and its health check before the runner, the web and site,
 // and one engine-smoke turn last (dl-5ssh.34.73, decision bead dl-hmvzn). The preview shows the
-// runner's path filter and auth.sh diff prod, and nothing ever runs auth.sh apply.
+// runner's path filter and auth.sh diff prod, and nothing ever runs auth.sh apply. It never seeds:
+// db-seed is not one of its steps (dl-5ssh.34.80). The docs ship only with DOCS=1 (dl-5ssh.34.81).
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -232,7 +233,7 @@ describe("make release", { timeout: 60_000 }, () => {
     expect(run.output).not.toContain("Released");
     const log = calls(s);
     expect(log).toContain("runner-deploy token=prod");
-    expect(log).toContain("web-deploy site-deploy docs-deploy token=prod");
+    expect(log).toContain("web-deploy site-deploy token=prod");
   });
 
   it("stops before the question when the plan destroys or replaces anything", () => {
@@ -264,16 +265,37 @@ describe("make release", { timeout: 60_000 }, () => {
       "auth.sh diff prod",
       "db-push ENV=prod token=prod",
       "db-role ENV=prod token=prod",
-      "db-seed ENV=prod token=prod",
       "terraform -chdir=infra/terraform apply",
       "api-deploy token=prod",
       expect.stringContaining("curl -s -o /dev/null"),
       "runner-deploy token=prod",
       "runner-status token=prod",
-      "web-deploy site-deploy docs-deploy token=prod",
+      "web-deploy site-deploy token=prod",
       "prod-status token=prod",
       "engine-smoke ENV=prod token=prod",
     ]);
+    expect(calls(s)).not.toContain("db-seed");
+    expect(calls(s)).not.toContain("docs-deploy");
+    expect(run.output).toContain("docs (skipped)");
+    expect(run.output).toContain("docs: skipped. make release DOCS=1");
+  });
+
+  it("deploys the docs only with DOCS=1, after the web and site and before prod-status", () => {
+    for (const off of ["", "0", "yes"]) {
+      const s = stage();
+      const run = atTerminal(s, "prod", { DOCS: off });
+      expect(run.status, run.output).toBe(0);
+      expect(calls(s)).not.toContain("docs-deploy");
+    }
+    const s = stage();
+    const run = atTerminal(s, "prod", { DOCS: "1" });
+    expect(run.status, run.output).toBe(0);
+    expect(run.output).toContain("docs (deploys)");
+    expect(run.output).not.toContain("docs: skipped");
+    const log = calls(s).split("\n");
+    const docs = log.findIndex((l) => l.includes("web-deploy site-deploy docs-deploy token=prod"));
+    expect(docs).toBeGreaterThan(log.findIndex((l) => l.includes("runner-deploy token=prod")));
+    expect(docs).toBeLessThan(log.findIndex((l) => l.includes("prod-status token=prod")));
   });
 
   it("with no migrations and no plan changes, pushes nothing and applies nothing", () => {
@@ -285,6 +307,6 @@ describe("make release", { timeout: 60_000 }, () => {
     const log = calls(s);
     expect(log).not.toContain("db-push ENV=prod token=prod");
     expect(log).not.toContain("apply");
-    expect(log).toContain("web-deploy site-deploy docs-deploy token=prod");
+    expect(log).toContain("web-deploy site-deploy token=prod");
   });
 });

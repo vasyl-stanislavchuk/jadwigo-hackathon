@@ -104,11 +104,17 @@ function startOnce(
   client: AttemptClient,
   assignmentId: AssignmentId,
   learner: LearnerId | null,
+  playerName: string | null,
 ): Promise<AttemptSnapshot> {
   const key = `${assignmentId}.${learner}`;
   const pending = starting.get(key);
   if (pending !== undefined) return pending;
-  const body = learner === null ? {} : { learner_id: learner };
+  const body =
+    learner !== null
+      ? { learner_id: learner }
+      : playerName !== null
+        ? { player_name: playerName }
+        : {};
   const started = client.startAttempt(assignmentId, body).then((snapshot) => {
     storedAttempt.set(assignmentId, snapshot.attempt.id, learner);
     return snapshot;
@@ -120,12 +126,14 @@ function startOnce(
 
 /**
  * `learner` is the child a play link names (`?learner=`, dl-1u6fn.5): an assignment for a pod's
- * learners starts only with one, and the attempt is that child's from its start.
+ * learners starts only with one, and the attempt is that child's from its start. `playerName` is
+ * what a player typed on the first screen (IntroScreen), kept on an attempt with no learner.
  */
 export function usePlayer(
   assignmentId: AssignmentId,
   client?: AttemptClient,
   learner: LearnerId | null = null,
+  playerName: string | null = null,
 ): Player {
   const api = useMemo(() => client ?? createClient({ base: "" }), [client]);
   const [state, dispatch] = useReducer(runner, initialRunner);
@@ -188,7 +196,7 @@ export function usePlayer(
     let live = true;
     const isLive = (): boolean => live;
     const start = (): Promise<AttemptSnapshot> =>
-      untilAnswered(() => startOnce(api, assignmentId, learner), isLive);
+      untilAnswered(() => startOnce(api, assignmentId, learner, playerName), isLive);
     const stored = storedAttempt.get(assignmentId, learner);
     const load =
       stored === null
@@ -223,7 +231,7 @@ export function usePlayer(
     return () => {
       live = false;
     };
-  }, [api, assignmentId, learner, take]);
+  }, [api, assignmentId, learner, playerName, take]);
 
   // A new question on screen: its clock starts now. A miss keeps the question, and its clock.
   useEffect(() => {

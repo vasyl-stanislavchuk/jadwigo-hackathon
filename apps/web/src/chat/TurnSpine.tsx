@@ -159,9 +159,11 @@ function Line({
   if (line.kind === "steer")
     return (
       <li className="flex flex-col gap-0.5" data-line="steer">
-        <span className="text-jw-page-micro font-medium text-jw-placeholder">
-          {copy(language, "chat_steer_label", {}, "adult")}
-        </span>
+        {line.afterTurn === true ? null : (
+          <span className="text-jw-page-micro font-medium text-jw-placeholder">
+            {copy(language, "chat_steer_label", {}, "adult")}
+          </span>
+        )}
         <span className="text-jw-page-small text-jw-ink">
           {line.quote === undefined ? say(language, line) : `„${line.quote}”`}
         </span>
@@ -353,6 +355,8 @@ export interface SpineActions {
   onRetry?: (() => void) | undefined;
   /** Kopiuj szczegóły dla pomocy: the run log to the clipboard (S3), the toast says Skopiowane. */
   onCopyDetails?: (() => void) | undefined;
+  /** No lesson exists yet in the conversation: a stop says only "Zatrzymane." (dl-uukj.47.71.40). */
+  noLesson?: boolean | undefined;
 }
 
 /** The card's foot (D7, S11, S15, §4.6): never an alert box, never red. */
@@ -376,11 +380,13 @@ function Foot({
     return (
       <div className={frame} data-foot="stopped">
         <p className="text-jw-page-small text-jw-ink-soft">
-          {foot.versionStands === undefined
-            ? s("live_stopped")
-            : s(foot.changed === true ? "chat_stopped_some" : "chat_stopped_none", {
-                n: foot.versionStands,
-              })}
+          {s(
+            foot.changed === true
+              ? "chat_stopped_some"
+              : actions.noLesson === true
+                ? "chat_stopped_before"
+                : "chat_stopped_none",
+          )}
         </p>
       </div>
     );

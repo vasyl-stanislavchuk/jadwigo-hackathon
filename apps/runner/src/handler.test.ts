@@ -1,3 +1,4 @@
+import { RunId } from "@jadwigo/contracts/run";
 import { describe, expect, it } from "vitest";
 import { createRunnerHandler } from "./handler.ts";
 import type { HostReport } from "./host.ts";
@@ -13,6 +14,8 @@ const REPORT: HostReport = {
   stuck: { oldest_ready_step_age_s: null, runs_past_deadline: [] },
   failed: [],
   dead_letters: 0,
+  runs: [],
+  refused: [],
 };
 const RUN = "run_0000000000000000000000000a";
 
@@ -49,6 +52,22 @@ describe("the runner's Lambda handler", () => {
     await handler({});
     await handler(undefined);
     expect(lines.map((l) => JSON.parse(l).poked)).toEqual([null, null]);
+  });
+
+  it("logs the runs it worked and the calls refused, though nothing failed", async () => {
+    const lines: string[] = [];
+    const run_id = RunId.parse(RUN);
+    const refused = [{ run_id, verb: "lesson_edit", type: "edit", count: 3 }] as const;
+    await createRunnerHandler(
+      () => Promise.resolve({ ...REPORT, runs: [run_id], refused }),
+      (line) => lines.push(line),
+    )({});
+
+    expect(JSON.parse(lines[0] ?? "")).toMatchObject({
+      failed: [],
+      runs: [RUN],
+      refused: [{ run_id: RUN, verb: "lesson_edit", type: "edit", count: 3 }],
+    });
   });
 
   it("logs nothing a payload carries: only the keys it names", async () => {

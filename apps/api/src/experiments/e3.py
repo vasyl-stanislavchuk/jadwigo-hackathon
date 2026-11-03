@@ -127,7 +127,11 @@ def parse_judge(text: str) -> dict[str, Any]:
         return {"accuracy": None, "warmth": None, "usefulness": None, "reason": "bad JSON"}
 
 
-def ledger_spend() -> dict[str, Any]:
+RUN_STARTED = ""
+
+
+def ledger_spend(since: str = "") -> dict[str, Any]:
+    """Ledger rows tagged e3:*, completed, at or after `since`: this run's calls only."""
     total = {"calls": 0, "usd": 0.0, "input_tokens": 0, "output_tokens": 0}
     log_dir = ROOT / "apps/cli/logs/muse"
     for path in sorted(log_dir.glob("*.jsonl")):
@@ -136,7 +140,11 @@ def ledger_spend() -> dict[str, Any]:
                 row = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if str(row.get("tag", "")).startswith("e3:") and row.get("terminal") == "completed":
+            if (
+                str(row.get("tag", "")).startswith("e3:")
+                and row.get("terminal") == "completed"
+                and str(row.get("at", "")) >= since
+            ):
                 usage = row.get("usage") or {}
                 total["calls"] += 1
                 total["usd"] += float(usage.get("usd") or 0)
@@ -176,6 +184,10 @@ def one_learner(entry: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
+    global RUN_STARTED
+    import datetime as dt
+
+    RUN_STARTED = dt.datetime.now(dt.timezone.utc).isoformat()
     t0 = time.time()
     WORK.mkdir(parents=True, exist_ok=True)
     learners = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
@@ -203,7 +215,7 @@ def main() -> int:
             means[key] = round(sum(vals) / len(vals), 2) if vals else None
         r["panel"] = panel
         r["panel_mean"] = means
-    spark_ledger = ledger_spend()
+    spark_ledger = ledger_spend(RUN_STARTED)
     clean = sum(1 for r in results if r["findings"] == [])
     panel_totals = {}
     for key in ("accuracy", "warmth", "usefulness"):
@@ -241,10 +253,13 @@ def main() -> int:
             "results": results,
         },
     }
-    if len(sys.argv) > 2 and Path(sys.argv[2]).exists():
-        out["detail"]["wonder_comparison"] = json.loads(
-            Path(sys.argv[2]).read_text(encoding="utf-8")
-        )
+    wonder = (
+        Path(sys.argv[2])
+        if len(sys.argv) > 2
+        else Path(__file__).resolve().parent / "e3-wonder-legacy.json"
+    )
+    if wonder.exists():
+        out["detail"]["wonder_comparison"] = json.loads(wonder.read_text(encoding="utf-8"))
     OUT.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {OUT}")
     return 0

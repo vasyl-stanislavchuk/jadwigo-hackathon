@@ -12,51 +12,6 @@ const EDIT: Record<LessonLanguage, (step: string, words: string) => string> = {
   en: (step, words) => `The parent asks for a change in step ${step}: ${words}`,
 };
 
-const UNDO: Record<LessonLanguage, (steps: string, revision: number) => string> = {
-  pl: (steps, revision) =>
-    `Rodzic prosi o cofnięcie zmiany w krokach ${steps}: wróć do wersji ${revision}.`,
-  en: (steps, revision) =>
-    `The parent asks to undo the change to steps ${steps}: go back to revision ${revision}.`,
-};
-
-const WORDS: Record<LessonLanguage, (step: string) => string> = {
-  pl: (step) => `Rodzic sam zmienił słowa w kroku ${step}.`,
-  en: (step) => `The parent changed the words in step ${step} themselves.`,
-};
-
-/** The steer for a parent's own words in one step, sent with its patch and no why (dl-z5ja.111). */
-export const wordsSteer = (language: LessonLanguage, step: string): string => WORDS[language](step);
-
 /** The steer for a parent's own edit of one step. */
 export const editSteer = (language: LessonLanguage, step: string, words: string): string =>
   EDIT[language](step, words);
-
-/** The steer "Cofnij" sends: back to `revision`, for the steps the last revision changed. */
-export const undoSteer = (
-  language: LessonLanguage,
-  question_ids: readonly string[],
-  revision: number,
-): string => UNDO[language](question_ids.join(", "), revision);
-
-const MOVE: Record<LessonLanguage, Record<"up" | "down", (step: string) => string>> = {
-  pl: {
-    up: (step) => `Rodzic sam przeniósł krok ${step} o jedno miejsce wyżej.`,
-    down: (step) => `Rodzic sam przeniósł krok ${step} o jedno miejsce niżej.`,
-  },
-  en: {
-    up: (step) => `The parent moved step ${step} one place up themselves.`,
-    down: (step) => `The parent moved step ${step} one place down themselves.`,
-  },
-};
-
-const DROP: Record<LessonLanguage, (step: string) => string> = {
-  pl: (step) => `Rodzic sam usunął krok ${step} z lekcji.`,
-  en: (step) => `The parent removed step ${step} from the lesson themselves.`,
-};
-
-/** The steer for a parent's own move of one step, sent with its patch (dl-z5ja.108.1). */
-export const moveSteer = (language: LessonLanguage, step: string, by: -1 | 1): string =>
-  MOVE[language][by === -1 ? "up" : "down"](step);
-
-/** The steer for a parent's own removal of one step, sent with its patch (dl-z5ja.108.1). */
-export const dropSteer = (language: LessonLanguage, step: string): string => DROP[language](step);

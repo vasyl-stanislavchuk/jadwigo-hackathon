@@ -155,6 +155,16 @@ export class PgmqRunQueue implements RunQueue {
     });
   }
 
+  async extend(msg_id: number, vt_s: number): Promise<void> {
+    // On the row, as READ_PAST moves it: jadwigo_runner holds update on this table already.
+    await this.#in((c) =>
+      c.query(
+        "update pgmq.q_agent_step set vt = clock_timestamp() + make_interval(secs => $1) where msg_id = $2::bigint",
+        [vt_s, msg_id],
+      ),
+    );
+  }
+
   async archive(msg_id: number): Promise<void> {
     await this.#in((c) => c.query("select pgmq.archive($1, $2::bigint)", [QUEUE, msg_id]));
   }

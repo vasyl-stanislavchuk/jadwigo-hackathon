@@ -1,16 +1,28 @@
 ---
 title: The question bank
-description: The credited question sets lessons are composed from, and how a search finds the right one.
+description: Lessons are composed from credited Khan Academy and Alfik questions. The bank lives outside git and only lesson-ready questions reach a child.
 status: live
 as_of: 2026-11-03
 prs: []
 ---
 
-This page is for a judge asking where the questions come from: credited sets, indexed by skill and
-grade, that a lesson is composed from instead of being invented in the moment. This page is being
-written for the 4 November demo; its badge above already says where it stands.
+This page is for a judge who wants to know where the questions come from, and what keeps a bad
+one away from a child.
+
+The bank holds converted Khan Academy items and Alfik Matematyczny tasks. Each item keeps its
+source credit and licence. The bank itself lives outside the repo: no question pages, database
+files, or media are ever committed. The API reaches it 2 ways only. It invokes the bank's own
+search Lambda, and it reads a question's body from the content bucket by id. An id that starts
+with `alfik_` is an Alfik task. Any other id is a Khan item.
+
+A lesson takes only a lesson-ready question. Ready means the bank checked that the item compiles,
+that its key grades its own answer, that every picture loads, and that the page draws it without
+an error. An item the bank has not checked waits. An item a person flagged is out. The bank
+searches by topic, grade, language, and question type, so a draft can ask for the types a child
+needs. Questions embed with OpenAI `text-embedding-3-large` for that search, a call whose prompts
+pass a name guard first.
 
 ## Next
 
-- [The story](/story/): the next stop on the tour.
-- [Vision](/vision/): where each of these is going next.
+- [Credits](/features/credits/): how a borrowed question shows its source.
+- [Question sources](/guides/question-sources/): sets, ready ids, and type counts.

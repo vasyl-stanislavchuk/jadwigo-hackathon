@@ -89,6 +89,7 @@ module "app" {
     "GET /api/health",
     "GET /api/v1/featured-lessons",
     "GET /api/v1/playground-examples/{language}",
+    "GET /api/v1/assignments/{id}",
     "POST /api/v1/assignments/{id}/attempts",
     "GET /api/v1/attempts/{id}",
     "PATCH /api/v1/attempts/{id}",
@@ -136,6 +137,7 @@ module "app" {
     "POST /api/v1/runs/{id}/ratings",
     # A conversation's checked lesson given to play (dl-5ssh.136); a token route.
     "POST /api/v1/conversations/{id}/lessons",
+    "PATCH /api/v1/conversations/{id}/lessons",
     # The checked lesson's PDF, started and then asked about (dl-1eieq.8.4); token routes.
     "POST /api/v1/conversations/{id}/prints",
     "GET /api/v1/prints/{id}",
@@ -172,6 +174,7 @@ module "app" {
     "POST /api/v1/runs/{id}/cancellations",
     "POST /api/v1/runs/{id}/ratings",
     "POST /api/v1/conversations/{id}/lessons",
+    "PATCH /api/v1/conversations/{id}/lessons",
     "POST /api/v1/conversations/{id}/prints",
     "GET /api/v1/prints/{id}",
     "POST /api/v1/attachments",

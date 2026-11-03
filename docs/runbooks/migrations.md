@@ -77,9 +77,12 @@ What each one is:
    `jadwigo_api` through the transaction pooler (port 6543), on `PORT` (8787 by default).
 6. **Prod**, once dev has run the same migrations and its checks pass: from your own terminal, not
    an agent's (the targets refuse prod unless stdin is a terminal), `make db-push ENV=prod DRY_RUN=1`,
-   then `make db-push ENV=prod`, then `make db-role ENV=prod` the first time, then
-   `make db-seed ENV=prod`. Each asks you to type `prod` before it links prod, and no `CONFIRM`
-   answers for it.
+   then `make db-push ENV=prod`, then `make db-role ENV=prod` the first time. Each asks you to
+   type `prod` before it links prod, and no `CONFIRM` answers for it. `make release` runs these
+   for you and never seeds prod (`dl-5ssh.34.80`): a featured lesson reaches prod only by
+   `make lesson-import ENV=prod FEATURED=1` (`docs/runbooks/lesson-import.md`). Run
+   `make db-seed ENV=prod` once, by hand, only on a fresh prod with no featured lesson, playground
+   examples or curriculum yet.
 
 ## After
 
