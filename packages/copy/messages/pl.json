@@ -892,9 +892,6 @@
   "chat_finding_key_grades": "Dobra odpowiedź nie zostałaby zaliczona.",
   "chat_finding_harsh_word": "Dziecko przeczyta tu za ostre słowo.",
   "chat_check_level_info": "Dla informacji",
-  "chat_announce_done": "Jadwigo AI: gotowe",
-  "chat_announce_needs_you": "Jadwigo AI: czeka na Twoją odpowiedź",
-  "chat_announce_stopped": "Zapisane, zatrzymane.",
   "chat_switch": "Rozmowa albo lekcja",
   "chat_check_findings": [
     {
@@ -1505,6 +1502,7 @@
   "chat_copy_support": "Kopiuj szczegóły dla pomocy",
   "chat_stopped_none": "Zatrzymane. Lekcja została bez zmian.",
   "chat_stopped_some": "Zatrzymane. W lekcji jest to, co zdążyłam zmienić.",
+  "chat_stopped_before": "Zatrzymane.",
   "chat_send_disabled": "Napisz coś albo dodaj zdjęcie.",
   "chat_queue_label": "Wyślę, gdy skończę",
   "chat_queue_now": "Wyślij teraz",

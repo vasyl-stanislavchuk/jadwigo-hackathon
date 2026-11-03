@@ -9,7 +9,7 @@
 import type { RunEvent } from "@jadwigo/contracts/run";
 import type { CopyKey } from "@jadwigo/copy";
 import { type ChatItem, foldRun } from "@jadwigo/core";
-import { lessonFacts, positionOf } from "./lessonFile.ts";
+import { lessonFacts, positionOf, stepIds } from "./lessonFile.ts";
 import { checkOf } from "./lines.ts";
 import type { LessonCardState, Words } from "./types.ts";
 
@@ -68,14 +68,18 @@ function findingWords(rule: string, level: string): Words | null {
 }
 
 /**
- * A finding's question number: its step's place, a twin's (`s02t`) under its own question's, null
- * for the lesson as a whole; undefined when the step is not in the file, so the finding is dropped.
+ * A finding's question number, the modal's (`positionOf`): its question's, a twin's (`s02t`) at its
+ * own question's; null for the lesson as a whole or a step that is no question (a narration line),
+ * which reads unnumbered; undefined when the step is not in the file, so the finding is dropped.
  */
 function stepOf(file: unknown, step_id: string | null): number | null | undefined {
   if (step_id === null) return null;
   const own = positionOf(file, step_id);
   if (own !== null) return own;
-  return step_id.endsWith("t") ? (positionOf(file, step_id.slice(0, -1)) ?? undefined) : undefined;
+  const twin = step_id.endsWith("t") ? positionOf(file, step_id.slice(0, -1)) : null;
+  if (twin !== null) return twin;
+  const ids = stepIds(file);
+  return ids.includes(step_id) || ids.includes(step_id.slice(0, -1)) ? null : undefined;
 }
 
 /**

@@ -106,8 +106,6 @@ describe("the chat pane, one state per golden log", () => {
   it("running (reload-with-duplicates): the state in words, a Stop, one spine and no tool rows", () => {
     const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
     expect(status().textContent).toBe("W toku");
-    // The live region stays quiet while a turn runs: it speaks when it ends or needs the parent.
-    expect(screen.getByRole("status").textContent).toBe("");
     expect(document.querySelectorAll("[data-spine]")).toHaveLength(1);
     noOldRows();
     fireEvent.click(stopButton() as HTMLElement);
@@ -185,20 +183,13 @@ describe("the chat pane, one state per golden log", () => {
     const foot = document.querySelector("[data-foot='failed']") as HTMLElement;
     fireEvent.click(within(foot).getByRole("button", { name: "Kopiuj szczegóły dla pomocy" }));
     const copied = String(writeText.mock.calls.at(0)?.at(0));
-    const lines = copied.split("\n");
-    expect(lines[0]).toBe(`run ${turn.run.id}`);
-    expect(lines[1]).toBe("attempt 1");
-    expect(lines.map((l) => l.split(/[ :]/)[0])).toEqual([
-      "run",
-      "attempt",
-      "status",
-      "errors",
-      "plan",
+    expect(copied.split("\n")).toEqual([
+      `run ${turn.run.id}`,
+      "attempt 1",
+      `status ${turn.view.status}`,
+      "errors: question_types bank-busy, StepTimedOut (attempt 1), StepTimedOut (attempt 2), StepFailed (attempt 3)",
+      "plan: 1 done · 2 failed · 3 pending",
     ]);
-    expect(lines[3]).toMatch(
-      /^errors: (none|[\w -]+( \(attempt \d+\))?(, [\w -]+( \(attempt \d+\))?)*)$/,
-    );
-    expect(lines[4]).toMatch(/^plan: (none|\d+ \w+( · \d+ \w+)*)$/);
   });
 
   it("copies no learner data: no name, answer, message, tool output, error message or plan words (dl-uukj.47.71.28)", () => {
@@ -223,9 +214,13 @@ describe("the chat pane, one state per golden log", () => {
             },
           };
         case "error":
+          // A sentence where a code belongs: the contract types an error's type as any string.
           return {
             ...e,
-            payload: { ...e.payload, error: { ...e.payload.error, message: PLANTED } },
+            payload: {
+              ...e.payload,
+              error: { ...e.payload.error, type: PLANTED, message: PLANTED },
+            },
           };
         case "plan":
           return {
@@ -242,6 +237,7 @@ describe("the chat pane, one state per golden log", () => {
     fireEvent.click(within(foot).getByRole("button", { name: "Kopiuj szczegóły dla pomocy" }));
     const copied = String(writeText.mock.calls.at(0)?.at(0));
     expect(copied).toContain(`run ${turn.run.id}`);
+    expect(copied).toContain("other (attempt 3)");
     for (const word of ["Ola", "17", "jabłek", "answer", "{", '"'])
       expect(copied).not.toContain(word);
   });
@@ -290,27 +286,6 @@ describe("the lesson pane", () => {
 });
 
 describe("accessibility and recovery (dl-z5ja.28)", () => {
-  const live = () => screen.getByRole("status");
-
-  it("the live region speaks when a turn finishes, stops or needs the parent, and not while restoring", () => {
-    pane({ turns: [turnOf("happy-turn")] });
-    expect(live().getAttribute("aria-live")).toBe("polite");
-    expect(live().textContent).toBe("Jadwigo AI: gotowe");
-    cleanup();
-    // plan-and-cite's approval, still unanswered.
-    const waiting = turnOf("plan-and-cite", (view) => {
-      for (const item of view.chat) if (item.kind === "approval") item.decision = null;
-    });
-    pane({ turns: [waiting] });
-    expect(live().textContent).toBe("Jadwigo AI: czeka na Twoją odpowiedź");
-    cleanup();
-    pane({ turns: [turnOf("cancel-during-a-verb")] });
-    expect(live().textContent).toBe("Zapisane, zatrzymane.");
-    cleanup();
-    pane({ turns: [turnOf("happy-turn")], restoring: true });
-    expect(live().textContent).toBe("");
-  });
-
   it("the run's state is text, not a colour alone", () => {
     pane({ turns: [turnOf("happy-turn")] });
     expect(status().textContent).toBe("Gotowe");
@@ -324,7 +299,6 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     expect(retries).toHaveLength(1);
     expect(retries[0]?.closest("[data-foot='failed']")).not.toBeNull();
     expect(document.querySelector("[data-row='retry-turn']")).toBeNull();
-    expect(live().textContent).toContain("Tej tury nie udało się dokończyć.");
   });
 
   it("a send that did not reach the server can go again, and the draft being typed stays", () => {
@@ -343,6 +317,27 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
     fireEvent.keyDown(screen.getByRole("textbox", { name: "Twoja wiadomość" }), { key: "Escape" });
     expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it("a turn stopped before any lesson exists says only 'Zatrzymane.' (dl-uukj.47.71.40)", () => {
+    /** cancel-during-a-verb with its lesson taken out: a stop that changed nothing. */
+    const unchanged = (): Turn => {
+      const turn = turnOf("cancel-during-a-verb", (view) => {
+        view.lesson = null;
+      });
+      const events = (turn.events ?? []).filter((e) => e.type !== "lesson_revision");
+      return { ...turn, events };
+    };
+    const foot = () => document.querySelector("[data-foot='stopped']")?.textContent;
+    pane({ turns: [unchanged()] });
+    expect(foot()).toBe("Zatrzymane.");
+    cleanup();
+    pane({ language: "en", turns: [unchanged()] });
+    expect(foot()).toBe("Stopped.");
+    cleanup();
+    // A lesson from an earlier turn stands: the stop left it as it was.
+    pane({ turns: [turnOf("happy-turn"), unchanged()] });
+    expect(foot()).toBe("Zatrzymane. Lekcja została bez zmian.");
   });
 
   it("a stopped turn's foot says whether the lesson changed, and names no version (S15, dl-vxjv2)", () => {
