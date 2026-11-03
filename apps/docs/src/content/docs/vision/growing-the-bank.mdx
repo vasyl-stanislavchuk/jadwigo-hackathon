@@ -14,9 +14,12 @@ use them.
 
 <Diagram name="bank-pipeline" caption="The slice flow, from a source library to a gated index." />
 
-The first slice is live: Khan maths for grade 3 in Polish and English, 143 sets and 2,738
+The first slice was Khan maths for grade 3 in Polish and English: 143 sets and 2,738
 questions, enriched on `muse-spark-1.3-contributor` for $2.57 (sets) and $1.22 (items) and
-indexed at 1,892 vectors. Growing means running the same steps again for a new grade or a new
+indexed at 1,892 vectors. The index has already grown past it: the index E5 gated on holds
+411 sets (Khan grades 1, 2, 3 and 4 at 23, 70, 143 and 151 sets, and 24 Alfik sets) at
+5,677 vectors, with enrichment still `reviewed: false` throughout, waiting for a person's
+read. Growing means running the same steps again for a new grade or a new
 library, and E4 priced them: enrichment projects to $26.52 per 1,000 sets, golden labels to
 about $2 to $3 per 100 needs, and a scored search run to about $0.04 per 100 needs of OpenAI
 and Voyage calls. The money is not the constraint. A person's review is: every enriched field
@@ -38,9 +41,11 @@ What stays fixed as the bank grows:
   that finds more and abstains less is blocked until a person reads the gaps, and a stale
   holdout baseline blocks judgement rather than passing quietly.
 
-The next slices are already shaped: another Khan grade reuses every tool and changes only its
-input file, output folder, needs and a golden set of its own (grades 1 to 4 are the plan, and
-Alfik Matematyczny is the second library, indexed beside Khan). The gaps in today's golden set
+That growth has begun the same way: Khan grades 1, 2 and 4 and Alfik Matematyczny, the
+second library, are read, enriched and indexed beside grade 3, each reusing the same tools
+with only its input file, output folder, needs and golden set of its own changed. What they
+do not have yet is their own passed gate and a person's review of their enrichment. The
+gaps in today's golden set
 choose what to pull next: of the 215 needs, 127 have no set graded relevant, and the curriculum
 outcomes they cite, such as reading and ordering numbers to 1000, are the shopping list. What
 is not yet measured is size: the search service builds its keyword corpus in memory at start,

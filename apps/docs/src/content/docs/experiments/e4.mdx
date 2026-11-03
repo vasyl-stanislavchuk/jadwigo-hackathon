@@ -46,7 +46,7 @@ and per item. The full table, including every task tag, is in the experiment's J
 | enrich (143 sets) | 572 | 20,605,761 | $2.57 | $0.018 a set |
 | items (2,738 items) | 402 | 11,080,491 | $1.22 | $0.00044 an item |
 | alt (picture words) | 141 | 4,045,683 | $0.39 | |
-| filters, smoke, samples, product | 44 | 840,566 | $0.10 | |
+| filters, smoke, samples, product | 44 | 840,566 | $0.11 | |
 
 By step, the golden labels split evenly over their 3 lenses (441 calls each: intent, skill,
 mistake), and set enrichment splits into 431 drafts at $1.68 and 141 critic calls at $0.90.
@@ -78,6 +78,14 @@ field rests on; a dropped ground is a claim the code could not find in the sourc
 
 The live run cost $0.0128 on spark for the 3 sets. Wonder used 133,272 input and 10,626 output
 tokens and is unpriced on this path, so its cost source says so instead of inventing a price.
+
+The enrichment model choice follows from this: keep `muse-spark-1.3-contributor` for
+enriching the bank. It is priced per call in the ledger ($0.018 a set at today's quality), it
+kept more of its grounds under the quote check here (42 of 44 against wonder's 36 of 46), and
+its fields run shorter and tighter. Wonder's longer, richer drafts are worth trying where a
+person reads every word anyway, such as a critic or a judge, and E3 and E7 test exactly that.
+One live draft per model is a reading, not a verdict: the 3-draft pipeline can re-check it at
+the next slice.
 
 ## Next
 
