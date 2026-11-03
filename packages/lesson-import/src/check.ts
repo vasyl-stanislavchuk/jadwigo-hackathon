@@ -29,7 +29,9 @@ import { mistakeClassesByStep, mistakeClassesOf, unknownBoosts } from "./mistake
  *   the check going on to the next step; a help rung nothing fills (`empty-rung`, a warn, read
  *   only when the file names its language); a `boost_by_mistake` key the question never gives
  *   (`unknown-mistake-class`, naming the valid ones); an answer the key accepts written into `say`
- *   outside a sum or a list (`key-in-say`, a warn: it is a heuristic). `ok` is "no error"; a warn
+ *   outside a sum or a list (`key-in-say`, a warn: it is a heuristic); a twin that asks its question
+ *   again (`twin-repeats`); a first hint that holds the answer (`hint-gives-key`, a warn: it is a
+ *   heuristic). `ok` is "no error"; a warn
  *   does not fail the file, so jw's plays-as-copied is never decided by one.
  * - `errors` is the error findings as jw read them before `findings`: one message by step id, a
  *   contract failure one message for the step, unknown boosts one message for the question. Kept
@@ -504,6 +506,70 @@ function twinRepresentation(steps: readonly RawStep[]): Finding[] {
   return findings;
 }
 
+/** The numbers a question's data shows, in order: its words may change and its sum stay the same. */
+function numbersIn(data: unknown): string[] {
+  // A picture's file and size say nothing about the sum: 2 spelling pictures share their sizes.
+  const shown = JSON.stringify(data, (key, value) =>
+    ["src", "width", "height"].includes(key) ? undefined : value,
+  );
+  return shown?.match(/\d+(?:[.,]\d+)?/g) ?? [];
+}
+
+/**
+ * A twin that asks its question again (`twin-repeats`): for a typed answer the same answer on the
+ * same numbers, for anything else the same answer on the same data. A child who missed it has just been shown that answer, so a right
+ * answer proves nothing (dl-hin8.48). A sibling with the same answer on other numbers is a real twin.
+ */
+function twinRepeats(steps: readonly RawStep[]): Finding[] {
+  const findings: Finding[] = [];
+  for (const step of steps) {
+    const twin = record(record(step.question["help"])?.["twin"]);
+    if (twin === null || canonical(step.question["key"]) !== canonical(twin["key"])) continue;
+    // A typed answer's sum is its numbers, whatever the words around it. Any other family's data is
+    // its words: 2 spelling lines can share a number and a key and ask different things.
+    const ours = numbersIn(step.question["data"]);
+    const same =
+      step.question["family"] === "enter" && ours.length > 0
+        ? canonical(ours) === canonical(numbersIn(twin["data"]))
+        : canonical(step.question["data"]) === canonical(twin["data"]);
+    if (!same) continue;
+    findings.push({
+      step_id: `${step.id}t`,
+      path: `${step.path}.question.help.twin`,
+      level: "error",
+      rule: "twin-repeats",
+      text: "The twin asks its question again, with the same numbers and the same answer.",
+      fix: "Give the twin other numbers and their own answer, from the same fact family: after a miss on 6 · 7, ask 6 · 8.",
+    });
+  }
+  return findings;
+}
+
+/** A first hint that gives the answer away: `look` and `boost` come before the child has worked it. */
+function hintGivesKey(steps: readonly RawStep[]): Finding[] {
+  const findings: Finding[] = [];
+  for (const q of steps.flatMap(questionsOf)) {
+    const help = record(q.question["help"]);
+    for (const rung of ["look", "boost"]) {
+      const text = record(help?.[rung])?.["text"];
+      if (typeof text !== "string") continue;
+      // An answer that is also a number in the sum (18 − 9 = 9) gives nothing away by being named.
+      const inSum = numbersIn(q.question["data"]);
+      const given = typedAnswers(q.question).filter((a) => !inSum.includes(a) && says(text, a));
+      if (given.length === 0) continue;
+      findings.push({
+        step_id: q.id,
+        path: `${q.path}.help.${rung}.text`,
+        level: "warn",
+        rule: "hint-gives-key",
+        text: `The ${rung} hint may give the answer away: it holds ${given.map((a) => `"${a}"`).join(", ")}.`,
+        fix: "Point at how to work it out and leave the answer for the child. The worked rung is where the answer belongs.",
+      });
+    }
+  }
+  return findings;
+}
+
 /** The typed answers a key accepts: an enter key's `accept`, and each enter gap's in slots. */
 function typedAnswers(question: Record<string, unknown>): string[] {
   const key = record(question["key"]);
@@ -640,6 +706,8 @@ export function check(raw: unknown): CheckResult {
   // class its question never gives never reaches the child (dl-e8ov.5.38.11).
   found.push(unknownMistakeClasses(id, steps));
   found.push({ findings: keyInSay(steps), errors: [] });
+  found.push({ findings: hintGivesKey(steps), errors: [] });
+  found.push(errorsAsJw(id, twinRepeats(steps)));
   found.push(errorsAsJw(id, twinRepresentation(steps)));
   found.push({ findings: resolved ? steps.flatMap(emptyRungs) : [], errors: [] });
   const findings = found.flatMap((f) => f.findings);

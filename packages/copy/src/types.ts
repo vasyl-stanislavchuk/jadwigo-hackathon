@@ -938,6 +938,8 @@ export const COPY_KEYS = [
   "chat_finding_unknown_mistake_class",
   "chat_finding_twin_representation",
   "chat_finding_twin_same_picture",
+  "chat_finding_twin_repeats",
+  "chat_finding_hint_gives_key",
   "chat_finding_key_in_say",
   "chat_finding_key_grades",
   "chat_finding_harsh_word",

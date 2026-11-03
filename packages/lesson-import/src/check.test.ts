@@ -290,6 +290,62 @@ describe("check.ts --json", () => {
     expect((out["errors"] as { step_id: string }[]).map((e) => e.step_id)).toEqual(["s03"]);
   });
 
+  describe("a twin and a hint that teach nothing (dl-hin8.48)", () => {
+    type Step = {
+      question: { key: unknown; data: unknown; family: string; help?: Record<string, unknown> };
+    };
+    const rulesOf = (out: Record<string, unknown>) =>
+      (out["findings"] as { rule: string; level: string; step_id: string }[]).filter((f) =>
+        ["twin-repeats", "hint-gives-key"].includes(f.rule),
+      );
+    const withTwin = (twinData: (data: unknown) => unknown, key?: unknown) =>
+      planted((raw) => {
+        const step = raw as unknown as Step;
+        step.question.help = {
+          ...step.question.help,
+          twin: {
+            say: "Policz jeszcze raz.",
+            data: twinData(structuredClone(step.question.data)),
+            key: key ?? step.question.key,
+          },
+        };
+      });
+
+    it("flags a twin with the same numbers and answer, though its words differ", () => {
+      const { out } = check(
+        withTwin((data) => ({
+          ...(data as object),
+          stem: { text: "Oblicz jeszcze raz." },
+        })),
+      );
+      expect(rulesOf(out)).toContainEqual(
+        expect.objectContaining({ rule: "twin-repeats", level: "error" }),
+      );
+    });
+
+    it("passes a twin with other numbers, even one with the same answer", () => {
+      const { out } = check(
+        withTwin((data) =>
+          JSON.parse(JSON.stringify(data).replace(/\d+/g, (n) => String(Number(n) + 1))),
+        ),
+      );
+      expect(rulesOf(out).filter((f) => f.rule === "twin-repeats")).toEqual([]);
+    });
+
+    it("warns on a first hint that holds the answer, and leaves one that does not", () => {
+      const hint = (text: string) =>
+        planted((raw) => {
+          const step = raw as unknown as Step & { question: { key: { accept: string[] } } };
+          step.question.key.accept = ["49"];
+          step.question.help = { ...step.question.help, boost: { text } };
+        });
+      expect(rulesOf(check(hint("7 skrzynek po 7 jabłek to 49 jabłek.")).out)).toContainEqual(
+        expect.objectContaining({ rule: "hint-gives-key", level: "warn" }),
+      );
+      expect(rulesOf(check(hint("Policz 7 skrzynek po 7 jabłek.")).out)).toEqual([]);
+    });
+  });
+
   it("does not take an operand for the answer in key-in-say, and passes the file", () => {
     // equal-groups s02 is an enter question; "10 − 5" with the answer 5 needs its 5.
     for (const say of [
