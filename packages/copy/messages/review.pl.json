@@ -300,6 +300,7 @@
   "play_paused": false,
   "play_paused_back": false,
   "play_not_found": false,
+  "app_share_description": false,
   "play_link_incomplete": false,
   "play_intro_yes": false,
   "play_intro_not_me": false,

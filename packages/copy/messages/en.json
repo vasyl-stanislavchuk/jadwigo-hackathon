@@ -485,6 +485,7 @@
   "play_paused": "The lesson is waiting for you.",
   "play_paused_back": "Back to the lesson",
   "play_not_found": "This lesson is not here.",
+  "app_share_description": "A short math or Polish lesson for grades 1–3, in the browser, with no sign-in. No points, timers or ads.",
   "play_link_incomplete": "This link is not complete. Ask a parent for a new one.",
   "play_intro_yes": "Yes, I'm {name}",
   "play_intro_not_me": "That's not me",
