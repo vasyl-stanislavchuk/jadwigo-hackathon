@@ -181,10 +181,7 @@ function Line({
           aria-hidden
           className={cn("mt-0.5 size-3.5 shrink-0", isNow ? "text-jw-act" : "text-jw-ink-soft")}
         />
-        {/* Keyed by its words: a new now line mounts fresh, so chat.css fades it in (§6). */}
-        <span key={say(language, line)} className="min-w-0 flex-1" data-words>
-          {say(language, line)}
-        </span>
+        <span className="min-w-0 flex-1">{say(language, line)}</span>
         {isNow && line.startedAt !== undefined && (
           <span
             className="shrink-0 text-jw-page-small font-normal text-jw-ink-soft tabular-nums"
