@@ -1,8 +1,9 @@
 /**
  * The lines above the composer (lane D of wave dl-uukj.47.71): the empty pane's starters, the
  * queue rows (D6), a failed turn's retry (until the spine's foot carries it, lane B), the
- * playground's status and live region, and one line for offline, a refused or a failed send
- * (§4.6). The "Jadwigo AI widzi" chip is gone (S21): Dla in the composer already says it.
+ * playground's status, and one line for offline, a refused or a failed send (§4.6). The page's one
+ * live region is the band's (dl-uukj.47.71.10). The "Jadwigo AI widzi" chip is gone (S21): Dla in
+ * the composer already says it.
  */
 
 import type { RunStatus } from "@jadwigo/contracts/run";
@@ -12,8 +13,8 @@ import { CornerDownRightIcon, InfoIcon, RotateCcwIcon, XIcon } from "lucide-reac
 import { type ReactElement, useEffect, useState } from "react";
 import { parentTextOf } from "./ChatThread.tsx";
 import "./chat.css";
-import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
-import { phaseAnnouncement, type RunPhase } from "./phase.ts";
+import type { SendLimit, Turn } from "./conversation.ts";
+import type { RunPhase } from "./phase.ts";
 
 const STATUS_KEY: Record<RunStatus, CopyKey> = {
   queued: "chat_status_queued",
@@ -25,21 +26,6 @@ const STATUS_KEY: Record<RunStatus, CopyKey> = {
 };
 
 const STARTERS: readonly CopyKey[] = ["chat_starter_1", "chat_starter_2", "chat_starter_3"];
-
-/**
- * What the live region says (dl-z5ja.28): only when the turn finishes, stops or needs the parent,
- * never each step, so a screen reader is not read every tool line. Empty while the page restores.
- */
-function announcementOf(last: Turn | undefined, restoring: boolean): CopyKey | null {
-  if (last === undefined || restoring) return null;
-  const status = last.view.status ?? last.run.status;
-  const waiting = last.view.chat.some((i) => i.kind === "approval" && i.decision === null);
-  if (isOpen(last))
-    return status === "awaiting_input" || waiting ? "chat_announce_needs_you" : null;
-  if (status === "cancelled") return "chat_announce_stopped";
-  if (status === "failed") return "chat_turn_unfinished";
-  return "chat_announce_done";
-}
 
 /** The browser's word on the network, kept current. */
 function useOnline(): boolean {
@@ -229,7 +215,6 @@ export function ComposerLines({
   const last = turns.at(-1);
   const status: RunStatus | null =
     last === undefined ? null : (last.view.status ?? last.run.status);
-  const announce = phase === undefined ? announcementOf(last, restoring) : phaseAnnouncement(phase);
   const retryText = last !== undefined && status === "failed" ? parentTextOf(last) : null;
   return (
     <>
@@ -275,23 +260,18 @@ export function ComposerLines({
       )}
       {/* The run's state as words, never a coloured dot alone; the parent's is in the band. */}
       {!parent && (
-        <>
-          <p
-            data-status={phase === undefined ? (status ?? "none") : (phase?.kind ?? "none")}
-            className="text-jw-page-body"
-          >
-            {phase === undefined
-              ? status === null
-                ? ""
-                : say(STATUS_KEY[status])
-              : phase === null
-                ? ""
-                : say(phase.copyKey)}
-          </p>
-          <p role="status" aria-live="polite" data-live className="sr-only">
-            {announce === null ? "" : say(announce)}
-          </p>
-        </>
+        <p
+          data-status={phase === undefined ? (status ?? "none") : (phase?.kind ?? "none")}
+          className="text-jw-page-body"
+        >
+          {phase === undefined
+            ? status === null
+              ? ""
+              : say(STATUS_KEY[status])
+            : phase === null
+              ? ""
+              : say(phase.copyKey)}
+        </p>
       )}
       <SendLine
         language={language}
