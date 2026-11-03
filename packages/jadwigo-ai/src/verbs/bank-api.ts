@@ -177,6 +177,17 @@ function needOf(query: BankQuery, limit: number): Need | undefined {
   };
 }
 
+/** Keep the source's description visible to the model; rank alone does not prove suitability. */
+function description(
+  words: Record<string, string> | undefined,
+  language: string,
+  label: string,
+): string {
+  if (words === undefined) return "";
+  const text = words[language] ?? words["en"] ?? Object.values(words)[0];
+  return text === undefined ? "" : `${label}: ${text.slice(0, 1200)}`;
+}
+
 function setOf(row: SearchEnvelope["rows"][number], query: BankQuery): BankSet {
   return {
     set_id: row.id,
@@ -185,7 +196,14 @@ function setOf(row: SearchEnvelope["rows"][number], query: BankQuery): BankSet {
     skills: row.skill_ids ?? [],
     questions: row.items ?? 0,
     question_types: row.question_types ?? [],
-    why_found: `the bank's search ranked it ${row.rank} (arm ${row.arm})`,
+    why_found: [
+      `Candidate ranked ${row.rank} (arm ${row.arm}); suitability for the full request is not verified.`,
+      description(row.enrichment?.summary, query.language, "Summary"),
+      description(row.enrichment?.can_do, query.language, "Practises"),
+      "May be nearby material. Inspect the drawn questions; use unchanged if suitable, or adapt with lesson_edit and record why.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
   };
 }
 
