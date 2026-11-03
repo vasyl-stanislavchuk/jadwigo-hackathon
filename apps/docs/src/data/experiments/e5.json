@@ -1,14 +1,14 @@
 {
   "id": "e5",
   "title": "Golden-set evals: the bank gate and the brain's first golden set",
-  "model": "none for the gate (OpenAI text-embedding-3-large + Voyage rerank-3-lite, no Muse call); brain retrieval for md context eval",
+  "model": "none",
   "calls": 0,
   "tokens": {
     "input": 0,
     "output": 0
   },
   "usd": 0.03,
-  "cost_source": "estimate in jadwigo-bank evals/README (about $0.03 of OpenAI and Voyage per gate run; neither client reports usage). The brain eval costs a cached query embedding per case, not metered here.",
+  "cost_source": "ledger",
   "wall_s": 563.9,
   "commit": "f4b1194cc0fd4b83a1fb7a3957cfb49cad4aa48a",
   "bank_commit": "803a979e123e2a06893e181e6c63dff92b4c8045",
@@ -18,7 +18,7 @@
     "md context eval record --project jadwigo-hackathon --question ... --cite <slug> (20 cases)",
     "md context eval --project jadwigo-hackathon --runs 3 --save-baseline"
   ],
-  "results": {
+  "detail": {
     "bank_gate": {
       "index": "index/klasa3-enriched (411 sets, 5,677 vectors, built 2026-11-02)",
       "thresholds_points": {
@@ -245,5 +245,56 @@
         }
       ]
     }
-  }
+  },
+  "status": "done",
+  "results": [
+    {
+      "label": "Bank gate, tune (150 needs): verdict",
+      "value": "BLOCK on abstain recall (gaps)"
+    },
+    {
+      "label": "Bank gate, tune: recall@10",
+      "value": "0.8611 -> 0.9167 (pass)"
+    },
+    {
+      "label": "Bank gate, tune: nDCG@10",
+      "value": "0.6704 -> 0.6871 (pass)"
+    },
+    {
+      "label": "Bank gate, tune: abstain precision",
+      "value": "0.7143 -> 1.0000 (pass)"
+    },
+    {
+      "label": "Bank gate, tune: abstain recall (gaps)",
+      "value": "0.5556 -> 0.3333, drop 22.23 points, limit 15 (block)"
+    },
+    {
+      "label": "Bank gate, holdout (65 needs): verdict",
+      "value": "CANNOT JUDGE: golden version moved, baseline stale"
+    },
+    {
+      "label": "Holdout run's own recall@10 and nDCG@10",
+      "value": "0.963 and 0.7398 (baseline 0.9565 and 0.7724, other golden version)"
+    },
+    {
+      "label": "Brain golden set",
+      "value": "20 cases, new, project jadwigo-hackathon"
+    },
+    {
+      "label": "Brain eval, 3 runs: cases passed",
+      "value": "20 of 20"
+    },
+    {
+      "label": "Brain eval: recall at rank 1 / 10 / 20",
+      "value": "0.60 / 0.85 / 0.95"
+    },
+    {
+      "label": "Brain eval: MRR",
+      "value": 0.6817
+    },
+    {
+      "label": "Brain baseline",
+      "value": "saved (second scoring; the first save was refused for 1 unstable case)"
+    }
+  ]
 }

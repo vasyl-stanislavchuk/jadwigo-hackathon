@@ -1,0 +1,70 @@
+---
+// One diagram, drawn with diagram-design in the Jadwigo profile (dl-5ssh.90.53.1): its light
+// and dark SVGs, exported beside the mermaid source they were drawn from in src/lib/diagrams/.
+// Both are inlined and Starlight's theme picks one, so a reader who switches theme never waits
+// on a fetch. diagrams.test.ts fails a name with no source or no SVG.
+interface Props {
+  /** The diagram's name: `src/lib/diagrams/<name>.mmd` and its 2 SVGs. */
+  name: string;
+  /** One line under the diagram, for what a reader should take from it. */
+  caption?: string;
+}
+
+const { name, caption } = Astro.props;
+const svgs = import.meta.glob<string>("../lib/diagrams/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+const light = svgs[`../lib/diagrams/${name}.light.svg`];
+const dark = svgs[`../lib/diagrams/${name}.dark.svg`];
+if (light === undefined || dark === undefined)
+  throw new Error(`no diagram "${name}": src/lib/diagrams/${name}.mmd and its SVGs are missing`);
+---
+
+<figure class="jw-diagram not-content" data-diagram={name}>
+  <div class="jw-diagram-scroll">
+    <div class="jw-diagram-light" set:html={light} />
+    <div class="jw-diagram-dark" set:html={dark} />
+  </div>
+  {caption && <figcaption>{caption}</figcaption>}
+</figure>
+
+<style>
+  .jw-diagram {
+    margin-block: var(--jw-space-4);
+  }
+
+  /* The diagram scrolls inside its own box on a narrow screen, never the page with it. */
+  .jw-diagram-scroll {
+    overflow-x: auto;
+  }
+
+  .jw-diagram :global(svg) {
+    display: block;
+    width: 100%;
+    min-width: 36rem;
+    height: auto;
+  }
+
+  .jw-diagram figcaption {
+    margin-block-start: var(--jw-space-2);
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+</style>
+
+<style is:global>
+  /* Starlight's theme sits on :root as data-theme; the night SVG shows only there. */
+  .jw-diagram-dark {
+    display: none;
+  }
+
+  :root[data-theme="dark"] .jw-diagram-dark {
+    display: block;
+  }
+
+  :root[data-theme="dark"] .jw-diagram-light {
+    display: none;
+  }
+</style>

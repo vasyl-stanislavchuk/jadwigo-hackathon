@@ -1,14 +1,14 @@
 {
   "id": "e4",
   "title": "How Meta models indexed the question bank",
-  "model": "muse-spark-1.3-contributor (ledger and live spark); muse-wonder-full-1.0 (live comparison)",
+  "model": "muse-spark-1.3-contributor; muse-wonder-full-1.0 for the live comparison",
   "calls": 3253,
   "tokens": {
     "input": 103215129,
     "output": 13738546
   },
   "usd": 10.2802,
-  "cost_source": "ledger (runs/muse/*.jsonl usage.usd); wonder tokens from the muse exec usage record, USD null (unpriced)",
+  "cost_source": "ledger",
   "wall_s": 492.5,
   "commit": "f4b1194cc0fd4b83a1fb7a3957cfb49cad4aa48a",
   "bank_commit": "803a979e123e2a06893e181e6c63dff92b4c8045",
@@ -16,7 +16,7 @@
     "uv run python -m tools.experiments.e4 ledger --out experiments/e4/ledger.json (in jadwigo-bank, lane/e4-e5)",
     "JADWIGO_MUSE_CAP_USD=500 uv run python -m tools.experiments.e4 live --out experiments/e4/live.json (in jadwigo-bank)"
   ],
-  "results": {
+  "detail": {
     "ledger_before_e4": {
       "rows": 3250,
       "contributor_calls": 3249,
@@ -533,5 +533,52 @@
         "input_tokens": 24216
       }
     }
-  }
+  },
+  "status": "done",
+  "results": [
+    {
+      "label": "Ledger calls on muse-spark-1.3 before E4",
+      "value": 3249
+    },
+    {
+      "label": "Ledger input tokens before E4",
+      "value": 103113871
+    },
+    {
+      "label": "Ledger USD before E4",
+      "value": "$10.27"
+    },
+    {
+      "label": "Set enrichment (572 calls, 143 sets)",
+      "value": "$2.57, $0.018 a set"
+    },
+    {
+      "label": "Item enrichment (402 calls, 2,738 items)",
+      "value": "$1.22, $0.00044 an item"
+    },
+    {
+      "label": "Golden labels (1,323 calls, 215 needs)",
+      "value": "$4.20"
+    },
+    {
+      "label": "Projected enrichment cost per 1,000 sets",
+      "value": "$26.52"
+    },
+    {
+      "label": "Live run: 3 sets on spark (ledger)",
+      "value": "$0.0128; grounds dropped 2 of 44; no hint leaks"
+    },
+    {
+      "label": "Live run: 3 sets on wonder (muse exec, unpriced)",
+      "value": "133,272 input tokens; grounds dropped 10 of 46; no hint leaks"
+    },
+    {
+      "label": "Draft agreement, curriculum tags (Jaccard)",
+      "value": "0.60 to 0.75 a set"
+    },
+    {
+      "label": "Draft agreement, keywords (Jaccard)",
+      "value": "0.07 to 0.10 a set"
+    }
+  ]
 }

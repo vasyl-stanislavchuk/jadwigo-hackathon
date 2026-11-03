@@ -1,9 +1,8 @@
 """Sheets built in code (no real lesson, no bank text: fence 8).
 
-`draft_sheet()` is the lane's stand-in for the lead's `tests/fixtures/mixed-20.sheet.json`
-(dl-1eieq.8.1) until it lands: the plan's 20-question "Dodawanie i czas" lesson, one question of
-each kind the page-by-page sketch on dl-1eieq.8 draws, in its order. `sheet()` prefers the lead's
-fixture when it is there.
+`sheet()` is the lead's `tests/fixtures/mixed-20.sheet.json` (dl-1eieq.8.1), which the golden
+tests draw. `draft_sheet()` is the lane's own 20 questions in the sketch's order, which the no-keys
+and handler tests plant fields in.
 """
 
 from __future__ import annotations
@@ -191,10 +190,8 @@ def alfik_sheet() -> dict[str, Any]:
 
 
 def sheet() -> dict[str, Any]:
-    """The lead's 20-question fixture when it has landed, else the lane's draft."""
-    if LEAD_FIXTURE.exists():
-        return json.loads(LEAD_FIXTURE.read_text())
-    return draft_sheet()
+    """The lead's 20-question fixture (dl-1eieq.8.1), which the golden tests draw."""
+    return json.loads(LEAD_FIXTURE.read_text())
 
 
 def picture_svg(width: int = 800, height: int = 400) -> bytes:

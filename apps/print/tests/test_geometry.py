@@ -17,8 +17,13 @@ PX_PER_MM = 96 / 25.4
 
 TEMPLATES = Path(__file__).parents[1] / "src" / "printer" / "templates"
 
-#: The plan's sketch puts the lead's 20-question lesson on 4 pages; the lane's denser draft on 5.
-PAGES = 4 if LEAD_FIXTURE.exists() else 5
+#: The plan's sketch puts the lead's 20-question lesson on 4 pages.
+PAGES = 4
+
+
+def test_the_lead_fixture_is_there() -> None:
+    """The golden tests draw the lead's fixture (dl-1eieq.8.1), never a stand-in."""
+    assert LEAD_FIXTURE.exists(), LEAD_FIXTURE
 
 
 def _reader(rendered) -> PdfReader:

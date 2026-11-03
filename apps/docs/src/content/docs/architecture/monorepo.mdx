@@ -3,6 +3,8 @@ title: Monorepo
 description: The apps and packages Jadwigo is built from, what each is for, and which way imports may go.
 ---
 
+import Diagram from "../../../components/Diagram.astro";
+
 This page is for anyone finding their way around Jadwigo's code: the apps and packages it is built
 from, which way imports may go, and the rules the build holds.
 
@@ -17,74 +19,7 @@ public entry, which is all other code imports.
 
 Each arrow is a runtime dependency: the app or package on the left imports the one it points to.
 
-```mermaid
-flowchart LR
-  subgraph apps [Apps]
-    api
-    web
-    site
-    docs
-    runner
-  end
-  subgraph packages [Packages]
-    analytics
-    api_client["api-client"]
-    bank
-    config
-    contracts
-    copy
-    core
-    jadwigo_ai["jadwigo-ai"]
-    lesson_import["lesson-import"]
-    lesson_kit["lesson-kit"]
-    store
-    ui
-  end
-  api --> contracts
-  api --> copy
-  api --> core
-  api --> jadwigo_ai
-  api --> store
-  web --> analytics
-  web --> api_client
-  web --> config
-  web --> contracts
-  web --> copy
-  web --> core
-  web --> jadwigo_ai
-  web --> lesson_import
-  web --> lesson_kit
-  web --> store
-  web --> ui
-  site --> analytics
-  site --> config
-  site --> contracts
-  site --> copy
-  site --> ui
-  docs --> config
-  docs --> contracts
-  docs --> lesson_kit
-  docs --> ui
-  runner --> contracts
-  runner --> jadwigo_ai
-  runner --> store
-  analytics --> config
-  api_client --> contracts
-  bank --> api_client
-  bank --> contracts
-  core --> contracts
-  jadwigo_ai --> contracts
-  jadwigo_ai --> core
-  jadwigo_ai --> lesson_import
-  jadwigo_ai --> store
-  lesson_import --> contracts
-  lesson_import --> core
-  lesson_import --> store
-  lesson_kit --> contracts
-  lesson_kit --> copy
-  lesson_kit --> ui
-  store --> contracts
-```
+<Diagram name="monorepo" />
 
 A test checks this diagram against the workspace's own dependency lists, so an edge added in the
 code and not here fails the docs build.

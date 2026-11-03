@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 400" role="img" aria-labelledby="answer-sequence-light-title answer-sequence-light-desc">
+<title id="answer-sequence-light-title">A request, end to end</title>
+<desc id="answer-sequence-light-desc">How a child's answer moves from the browser to Postgres and back with the verdict.</desc>
+<defs><marker id="a-m-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#50535c"/></marker><marker id="a-a-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3a5fa8"/></marker><marker id="a-l-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f63b8"/></marker></defs>
+<rect x="0" y="0" width="960" height="400" fill="#ffffff"/>
+<rect x="20" y="24" width="140" height="44" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="90.0" y="50.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Browser</text>
+<line x1="90" y1="68" x2="90" y2="380" stroke="#e8e2d5" stroke-width="1.5"/>
+<rect x="190" y="24" width="140" height="44" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="260.0" y="50.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">CloudFront</text>
+<line x1="260" y1="68" x2="260" y2="380" stroke="#e8e2d5" stroke-width="1.5"/>
+<rect x="370" y="24" width="140" height="44" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="440.0" y="50.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">API Gateway</text>
+<line x1="440" y1="68" x2="440" y2="380" stroke="#e8e2d5" stroke-width="1.5"/>
+<rect x="570" y="24" width="140" height="44" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="640.0" y="50.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">API Lambda</text>
+<line x1="640" y1="68" x2="640" y2="380" stroke="#e8e2d5" stroke-width="1.5"/>
+<rect x="760" y="24" width="140" height="44" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="830.0" y="50.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Postgres</text>
+<line x1="830" y1="68" x2="830" y2="380" stroke="#e8e2d5" stroke-width="1.5"/>
+<polyline points="90,110 260,110" fill="none" stroke="#2f63b8" stroke-width="1.2" marker-end="url(#a-l-light)"/>
+<rect x="82.0" y="94" width="186" height="16" fill="#ffffff"/>
+<text x="175" y="105" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">POST /API/V1/ATTEMPTS/{ID}/ANSWERS</text>
+<polyline points="260,150 440,150" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<rect x="251.5" y="134" width="197" height="16" fill="#ffffff"/>
+<text x="350" y="145" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">AN API PATH PASSES THROUGH, UNCACHED</text>
+<polyline points="440,190 640,190" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<rect x="449.5" y="174" width="181" height="16" fill="#ffffff"/>
+<text x="540" y="185" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">THROTTLED, NO TOKEN ON THIS ROUTE</text>
+<polyline points="640,230 676,230 676,248 640,248" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<rect x="684" y="230" width="148" height="14" fill="#ffffff"/>
+<text x="688" y="241" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">parse the body, authorize()</text>
+<polyline points="640,270 830,270" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<rect x="629.0" y="254" width="212" height="16" fill="#ffffff"/>
+<text x="735" y="265" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">ONE TRANSACTION: READ, WRITE THE ANSWER</text>
+<polyline points="830,310 640,310" fill="none" stroke="#50535c" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#a-m-light)"/>
+<rect x="720.0" y="294" width="30" height="16" fill="#ffffff"/>
+<text x="735" y="305" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">ROWS</text>
+<polyline points="640,350 90,350" fill="none" stroke="#3a5fa8" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#a-a-light)"/>
+<rect x="274.5" y="334" width="181" height="16" fill="#ffffff"/>
+<text x="365" y="345" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">THE VERDICT AND THE NEXT QUESTION</text>
+</svg>
