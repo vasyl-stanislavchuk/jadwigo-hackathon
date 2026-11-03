@@ -1,9 +1,9 @@
 /**
  * The lines above the composer (lane D of wave dl-uukj.47.71): the empty pane's starters, the
- * queue rows (D6), a failed turn's retry (until the spine's foot carries it, lane B), the
- * playground's status, and one line for offline, a refused or a failed send (§4.6). The page's one
- * live region is the band's (dl-uukj.47.71.10). The "Jadwigo AI widzi" chip is gone (S21): Dla in
- * the composer already says it.
+ * queue rows (D6), the playground's status, and one line for offline, a refused or a failed send
+ * (§4.6). The page's one live region is the band's (dl-uukj.47.71.10). A failed turn's Spróbuj
+ * ponownie lives in its spine's foot (D7), not here, and the "Jadwigo AI widzi" chip is gone (S21):
+ * Dla in the composer already says it.
  */
 
 import type { RunStatus } from "@jadwigo/contracts/run";
@@ -11,7 +11,6 @@ import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { Button, DisabledReason } from "@jadwigo/ui";
 import { CornerDownRightIcon, InfoIcon, RotateCcwIcon, XIcon } from "lucide-react";
 import { type ReactElement, useEffect, useState } from "react";
-import { parentTextOf } from "./ChatThread.tsx";
 import "./chat.css";
 import type { SendLimit, Turn } from "./conversation.ts";
 import type { RunPhase } from "./phase.ts";
@@ -215,7 +214,6 @@ export function ComposerLines({
   const last = turns.at(-1);
   const status: RunStatus | null =
     last === undefined ? null : (last.view.status ?? last.run.status);
-  const retryText = last !== undefined && status === "failed" ? parentTextOf(last) : null;
   return (
     <>
       {turns.length === 0 && !restoring && !parent && (
@@ -249,14 +247,6 @@ export function ComposerLines({
             />
           ))}
         </ul>
-      )}
-      {retryText !== null && (
-        <div data-row="retry-turn" className="flex items-center gap-2 text-jw-page-body">
-          <p>{say("chat_turn_unfinished")}</p>
-          <Button variant="outline" size="sm" onClick={() => resend(retryText)}>
-            {say("chat_retry_turn")}
-          </Button>
-        </div>
       )}
       {/* The run's state as words, never a coloured dot alone; the parent's is in the band. */}
       {!parent && (

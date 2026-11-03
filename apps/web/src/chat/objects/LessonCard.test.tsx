@@ -227,6 +227,23 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     expect(props.onFix).toHaveBeenCalledTimes(1);
   });
 
+  it("fix: a finding about the whole lesson names no question (dl-uukj.47.71.31)", () => {
+    drawn({
+      ...BASE,
+      kind: "fix",
+      count: 4,
+      preview: PREVIEW,
+      findings: [
+        { step: null, words: { copyKey: "chat_finding_no_question", values: {} } },
+        { step: 3, words: { copyKey: "chat_finding_key_in_say", values: {} } },
+      ],
+    });
+    expect([...document.querySelectorAll("[data-finding]")].map((f) => f.textContent)).toEqual([
+      "W lekcji nie ma jeszcze żadnego pytania.",
+      "Zadanie 3. Pytanie zdradza odpowiedź.",
+    ]);
+  });
+
   it("fix with no step to show never says 0 zadań; without onFix there is no Popraw za mnie", () => {
     drawn({ ...BASE, kind: "fix", count: 0, preview: [], findings: [] }, { onFix: undefined });
     expect(card()?.textContent).not.toMatch(/0 zadań|Gotowa/);
