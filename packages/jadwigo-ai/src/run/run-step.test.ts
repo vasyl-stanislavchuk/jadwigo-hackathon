@@ -37,7 +37,7 @@ import {
 } from "../muse/client.ts";
 import { ScriptedMuse } from "../muse/scripted.ts";
 import { InMemoryRunQueue } from "../queue/memory.ts";
-import { STEP_VISIBILITY_S } from "../queue/types.ts";
+import { MAX_READS, STEP_VISIBILITY_S } from "../queue/types.ts";
 import { createVerbs, fixtureBank } from "../verbs/index.ts";
 import {
   type Verb,
@@ -1155,14 +1155,64 @@ describe("runStep and drain", () => {
     expect(again).toMatchObject({ msg_id: 1, read_ct: 2, message: { run_id: run } });
   });
 
-  it("leaves a step that throws in the queue, and the dead letter takes it after MAX_READS", async () => {
+  it("ends the run failed once its step fails on every delivery, and takes the step out (dl-hin8.28)", async () => {
     const t = await setup([]);
-    await t.say("Muse is down.");
-    for (let i = 0; i < 5; i++) {
+    const run = await t.say("Muse is down.");
+    for (let i = 0; i < MAX_READS; i++) {
+      expect((await t.run(run)).status).not.toBe("failed");
       await drain(t.deps);
       t.tick(STEP_VISIBILITY_S * 1000 + 1000);
     }
+    expect((await t.run(run)).status).toBe("failed");
+    const events = await t.log(run);
+    const errors = events.flatMap((e) => (e.type === "error" ? [e.payload] : []));
+    // 2 redeliveries said "trying again"; the last failure ended the turn, which the page words.
+    expect(errors.map((e) => [e.error.type, e.retryable])).toEqual([
+      [RUN_ERROR_TYPE.stepTimedOut, true],
+      [RUN_ERROR_TYPE.stepTimedOut, true],
+      [RUN_ERROR_TYPE.stepFailed, false],
+    ]);
+    expect(types(events).slice(-2)).toEqual(["status", "turn_complete"]);
+    expect(await t.queue.read(0, 5)).toEqual([]);
+    expect(await t.queue.deadLetters()).toEqual([]);
+  });
+
+  it("ends the run of a verb that always throws a plain Error, rather than retry it for 30 minutes", async () => {
+    const throwing = fakeVerbs({
+      question_types: () => {
+        throw new Error("the bank route answered 502");
+      },
+    });
+    const script = Array.from({ length: 10 }, () => ({
+      calls: [{ verb: "question_types" as const }],
+    }));
+    const t = await setup(script, throwing);
+    const run = await t.say("Make a lesson.");
+    for (let i = 0; i < MAX_READS; i++) {
+      await drain(t.deps);
+      t.tick(STEP_VISIBILITY_S * 1000 + 1000);
+    }
+    expect((await t.run(run)).status).toBe("failed");
+    expect(types(await t.log(run)).at(-1)).toBe("turn_complete");
+  });
+
+  it("ends the run of a step the dead letter took without a throw (its host died with it)", async () => {
+    const t = await setup([]);
+    const run = await t.say("Halves.");
+    // 4 reads with no run: the 4th moves it to the dead letter, as a host killed mid-step leaves it.
+    for (let i = 0; i <= MAX_READS; i++) {
+      await t.queue.read(0, 1);
+    }
     expect(await t.queue.deadLetters()).toHaveLength(1);
+    expect((await t.run(run)).status).not.toBe("failed");
+    await drain(t.deps);
+    expect((await t.run(run)).status).toBe("failed");
+    const last = (await t.log(run)).filter((e) => e.type === "error").at(-1);
+    expect(last).toMatchObject({ payload: { error: { type: RUN_ERROR_TYPE.stepFailed } } });
+    // A later drain leaves the ended run as it is.
+    const count = (await t.log(run)).length;
+    await drain(t.deps);
+    expect(await t.log(run)).toHaveLength(count);
   });
 });
 
@@ -1173,6 +1223,7 @@ describe("the run's own error types", () => {
       stepTimedOut: "StepTimedOut",
       runIdle: "RunIdle",
       runTimedOut: "RunTimedOut",
+      stepFailed: "StepFailed",
       answerUnchecked: "AnswerUnchecked",
       // The page writes it as its generic "what went off track" line, as AnswerUnchecked.
       answerWrongLanguage: "AnswerWrongLanguage",
