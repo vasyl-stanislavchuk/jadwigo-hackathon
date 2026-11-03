@@ -35,7 +35,10 @@ import { checkedLesson } from "./give.ts";
  *
  *   pods/<pod>/prints/<id>.json         the sheet, written by this route
  *   pods/<pod>/prints/<id>.pdf          the PDF, written by the print Lambda
- *   pods/<pod>/prints/<id>.error.json   {"reason": PrintFailure}, written by the print Lambda
+ *   pods/<pod>/prints/<id>.error.json   {"code": PrintFailure}, written by the print Lambda
+ *
+ * The Lambda is started with `{"bucket", "key"}`, the converter's event shape, and every object
+ * carries the tag `kind=print`, which the uploads bucket's lifecycle expires (apps/print/AGENTS.md).
  */
 
 /** How long the link to a PDF reads it. */
@@ -43,6 +46,8 @@ const LINK_S = 5 * 60;
 
 /** The bucket calls the print routes make: the uploads bucket, under `pods/<pod>/prints/`. */
 export interface PrintBucket {
+  /** The bucket's name, which the print Lambda's event names. */
+  name(): Promise<string>;
   has(key: string): Promise<boolean>;
   text(key: string): Promise<string | undefined>;
   put(key: string, body: string, contentType: string): Promise<void>;
@@ -50,7 +55,7 @@ export interface PrintBucket {
 }
 
 /** Starts the print Lambda on one stored sheet; it returns before the PDF is made. */
-export type StartPrint = (sheetKey: string) => Promise<void>;
+export type StartPrint = (bucket: string, sheetKey: string) => Promise<void>;
 
 export interface PrintDeps {
   readonly bucket?: PrintBucket | undefined;
@@ -115,7 +120,7 @@ async function statusOf(
     };
   const error = await bucket.text(`${at}.error.json`);
   if (error !== undefined) {
-    const parsed = PrintFailure.safeParse((JSON.parse(error) as { reason?: unknown }).reason);
+    const parsed = PrintFailure.safeParse((JSON.parse(error) as { code?: unknown }).code);
     return {
       status: "failed",
       print_id: id,
@@ -167,7 +172,7 @@ export async function startPrint(
   if (known !== undefined) return known;
   const key = `${base(pod, id)}.json`;
   await bucket.put(key, JSON.stringify(sheet), "application/json");
-  await start(key);
+  await start(await bucket.name(), key);
   return { status: "pending", print_id: id };
 }
 
@@ -205,6 +210,7 @@ export function s3Prints(
   const missing = (e: unknown) =>
     e instanceof Error && (e.name === "NotFound" || e.name === "NoSuchKey");
   return {
+    name: bucket,
     async has(key) {
       try {
         await client.send(new HeadObjectCommand({ Bucket: await bucket(), Key: key }));
@@ -230,6 +236,7 @@ export function s3Prints(
           Key: key,
           Body: body,
           ContentType: contentType,
+          Tagging: "kind=print",
         }),
       );
     },
@@ -248,19 +255,19 @@ export interface PrintClient {
 
 /**
  * The start in the Lambda: an async invoke (`InvocationType: "Event"`) of `PRINT_FUNCTION` with
- * `{"key": <sheet key>}`, nothing else. Undefined when the variable is unset: no printing here.
+ * `{"bucket", "key"}`, nothing else. Undefined when the variable is unset: no printing here.
  */
 export function lambdaPrint(
   arn = printFunction(),
   client: PrintClient = new LambdaClient({}),
 ): StartPrint | undefined {
   if (arn === undefined) return undefined;
-  return async (key) => {
+  return async (bucket, key) => {
     await client.send(
       new InvokeCommand({
         FunctionName: arn,
         InvocationType: "Event",
-        Payload: new TextEncoder().encode(JSON.stringify({ key })),
+        Payload: new TextEncoder().encode(JSON.stringify({ bucket, key })),
       }),
     );
   };

@@ -1,5 +1,6 @@
 // The print routes (dl-1eieq.8.4) on InMemoryStore, with a bucket in memory and a fake print Lambda.
 import { randomUUID } from "node:crypto";
+import type { InvokeCommand } from "@aws-sdk/client-lambda";
 import {
   type ErrorEnvelope,
   EventId,
@@ -14,7 +15,7 @@ import { InMemoryRunQueue } from "@jadwigo/jadwigo-ai";
 import { InMemoryStore } from "@jadwigo/store";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
-import { type PrintBucket, printMediaSrc } from "./print.ts";
+import { lambdaPrint, type PrintBucket, printMediaSrc } from "./print.ts";
 import { pathOf, seeded } from "./testing/client.ts";
 import { bearerOf, signToken } from "./testing/token.ts";
 
@@ -25,6 +26,7 @@ function memoryBucket(): PrintBucket & { objects: Map<string, string> } {
   const objects = new Map<string, string>();
   return {
     objects,
+    name: async () => "uploads.test",
     has: async (key) => objects.has(key),
     text: async (key) => objects.get(key),
     put: async (key, body) => {
@@ -42,8 +44,8 @@ function setUp({ wired = true }: { readonly wired?: boolean } = {}) {
     print: wired
       ? {
           bucket,
-          start: async (key) => {
-            started.push(key);
+          start: async (bucketName, key) => {
+            started.push(`${bucketName}/${key}`);
           },
           media: "https://media.test",
         }
@@ -109,7 +111,7 @@ describe("the print routes", () => {
     expect(first.status).toBe(200);
     expect(first.body.status).toBe("pending");
     const key = `pods/${a.pod}/prints/${first.body.print_id}.json`;
-    expect(started).toEqual([key]);
+    expect(started).toEqual([`uploads.test/${key}`]);
     const sheet = PrintSheet.parse(JSON.parse(bucket.objects.get(key) ?? "{}"));
     // 11 planned questions, one an explain the player never asks: 10 on paper.
     expect(sheet.questions).toHaveLength(10);
@@ -137,12 +139,12 @@ describe("the print routes", () => {
     const other = (await b.print()).body.print_id;
     bucket.objects.set(
       `pods/${b.pod}/prints/${other}.error.json`,
-      JSON.stringify({ reason: "picture_unavailable" }),
+      JSON.stringify({ code: "invalid_sheet" }),
     );
     expect((await b.status(other)).body).toEqual({
       status: "failed",
       print_id: other,
-      reason: "picture_unavailable",
+      reason: "invalid_sheet",
     });
   });
 
@@ -184,5 +186,27 @@ describe("a picture's address on paper", () => {
   it("refuses an address the print Lambda may not fetch", () => {
     expect(() => printMediaSrc("data:image/png;base64,AA", "https://m.test")).toThrow(/address/);
     expect(() => printMediaSrc(ref, "")).toThrow(/address/);
+  });
+});
+
+describe("starting the print Lambda", () => {
+  it("sends the converter's event shape, {bucket, key}, as an async invoke", async () => {
+    const sent: InvokeCommand[] = [];
+    const start = lambdaPrint("arn:aws:lambda:eu-central-1:1:function:print", {
+      send: async (command) => {
+        sent.push(command);
+      },
+    });
+    await start?.("uploads.test", "pods/p/prints/x.json");
+    const [command] = sent;
+    expect(command?.input.InvocationType).toBe("Event");
+    expect(JSON.parse(new TextDecoder().decode(command?.input.Payload as Uint8Array))).toEqual({
+      bucket: "uploads.test",
+      key: "pods/p/prints/x.json",
+    });
+  });
+
+  it("is not set up without PRINT_FUNCTION", () => {
+    expect(lambdaPrint(undefined)).toBeUndefined();
   });
 });

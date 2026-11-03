@@ -2,8 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "string",
   "enum": [
-    "render_failed",
-    "picture_unavailable",
-    "bad_sheet"
+    "invalid_sheet",
+    "render_failed"
   ]
 }

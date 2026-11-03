@@ -165,8 +165,11 @@ export type PrintId = z.infer<typeof PrintId>;
 export const PrintStart = z.strictObject({ revision: z.int().min(1).optional() });
 export type PrintStart = z.infer<typeof PrintStart>;
 
-/** Why a print could not be made: the sheet failed to render, or a picture could not be fetched. */
-export const PrintFailure = z.enum(["render_failed", "picture_unavailable", "bad_sheet"]);
+/**
+ * Why a print could not be made, as the print Lambda writes it (apps/print, `<id>.error.json`'s
+ * `code`): the sheet did not parse, or it did not render (a picture it could not fetch included).
+ */
+export const PrintFailure = z.enum(["invalid_sheet", "render_failed"]);
 export type PrintFailure = z.infer<typeof PrintFailure>;
 
 /**
