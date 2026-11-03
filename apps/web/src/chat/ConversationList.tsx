@@ -9,6 +9,7 @@
 import type { ConversationListClient } from "@jadwigo/api-client";
 import type { Conversation, ConversationId } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
+import { Button, RegisterProvider } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useState } from "react";
 
 type Load = { kind: "loading" } | { kind: "failed" } | { kind: "ready"; rows: Conversation[] };
@@ -66,17 +67,19 @@ export function ConversationList({
     );
   };
 
-  return (
+  const body = (
     <nav aria-label={say("chat_list_title")} data-conversations className="flex flex-col gap-2">
-      <h2 className="text-base font-medium">{say("chat_list_title")}</h2>
-      {load.kind === "loading" && <p className="text-muted-foreground text-sm">{say("loading")}</p>}
+      <h2 className="text-jw-page-h2 font-semibold">{say("chat_list_title")}</h2>
+      {load.kind === "loading" && (
+        <p className="text-jw-page-body text-muted-foreground">{say("loading")}</p>
+      )}
       {load.kind === "failed" && (
-        <p role="alert" className="text-sm">
+        <p role="alert" className="text-jw-page-body">
           {say("chat_list_failed")}
         </p>
       )}
       {load.kind === "ready" && load.rows.length === 0 && (
-        <p data-conversations-empty className="text-muted-foreground text-sm">
+        <p data-conversations-empty className="text-jw-page-body text-muted-foreground">
           {say("chat_list_empty")}
         </p>
       )}
@@ -87,7 +90,7 @@ export function ConversationList({
               key={row.id}
               data-conversation={row.id}
               data-current={row.id === current || undefined}
-              className="flex flex-col gap-1 rounded-md border p-2 text-sm"
+              className="flex flex-col gap-1 rounded-jw-card border-jw border-jw-line p-2 text-jw-page-body"
             >
               <div className="flex items-center gap-2">
                 <button
@@ -97,33 +100,35 @@ export function ConversationList({
                 >
                   {row.title ?? say("chat_list_untitled")}
                 </button>
-                <button
+                <Button
                   type="button"
+                  variant="quiet"
+                  size="sm"
                   data-archive={row.id}
-                  className="rounded-md border px-2 py-0.5"
                   onClick={() => {
                     setAsking(row.id);
                     setFailed(null);
                   }}
                 >
                   {say("chat_list_archive")}
-                </button>
+                </Button>
               </div>
               {asking === row.id && (
                 <div data-archive-confirm className="flex flex-col gap-1">
                   <p>{say("chat_list_archive_confirm")}</p>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       disabled={busy}
-                      className="rounded-md border px-2 py-0.5"
                       onClick={() => archive(row.id)}
                     >
                       {say("chat_list_archive_yes")}
-                    </button>
-                    <button type="button" className="px-2 py-0.5" onClick={() => setAsking(null)}>
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setAsking(null)}>
                       {say("chat_edit_cancel")}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -138,4 +143,5 @@ export function ConversationList({
       )}
     </nav>
   );
+  return <RegisterProvider value="app">{body}</RegisterProvider>;
 }

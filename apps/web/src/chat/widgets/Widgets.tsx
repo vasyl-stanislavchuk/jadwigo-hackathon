@@ -18,11 +18,11 @@ import {
 import type { VerbName } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language, mistakeCopyKey } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
+import { Badge, Button } from "@jadwigo/ui";
 import { ChevronRightIcon } from "lucide-react";
 import type { ReactElement } from "react";
 import { GoalLists } from "../../parent/learner/GoalLists.tsx";
 import { WeekStrip } from "../../parent/learner/WeekStrip.tsx";
-import { Button } from "../button.tsx";
 import type { ObjectRef } from "../objects/ref.ts";
 import { TOOL_ICON } from "../toolLine.ts";
 
@@ -101,7 +101,7 @@ function Findings({ view, language }: { view: LessonCheckView; language: Languag
               key={`${i}-${f.rule}-${f.path}`}
               data-level={f.level}
               data-step-finding={f.step_id ?? ""}
-              className="rounded-md border px-2 py-1"
+              className="rounded-jw-control border-jw border-jw-line px-2 py-1"
             >
               <span className="font-medium">{say(LEVEL_KEY[f.level])}</span>
               {f.step_id !== null && ` · ${say("chat_lesson_step", { step: f.step_id })}`}
@@ -167,7 +167,7 @@ function Ideas({
             {actions.onAsk !== undefined && (
               <Button
                 variant="outline"
-                size="xs"
+                size="sm"
                 className="ml-auto"
                 onClick={() => actions.onAsk?.(say("chat_ideas_ask_message", { n, list }))}
                 data-ask-idea={idea.id}
@@ -248,7 +248,7 @@ function OpenLearner({
   return (
     <Button
       variant="outline"
-      size="xs"
+      size="sm"
       className="w-fit"
       onClick={() => open({ kind: "learner", id: learner.id })}
       data-open-learner={learner.id}
@@ -275,9 +275,11 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     Widget: ({ data, language }) => (
       <ul className="flex flex-wrap gap-1">
         {data.changed_step_ids.map((id) => (
-          <li key={id} data-edited-step={id} className="rounded-full border px-2 py-0.5">
-            {copy(language, "chat_lesson_step", { step: id }, "adult")}
-          </li>
+          <Badge asChild key={id} variant="tag">
+            <li data-edited-step={id}>
+              {copy(language, "chat_lesson_step", { step: id }, "adult")}
+            </li>
+          </Badge>
         ))}
       </ul>
     ),
@@ -293,9 +295,9 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
       ) : (
         <ul className="flex flex-wrap gap-1">
           {data.sets.map((s) => (
-            <li key={s.set_id} data-set={s.set_id} className="rounded-full border px-2 py-0.5">
-              {s.title}
-            </li>
+            <Badge asChild key={s.set_id} variant="tag">
+              <li data-set={s.set_id}>{s.title}</li>
+            </Badge>
           ))}
         </ul>
       ),
@@ -387,9 +389,9 @@ export function toolResult(
           <section
             data-widget={tool.verb}
             aria-label={copy(language, entry.title, {}, "adult")}
-            className="flex flex-col gap-1 rounded-md border p-2 text-sm"
+            className="flex flex-col gap-1 rounded-jw-card border-jw border-jw-line p-3 text-jw-page-body"
           >
-            <p className="text-muted-foreground flex items-center gap-1 text-xs">
+            <p className="flex items-center gap-1 text-jw-page-small text-muted-foreground">
               <Icon aria-hidden className="size-3" />
               {copy(language, entry.title, {}, "adult")}
             </p>

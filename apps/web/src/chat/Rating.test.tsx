@@ -58,9 +58,25 @@ describe("Good, Bad and Try again on each completed turn (dl-z5ja.63)", () => {
     const first = turnOf("happy-turn");
     pane([first, turnOf("happy-turn", SECOND)]);
     expect(bands()).toEqual([first.run.id, SECOND]);
-    expect(screen.getAllByRole("button", { name: "Dobrze" })).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: "Słabo" })).toHaveLength(2);
+    expect(screen.getAllByRole("radio", { name: "Dobrze" })).toHaveLength(2);
+    expect(screen.getAllByRole("radio", { name: "Słabo" })).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: "Spróbuj jeszcze raz" })).toHaveLength(2);
+  });
+
+  it("is a labelled choice: Dobrze and Słabo say their words beside their icons (S11)", () => {
+    pane([turnOf("happy-turn")]);
+    const group = screen.getByRole("radiogroup", { name: "Jak poszło?" });
+    const names = [...group.querySelectorAll('[role="radio"]')].map((r) => r.textContent);
+    expect(names).toEqual(["Dobrze", "Słabo"]);
+    const retry = screen.getByRole("button", { name: "Spróbuj jeszcze raz" });
+    expect(retry.textContent).toBe("Spróbuj jeszcze raz");
+  });
+
+  it("Słabo stays picked while the note is open (S11)", () => {
+    pane([turnOf("happy-turn")]);
+    const bad = screen.getByRole("radio", { name: "Słabo" });
+    fireEvent.click(bad);
+    expect(bad.getAttribute("aria-checked")).toBe("true");
   });
 
   it("draws none on a turn still running", () => {
@@ -71,7 +87,7 @@ describe("Good, Bad and Try again on each completed turn (dl-z5ja.63)", () => {
   it("Dobrze posts good with the run id, then thanks", async () => {
     const turn = turnOf("happy-turn");
     const { rated } = pane([turn]);
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Dobrze" })));
+    await act(async () => fireEvent.click(screen.getByRole("radio", { name: "Dobrze" })));
     expect(rated).toEqual([[turn.run.id, { verdict: "good" }]]);
     expect(screen.getByText("Dziękujemy, ocena jest zapisana.")).toBeTruthy();
   });
@@ -79,7 +95,7 @@ describe("Good, Bad and Try again on each completed turn (dl-z5ja.63)", () => {
   it("Słabo asks what was missing, and posts bad with the note", async () => {
     const turn = turnOf("happy-turn");
     const { rated } = pane([turn]);
-    fireEvent.click(screen.getByRole("button", { name: "Słabo" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Słabo" }));
     fireEvent.change(screen.getByRole("textbox", { name: "Czego zabrakło?" }), {
       target: { value: " więcej przykładów z życia " },
     });
@@ -90,7 +106,7 @@ describe("Good, Bad and Try again on each completed turn (dl-z5ja.63)", () => {
   it("Słabo with no note posts bad alone", async () => {
     const turn = turnOf("happy-turn");
     const { rated } = pane([turn]);
-    fireEvent.click(screen.getByRole("button", { name: "Słabo" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Słabo" }));
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyślij ocenę" })));
     expect(rated).toEqual([[turn.run.id, { verdict: "bad" }]]);
   });
@@ -99,11 +115,11 @@ describe("Good, Bad and Try again on each completed turn (dl-z5ja.63)", () => {
     pane([turnOf("happy-turn")], async () => {
       throw new Error("offline");
     });
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Dobrze" })));
+    await act(async () => fireEvent.click(screen.getByRole("radio", { name: "Dobrze" })));
     expect(screen.getByRole("alert").textContent).toBe(
       "Nie udało się zapisać oceny. Spróbuj jeszcze raz.",
     );
-    expect(screen.getByRole("button", { name: "Dobrze" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Dobrze" })).toBeTruthy();
   });
 
   it("Spróbuj jeszcze raz sends the turn's message again", () => {
@@ -134,7 +150,7 @@ describe("the chat page rates through the route (dl-z5ja.63)", () => {
       },
     };
     render(<ChatScreen transport={transport} ratings={ratings} />);
-    const good = await screen.findByRole("button", { name: "Dobrze" });
+    const good = await screen.findByRole("radio", { name: "Dobrze" });
     await act(async () => fireEvent.click(good));
     expect(rated).toEqual([[run.id, { verdict: "good" }]]);
   });
