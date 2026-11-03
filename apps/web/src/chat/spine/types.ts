@@ -113,7 +113,8 @@ export type LessonCardState =
   | (CardBase &
       CardContent & {
         kind: "fix";
-        findings: readonly { step: number; words: Words }[];
+        /** Each finding in plain words; `step` null for the lesson as a whole (no "Zadanie {n}."). */
+        findings: readonly { step: number | null; words: Words }[];
       })
   | (CardBase & CardContent & { kind: "working" })
   | (CardBase & { kind: "superseded" });

@@ -148,18 +148,20 @@ export function plainWords(verb: VerbName, input: Record<string, unknown> | unde
 /** A lesson_check's output read leniently: a log may leave out `publishable` when nothing was found. */
 export interface CheckRead {
   publishable: boolean;
-  findings: readonly { step_id: string | null; level: string }[];
+  /** Each finding's step, level and rule name (`empty-rung`), "" when it names none. */
+  findings: readonly { step_id: string | null; level: string; rule: string }[];
 }
 
 export function checkOf(output: Record<string, unknown> | null | undefined): CheckRead | null {
   if (output == null || !Array.isArray(output["findings"])) return null;
   const findings = output["findings"].flatMap((f: unknown) => {
     if (typeof f !== "object" || f === null) return [];
-    const { step_id, level } = f as { step_id?: unknown; level?: unknown };
+    const { step_id, level, rule } = f as { step_id?: unknown; level?: unknown; rule?: unknown };
     return [
       {
         step_id: typeof step_id === "string" ? step_id : null,
         level: typeof level === "string" ? level : "error",
+        rule: typeof rule === "string" ? rule : "",
       },
     ];
   });

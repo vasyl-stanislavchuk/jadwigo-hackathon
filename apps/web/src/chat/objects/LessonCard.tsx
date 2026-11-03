@@ -264,15 +264,20 @@ export function LessonCard({
           className="flex flex-col gap-1.5 border-t-jw border-jw-line py-3 pr-4 pl-4 text-jw-page-small text-jw-ink sm:pl-15"
           data-card-findings
         >
-          {state.findings.map((finding) => (
+          {state.findings.map((finding, i) => (
             <li
-              key={`${finding.step}-${finding.words.copyKey}`}
+              key={`${i}-${finding.step ?? "lesson"}-${finding.words.copyKey}`}
               className="flex items-start gap-2"
-              data-finding={finding.step}
+              data-finding={finding.step ?? "lesson"}
             >
               <AlertCircleIcon aria-hidden className="mt-0.5 size-3.5 shrink-0" />
               <span>
-                <span className="font-semibold">{`${say("print_task", { n: finding.step })}.`}</span>{" "}
+                {/* A finding about the lesson as a whole names no question (dl-uukj.47.71.31). */}
+                {finding.step !== null && (
+                  <>
+                    <span className="font-semibold">{`${say("print_task", { n: finding.step })}.`}</span>{" "}
+                  </>
+                )}
                 {say(finding.words.copyKey, { ...finding.words.values })}
               </span>
             </li>
