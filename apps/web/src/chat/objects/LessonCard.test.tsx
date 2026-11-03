@@ -199,6 +199,11 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     });
     expect(card()?.querySelectorAll("[data-card-prompt]").length).toBe(3);
     expect(card()?.querySelector("[data-card-more]")?.textContent).toBe("+9 więcej");
+    cleanup();
+    // 5 questions, 2 with words to show: the other 3 are "+3 więcej", never "+2" (steward on #808).
+    drawn({ ...BASE, kind: "ready", count: 5, preview: PREVIEW.slice(0, 2) });
+    expect(card()?.querySelectorAll("[data-card-prompt]").length).toBe(2);
+    expect(card()?.querySelector("[data-card-more]")?.textContent).toBe("+3 więcej");
   });
 
   it("writes its state only in the tag; the tile is always the book; it alone is raised", () => {
@@ -267,6 +272,20 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     ]);
   });
 
+  it("fix with questions and no findings says the lesson changed since its check (#802's case)", () => {
+    drawn({ ...BASE, kind: "fix", count: 4, preview: PREVIEW, findings: [] });
+    const reason = card()?.querySelector("[data-fix-reason]")?.textContent ?? "";
+    expect(reason).toBe(
+      "Lekcja zmieniła się od ostatniego sprawdzenia. Poczekaj, aż Jadwigo ją sprawdzi, i spróbuj znowu.",
+    );
+    // It names no question to fix, since none is listed.
+    expect(reason).not.toMatch(/zadania będą poprawione|poprawić/);
+    const give = card()?.querySelector("[data-give]") as HTMLElement;
+    expect(document.getElementById(give.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      reason,
+    );
+  });
+
   it("fix with no step to show never says 0 zadań; without onFix there is no Popraw za mnie", () => {
     drawn({ ...BASE, kind: "fix", count: 0, preview: [], findings: [] }, { onFix: undefined });
     expect(card()?.textContent).not.toMatch(/0 zadań|Gotowa/);
@@ -285,7 +304,7 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
   it("superseded: one flat row, jest nowsza wersja, no actions or expand; Otwórz tę wersję when given", () => {
     drawn({ ...BASE, kind: "superseded" });
     expect(card()?.getAttribute("data-card-state")).toBe("superseded");
-    expect(card()?.textContent).toBe("Mnożenie przez 2 i 5jest nowsza wersja");
+    expect(card()?.textContent).toBe("Mnożenie przez 2 i 5· jest nowsza wersja");
     expect(card()?.classList.contains("shadow-card")).toBe(false);
     expect(card()?.querySelector("[data-test-actions]")).toBeNull();
     expect(card()?.querySelector("[data-expand]")).toBeNull();

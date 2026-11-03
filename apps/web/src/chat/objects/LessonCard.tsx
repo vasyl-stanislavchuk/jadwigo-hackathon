@@ -154,7 +154,7 @@ export function LessonCard({
           {title}
         </span>
         <span className="shrink-0 text-jw-ink-soft" data-card-facts>
-          {say("card_superseded")}
+          {`· ${say("card_superseded")}`}
         </span>
         {onOpenVersion !== undefined && (
           <Button
@@ -172,7 +172,8 @@ export function LessonCard({
     );
 
   const tag = TAG[state.kind];
-  const more = state.count - SHOWN;
+  // The questions the rows do not show: a prompt with no words is no row, so count from the rows.
+  const more = state.count - Math.min(state.preview.length, SHOWN);
   const openName = say("chat_lesson_card_open_named", { title });
   return (
     <section
@@ -286,7 +287,7 @@ export function LessonCard({
         </ul>
       )}
       {state.kind === "fix" ? (
-        <FixFoot say={say} count={state.findings.length} onFix={onFix} />
+        <FixFoot say={say} findings={state.findings.length} questions={state.count} onFix={onFix} />
       ) : (
         actions !== undefined && (
           <div
@@ -307,14 +308,21 @@ export function LessonCard({
  */
 function FixFoot({
   say,
-  count,
+  findings,
+  questions,
   onFix,
 }: {
   say: (key: CopyKey, vars?: Record<string, string | number>) => string;
-  count: number;
+  /** How many findings the card lists. */
+  findings: number;
+  /** How many questions the lesson has. */
+  questions: number;
   onFix: (() => void) | undefined;
 }): ReactElement {
-  const reason = say("card_fix_reason");
+  // Questions but nothing listed: the lesson changed after its last check (a later edit, a
+  // parent's own change) or was never checked, so no question is named as wrong (#802's case).
+  const reason =
+    findings === 0 && questions > 0 ? say("parent_give_refused_changed") : say("card_fix_reason");
   return (
     <div
       className="flex flex-wrap items-center gap-2 border-t-jw border-jw-line bg-jw-side px-4 py-2.5"
@@ -327,7 +335,7 @@ function FixFoot({
         {reason}
       </p>
       <DisabledReason
-        reason={count > 0 ? say("card_fix_reason_short", { n: count }) : reason}
+        reason={findings > 0 ? say("card_fix_reason_short", { n: findings }) : reason}
         className="max-sm:order-2"
       >
         <Button
