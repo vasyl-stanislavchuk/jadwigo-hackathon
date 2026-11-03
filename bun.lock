@@ -41,6 +41,7 @@
       },
       "devDependencies": {
         "@jadwigo/lesson-import": "workspace:*",
+        "@jadwigo/lesson-kit": "workspace:*",
         "@jadwigo/testing": "workspace:*",
         "@types/node": "catalog:",
         "@types/react": "catalog:",

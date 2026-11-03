@@ -26,7 +26,9 @@ const READ_TOOLS: Partial<Record<RouteName, string>> = {
   getAttachment: "attachment_get",
 };
 /** Token GETs with no read tool, each with why. */
-const EXCLUDED: Partial<Record<RouteName, string>> = {};
+const EXCLUDED: Partial<Record<RouteName, string>> = {
+  getPrint: "the app polls a print it started; the MCP gets its own print tool (dl-1eieq.8.6)",
+};
 
 describe("the MCP read tools' coverage", () => {
   it("gives every token GET in ROUTES a tool, or a stated reason for none", () => {
