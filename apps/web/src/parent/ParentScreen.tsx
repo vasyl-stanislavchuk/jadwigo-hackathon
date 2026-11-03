@@ -845,6 +845,7 @@ function SignedIn({
           onAddChild={() => setAdding("dla")}
           api={api}
           readAttachment={readAttachment}
+          uploadDeps={uploadDeps}
         />,
       );
     }
