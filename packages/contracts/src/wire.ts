@@ -1005,6 +1005,10 @@ export const ERROR_STATUS = {
    * replaced it, or it holds more than `LIMITS.questionsPerLesson` questions (dl-5ssh.136).
    */
   LessonNotPublishable: 409,
+  /** A lesson that holds a question type with no paper form (today only `explain`), dl-1eieq.8. */
+  LessonNotPrintable: 409,
+  /** The print Lambda is not set up where the API runs, so no PDF can be made. */
+  PrintUnavailable: 502,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

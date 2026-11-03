@@ -1,5 +1,5 @@
 import { createPostgresStore, type Store } from "@jadwigo/store";
-import { createApp } from "./app.ts";
+import { type AppDeps, createApp } from "./app.ts";
 import { s3Uploads, type UploadsBucket } from "./attachments.ts";
 import { type Authenticate, jwksUrlAuth, lambdaAuth } from "./auth.ts";
 import {
@@ -8,9 +8,11 @@ import {
   lambdaDatabaseUrl,
   mcpAuthorizationServer,
   mcpResourceUrl,
+  mediaUrl,
 } from "./config.ts";
 import { lambdaMail, type MailDeps } from "./mail/hook.ts";
 import { lambdaPoke, type PokeStepHost } from "./poke.ts";
+import { lambdaPrint, s3Prints } from "./print.ts";
 import { type BankDeps, type BucketDeps, lambdaBank, lambdaBucket } from "./questions.ts";
 
 export { createApp } from "./app.ts";
@@ -67,6 +69,7 @@ export function createHandler(
   poke: PokeStepHost | undefined = lambdaPoke(),
   uploads: UploadsBucket = s3Uploads(),
   mail: MailDeps | undefined = lambdaMail(),
+  print: AppDeps["print"] = { bucket: s3Prints(), start: lambdaPrint(), media: mediaUrl() },
 ) {
   let store: Promise<Store> | undefined;
   let failed = false;
@@ -93,7 +96,7 @@ export function createHandler(
 
   const mcp = { resourceUrl: mcpResourceUrl(), authorizationServer: mcpAuthorizationServer() };
   return (event: unknown, context: Context) =>
-    createApp(open(), { authenticate, bank, bucket, poke, uploads, mail, mcp }).resolve(
+    createApp(open(), { authenticate, bank, bucket, poke, uploads, mail, mcp, print }).resolve(
       event,
       context,
     );
