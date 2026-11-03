@@ -16,7 +16,7 @@ jw = "jw.cli:main"
 
 [dependency-groups]
 dev = [
-  "pytest==9.1.1", # the tests in tests/
+  "pytest==9.2.0", # the tests in tests/
   "anyio==4.15.1", # tests/test_mcp.py drives the async MCP client
 ]
 
