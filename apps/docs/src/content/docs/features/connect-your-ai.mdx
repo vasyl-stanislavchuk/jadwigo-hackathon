@@ -1,16 +1,48 @@
 ---
 title: Connect your AI
-description: "A parent's own AI app drives Jadwigo over the remote MCP: search, compose, publish."
+description: A parent connects their own AI app to Jadwigo's remote MCP by OAuth 2.1 and makes lessons from that chat.
 status: main
 as_of: 2026-11-03
-prs: [720, 727]
+prs: [714, 717, 720, 727]
 ---
 
-This page is for a judge who already has an AI app they like: it connects to Jadwigo over the
-remote MCP, searches the question bank, composes a lesson and publishes it for the child. This
-page is being written for the 4 November demo; its badge above already says where it stands.
+import Diagram from "../../../components/Diagram.astro";
+
+This page is for a parent who already talks to an AI app and wants that app to make lessons in
+Jadwigo. It folds in `dl-1u6fn.12`.
+
+Jadwigo serves a remote MCP at `https://app.jadwigo.pl/api/mcp`. It is stateless Streamable HTTP
+with JSON replies and no server-sent events. The parent's AI app connects by OAuth 2.1, with
+Supabase Auth as the authorization server. A call with no token gets a `401` whose
+`WWW-Authenticate` header names the protected-resource metadata. The metadata names the
+authorization server. The parent signs in and approves on a consent page at `/oauth/consent`.
+The AI app's token then carries the same rights as the parent's own web token. A revoked app
+keeps its current token until it expires, at most 1 hour.
+
+Through the tools, the parent's AI reads only their own family's pod, plus the question bank. It
+writes the lesson's words. Jadwigo's server-side verbs draft, check, and keep the lesson. The
+parent's yes in their own AI chat is the confirmation: `lesson_publish` publishes the checked
+lesson for 1 named child and answers that child's play link. A child's data, names included, may
+go to the AI app the parent connected. It is the parent's own export of their family's data.
+
+Diagram 5 shows the 2 halves: OAuth 2.1 sign-in first, then tool calls to the remote MCP.
+
+<Diagram name="connect-your-ai" />
+
+Status: the endpoint (#714), the consent page (#717), and `lesson_publish` (#727) are on `main`,
+not yet on prod. The OAuth 2.1 server runs on jadwigo-dev only (#720). The local `jw mcp serve`
+server for lesson authors stays as it is.
+
+## Every client
+
+| Client | How it connects |
+| --- | --- |
+| claude.ai | Add a custom connector with the URL above, then approve on the consent page. |
+| ChatGPT | Add a custom MCP server with the URL above, then approve on the consent page. |
+| Claude Code | `claude mcp add --transport http jadwigo https://app.jadwigo.pl/api/mcp` |
+| Muse Code | Add the URL as a remote MCP server in settings, then approve on the consent page. |
 
 ## Next
 
-- [Sign-in and consent](/features/sign-in-and-consent/): the next stop on the tour.
-- [Vision](/vision/): where each of these is going next.
+- [MCP](/mcp/): the local server for lesson authors, and every tool it gives.
+- [Sign-in and consent](/features/sign-in-and-consent/): the 2 sign-ins a parent meets.

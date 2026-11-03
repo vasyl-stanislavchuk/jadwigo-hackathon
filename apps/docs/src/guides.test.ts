@@ -42,6 +42,11 @@ describe("unknownApiPaths", () => {
     expect(unknownApiPaths("under `/api/v1/`, see [it](/api/operations/getme/)")).toEqual([]);
   });
 
+  it("lets the remote MCP's path pass, outside ROUTES by design", () => {
+    expect(unknownApiPaths("at `https://app.jadwigo.pl/api/mcp`")).toEqual([]);
+    expect(unknownApiPaths("at `/api/mcp/nope`")).toEqual(["/api/mcp/nope"]);
+  });
+
   it("reads a hero action's link as a docs link", () => {
     expect(unknownApiPaths("actions:\n    - text: API reference\n      link: /api/\n")).toEqual([]);
     expect(unknownApiLinks("      link: /api/operations/nope/")).toEqual(["/api/operations/nope/"]);

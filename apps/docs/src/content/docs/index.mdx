@@ -1,15 +1,15 @@
 ---
-title: Jadwigo docs
-description: How to call Jadwigo's API and MCP server, and how its design system is built.
+title: What Jadwigo is
+description: Jadwigo turns a photo of homework into a lesson a child can play. This page says what it does, what is live, and where to read next.
 template: splash
 hero:
-  tagline: How to call Jadwigo's API and MCP server, and how its design system is built.
+  tagline: A learning app for children in the first school grades. A parent photographs homework, Jadwigo builds a lesson from a credited question bank, and the child plays it.
   actions:
-    - text: Read the guides
-      link: /guides/introduction/
+    - text: Tour the features
+      link: /features/photo-to-lesson/
       icon: right-arrow
-    - text: API reference
-      link: /api/
+    - text: Read the story
+      link: /story/
       icon: document
       variant: secondary
     - text: Use with agents
@@ -20,33 +20,52 @@ hero:
 
 import { CardGrid, LinkCard } from "@astrojs/starlight/components";
 
-These docs are for the people and agents who build on Jadwigo, a learning app for children in the
-first school grades, in Polish and English.
+Jadwigo is a learning app for children in the first school grades, in Polish and English. The
+parent's job takes 1 photo. Everything after it is the app's job.
+
+The happy path has 4 steps. A parent signs in and adds a child. The parent photographs a homework
+page in the chat. Jadwigo reads the photo, draws questions from the question bank, and builds a
+lesson of at most 20 questions. The parent gives the lesson, prints it, or sends its link. The
+child opens the link and plays, with no sign-in.
+
+Every feature page carries 1 of 3 labels. `live` means it runs on prod today. `main` means the
+code is on `main` and not yet on prod. `vision` means it is not built, and an experiment page
+shows the idea working on invented learners. Labels were checked on 2026-11-03.
 
 <CardGrid>
   <LinkCard
-    title="Start here"
-    href="/guides/introduction/"
-    description="What the API is, how to sign a request, your first call, and the errors."
+    title="Features"
+    href="/features/photo-to-lesson/"
+    description="What a parent and a child can do today, 1 page per feature, each labelled."
   />
   <LinkCard
-    title="Use with agents"
-    href="/guides/agents/"
-    description="What an agent can read here, and the tools Jadwigo's MCP server gives it."
+    title="The story"
+    href="/story/"
+    description="How Jadwigo was decided, day by day, from 2026-10-24 to 2026-11-04."
   />
   <LinkCard
-    title="API reference"
-    href="/api/"
-    description="Every route, generated from the code."
+    title="Vision"
+    href="/vision/"
+    description="What comes next: knowing the learner, picking the next lesson, dreaming over results."
   />
   <LinkCard
-    title="Design system"
-    href="/design-system/"
-    description="Tokens, question types and the parts a lesson is built from."
+    title="Experiments"
+    href="/experiments/"
+    description="7 runs on invented learners that show the vision working, with costs."
   />
   <LinkCard
-    title="Architecture"
+    title="How it is built"
     href="/architecture/"
-    description="How the pieces fit."
+    description="The containers, the AI engine, and how agents build this repo."
+  />
+  <LinkCard
+    title="API and MCP"
+    href="/mcp/"
+    description="Every route and every tool, generated from the code."
   />
 </CardGrid>
+
+## Next
+
+- [Photo to lesson](/features/photo-to-lesson/): the first step of the happy path.
+- [The story](/story/): why the product looks the way it does.
