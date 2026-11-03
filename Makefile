@@ -259,7 +259,8 @@ endif
 ## ENV=prod runs only from your own terminal and asks you to type prod before it links. The seed runs
 ## under env -i: it sees PATH, HOME, USER, TMPDIR, PGPASSWORD and DATABASE_URL, no other secret. Safe to rerun:
 ## the same content publishes nothing new. It first waits up to LOGIN_WAIT seconds while the pooler
-## still refuses a password db-role just set.
+## still refuses a password db-role just set. make release never runs it (dl-5ssh.34.80): ENV=prod
+## is for a fresh prod only, and featured lessons reach prod by lesson-import ENV=prod FEATURED=1.
 db-seed:
 ifeq ($(ENV),)
 	bun run --cwd packages/lesson-import seed
@@ -292,6 +293,27 @@ else
 	@$(PROD_GATE)
 	@$(API_SESSION); \
 	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(LESSON_IMPORT_FLAGS)
+endif
+
+## run-timeline CONV=cnv_…|<uuid> [ENV=dev|prod]: one conversation's runs, read-only: timing, verbs,
+## tokens, cost and refusals, never a message or a lesson (docs/runbooks/run-timeline.md, dl-hin8.37).
+## No ENV reads the local database. It has no PROD_GATE, whose terminal check would refuse `!` in
+## Claude Code, where the owner runs this. ENV=prod is still the owner's: the guard refuses it to a session.
+RUN_TIMELINE_UUID = bun -e 'import { uuidOf } from "./packages/contracts/src/ids.ts"; const id = process.argv[1] ?? ""; console.log(id.startsWith("cnv_") ? uuidOf("cnv_", id) : id)' "$(CONV)" | grep -E '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$$'
+.PHONY: run-timeline
+run-timeline:
+	@test -n "$(CONV)" || { echo "run-timeline: CONV=<cnv_ id or uuid> is required"; exit 1; }
+ifeq ($(ENV),)
+	@$(LOCAL_DB_GATE)
+	@conv=$$($(RUN_TIMELINE_UUID)) || { echo "run-timeline: $(CONV) is not a cnv_ id or a uuid"; exit 1; }; \
+	psql "$(LOCAL_DATABASE_URL)" -X -q -v ON_ERROR_STOP=1 -v conv="$$conv" -f tools/run-timeline.sql
+else
+	@conv=$$($(RUN_TIMELINE_UUID)) || { echo "run-timeline: $(CONV) is not a cnv_ id or a uuid"; exit 1; }; \
+	$(SUPABASE_LINK); \
+	url=$$(sed 's/:6543\//:5432\//' supabase/.temp/pooler-url); \
+	case "$$url" in *://postgres.$(SUPABASE_REF)@*:5432/*) ;; *) echo "$@: supabase/.temp/pooler-url does not name jadwigo-$(ENV)"; exit 1;; esac; \
+	env -i PATH="$$PATH" HOME="$$HOME" PGCONNECT_TIMEOUT=10 PGPASSWORD="$$SUPABASE_DB_PASSWORD" \
+	  psql "$$url" -X -q -v ON_ERROR_STOP=1 -v conv="$$conv" -f tools/run-timeline.sql
 endif
 
 ## lesson-withdraw LESSON=les_… | ASSIGNMENT=asg_… [UNDO=1]: withdraws a featured lesson by
@@ -369,11 +391,13 @@ api-dev:
 
 ## release: origin/main to prod, asking once (infra/release.sh, dl-5ssh.34.67). It previews the
 ## migrations, a saved Terraform plan and prod-status, asks you to type prod, then pushes the
-## migrations, checks jadwigo_api's login, seeds, applies the saved plan and deploys the api, the web,
-## the site and the docs. It stops before asking when the plan destroys or replaces anything. Your own
-## terminal only; the guard denies it from a session, and `make -n release` shows the one command.
+## migrations, checks jadwigo_api's login, applies the saved plan and deploys the api, the runner, the
+## web and the site. It never seeds (dl-5ssh.34.80). DOCS=1 deploys the docs too; without it the
+## release skips them (dl-5ssh.34.81). It stops before asking when the plan destroys or replaces
+## anything. Your own terminal only; the guard denies it from a session, and `make -n release` shows
+## the one command.
 release:
-	@sh infra/release.sh
+	@DOCS="$(DOCS)" sh infra/release.sh
 
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
 ## you type the ENV's name. For dev only, CONFIRM=dev on the command line answers where there is no

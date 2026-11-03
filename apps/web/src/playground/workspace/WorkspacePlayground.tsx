@@ -13,8 +13,8 @@
 import type { LearnerId } from "@jadwigo/contracts";
 import { Conversation, ConversationId } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
-import { DensityScope } from "@jadwigo/ui";
-import { type ReactElement, type ReactNode, useMemo, useState } from "react";
+import { DensityScope, setAudience } from "@jadwigo/ui";
+import { type ReactElement, type ReactNode, useLayoutEffect, useMemo, useState } from "react";
 import { newConversationId } from "../../chat/ids.ts";
 import { type EngineTransport, hotTransport } from "../../chat/useConversation.ts";
 import { type Pace, paceOf } from "../../chat/wire.ts";
@@ -52,12 +52,21 @@ function devEngine(transport: EngineTransport): LessonEngine {
     transport,
     consent: null,
     ratings: null,
-    give: { giveLesson: async () => madeUpGiven() },
+    give: { giveLesson: async () => madeUpGiven(), renameLesson: async () => ({ revision: 2 }) },
   };
 }
 
-/** The parent shell's frame without its sidebar: the workspace fills it. */
+/**
+ * The parent shell's frame without its sidebar: the workspace fills it, in the adult's look
+ * (`<html data-audience="adult">`, foundation.css), as the parent app draws it. The rest of the
+ * playground keeps the child's (App.tsx), so leaving the page gives it back. The dialogs and
+ * tooltips Radix portals to the body take it too, which a wrapper element would not give them.
+ */
 function Frame({ children }: { children: ReactNode }): ReactElement {
+  useLayoutEffect(() => {
+    setAudience(document.documentElement, "adult");
+    return () => setAudience(document.documentElement, "kid");
+  }, []);
   return (
     <DensityScope
       value="parent"

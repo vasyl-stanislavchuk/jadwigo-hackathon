@@ -21,6 +21,7 @@ import type { RunPhase } from "../phase.ts";
 import { SLOW_MS, STALL_MS } from "../phase.ts";
 import { stepIds } from "./lessonFile.ts";
 import {
+  checkOf,
   type DoneCall,
   emptyMerge,
   type Merge,
@@ -303,7 +304,12 @@ export function spineOf(
         const words = e.payload.text.trim();
         const line: SpineLine =
           e.payload.source === "lesson_edit"
-            ? { kind: "steer", copyKey: "chat_steered_edit", values: {} }
+            ? {
+                kind: "steer",
+                copyKey: "chat_steered_edit",
+                values: {},
+                ...(endedAt === undefined ? {} : { afterTurn: true }),
+              }
             : { kind: "steer", ...sayWords(words), steerLabel: true, quote: words };
         if (e.payload.source === "lesson_edit" || words !== "")
           placed.push({ seq: e.seq, stage: stageNow(), line });
@@ -354,7 +360,8 @@ export function spineOf(
   const kind = phase === null ? phaseFromLog(log, all, now) : PHASE[phase.kind];
   const ended = ENDED.has(kind);
 
-  // Done lines: one per verb per stage visit, merged (S2), placed where the first one landed.
+  // Done lines: one per verb per stage visit, merged (S2), placed where the last one landed, so a
+  // check that passed after a refusal reads after it (dl-uukj.47.71.45).
   const merges = new Map<string, { seq: number; stage: number; merge: Merge }>();
   const finished = all
     .filter((c) => c.result !== undefined && !c.result.failed)
@@ -366,6 +373,7 @@ export function spineOf(
       stage: call.stage,
       merge: emptyMerge(call.verb),
     };
+    slot.seq = call.seq;
     merges.set(key, slot);
     mergeCall(slot.merge, doneCall(call, revisions, reads));
   }
@@ -374,7 +382,8 @@ export function spineOf(
     placed.push({ seq, stage, line: { kind: "done", ...words, ...(tags ? { tags } : {}) } });
   }
 
-  // A failed call shows only once the turn is over, in plain words (S5, S13, §2 item 6).
+  // A failed call shows only once the turn is over, in plain words (S5, S13, §2 item 6). One the
+  // agent then fixed shows nothing: it did not go on without it (dl-uukj.47.71.45).
   if (ended)
     for (const call of all) {
       if (call.result?.failed !== true) continue;
@@ -382,6 +391,7 @@ export function spineOf(
       const recovered = all.some(
         (c) => c.result !== undefined && !c.result.failed && c.result.seq > failedAt,
       );
+      if (call.verb !== "question_types" && fixedLater(call, all)) continue;
       placed.push({
         seq: failedAt,
         stage: call.stage,
@@ -530,6 +540,19 @@ function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
     before = e.payload.entries;
   });
   return found;
+}
+
+/**
+ * Whether a refused call was made good later: the same verb on the same step went through, or a
+ * lesson check passed. Another step's edit going through fixes nothing.
+ */
+function fixedLater(call: Call, all: readonly Call[]): boolean {
+  const failedAt = call.result?.seq ?? 0;
+  return all.some((c) => {
+    if (c.result === undefined || c.result.failed || c.result.seq <= failedAt) return false;
+    if (c.verb === "lesson_check" && checkOf(c.result.output)?.publishable === true) return true;
+    return c.verb === call.verb && c.input["step_id"] === call.input["step_id"];
+  });
 }
 
 /** A finished call with the lesson around it: what it wrote, what stood before, the known steps. */

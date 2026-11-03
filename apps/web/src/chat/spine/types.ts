@@ -31,6 +31,8 @@ export interface SpineLine extends Words {
   tags?: readonly SpineTag[];
   /** A steer: "Dopisane w trakcie" above the parent's words in quotes (S17). */
   steerLabel?: boolean;
+  /** A parent's lesson edit made after the turn ended: not "during", so it takes no label. */
+  afterTurn?: boolean;
   /** A steer's own words, the parent's, shown in quotes; never the engine's. */
   quote?: string;
 }

@@ -125,13 +125,17 @@ test("a lesson given to one child plays from its ?learner= link to the results, 
     `/api/v1/conversations/${conversation}/lessons`,
     { learner_id: learner },
   );
-  expect(given.assignment.audience).toBe("learners");
+  expect(given.assignment.audience).toBe("anyone");
 
   // The child's link: the attempt starts as that learner, and plays to the results.
   const started = page.waitForResponse((r) =>
     r.url().endsWith(`/api/v1/assignments/${given.assignment.id}/attempts`),
   );
   await page.goto(`/play/${given.assignment.id}?learner=${learner}`);
+  // The first screen names the child and says what the lesson is; nothing starts before the yes.
+  await expect(page.locator("[data-intro-title]")).toBeVisible();
+  await expect(page.locator("[data-intro-yes]")).toContainText("Tymek");
+  await page.locator("[data-intro-yes]").click();
   const start = await started;
   expect(start.status()).toBe(201);
   expect(start.request().postDataJSON()).toEqual({ learner_id: learner });

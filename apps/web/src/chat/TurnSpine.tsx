@@ -159,9 +159,11 @@ function Line({
   if (line.kind === "steer")
     return (
       <li className="flex flex-col gap-0.5" data-line="steer">
-        <span className="text-jw-page-micro font-medium text-jw-placeholder">
-          {copy(language, "chat_steer_label", {}, "adult")}
-        </span>
+        {line.afterTurn === true ? null : (
+          <span className="text-jw-page-micro font-medium text-jw-placeholder">
+            {copy(language, "chat_steer_label", {}, "adult")}
+          </span>
+        )}
         <span className="text-jw-page-small text-jw-ink">
           {line.quote === undefined ? say(language, line) : `„${line.quote}”`}
         </span>
@@ -179,7 +181,10 @@ function Line({
           aria-hidden
           className={cn("mt-0.5 size-3.5 shrink-0", isNow ? "text-jw-act" : "text-jw-ink-soft")}
         />
-        <span className="min-w-0 flex-1">{say(language, line)}</span>
+        {/* Keyed by its words: a new now line mounts fresh, so chat.css fades it in (§6). */}
+        <span key={say(language, line)} className="min-w-0 flex-1" data-words>
+          {say(language, line)}
+        </span>
         {isNow && line.startedAt !== undefined && (
           <span
             className="shrink-0 text-jw-page-small font-normal text-jw-ink-soft tabular-nums"

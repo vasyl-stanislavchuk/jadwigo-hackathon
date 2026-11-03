@@ -516,6 +516,36 @@ describe("one living lesson card (S7, S16)", () => {
       within(cards[1] as HTMLElement).getByRole("button", { name: "Daj lekcję" }),
     ).toBeTruthy();
   });
+
+  it("a turn whose lesson was never checked draws Lekcja do poprawy, and Popraw za mnie sends the fix as a new turn (S16)", () => {
+    const lessonObject = { kind: "lesson", id: "lsn_2h4m8gyw0fb1cvz2nkqw0px8fq" } as ObjectRef;
+    // happy-turn without its lesson_check call: the card cannot say the lesson is ready.
+    const turn = turnOf("happy-turn");
+    const checks = new Set(
+      (turn.events ?? []).flatMap((e) =>
+        e.type === "tool_call" && e.payload.verb === "lesson_check" ? [e.payload.call_id] : [],
+      ),
+    );
+    expect(checks.size).toBeGreaterThan(0);
+    const unchecked: Turn = {
+      ...turn,
+      events: (turn.events ?? []).filter(
+        (e) =>
+          !((e.type === "tool_call" || e.type === "tool_result") && checks.has(e.payload.call_id)),
+      ),
+    };
+    const { onSend } = pane({ turns: [unchecked], lessonObject, onOpen: vi.fn() });
+    const card = document.querySelector("[data-card-state]") as HTMLElement;
+    expect(card.getAttribute("data-card-state")).toBe("fix");
+    fireEvent.click(within(card).getByRole("button", { name: "Popraw za mnie" }));
+    expect(onSend).toHaveBeenCalledWith("Popraw za mnie");
+    cleanup();
+    // The same turn with its check is ready, and offers no fix.
+    pane({ turns: [turn], lessonObject, onOpen: vi.fn() });
+    const ready = document.querySelector("[data-card-state]") as HTMLElement;
+    expect(ready.getAttribute("data-card-state")).toBe("ready");
+    expect(within(ready).queryByRole("button", { name: "Popraw za mnie" })).toBeNull();
+  });
 });
 
 describe("the two sides apart (dl-uukj.47.28)", () => {

@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 import { agreeToAi } from "./consent.ts";
-import { giveLesson } from "./given.ts";
+import { confirmChild, giveLesson } from "./given.ts";
 
 const LESSON: unknown = JSON.parse(
   readFileSync(new URL("./lessons/given-sums.json", import.meta.url), "utf8"),
@@ -31,6 +31,7 @@ test.beforeEach(({ page }) => agreeToAi(page));
 // at its <source>; the reducer's verdicts were never the cause.
 test("the queen plays at the third right answer in a row in a given lesson", async ({ page }) => {
   await page.goto(await giveLesson(page, LESSON));
+  await confirmChild(page);
   await answer(page, "7 + 5", "12");
   await expect(queen(page)).toHaveCount(0);
   await page.locator("[data-next]").click();
@@ -53,6 +54,7 @@ test("a borrowed question shows 'z Khan Academy', which opens its licence card; 
   page,
 }) => {
   await page.goto(await giveLesson(page, LESSON));
+  await confirmChild(page);
   const trigger = page.locator("[data-credit-trigger]");
   await expect(page.locator("[data-step-shell]").getByText("7 + 5").first()).toBeVisible();
   await expect(trigger).toHaveCount(0);

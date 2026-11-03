@@ -699,6 +699,47 @@ describe("runStep and drain", () => {
     expect(revisions).toEqual([1, 2]);
   });
 
+  it("runs several lesson_edit calls of one response in order, each on the one before, past a refused one (dl-hin8.36)", async () => {
+    const seen: (number | null)[] = [];
+    const t = await setup(
+      [
+        { calls: [{ verb: "lesson_draft" }] },
+        {
+          calls: [
+            { verb: "lesson_edit", input: { step_id: "s01" } },
+            { verb: "lesson_edit", input: { step_id: "refused" } },
+            { verb: "lesson_edit", input: { step_id: "s03" } },
+          ],
+        },
+        { text: "ok" },
+      ],
+      fakeVerbs({
+        lesson_edit: async (context, input) => {
+          seen.push(context.lesson?.revision ?? null);
+          if (input["step_id"] === "refused") throw new VerbError("edit", "nothing changed");
+          return { output: {}, lesson_file: { id: "made-up", parts: [] } };
+        },
+      }),
+    );
+    const run = await t.say("Go.");
+    await drain(t.deps);
+
+    const log = await t.log(run);
+    expect(seen).toEqual([1, 2, 2]);
+    expect(log.flatMap((e) => (e.type === "lesson_revision" ? [e.payload.revision] : []))).toEqual([
+      1, 2, 3,
+    ]);
+    expect(
+      log.flatMap((e) =>
+        e.type === "tool_result" && e.payload.verb === "lesson_edit"
+          ? [e.payload.error?.type ?? "ok"]
+          : [],
+      ),
+    ).toEqual(["ok", "edit", "ok"]);
+    // The 3 edits cost 1 model call, and the next one reads all 3 results.
+    expect(t.muse.calls).toHaveLength(3);
+  });
+
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
     // lesson_check names the run's draft, known once the parent has spoken.
     const check: Record<string, unknown> = { help: {}, names: [] };
@@ -927,7 +968,7 @@ describe("runStep and drain", () => {
     for (const call of t.muse.calls) {
       expect(call.instructions).toContain(CARD_RULE);
       // A new instructions text, a new cache key: no call reads a prefix cached without the rule.
-      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:4");
+      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:5");
     }
     expect(CARD_RULE).toMatch(/never list or repeat the lesson's questions/);
   });
