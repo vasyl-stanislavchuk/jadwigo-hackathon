@@ -9,7 +9,6 @@ import { ApiError } from "@jadwigo/api-client";
 import { AttachmentId, ErrorType, type EventId } from "@jadwigo/contracts";
 import type { ConversationId, MessageContext, Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { useContextClosed } from "./contextHold.ts";
 import {
   type ConversationState,
   conversationReducer,
@@ -157,9 +156,6 @@ export interface Conversation {
   sendNow(index: number): void;
   /** Takes one waiting row out (to remove it, or back to the composer), answering its words. */
   takeNext(index: number): string | null;
-  /** The parent closed the context chip: the next messages go with no context (dl-uukj.47.36). */
-  contextClosed: boolean;
-  closeContext(): void;
   /** "Spróbuj ponownie" after a failed send: the exact words that failed, sent the same way. */
   resend(): void;
   /**
@@ -206,9 +202,15 @@ export function useConversation(
   const latest = useRef(state);
   latest.current = state;
   const subscribed = useRef(new Map<RunId, () => void>());
-  const chip = useContextClosed(conversation);
-  const closedRef = useRef(chip.closed);
-  closedRef.current = chip.closed;
+  // The context chip and its hold are gone (handoff S21; owner, 2026-11-03, decision dl-6rx6g):
+  // a flag an earlier page left in this tab is cleared, never read.
+  useEffect(() => {
+    try {
+      window.sessionStorage.removeItem(`jw.chat.context-closed.${conversation}`);
+    } catch {
+      // Storage refused: there is nothing it could hold.
+    }
+  }, [conversation]);
   const queue = useNextQueue(conversation, owner === false ? undefined : owner);
   /**
    * The last send that failed, of any kind (a message, a queued row, a steer, Stop, a retry's
@@ -313,9 +315,9 @@ export function useConversation(
       queued = false,
       attachmentIds: readonly AttachmentId[] = [],
     ): Promise<boolean> => {
-      // The page goes on with the context the conversation already has, until the parent closes
-      // the chip; then nothing more goes with any message (dl-uukj.47.36).
-      const context = closedRef.current ? undefined : (given ?? lastContext(latest.current));
+      // A message goes with the context given (Dla's child), else the one the conversation
+      // already has (dl-uukj.47.36).
+      const context = given ?? lastContext(latest.current);
       const event_id = newEventId();
       dispatch({ type: "pending", pending: { text, event_id, at: Date.now() } });
       return transport
@@ -529,10 +531,7 @@ export function useConversation(
           went();
           return follow(run);
         })
-        .catch(() => {
-          fail(() => void redo.current?.edit(text, question_ids));
-          dispatch({ type: "steer_failed", event_id });
-        });
+        .catch(() => fail(() => void redo.current?.edit(text, question_ids)));
       return event_id;
     },
     [transport, conversation, follow, send, went, fail],
@@ -554,8 +553,6 @@ export function useConversation(
     nextRows: queue.rows,
     sendNow,
     takeNext: queue.take,
-    contextClosed: chip.closed,
-    closeContext: chip.close,
     resend,
   };
 }

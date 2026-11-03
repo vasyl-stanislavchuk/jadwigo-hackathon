@@ -76,11 +76,6 @@ export interface ConversationState {
    * per-minute one or the day's. Either way there is no retry.
    */
   sendLimit: SendLimit | null;
-  /**
-   * The edit steers whose send was refused or never reached the server, by `event_id`: no log will
-   * hold them, so what waits on one (Cofnij) stops waiting (dl-z5ja.111).
-   */
-  failedSteers: readonly string[];
 }
 
 /** The two message limits a send can hit: `MessageLimitMinute` and `MessageLimitDay`. */
@@ -102,8 +97,7 @@ export type ConversationAction =
   | { type: "unsent"; event_id: string }
   | { type: "queued"; text: string }
   | { type: "stop" }
-  | { type: "send_failed"; failed: boolean; limit?: SendLimit | null }
-  | { type: "steer_failed"; event_id: string };
+  | { type: "send_failed"; failed: boolean; limit?: SendLimit | null };
 
 export const EMPTY: ConversationState = {
   runs: [],
@@ -117,7 +111,6 @@ export const EMPTY: ConversationState = {
   stopping: false,
   sendFailed: false,
   sendLimit: null,
-  failedSteers: [],
 };
 
 /** The highest `seq` merged: where the next fetch starts. */
@@ -268,8 +261,6 @@ export function conversationReducer(
         sendLimit: action.limit ?? null,
         ...(action.failed ? { pending: null } : {}),
       };
-    case "steer_failed":
-      return { ...state, failedSteers: [...state.failedSteers, action.event_id] };
   }
 }
 

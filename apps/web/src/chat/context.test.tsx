@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 /**
- * The closable context chip (dl-uukj.47.36): a conversation goes on with the context its messages
- * carry, until the parent closes the chip; then the next messages go with none, the chip stays
- * closed over a reload and a new turn, and another conversation starts open.
+ * A message's context (dl-uukj.47.36), with no chip to close it any more (handoff S21,
+ * dl-uukj.47.71.13): each message goes with the context given (Dla's child), else the one the
+ * conversation already has. A "closed" flag an earlier page left in the tab is ignored and cleared
+ * (owner, 2026-11-03, decision dl-6rx6g).
  */
 
 import { LearnerId } from "@jadwigo/contracts";
@@ -15,7 +16,6 @@ import { type EngineTransport, useConversation } from "./useConversation.ts";
 import type { SendBody } from "./wire.ts";
 
 const CONVERSATION = ConversationId.parse("cnv_00000000000000000000000001");
-const OTHER = ConversationId.parse("cnv_00000000000000000000000002");
 const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
 const happy = (RUN_LOGS.find((l) => l.name === "happy-turn")?.events ?? []).map((e) =>
   RunEvent.parse(e),
@@ -85,36 +85,29 @@ const contexts = (sent: SendBody[]) =>
 beforeEach(() => window.sessionStorage.clear());
 afterEach(cleanup);
 
-describe("the closable context chip", () => {
-  it("keeps the conversation's context on the next message until the chip is closed, then sends none", async () => {
+describe("a message's context, with no chip to close it", () => {
+  it("goes on with the conversation's context, and Dla's child wins when one is given", async () => {
     const s = standIn();
-    const { result, unmount } = renderHook(() => useConversation(s.transport, CONVERSATION));
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION));
     await act(async () => {});
     await act(async () => result.current.send("Pierwsza", { learner_id: OLA }));
     await act(async () => {});
     await act(async () => result.current.send("Druga"));
     expect(contexts(s.sent)).toEqual([{ learner_id: OLA }, { learner_id: OLA }]);
+  });
 
-    expect(result.current.contextClosed).toBe(false);
-    await act(async () => result.current.closeContext());
-    await act(async () => result.current.send("Trzecia"));
-    expect(contexts(s.sent).at(-1)).toBeNull();
-
-    // A reload: still closed, and a new turn sends none either.
-    unmount();
-    const again = renderHook(() => useConversation(s.transport, CONVERSATION));
+  it("ignores and clears a 'closed' flag an earlier page left in the tab (decision dl-6rx6g)", async () => {
+    const key = `jw.chat.context-closed.${CONVERSATION}`;
+    window.sessionStorage.setItem(key, "1");
+    const s = standIn();
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION));
     await act(async () => {});
-    expect(again.result.current.contextClosed).toBe(true);
-    await act(async () => again.result.current.send("Czwarta", { learner_id: OLA }));
-    expect(contexts(s.sent).at(-1)).toBeNull();
-
-    // Another conversation starts open.
-    const other = renderHook(() => useConversation(s.transport, OTHER));
-    expect(other.result.current.contextClosed).toBe(false);
+    expect(window.sessionStorage.getItem(key)).toBeNull();
+    await act(async () => result.current.send("Pierwsza", { learner_id: OLA }));
+    expect(contexts(s.sent)).toEqual([{ learner_id: OLA }]);
   });
 
   it("draws no chip and no × (S21): Dla in the composer says who the lesson is for", () => {
-    let closed = 0;
     const turn = {
       run: { id: RunId.parse("run_00000000000000000000000001"), status: "completed" } as Run,
       view: {
@@ -150,14 +143,10 @@ describe("the closable context chip", () => {
       onSend: () => {},
       onStop: () => {},
       nameOf: (id: string) => (id === OLA ? "Ola" : null),
-      onCloseContext: () => {
-        closed += 1;
-      },
     };
     render(<ChatPane {...props} />);
     // The chip is gone (handoff dl-uukj.47.71 S21): nothing to close, and closing stays the hook's.
     expect(document.querySelector("[data-context-chip]")).toBeNull();
     expect(screen.queryByRole("button", { name: "Ukryj kontekst" })).toBeNull();
-    expect(closed).toBe(0);
   });
 });

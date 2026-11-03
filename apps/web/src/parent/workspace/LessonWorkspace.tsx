@@ -108,8 +108,6 @@ export function LessonWorkspace({
     nextRows,
     sendNow,
     takeNext,
-    contextClosed,
-    closeContext,
     resend,
   } = useConversation(engine.transport, conversation, owner, engine.owner);
   const lesson = useLessonWiring(state);
@@ -288,8 +286,6 @@ export function LessonWorkspace({
       next={nextRows}
       onSendNow={sendNow}
       onTakeNext={takeNext}
-      contextClosed={contextClosed}
-      onCloseContext={closeContext}
       onResend={resend}
       lessonObject={ownLesson}
       onOpen={inspector.open}
