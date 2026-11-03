@@ -245,9 +245,12 @@ function Revision({
         )}
         <div className="flex items-center gap-2">
           {/* The questions, never the version (lesson card delta C5). */}
-          <span className="text-jw-page-small text-muted-foreground tabular-nums" data-pane-count>
-            {say("card_count", { n: openable.length })}
-          </span>
+          {/* Never "0 zadań": a revision with no question says no count, as the card does. */}
+          {openable.length > 0 && (
+            <span className="text-jw-page-small text-muted-foreground tabular-nums" data-pane-count>
+              {say("card_count", { n: openable.length })}
+            </span>
+          )}
           {openable.length > 0 && (
             <Button
               type="button"

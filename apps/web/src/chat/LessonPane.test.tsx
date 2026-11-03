@@ -124,6 +124,23 @@ describe("the lesson column (dl-z5ja.108.1)", () => {
     expect(document.querySelector("[data-skill]")?.textContent).toBe("maths.mul.2x5");
   });
 
+  it("a revision with no question says no count, never 0 zadań (steward on #808)", () => {
+    const shown = lesson();
+    if (shown === null) throw new Error("the happy turn has a lesson");
+    const file = structuredClone(shown.lesson_file) as {
+      script: { parts: { steps: { question?: Record<string, unknown> }[] }[] };
+    };
+    for (const part of file.script.parts)
+      for (const step of part.steps)
+        if (step.question !== undefined) step.question["family"] = "nope";
+    render(<LessonPane language="pl" lesson={{ ...shown, lesson_file: file }} />);
+    expect(document.querySelector("[data-pane-count]")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/0 zadań/);
+    cleanup();
+    render(<LessonPane language="pl" lesson={shown} />);
+    expect(document.querySelector("[data-pane-count]")?.textContent).toBe("4 zadania");
+  });
+
   it("without an edit handler an opened step offers no actions", () => {
     render(<LessonPane language="pl" lesson={lesson()} />);
     fireEvent.click(toggles()[0] as HTMLButtonElement);
