@@ -8,7 +8,7 @@
  *   band     the run's state in words, and the polite live region that speaks when a turn ends or
  *            needs the parent
  *   preview  over the chat, from the lesson card's expand button (dl-1eieq.1): the latest
- *            revision (LessonPane), its changed steps marked, Cofnij and step edits, with the
+ *            revision (LessonPane), its changed steps marked, Zmień ten krok on each, with the
  *            card's actions in its foot; or, when `?open` names another thing, that thing's panel
  *            (the inspector, dl-uukj.47.58)
  *   (no footer: giving the lesson, and when, happen in the chat; design review 2026-11-02)
@@ -311,13 +311,9 @@ export function LessonWorkspace({
                       lesson={lesson.shown}
                       changed={lesson.changed}
                       added={addedSteps(lesson.turns, lesson.changed)}
-                      onUndo={lesson.onUndo}
-                      undoRefused={lesson.undoRefused}
-                      undoPending={lesson.undoPending}
                       onEdit={edit}
                       ghosts={lesson.ghosts}
                       withChild={child !== null}
-                      outcomeOf={lesson.outcomeOf}
                       bare
                     />
                   ),
