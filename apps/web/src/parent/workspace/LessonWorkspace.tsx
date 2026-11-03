@@ -38,7 +38,6 @@ import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/r
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
-import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { playPath } from "../../play/route.ts";
 import { CATEGORY, pageLang } from "../adult.ts";
@@ -113,7 +112,7 @@ export function LessonWorkspace({
     closeContext,
     resend,
   } = useConversation(engine.transport, conversation, owner, engine.owner);
-  const lesson = useLessonWiring(state, edit);
+  const lesson = useLessonWiring(state);
   const { turns } = lesson;
   const restoring = state.connection === "restoring";
   const { ratings } = engine;
@@ -150,31 +149,56 @@ export function LessonWorkspace({
   const summary = lessonSummary(lesson.shown);
   const child = learners.find((l) => l.id === forLearner) ?? null;
 
-  // Daj lekcję (dl-uukj.47.55): the latest checked revision, given to the Dla child, who plays it
-  // from its ?learner= link; with no child, given to nobody in particular and opened here. The route
-  // refuses a revision no check passed (harsh words included) and a child outside the family.
+  // Daj lekcję (dl-uukj.47.55): the revision the parent sees, given to the Dla child or to nobody
+  // in particular, as one link to send or open. The route refuses a revision no check passed
+  // (harsh words included) or that is no longer the latest, and a child outside the family.
   const [given, setGiven] = useState<GiveState>({ kind: "idle" });
+  const shownRevision = lesson.shown?.revision;
+  // A link is for one child and one revision: either changing takes it off the card, and a reply
+  // still on its way for the old pair says nothing.
+  const giveFor = `${forLearner}:${shownRevision}`;
+  const giveForNow = useRef(giveFor);
+  giveForNow.current = giveFor;
+  useEffect(() => setGiven({ kind: "idle" }), [giveFor]);
   const giveTo = async (to: Learner | null): Promise<void> => {
     if (engine.give === null || !lesson.ready) return;
+    const asked = giveFor;
     setGiven({ kind: "giving" });
     try {
-      const { assignment } = await engine.give.giveLesson(
-        conversation,
-        to === null ? {} : { learner_id: to.id },
-      );
-      if (to === null) {
-        navigate(playPath(assignment.id));
-        return;
-      }
-      const href = `${playPath(assignment.id)}?${new URLSearchParams({ learner: to.id })}`;
-      setGiven({ kind: "given", name: to.first_name, href });
+      const { assignment } = await engine.give.giveLesson(conversation, {
+        ...(shownRevision === undefined ? {} : { revision: shownRevision }),
+        ...(to === null ? {} : { learner_id: to.id }),
+      });
+      if (giveForNow.current !== asked) return;
+      const search = to === null ? "" : `?${new URLSearchParams({ learner: to.id })}`;
+      setGiven({
+        kind: "given",
+        name: to?.first_name ?? null,
+        href: `${playPath(assignment.id)}${search}`,
+      });
     } catch (error) {
+      if (giveForNow.current !== asked) return;
       const type = error instanceof ApiError ? error.type : null;
       setGiven({
         kind: "refused",
         reason:
           type === "LessonNotPublishable" ? "changed" : type === "NotFound" ? "child" : "failed",
       });
+    }
+  };
+
+  // A new title from the card (dl-1eieq.16): the route checks it, so the lesson stays ready. Its
+  // revision comes back through the conversation's own read.
+  const renameLesson = async (title: string): Promise<CopyKey | null> => {
+    if (engine.give === null) return "parent_title_failed";
+    try {
+      await engine.give.renameLesson(conversation, { title });
+      refetch();
+      return null;
+    } catch (error) {
+      const type = error instanceof ApiError ? error.type : null;
+      if (type === "LessonNotPublishable") return "parent_title_refused";
+      return type === "AnswerConflict" ? "parent_title_busy" : "parent_title_failed";
     }
   };
 
@@ -214,7 +238,6 @@ export function LessonWorkspace({
         ? {}
         : {
             onGive: () => void giveTo(child),
-            onOpenHere: () => void giveTo(null),
           })}
     />
   );
@@ -272,6 +295,7 @@ export function LessonWorkspace({
       onOpen={inspector.open}
       // How and when to give the lesson live in its card (dl-uukj.47.55, decision dl-hz9ks).
       lessonActions={actions}
+      onRenameLesson={engine.give === null ? undefined : renameLesson}
     />
   );
 

@@ -52,7 +52,7 @@ function devEngine(transport: EngineTransport): LessonEngine {
     transport,
     consent: null,
     ratings: null,
-    give: { giveLesson: async () => madeUpGiven() },
+    give: { giveLesson: async () => madeUpGiven(), renameLesson: async () => ({ revision: 2 }) },
   };
 }
 

@@ -123,6 +123,7 @@ const INSTRUCTIONS = [
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
   CARD_RULE,
   "A nearby source is a starting point: inspect the actual question.data, not only say. Adapt data, key and help consistently to the requested operation and range. Renaming a subtraction does not turn it into addition.",
+  "Once the questions are settled, give the lesson its title by passing title to the lesson_check that closes your work: a few plain words a child reads, naming what it practises, in the lesson's language. Never the parent's request word for word, and never a name.",
   "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key and inherits the main question family when omitted. If a check still fails, explain the limitation and do not claim the lesson is ready.",
   FENCE_RULE,
 ].join("\n");

@@ -136,7 +136,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
   lesson_check: {
     name: "lesson_check",
     description:
-      "Check the draft with your words on it. help maps each step_id to what its you_write lists (twin, boost_by_mistake, look, boost, almost, worked); help {} checks the draft as it stands. Fix what findings list by step id until ok is true.",
+      "Check the draft with your words on it. help maps each step_id to what its you_write lists (twin, boost_by_mistake, look, boost, almost, worked); help {} checks the draft as it stands. Fix what findings list by step id until ok is true. title sets the lesson's title: a few plain words a child reads, naming what it practises.",
     parameters: params(
       {
         draft_id: str,
