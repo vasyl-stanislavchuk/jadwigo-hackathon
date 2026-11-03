@@ -27,7 +27,9 @@ import type { ChatItem, RunView } from "@jadwigo/core";
 import {
   Badge,
   Button,
+  cn,
   DisabledReason,
+  Input,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -41,7 +43,7 @@ import {
   Maximize2Icon,
   PencilIcon,
 } from "lucide-react";
-import type { ReactElement, ReactNode } from "react";
+import { type ReactElement, type ReactNode, useState } from "react";
 import type { Turn } from "../conversation.ts";
 import { lessonFacts } from "../spine/lessonFile.ts";
 import type { LessonCardState } from "../spine/types.ts";
@@ -115,6 +117,91 @@ const SHOWN = 3;
 /** Where the card's state comes from: the run's fold, or the revision alone. */
 type Source = { state: LessonCardState } | { lesson: LessonAt };
 
+/** The longest title the route takes (`LessonRename`). */
+const TITLE_CHARS = 80;
+
+const TITLE =
+  "col-start-2 min-w-0 text-base leading-snug font-semibold text-jw-ink max-sm:line-clamp-2 sm:truncate";
+
+/**
+ * The ready card's title, changed where it stands (dl-1eieq.16): a tap makes it a field, Enter or
+ * leaving saves, Esc keeps it. The new words show at once; a refusal puts the old ones back and says
+ * why under them.
+ */
+function TitleEdit({
+  title,
+  language,
+  onRename,
+}: {
+  title: string;
+  language: Language;
+  onRename: (title: string) => Promise<CopyKey | null>;
+}): ReactElement {
+  const say = (key: CopyKey, vars: Record<string, string> = {}) =>
+    copy(language, key, vars, "adult");
+  const [typing, setTyping] = useState<string | null>(null);
+  const [saved, setSaved] = useState<{ words: string; over: string } | null>(null);
+  const [problem, setProblem] = useState<CopyKey | null>(null);
+  // What was saved stands until the lesson's own title moves.
+  const shown = saved !== null && saved.over === title ? saved.words : title;
+  const save = (): void => {
+    if (typing === null) return;
+    const words = typing.trim();
+    setTyping(null);
+    if (words === "" || words === shown) return;
+    setProblem(null);
+    setSaved({ words, over: title });
+    void onRename(words).then((refused) => {
+      if (refused === null) return;
+      setSaved(null);
+      setProblem(refused);
+    });
+  };
+  return (
+    <div className="col-start-2 flex min-w-0 flex-col gap-1">
+      {typing === null ? (
+        <button
+          type="button"
+          aria-label={say("parent_title_edit", { title: shown })}
+          className={cn(
+            TITLE,
+            "group/title flex cursor-text items-center gap-1.5 text-left hover:underline focus-visible:outline-3 focus-visible:outline-jw-focus",
+          )}
+          onClick={() => setTyping(shown)}
+          data-card-title
+        >
+          <span className="min-w-0">{shown}</span>
+          <PencilIcon
+            aria-hidden
+            className="size-3.5 shrink-0 text-jw-ink-soft opacity-0 group-hover/title:opacity-100 group-focus-visible/title:opacity-100 max-sm:opacity-100"
+          />
+        </button>
+      ) : (
+        <Input
+          kind="text"
+          // biome-ignore lint/a11y/noAutofocus: the parent just asked for this field.
+          autoFocus
+          maxLength={TITLE_CHARS}
+          value={typing}
+          aria-label={say("parent_title_edit", { title: shown })}
+          onChange={(event) => setTyping(event.target.value)}
+          onBlur={save}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") save();
+            if (event.key === "Escape") setTyping(null);
+          }}
+          data-card-title-field
+        />
+      )}
+      {problem !== null && (
+        <p role="status" className="text-jw-page-small text-jw-ink" data-card-title-problem>
+          {say(problem)}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function LessonCard({
   object,
   language,
@@ -122,6 +209,7 @@ export function LessonCard({
   actions,
   onFix,
   onOpenVersion,
+  onRename,
   ...source
 }: Source & {
   /** The lesson as a thing to open: its conversation. */
@@ -134,6 +222,8 @@ export function LessonCard({
   onFix?: (() => void) | undefined;
   /** Otwórz tę wersję on a superseded row; not drawn without it (dl-uukj.47.63). */
   onOpenVersion?: (() => void) | undefined;
+  /** Saves a new title, answering what to say if it could not; the title is plain words without it. */
+  onRename?: ((title: string) => Promise<CopyKey | null>) | undefined;
 }): ReactElement {
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
@@ -154,7 +244,7 @@ export function LessonCard({
           {title}
         </span>
         <span className="shrink-0 text-jw-ink-soft" data-card-facts>
-          {say("card_superseded")}
+          {`· ${say("card_superseded")}`}
         </span>
         {onOpenVersion !== undefined && (
           <Button
@@ -172,7 +262,8 @@ export function LessonCard({
     );
 
   const tag = TAG[state.kind];
-  const more = state.count - SHOWN;
+  // The questions the rows do not show: a prompt with no words is no row, so count from the rows.
+  const more = state.count - Math.min(state.preview.length, SHOWN);
   const openName = say("chat_lesson_card_open_named", { title });
   return (
     <section
@@ -192,12 +283,13 @@ export function LessonCard({
         >
           <BookOpenIcon className="size-4 text-jw-ink" />
         </span>
-        <span
-          className="col-start-2 min-w-0 text-base leading-snug font-semibold text-jw-ink max-sm:line-clamp-2 sm:truncate"
-          data-card-title
-        >
-          {title}
-        </span>
+        {state.kind === "ready" && onRename !== undefined ? (
+          <TitleEdit title={title} language={language} onRename={onRename} />
+        ) : (
+          <span className={TITLE} data-card-title>
+            {title}
+          </span>
+        )}
         {/* The one place the state is written (C4). */}
         <Badge
           variant="secondary"
@@ -240,10 +332,11 @@ export function LessonCard({
           )}
           {state.preview.length > 0 && (
             <ol className="mt-2 flex flex-col gap-1" data-card-preview>
-              {state.preview.slice(0, SHOWN).map((prompt, i) => (
-                <li key={`${i}-${prompt}`} className="flex min-w-0 items-baseline gap-2">
+              {state.preview.slice(0, SHOWN).map(({ place, prompt }) => (
+                <li key={place} className="flex min-w-0 items-baseline gap-2" data-card-row={place}>
+                  {/* The question's own number, the one the findings and the preview modal use. */}
                   <span className="w-3.5 shrink-0 text-xs text-jw-placeholder tabular-nums">
-                    {i + 1}
+                    {place}
                   </span>
                   <span className="truncate text-jw-page-small text-jw-ink" data-card-prompt>
                     {prompt}
@@ -285,7 +378,7 @@ export function LessonCard({
         </ul>
       )}
       {state.kind === "fix" ? (
-        <FixFoot say={say} count={state.findings.length} onFix={onFix} />
+        <FixFoot say={say} findings={state.findings.length} questions={state.count} onFix={onFix} />
       ) : (
         actions !== undefined && (
           <div
@@ -306,14 +399,21 @@ export function LessonCard({
  */
 function FixFoot({
   say,
-  count,
+  findings,
+  questions,
   onFix,
 }: {
   say: (key: CopyKey, vars?: Record<string, string | number>) => string;
-  count: number;
+  /** How many findings the card lists. */
+  findings: number;
+  /** How many questions the lesson has. */
+  questions: number;
   onFix: (() => void) | undefined;
 }): ReactElement {
-  const reason = say("card_fix_reason");
+  // Questions but nothing listed: the lesson changed after its last check (a later edit, a
+  // parent's own change) or was never checked, so no question is named as wrong (#802's case).
+  const reason =
+    findings === 0 && questions > 0 ? say("parent_give_refused_changed") : say("card_fix_reason");
   return (
     <div
       className="flex flex-wrap items-center gap-2 border-t-jw border-jw-line bg-jw-side px-4 py-2.5"
@@ -326,7 +426,7 @@ function FixFoot({
         {reason}
       </p>
       <DisabledReason
-        reason={count > 0 ? say("card_fix_reason_short", { n: count }) : reason}
+        reason={findings > 0 ? say("card_fix_reason_short", { n: findings }) : reason}
         className="max-sm:order-2"
       >
         <Button

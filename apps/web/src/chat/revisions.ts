@@ -6,10 +6,8 @@
  */
 
 import { toolViewData } from "@jadwigo/contracts";
-import type { LessonPatch } from "@jadwigo/contracts/run";
 import type { Turn } from "./conversation.ts";
 import { lessonOf } from "./conversation.ts";
-import { revertPatch } from "./patches.ts";
 
 type Fields = Record<string, unknown>;
 
@@ -74,48 +72,4 @@ export function changedOf(turns: readonly Turn[]): ReadonlySet<string> {
     return changedSteps(before?.lesson_file ?? null, view.lesson.lesson_file);
   }
   return new Set();
-}
-
-/** What "Cofnij" takes back: the steps the latest revision changed, and the revision before it. */
-export interface Undo {
-  revision: number;
-  question_ids: string[];
-  /** The lesson's own language, which the undo steer is written in. */
-  language: "pl" | "en";
-}
-
-/**
- * The one step "Cofnij" undoes (dl-z5ja.30): back to the revision before the latest, for the steps
- * it changed. Null when there is nothing before it or nothing changed.
- */
-export function undoOf(turns: readonly Turn[]): Undo | null {
-  for (let i = turns.length - 1; i >= 0; i -= 1) {
-    const view = turns[i]?.view;
-    if (!view?.lesson) continue;
-    const before = view.previous_lesson ?? lessonOf(turns.slice(0, i));
-    const changed = [...changedOf(turns)];
-    if (before === null || changed.length === 0) return null;
-    return {
-      revision: before.revision,
-      question_ids: changed,
-      language: view.lesson.lesson_file["language"] === "en" ? "en" : "pl",
-    };
-  }
-  return null;
-}
-
-/**
- * The merge patch "Cofnij" carries (dl-z5ja.111): from the lesson the pane draws back to the
- * revision `undoOf` names, which the runner applies with no model call. Null when there is nothing
- * to undo, or no merge patch can say it, and the undo steer asks the AI in words instead.
- */
-export function revertOf(turns: readonly Turn[]): LessonPatch | null {
-  if (undoOf(turns) === null) return null;
-  for (let i = turns.length - 1; i >= 0; i -= 1) {
-    const view = turns[i]?.view;
-    if (!view?.lesson) continue;
-    const before = view.previous_lesson ?? lessonOf(turns.slice(0, i));
-    return before === null ? null : revertPatch(view.lesson.lesson_file, before.lesson_file);
-  }
-  return null;
 }

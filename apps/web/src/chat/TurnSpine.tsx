@@ -159,9 +159,11 @@ function Line({
   if (line.kind === "steer")
     return (
       <li className="flex flex-col gap-0.5" data-line="steer">
-        <span className="text-jw-page-micro font-medium text-jw-placeholder">
-          {copy(language, "chat_steer_label", {}, "adult")}
-        </span>
+        {line.afterTurn === true ? null : (
+          <span className="text-jw-page-micro font-medium text-jw-placeholder">
+            {copy(language, "chat_steer_label", {}, "adult")}
+          </span>
+        )}
         <span className="text-jw-page-small text-jw-ink">
           {line.quote === undefined ? say(language, line) : `„${line.quote}”`}
         </span>
@@ -179,7 +181,10 @@ function Line({
           aria-hidden
           className={cn("mt-0.5 size-3.5 shrink-0", isNow ? "text-jw-act" : "text-jw-ink-soft")}
         />
-        <span className="min-w-0 flex-1">{say(language, line)}</span>
+        {/* Keyed by its words: a new now line mounts fresh, so chat.css fades it in (§6). */}
+        <span key={say(language, line)} className="min-w-0 flex-1" data-words>
+          {say(language, line)}
+        </span>
         {isNow && line.startedAt !== undefined && (
           <span
             className="shrink-0 text-jw-page-small font-normal text-jw-ink-soft tabular-nums"
@@ -353,6 +358,8 @@ export interface SpineActions {
   onRetry?: (() => void) | undefined;
   /** Kopiuj szczegóły dla pomocy: the run log to the clipboard (S3), the toast says Skopiowane. */
   onCopyDetails?: (() => void) | undefined;
+  /** No lesson exists yet in the conversation: a stop says only "Zatrzymane." (dl-uukj.47.71.40). */
+  noLesson?: boolean | undefined;
 }
 
 /** The card's foot (D7, S11, S15, §4.6): never an alert box, never red. */
@@ -376,7 +383,13 @@ function Foot({
     return (
       <div className={frame} data-foot="stopped">
         <p className="text-jw-page-small text-jw-ink-soft">
-          {s(foot.changed === true ? "chat_stopped_some" : "chat_stopped_none")}
+          {s(
+            foot.changed === true
+              ? "chat_stopped_some"
+              : actions.noLesson === true
+                ? "chat_stopped_before"
+                : "chat_stopped_none",
+          )}
         </p>
       </div>
     );

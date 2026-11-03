@@ -17,6 +17,7 @@ import {
   type AccountCreate,
   type AssignmentAttempts,
   type AssignmentId,
+  type AssignmentIntro,
   type AttachmentCreate,
   type AttachmentId,
   type AttachmentRead,
@@ -58,6 +59,8 @@ import {
   type LearnerSnapshot,
   type LessonGive,
   type LessonGiven,
+  type LessonRename,
+  type LessonRenamed,
   type Me,
   type ParentAttemptReview,
   type PlaygroundExamples,
@@ -118,6 +121,14 @@ export interface AttemptClient {
   getResults(attemptId: AttemptId): Promise<AttemptResults>;
   /** A finished attempt's questions again; `AttemptNotFinished` before it finishes. */
   getReview(attemptId: AttemptId): Promise<AttemptReview>;
+}
+
+/** A play link's first screen: what it says before any attempt exists. */
+export interface AssignmentIntroClient {
+  getAssignmentIntro(
+    assignmentId: AssignmentId,
+    learner?: LearnerId | null,
+  ): Promise<AssignmentIntro>;
 }
 
 /** The home page's call: the lessons anyone may play now, oldest first. */
@@ -201,6 +212,11 @@ export interface LessonGiveClient {
    * assignment.
    */
   giveLesson(conversationId: ConversationId, body: LessonGive): Promise<LessonGiven>;
+  /**
+   * A new title for the latest lesson, which stays ready to give. A harsh word is 409
+   * `LessonNotPublishable`; a turn at work on the lesson is 409 `AnswerConflict`.
+   */
+  renameLesson(conversationId: ConversationId, body: LessonRename): Promise<LessonRenamed>;
 }
 
 /**
@@ -248,6 +264,7 @@ export interface AttachmentClient {
 
 /** Every `/api/v1` call this client makes. */
 export type Client = AttemptClient &
+  AssignmentIntroClient &
   FeaturedClient &
   ParentClient &
   LearnerKnowledgeClient &
@@ -270,7 +287,7 @@ export function pathOf(route: Route, params: Record<string, string | number>): s
 }
 
 /** `?name=value` for each value given, or "" when none is. */
-function queryOf(query: Record<string, number | undefined>): string {
+function queryOf(query: Record<string, string | number | undefined>): string {
   const given = new URLSearchParams();
   for (const [name, value] of Object.entries(query))
     if (value !== undefined) given.set(name, String(value));
@@ -286,7 +303,7 @@ export function createClient({
     route: R,
     params: Record<string, string | number>,
     body: unknown,
-    query: Record<string, number | undefined> = {},
+    query: Record<string, string | number | undefined> = {},
   ): Promise<ReturnType<R["response"]["parse"]>> {
     const headers: Record<string, string> = { accept: "application/json" };
     if (route.auth === "token") {
@@ -332,6 +349,10 @@ export function createClient({
 
   return {
     featuredLessons: () => call(ROUTES.featuredLessons, {}, undefined),
+    getAssignmentIntro: (assignmentId, learner) =>
+      call(ROUTES.getAssignmentIntro, { id: assignmentId }, undefined, {
+        learner_id: learner ?? undefined,
+      }),
     startAttempt: (assignmentId, body = {}) =>
       call(ROUTES.startAttempt, { id: assignmentId }, body),
     getAttempt: (attemptId) => call(ROUTES.getAttempt, { id: attemptId }, undefined),
@@ -373,6 +394,7 @@ export function createClient({
       call(ROUTES.listRunEvents, { id: runId }, undefined, { after }),
     cancelRun: (runId, body) => call(ROUTES.cancelRun, { id: runId }, body),
     giveLesson: (conversationId, body) => call(ROUTES.giveLesson, { id: conversationId }, body),
+    renameLesson: (conversationId, body) => call(ROUTES.renameLesson, { id: conversationId }, body),
     startPrint: (conversationId, body) => call(ROUTES.startPrint, { id: conversationId }, body),
     getPrint: (printId) => call(ROUTES.getPrint, { id: printId }, undefined),
     rateRun: (runId, body) => call(ROUTES.rateRun, { id: runId }, body),

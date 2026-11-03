@@ -589,7 +589,6 @@
   "chat_restoring": "Przywracam rozmowę…",
   "chat_new": "Nowa rozmowa",
   "chat_lesson_empty": "Tu pojawi się lekcja.",
-  "chat_lesson_revision": "Wersja {n}",
   "chat_lesson_unreadable": "Tej wersji lekcji nie da się jeszcze pokazać.",
   "chat_lesson_step_hidden": "Kroku {step} nie da się jeszcze pokazać.",
   "chat_tool_count": {
@@ -623,8 +622,6 @@
   "chat_steered_edit": "Twoja zmiana w lekcji",
   "chat_lesson_step": "Krok {step}",
   "chat_lesson_changed": "Lekcja się zmieniła",
-  "chat_revision_by_ai": "Zmienione przez asystenta",
-  "chat_undo": "Cofnij",
   "chat_undone": "Cofnięte do wersji {n}",
   "chat_edit_sent": "Twoja zmiana trafiła do asystenta.",
   "chat_newer_wins": "Twoja wersja jest nowsza, więc zostaje. Asystent o tym wie.",
@@ -648,9 +645,6 @@
   "chat_check_level_error": "Do poprawy",
   "chat_check_level_warning": "Warto spojrzeć",
   "chat_check_level_info": "Dla informacji",
-  "chat_announce_done": "Asystent skończył.",
-  "chat_announce_needs_you": "Asystent czeka na Twoją odpowiedź.",
-  "chat_announce_stopped": "Zapisane, zatrzymane.",
   "chat_switch": "Rozmowa albo lekcja",
   "chat_check_findings": {
     "notes_noun=one": "{n} uwaga do poprawy",

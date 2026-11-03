@@ -26,7 +26,9 @@ describe("cardStateOf (S16)", () => {
       title: "Równe grupy",
       count: 4,
     });
-    const preview = (cardStateOf(upTo("happy-turn")) as { preview: readonly string[] }).preview;
+    const preview = (
+      cardStateOf(upTo("happy-turn")) as { preview: readonly { prompt: string }[] }
+    ).preview.map((row) => row.prompt);
     // The first 3 prompts as the child reads them (lesson card delta C3).
     expect(preview).toHaveLength(3);
     for (const prompt of preview) expect(prompt).not.toMatch(/[*`$\\{}]|\n/);
@@ -38,9 +40,12 @@ describe("cardStateOf (S16)", () => {
     expect(card).toMatchObject({ kind: "fix", version: 5 });
     // empty-rung has its own words; this log's say-format is no rule the check emits, so it falls
     // back to its level's word (dl-uukj.47.71.31).
+    // Numbered as the preview modal numbers its rows, questions only (dl-uukj.47.71.32): this
+    // revision's questions are s04 and s05, so s05 is question 2, and s03, no question here, reads
+    // unnumbered and first.
     expect(card?.kind === "fix" ? card.findings : null).toEqual([
-      { step: 2, words: { copyKey: "chat_check_level_error", values: {} } },
-      { step: 4, words: { copyKey: "chat_finding_empty_rung", values: {} } },
+      { step: null, words: { copyKey: "chat_check_level_error", values: {} } },
+      { step: 2, words: { copyKey: "chat_finding_empty_rung", values: {} } },
     ]);
   });
 

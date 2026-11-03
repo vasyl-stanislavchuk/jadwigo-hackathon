@@ -97,8 +97,12 @@ function ghApiMethod(args: string[]): string | undefined {
   return sends ? "POST" : "GET";
 }
 
-/** The Makefile targets that write to a Supabase project; ENV=prod on any of them is the owner's. */
-const DB_TARGET = /(^|[\s'",[(])(db-(push|role|seed|reset)|lesson-(import|withdraw))\b/;
+/**
+ * The Makefile targets that write to a Supabase project, and run-timeline, which reads a family's
+ * run records past row-level security; ENV=prod on any of them is the owner's.
+ */
+const DB_TARGET =
+  /(^|[\s'",[(])(db-(push|role|seed|reset)|lesson-(import|withdraw)|run-timeline)\b/;
 const PROD = /\bENV\W{0,4}prod\b/;
 /** Programs that can run a command on a pseudo-terminal, or hide one in a quoted script. */
 const WRAPPERS =
@@ -202,7 +206,7 @@ function prodDbDenial(cmd: string, bare: string, commands: string[][]): string |
   for (const words of commands) {
     const make = words.some((w) => /^g?make$/.test(base(w)));
     if (make && words.some((w) => DB_TARGET.test(w)) && PROD.test(cmd)) {
-      return "make db-push, db-role, db-seed, db-reset, lesson-import and lesson-withdraw with ENV=prod are the owner's, typed at their own terminal (`!` in Claude Code). From a session, use ENV=dev.";
+      return "make db-push, db-role, db-seed, db-reset, lesson-import, lesson-withdraw and run-timeline with ENV=prod are the owner's, typed at their own terminal (`!` in Claude Code). From a session, use ENV=dev.";
     }
     const pty = words.some(
       (w) => PTY_WRAPPERS.test(base(w)) || (/^python[\d.]*$/.test(base(w)) && /\bpty\b/.test(cmd)),

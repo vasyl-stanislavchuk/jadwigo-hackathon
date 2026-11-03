@@ -27,6 +27,7 @@ import { recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
 import { type ReadAttachment, ThreadAttachments } from "./attachments/ThreadAttachments.tsx";
 import { isOpen, type Turn } from "./conversation.ts";
+import { useFoldAtEnd } from "./foldMotion.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
 import { CitationChips } from "./objects/CitationChips.tsx";
 import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
@@ -115,6 +116,36 @@ function parentTextOf(turn: Turn): string | null {
 export const lessMotion = (): boolean =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
+/**
+ * A turn's spine row: the card while it runs, the summary row once it is done. It enters with a
+ * fade and folds to the summary over 240 ms (§6, chat.css and foldMotion.ts), neither under
+ * reduced motion.
+ */
+function SpineRow({
+  done,
+  last,
+  still,
+  children,
+}: {
+  done: boolean;
+  last: boolean;
+  still: boolean;
+  children: ReactNode;
+}): ReactElement {
+  const ref = useFoldAtEnd<HTMLLIElement>(done);
+  return (
+    <li
+      ref={ref}
+      className="flex flex-col"
+      data-chat-row
+      data-turn={last ? "current" : "older"}
+      {...(still ? {} : { "data-enter": "" })}
+    >
+      {children}
+    </li>
+  );
+}
+
 /** Smooth unless the parent asked the system for less motion. */
 const scrollBehavior = (): ScrollBehavior => (lessMotion() ? "auto" : "smooth");
 
@@ -138,6 +169,42 @@ const living = (card: NonNullable<ReturnType<typeof cardOf>>, newest: boolean): 
 /** The newest finished turn that wrote the lesson: the one whose card carries the actions. */
 function newestCard(turns: readonly Turn[]): Turn | undefined {
   return turns.findLast((t) => !isOpen(t) && t.view.lesson !== null && wroteLesson(t.view));
+}
+
+/** How long the opened thread holds the bottom while its rows settle (S19). */
+const HOLD_MS = 2_000;
+
+/**
+ * Keeps `box` at its bottom while its rows grow (a ResizeObserver on each row, the rows added, and
+ * the web fonts once loaded), until `HOLD_MS` pass or the parent scrolls away (`atBottom` turns
+ * false). Answers the function that stops it.
+ */
+function holdBottom(box: HTMLElement, atBottom: () => boolean): () => void {
+  let on = true;
+  const pin = () => {
+    if (on && atBottom()) box.scrollTop = box.scrollHeight;
+  };
+  const resized = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(pin);
+  for (const row of box.children) resized?.observe(row);
+  const added =
+    typeof MutationObserver === "undefined"
+      ? null
+      : new MutationObserver((records) => {
+          for (const record of records)
+            for (const node of record.addedNodes)
+              if (node instanceof Element) resized?.observe(node);
+          pin();
+        });
+  added?.observe(box, { childList: true });
+  void document.fonts?.ready.then(pin);
+  const stop = () => {
+    on = false;
+    resized?.disconnect();
+    added?.disconnect();
+    clearTimeout(timer);
+  };
+  const timer = setTimeout(stop, HOLD_MS);
+  return stop;
 }
 
 /** The calendar day of an instant, by the page's clock: "2026-11-03". */
@@ -363,6 +430,8 @@ export interface ChatThreadProps {
   lessonObject?: ObjectRef | undefined;
   onOpen?: ((object: ObjectRef) => void) | undefined;
   lessonActions?: ReactNode;
+  /** Saves a new title from the living lesson card (dl-1eieq.16); the title is plain words without it. */
+  onRenameLesson?: ((title: string) => Promise<CopyKey | null>) | undefined;
   readAttachment?: ReadAttachment | undefined;
   /** Esc stops a running turn with focus anywhere in the thread (S6, §3; lane D's hook). */
   stop: StopKey;
@@ -383,6 +452,7 @@ export function ChatThread({
   lessonObject,
   onOpen,
   lessonActions,
+  onRenameLesson,
   readAttachment,
   stop,
 }: ChatThreadProps): ReactElement {
@@ -407,8 +477,22 @@ export function ChatThread({
     const box = list.current;
     box?.scrollTo?.({ top: box.scrollHeight, behavior });
   };
+  // S19: the thread opens at the bottom. The first scroll is instant (a smooth one aims at the height
+  // it started from, and its own scroll events read as the parent leaving the bottom), and the
+  // bottom is held while the rows settle: the web font swapping in, a card's image, a late row.
+  const shown = useRef(false);
+  const hold = useRef<(() => void) | null>(null);
+  useEffect(() => () => hold.current?.(), []);
   useEffect(() => {
-    if ((rowCount > 0 || pending !== null) && atBottom.current) toBottom(scrollBehavior());
+    const box = list.current;
+    if (box === null || !(rowCount > 0 || pending !== null) || !atBottom.current) return;
+    if (shown.current) {
+      toBottom(scrollBehavior());
+      return;
+    }
+    shown.current = true;
+    toBottom("auto");
+    hold.current = holdBottom(box, () => atBottom.current);
   }, [follow]);
   const multiDay = new Set(turns.map((t) => dayOf(Date.parse(t.run.created_at)))).size > 1;
   const newest = newestCard(turns);
@@ -447,15 +531,10 @@ export function ChatThread({
     const actions: SpineActions = {
       onRetry: last && spine.foot?.kind === "stalled" ? onRetry : retryOf(turn, resend),
       onCopyDetails: copyDetails(turn, language),
+      noLesson: !turns.slice(0, index + 1).some((t) => t.view.lesson !== null),
     };
     entries.push(
-      <li
-        key={`${id}-spine`}
-        className="flex flex-col"
-        data-chat-row
-        data-turn={last ? "current" : "older"}
-        {...(still ? {} : { "data-enter": "" })}
-      >
+      <SpineRow key={`${id}-spine`} done={done} last={last} still={still}>
         <AiHeader language={language} />
         {done ? (
           <TurnSummary
@@ -475,7 +554,7 @@ export function ChatThread({
         ) : (
           <TurnSpine spine={spine} now={now} language={language} actions={actions} />
         )}
-      </li>,
+      </SpineRow>,
     );
     for (const item of turn.view.chat)
       if (item.kind === "approval" || item.kind === "steer")
@@ -509,7 +588,7 @@ export function ChatThread({
             onOpen={onOpen}
             onFix={() => resend(copy(language, "card_fix_action", {}, "adult"))}
             {...(lessonActions !== undefined && living(card, turn === newest)
-              ? { actions: lessonActions }
+              ? { actions: lessonActions, onRename: onRenameLesson }
               : {})}
           />
         </li>,

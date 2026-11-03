@@ -31,6 +31,8 @@ export interface SpineLine extends Words {
   tags?: readonly SpineTag[];
   /** A steer: "Dopisane w trakcie" above the parent's words in quotes (S17). */
   steerLabel?: boolean;
+  /** A parent's lesson edit made after the turn ended: not "during", so it takes no label. */
+  afterTurn?: boolean;
   /** A steer's own words, the parent's, shown in quotes; never the engine's. */
   quote?: string;
 }
@@ -98,8 +100,8 @@ interface CardBase {
 /** What the living card shows of the lesson: its questions and the first 3 prompts (delta C3). */
 interface CardContent {
   count: number;
-  /** Up to 3 question prompts, as plain text, in lesson order. */
-  preview: readonly string[];
+  /** Up to 3 question prompts as plain text, each with its question's number, in lesson order. */
+  preview: readonly { place: number; prompt: string }[];
 }
 
 /**

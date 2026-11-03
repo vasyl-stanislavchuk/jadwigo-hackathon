@@ -13,6 +13,7 @@ import { AttachmentId, ID_PREFIXES, idOf, type Learner, LearnerId } from "@jadwi
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { FIXED_NOW, RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineTransport } from "../../chat/useConversation.ts";
 import type { SendBody } from "../../chat/wire.ts";
@@ -320,6 +321,9 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     expect(echo?.textContent).toBe("Odejmowanie przez 10");
     expect(band()).toMatch(/^W kolejce/);
     expect(activity()).toBe("queued");
+    // The page's one polite live region (§3, dl-uukj.47.71.10), saying only the live words.
+    expect(document.querySelectorAll("[aria-live]")).toHaveLength(1);
+    expect(live()).toBe("Jadwigo pracuje");
 
     const before = q.reads.runs;
     await tick(20_000);
@@ -513,40 +517,86 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
       : e,
   );
   const ASSIGNMENT = "asg_00000000000000000000000001";
+  // The newest revision the happy turn wrote: what the card shows, and so what Daj lekcję gives.
+  const SHOWN_REVISION = checked.reduce(
+    (latest, e) => (e.type === "lesson_revision" ? e.payload.revision : latest),
+    0,
+  );
 
-  async function giving(giveLesson: ReturnType<typeof vi.fn>) {
+  let workspace: (forLearner: LearnerId | null) => ReactElement;
+
+  async function giving(
+    giveLesson: ReturnType<typeof vi.fn>,
+    forLearner: LearnerId | null = ola.id,
+  ) {
     const { engine } = engineWith(async () => run, checked);
     engine.give = { giveLesson } as unknown as LessonEngine["give"];
     firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
+    workspace = (learner) => (
+      <LessonWorkspace
+        language="pl"
+        conversation={CONVERSATION}
+        engine={engine}
+        learners={[ola]}
+        forLearner={learner}
+        onForChange={() => {}}
+        onAddChild={() => {}}
+      />
+    );
+    let view: ReturnType<typeof render> | undefined;
     await act(async () => {
-      render(
-        <LessonWorkspace
-          language="pl"
-          conversation={CONVERSATION}
-          engine={engine}
-          learners={[ola]}
-          forLearner={ola.id}
-          onForChange={() => {}}
-          onAddChild={() => {}}
-        />,
-      );
+      view = render(workspace(forLearner));
     });
     await screen.findByText("Your lesson is ready on the right.");
     await act(async () => {
       fireEvent.click(document.querySelector("[data-give]") as HTMLElement);
     });
+    return view as ReturnType<typeof render>;
   }
 
-  it("gives the lesson to the Dla child and says where it waits, with the child's link", async () => {
+  it("gives the revision shown to the Dla child and shows the child's link", async () => {
     const giveLesson = vi.fn(async () => ({ assignment: { id: ASSIGNMENT } }));
     await giving(giveLesson);
-    expect(giveLesson).toHaveBeenCalledWith(CONVERSATION, { learner_id: ola.id });
-    expect(document.querySelector("[data-give-state]")?.textContent).toBe(
-      "Lekcja czeka na: Ola. Link do lekcji",
-    );
-    expect(screen.getByRole("link", { name: "Link do lekcji" }).getAttribute("href")).toBe(
+    expect(giveLesson).toHaveBeenCalledWith(CONVERSATION, {
+      revision: SHOWN_REVISION,
+      learner_id: ola.id,
+    });
+    expect(document.querySelector("[data-given]")?.textContent).toContain("Lekcja czeka na: Ola.");
+    expect(screen.getByRole("link", { name: "Otwórz lekcję" }).getAttribute("href")).toBe(
       `/play/${ASSIGNMENT}?learner=${ola.id}`,
     );
+  });
+
+  it("with no child gives a link anyone may play, and stays in the chat", async () => {
+    const giveLesson = vi.fn(async () => ({ assignment: { id: ASSIGNMENT } }));
+    await giving(giveLesson, null);
+    expect(giveLesson).toHaveBeenCalledWith(CONVERSATION, { revision: SHOWN_REVISION });
+    expect(screen.getByRole("link", { name: "Otwórz lekcję" }).getAttribute("href")).toBe(
+      `/play/${ASSIGNMENT}`,
+    );
+    expect(window.location.pathname).not.toContain("/play/");
+  });
+
+  it("takes the link away when the Dla child changes", async () => {
+    const giveLesson = vi.fn(async () => ({ assignment: { id: ASSIGNMENT } }));
+    const { rerender } = await giving(giveLesson);
+    expect(document.querySelector("[data-given]")).not.toBeNull();
+    await act(async () => rerender(workspace(null)));
+    expect(document.querySelector("[data-given]")).toBeNull();
+  });
+
+  it("ignores a reply still on its way once the Dla child changed", async () => {
+    let answer: (value: unknown) => void = () => {};
+    const giveLesson = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const { rerender } = await giving(giveLesson);
+    await act(async () => rerender(workspace(null)));
+    await act(async () => answer({ assignment: { id: ASSIGNMENT } }));
+    expect(document.querySelector("[data-given]")).toBeNull();
   });
 
   it("words a refusal: a lesson changed since its check, and any other failure", async () => {

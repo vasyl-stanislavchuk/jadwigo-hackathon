@@ -486,6 +486,22 @@
   "play_paused_back": "Back to the lesson",
   "play_not_found": "This lesson is not here.",
   "play_link_incomplete": "This link is not complete. Ask a parent for a new one.",
+  "play_intro_yes": "Yes, I'm {name}",
+  "play_intro_not_me": "That's not me",
+  "play_intro_name": "What's your name?",
+  "play_intro_start": "Let's start",
+  "play_intro_anonymous": "Play without a name",
+  "play_intro_name_missing": "Type your name, or play without one.",
+  "play_intro_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} question",
+        "q_noun=other": "{n} questions"
+      }
+    }
+  ],
   "play_save": "Save your progress",
   "play_save_note": "For a grown-up: sign in, and this lesson stays on your child's account.",
   "parent_title": "Parent account",
@@ -767,7 +783,6 @@
   "chat_restoring": "Restoring the conversation…",
   "chat_new": "New conversation",
   "chat_lesson_empty": "The lesson appears here.",
-  "chat_lesson_revision": "Revision {n}",
   "chat_lesson_unreadable": "This revision can't be shown yet.",
   "chat_lesson_step_hidden": "Step {step} can't be shown yet.",
   "chat_object_lesson": "Lesson",
@@ -779,19 +794,8 @@
   "chat_object_not_here": "This can't be shown here yet.",
   "chat_learner_open": "Details: {name}",
   "chat_learner_open_page": "Child's page: {name}",
-  "chat_lesson_card": "Lesson ready",
   "chat_lesson_card_open": "Preview",
   "chat_lesson_card_open_named": "Preview the lesson: {title}",
-  "chat_lesson_card_steps": [
-    {
-      "declarations": ["input n", "local q_noun = n: plural"],
-      "selectors": ["q_noun"],
-      "match": {
-        "q_noun=one": "{n} question",
-        "q_noun=other": "{n} questions"
-      }
-    }
-  ],
   "chat_citations_why": "Why?",
   "chat_citation_nth": "{title} {n}",
   "chat_tool_count": [
@@ -829,8 +833,6 @@
   "chat_steered_edit": "Your change to the lesson",
   "chat_lesson_step": "Step {step}",
   "chat_lesson_changed": "The lesson changed",
-  "chat_revision_by_ai": "Changed by Jadwigo AI",
-  "chat_undo": "Undo",
   "chat_undone": "Back to revision {n}",
   "chat_edit_sent": "Your change went to Jadwigo AI.",
   "chat_newer_wins": "Your version is newer, so it stays. Jadwigo AI knows.",
@@ -872,9 +874,6 @@
   "chat_finding_key_grades": "The right answer would not be marked right.",
   "chat_finding_harsh_word": "A child would read a word that is too harsh here.",
   "chat_check_level_info": "For your information",
-  "chat_announce_done": "Jadwigo AI: done",
-  "chat_announce_needs_you": "Jadwigo AI: waiting for your answer",
-  "chat_announce_stopped": "Saved, stopped.",
   "chat_switch": "Conversation or lesson",
   "chat_check_findings": [
     {
@@ -900,6 +899,10 @@
   "parent_children_hint": "Add a child so Jadwigo can follow what they can do. Not needed for a lesson.",
   "parent_breadcrumb_label": "Where you are",
   "parent_new_lesson": "New lesson",
+  "parent_title_edit": "Change the title: {title}",
+  "parent_title_refused": "We can't use this title. Try other words.",
+  "parent_title_busy": "Jadwigo is changing the lesson. Try again in a moment.",
+  "parent_title_failed": "The title did not change. Try again.",
   "parent_menu_fold": "Fold the menu",
   "parent_toasts_label": "Notifications",
   "parent_menu_unfold": "Unfold the menu",
@@ -958,10 +961,6 @@
   "parent_grade": "Class",
   "parent_cancel": "Cancel",
   "parent_lesson_soon": "Making a lesson from here is on its way. It will work soon.",
-  "chat_edit_words": "What this step says to the child",
-  "chat_edit_saved": "Your change is in the lesson now.",
-  "chat_edit_saving": "Saving your change to the lesson…",
-  "chat_edit_not_applied": "This change wasn't applied: the lesson changed in the meantime, or the change doesn't fit it. Your text is below.",
   "chat_phase_connecting": "Connecting…",
   "chat_phase_queued": "Queued",
   "chat_phase_thinking": "Thinking…",
@@ -1211,17 +1210,10 @@
   "parent_step_source": "Where it came from",
   "parent_source_bank": "Jadwigo's question bank",
   "parent_source_authored": "Written by Jadwigo AI",
-  "parent_step_move_up": "Move up",
-  "parent_step_move_down": "Move down",
-  "parent_step_drop": "Remove",
-  "parent_give_title": "How to give the lesson?",
-  "parent_this_computer": "Open on this computer",
   "parent_print": "Print",
-  "parent_print_hint": "A sheet with the questions, no answers",
   "parent_print_preparing": "Preparing the sheet…",
   "parent_print_failed": "The sheet could not be prepared. Please try again.",
   "parent_print_slow": "The sheet is still being prepared. Try again in a moment.",
-  "parent_this_computer_soon": "Opening the lesson on this computer is on its way.",
   "parent_give_refused_changed": "The lesson changed since its last check. Wait for Jadwigo to check it, then try again.",
   "parent_give_refused_child": "This child isn't in your family. Pick another in “For”.",
   "parent_give_failed": "We couldn't give the lesson. Try again.",
@@ -1229,6 +1221,10 @@
   "parent_giving": "Giving the lesson…",
   "parent_given_child": "The lesson is waiting for {name}.",
   "parent_given_link": "Link to the lesson",
+  "parent_given_anyone": "Anyone with this link can play and type their name.",
+  "parent_given_copy": "Copy",
+  "parent_given_copied": "Copied",
+  "parent_given_open": "Open the lesson",
   "email_subject_signup": "Your Jadwigo code",
   "email_subject_magiclink": "Your Jadwigo sign-in code",
   "email_subject_email_change": "Your code to change your Jadwigo email",
@@ -1439,6 +1435,7 @@
   "chat_copy_support": "Copy details for support",
   "chat_stopped_none": "Stopped. The lesson is unchanged.",
   "chat_stopped_some": "Stopped. The lesson has what I managed to change.",
+  "chat_stopped_before": "Stopped.",
   "chat_send_disabled": "Type something or add a photo.",
   "chat_queue_label": "I'll send this when I'm done",
   "chat_queue_now": "Send now",

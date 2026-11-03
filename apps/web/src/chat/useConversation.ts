@@ -20,7 +20,6 @@ import {
   turnsOf,
 } from "./conversation.ts";
 import { newEventId } from "./ids.ts";
-import type { LessonChange } from "./patches.ts";
 import { useNextQueue, type Waiting } from "./queue.ts";
 import {
   type EventsAnswer,
@@ -130,12 +129,11 @@ export interface Conversation {
   /**
    * A parent's edit in the lesson pane (dl-z5ja.30): a steer naming the questions while the turn
    * runs, which the runner keeps (dl-z5ja.42); after the turn, the same words as a new message,
-   * since a steer on an ended turn changes nothing. With a `patch`, the parent's own change, it is
-   * always a steer, with the revision it was made on: the runner applies it to the last turn with
-   * no model call while the lesson is still at that revision (dl-z5ja.111). Answers the steer's
-   * `event_id`, which the pane follows to its revision, or null when it went as a message.
+   * since a steer on an ended turn changes nothing. It never carries a patch: the parent does not
+   * edit the lesson by hand (dl-uukj.47.71.17). Answers the steer's `event_id`, or null when it
+   * went as a message.
    */
-  edit(text: string, question_ids: string[], change?: LessonChange): EventId | null;
+  edit(text: string, question_ids: string[]): EventId | null;
   /**
    * True once a route answered 409 `AiConsentMissing` (dl-z5ja.32): the page asks for the pod's
    * consent instead of saying the send failed.
@@ -222,7 +220,7 @@ export function useConversation(
     sendNow: (index: number) => void;
     stop: () => void;
     retry: () => void;
-    edit: (text: string, question_ids: string[], change?: LessonChange) => EventId | null;
+    edit: (text: string, question_ids: string[]) => EventId | null;
   } | null>(null);
   /** A failure, with the way to do it again. */
   const fail = useCallback((again: () => void, limit: SendLimit | null = null) => {
@@ -507,9 +505,9 @@ export function useConversation(
   }, [state, send]);
 
   const edit = useCallback(
-    (text: string, question_ids: string[], change?: LessonChange): EventId | null => {
+    (text: string, question_ids: string[]): EventId | null => {
       const last = turnsOf(latest.current).at(-1);
-      if (last === undefined || (change === undefined && !isOpen(last))) {
+      if (last === undefined || !isOpen(last)) {
         send(text);
         return null;
       }
@@ -522,16 +520,13 @@ export function useConversation(
           text,
           source: "lesson_edit",
           question_ids,
-          ...(change === undefined
-            ? {}
-            : { patch: change.patch, base_revision: change.base_revision }),
         })
         .then((run) => {
           went();
           return follow(run);
         })
         .catch(() => {
-          fail(() => void redo.current?.edit(text, question_ids, change));
+          fail(() => void redo.current?.edit(text, question_ids));
           dispatch({ type: "steer_failed", event_id });
         });
       return event_id;

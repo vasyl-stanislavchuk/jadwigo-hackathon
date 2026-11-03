@@ -4,6 +4,8 @@ import {
   type LearnerId,
   LessonGive,
   type LessonGiven,
+  LessonRename,
+  type LessonRenamed,
   LIMITS,
   type PodId,
   toolViewData,
@@ -16,6 +18,7 @@ import type { Store } from "@jadwigo/store";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
 import { ApiError, badRequest } from "./errors.ts";
+import { retitleLesson } from "./mcp/tools/lesson-draft-run.ts";
 
 /**
  * Giving a conversation's lesson to play (dl-5ssh.136): its latest lesson revision becomes a
@@ -202,7 +205,9 @@ export async function publishLesson(
   const assignment = await store.putAssignment(pod, {
     id: featuredAssignmentId(named, pod),
     lesson_id: lesson.id,
-    audience: "learners",
+    // Anyone holding the link may play: a named child confirms, anyone else types a name or none
+    // (decision 2026-11-03-a-play-link-opens-on-a-first-screen-title-and-question-count-the).
+    audience: "anyone",
     identity: "pick",
   });
   return { assignment, lesson_version };
@@ -219,4 +224,18 @@ export async function giveLesson(
   const parsed = LessonGive.safeParse(raw);
   if (!parsed.success) throw badRequest(parsed.error.issues);
   return publishLesson(store, pod, { conversation_id: id, ...parsed.data });
+}
+
+/** `PATCH /api/v1/conversations/{id}/lessons`: a new title for the caller's latest lesson. */
+export async function renameLesson(
+  store: Store,
+  claims: Claims,
+  id: ConversationId,
+  raw: unknown,
+): Promise<LessonRenamed> {
+  const { pod } = await authorizeMember(store, claims);
+  const parsed = LessonRename.safeParse(raw);
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  await store.getConversation(pod, id);
+  return { revision: await retitleLesson(store, { pod }, id, parsed.data.title) };
 }
