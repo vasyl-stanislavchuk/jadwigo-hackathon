@@ -53,8 +53,13 @@ There is no jadwigo.kids. English reaches a deploy only once `en` is `live` in `
 - The header carries the crown wordmark (`dl-w0b4.68`) as a link home, a link to each page in
   `landing.yaml`'s `links` (each its own page, never an anchor), the switch to the page's twin, and
   the sign-in (`/zaloguj`, `/en/sign-in`). Links to the app come from `hosts.prod.app`, never typed.
-- Colours and type come from `@jadwigo/ui/foundation.css` (Zeszyt) and Andika. Crown yellow is for
-  the brand only.
+- Colours and type come from `@jadwigo/ui/foundation.css`, in two audiences (`dl-uukj.47.67`,
+  `dl-w0b4.122`). `<html data-audience="adult">`: the frame and every line for the parent (header,
+  footer, buttons, sign-in, StepPath, PartnerBlock, the bands) in Geist, flat, on 1 px lines, corners
+  6 / 10, the ink action with white text and a soft focus halo. What shows the child's lesson (the
+  question sheet, the Gallery's lesson cards, `/jak-to-dziala` step 2's card, the Backdrop) carries
+  `data-audience="kid"` and stays Zeszyt in Andika. Read colours and shape through tokens (`--jw-border`,
+  `--jw-press`, `--jw-radius-*`, the shadcn names), never a new hex. Crown yellow is for the brand only.
 - A link to a page with a `path` appears only when the build serves that page (`servedPathPages`),
   so a draft such as `/o-nas` is never linked.
 - O nas names the son's school only after the school consents

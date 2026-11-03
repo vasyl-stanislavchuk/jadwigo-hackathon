@@ -231,28 +231,49 @@ describe("primitive sources", () => {
   it("holds the primitives the blocks and screens need, and nothing else", () => {
     expect(files.map((f) => f.name).sort()).toEqual(
       [
+        "alert-dialog.tsx",
         "badge.tsx",
         "breadcrumb.tsx",
         "button.tsx",
         "card.tsx",
+        "checkbox.tsx",
+        "collapsible.tsx",
+        "combobox.tsx",
+        "context-menu.tsx",
+        "chip.tsx",
         "dialog.tsx",
+        "disabled-reason.tsx",
         "disc.tsx",
+        "dropdown-menu.tsx",
+        "input-otp.tsx",
         "input.tsx",
+        "kbd.tsx",
+        "empty.tsx",
+        "pagination.tsx",
         "panel-toggle.tsx",
         "popover.tsx",
         "progress.tsx",
+        "radio-cards.tsx",
         "radio-group.tsx",
+        "result-bar.tsx",
         "segmented-control.tsx",
+        "select.tsx",
+        "separator.tsx",
         "sheet.tsx",
         "side-menu.tsx",
+        "skeleton.tsx",
         "slider.tsx",
         "spinner.tsx",
+        "status.tsx",
         "switch.tsx",
         "table.tsx",
         "tabs.tsx",
+        "textarea.tsx",
+        "toast.tsx",
         "toggle-group.tsx",
         "toggle.tsx",
-      ].sort(), // popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1)
+        "tooltip.tsx",
+      ].sort(), // checkbox, combobox, input-otp, radio-cards, select and textarea: the adult form controls (dl-uukj.47.67.3); alert-dialog, context-menu, disabled-reason, dropdown-menu, kbd, toast and tooltip: the adult overlays (dl-uukj.47.67.2); popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1); chip, empty, pagination, result-bar, skeleton and status: the adult kit's display parts (dl-uukj.47.67.4)
     );
   });
 
@@ -271,7 +292,18 @@ describe("primitive sources", () => {
   // A literal height or width on a control would undercut --kid-tap-min. Icon sizes inside a
   // control ([&_svg…]:size-7) are not targets. The slider's track and thumb face are drawn
   // inside a row that is itself tap-min high; each is listed with its reason.
-  const LABELS = new Set(["badge.tsx", "progress.tsx", "card.tsx", "spinner.tsx", "disc.tsx"]);
+  const LABELS = new Set([
+    "badge.tsx",
+    "progress.tsx",
+    "card.tsx",
+    "spinner.tsx",
+    "disc.tsx",
+    "kbd.tsx",
+    "status.tsx",
+    "skeleton.tsx",
+    "empty.tsx",
+    "result-bar.tsx",
+  ]);
   const DRAWN: Record<string, string[]> = {
     "radio-group.tsx": [
       "min-w-0", // lets the wrapper of legend and rows shrink in a flex row; the rows are the targets
@@ -280,6 +312,11 @@ describe("primitive sources", () => {
     ],
     "segmented-control.tsx": [
       "min-w-0", // lets the wrapper of legend and track shrink in a flex row; the track is the target
+    ],
+    "chip.tsx": [
+      "h-5.5", // the chip, a label; the × inside it is a mouse target in the adult app
+      "size-4.5", // the × around its icon
+      "size-3", // the × icon
     ],
     "breadcrumb.tsx": [
       "min-w-0", // lets a long page name truncate in the top bar's flex row
@@ -298,6 +335,30 @@ describe("primitive sources", () => {
       "h-8", // the track, drawn inside the tap-min row that is the switch
       "w-14", // the same
       "size-6", // the knob inside the track
+      "h-4.5", // the adult's 32 × 18 track, inside the 34 row that is the switch (dl-uukj.47.67 §6.3)
+      "w-8", // the same
+      "size-3.5", // the adult's knob
+    ],
+    "checkbox.tsx": [
+      "size-4", // the 16 px box (§6.3); the label row around it is the target
+    ],
+    "combobox.tsx": [
+      "size-4", // the chevron inside the 34 trigger
+      "w-70", // the list's 280 width (§6.5); its rows are the targets
+      "max-h-80", // the list scrolls past 8 rows
+    ],
+    "input-otp.tsx": [
+      "w-9", // a code cell, drawn under the one input that is the target
+    ],
+    "radio-cards.tsx": [
+      "min-w-0", // lets the wrapper of legend and cards shrink in a flex row; the cards are the targets
+    ],
+    "dropdown-menu.tsx": [
+      "size-2", // a radio row's dot, inside the row that is the target
+    ],
+    "toast.tsx": [
+      "size-7", // the kind's icon disc beside the words; the toast's buttons are the targets
+      "min-w-0", // lets the words wrap beside the buttons
     ],
     "slider.tsx": [
       "data-horizontal:h-3", // the track's thickness, inside the tap-min row

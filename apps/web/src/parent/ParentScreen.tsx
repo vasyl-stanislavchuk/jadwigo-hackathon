@@ -40,7 +40,18 @@ import {
 } from "@jadwigo/api-client";
 import type { AssignmentId, AttemptId, LearnerId, Me } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { Button, type Crumb, Field, Heading, Input, Notice, Page, Spinner } from "@jadwigo/ui";
+import {
+  Button,
+  type Crumb,
+  Field,
+  Heading,
+  Input,
+  InputOtp,
+  Notice,
+  Page,
+  Spinner,
+} from "@jadwigo/ui";
+import { CircleAlert } from "lucide-react";
 import {
   type FormEvent,
   type ReactElement,
@@ -52,6 +63,8 @@ import {
   useState,
 } from "react";
 import { browserDeps } from "../chat/attachments/browser.ts";
+import { forgetSent } from "../chat/attachments/sentPreviews.ts";
+import { forgetLinks, type ReadAttachment } from "../chat/attachments/ThreadAttachments.tsx";
 import type { UploadDeps } from "../chat/attachments/upload.ts";
 import { ConsentScreen, giveConsent } from "../chat/ConsentScreen.tsx";
 import { newEventId } from "../chat/ids.ts";
@@ -96,9 +109,9 @@ import {
 } from "./route.ts";
 import { ParentShell } from "./shell/ParentShell.tsx";
 import type { Place } from "./shell/Sidebar.tsx";
+import { learnerTone } from "./tone.ts";
 import { browserEngine, firstMessage, type LessonEngine } from "./workspace/engine.ts";
 import { LessonWorkspace } from "./workspace/LessonWorkspace.tsx";
-import { ChatFoldToggle, LessonToggle } from "./workspace/Workspace.tsx";
 
 /** The parent's page: the app page's prose column. */
 /** A parent page: the prose column, or a wider one for a list that needs the room (Lekcje). */
@@ -170,6 +183,11 @@ export function ParentScreen({
     () => (client ? null : browserDeps(own)),
     [client, own],
   );
+  // A sent photo's link reads through the page's own client too (dl-z5ja.11.6); a test's has none.
+  const readAttachment = useMemo<ReadAttachment | null>(
+    () => (client ? null : (id) => own.getAttachment(id)),
+    [client, own],
+  );
   const podApi: PodClient | null = pods ?? (client ? null : own);
   const listApi = lessons ?? (client ? null : own);
   const route = parentRoute(useLocation().path);
@@ -182,6 +200,9 @@ export function ParentScreen({
       newLessonDraft.clear();
       // And the chat's queued words, every conversation's (dl-uukj.47.34).
       clearChatQueues();
+      // And every sent photo's local copy and cached link (dl-z5ja.11.6).
+      forgetSent();
+      forgetLinks();
     }
   }, [signedIn]);
   // The URL the page opened at. completeRedirect takes the return off the address bar, so a second
@@ -235,6 +256,7 @@ export function ParentScreen({
       conversations={listApi}
       engine={engine}
       uploadDeps={uploadDeps}
+      readAttachment={readAttachment}
       language={language}
       route={route ?? { kind: "home" }}
       learner={learnerOf(query)}
@@ -389,7 +411,9 @@ export function SignIn({
   }, [startable]);
 
   return (
-    <ParentPage>
+    // The sign-in scale (handoff dl-uukj.47.67 §3, §12.1): signed out, one step up from the app's,
+    // the prose column at 640, title 28, controls 40.
+    <Page width="prose" className="max-w-160" data-parent data-size="signin">
       <Heading>{copy(language, "parent_title", {}, CATEGORY)}</Heading>
       <p>{copy(language, "parent_promise", {}, CATEGORY)}</p>
       <p>{copy(language, "parent_guardian", {}, CATEGORY)}</p>
@@ -397,13 +421,17 @@ export function SignIn({
           unless the parent came in English or picks it here (dl-uukj.33). */}
       <LanguagePick language={language} />
       {providerProblem !== null && (
-        <Notice role="alert" data-provider-problem>
+        <Notice role="alert" icon={<CircleAlert aria-hidden="true" />} data-provider-problem>
           {copy(language, providerProblem, {}, CATEGORY)}
         </Notice>
       )}
       {sentTo === null ? (
         <form onSubmit={send} className="flex w-full flex-col gap-4" data-email-step>
-          <Field label={copy(language, "parent_email", {}, CATEGORY)} problem={problemLine}>
+          <Field
+            label={copy(language, "parent_email", {}, CATEGORY)}
+            description={copy(language, "parent_email_hint", {}, CATEGORY)}
+            problem={problemLine}
+          >
             <Input
               kind="text"
               type="email"
@@ -411,16 +439,19 @@ export function SignIn({
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="min-h-jw-control-lg"
               data-email
             />
           </Field>
-          <Button type="submit" size="control" disabled={busy} data-send-code>
+          <Button type="submit" size="lg" disabled={busy} data-send-code>
             {copy(language, "parent_send_code", {}, CATEGORY)}
           </Button>
           {providers.length > 0 && (
             <div className="flex w-full flex-col gap-3" data-providers>
-              <p className="text-center text-jw-ink-soft">
+              <p className="flex items-center gap-3 text-jw-page-small text-muted-foreground">
+                <span aria-hidden="true" className="h-px flex-1 bg-border" />
                 {copy(language, "parent_or", {}, CATEGORY)}
+                <span aria-hidden="true" className="h-px flex-1 bg-border" />
               </p>
               {providers.map((provider) =>
                 provider === "google" && inApp ? (
@@ -442,24 +473,14 @@ export function SignIn({
         <form onSubmit={verify} className="flex w-full flex-col gap-4" data-code-step>
           <Notice>{copy(language, "parent_code_sent", { email: sentTo }, CATEGORY)}</Notice>
           <Field label={copy(language, "parent_code", {}, CATEGORY)} problem={problemLine}>
-            <Input
-              kind="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              data-code
-            />
+            <InputOtp required value={code} onChange={setCode} data-code />
           </Field>
-          <Button type="submit" size="control" disabled={busy} data-sign-in>
+          <Button type="submit" size="lg" disabled={busy} data-sign-in>
             {copy(language, "parent_sign_in", {}, CATEGORY)}
           </Button>
         </form>
       )}
-    </ParentPage>
+    </Page>
   );
 }
 
@@ -477,7 +498,7 @@ function OpenInBrowser({ language }: { language: Language }): ReactElement {
   return (
     <div className="flex w-full flex-col gap-3" data-open-in-browser>
       <Notice>{copy(language, "parent_google_in_app", {}, CATEGORY)}</Notice>
-      <Button type="button" variant="outline" size="control" onClick={copyLink} data-copy-link>
+      <Button type="button" variant="outline" size="lg" onClick={copyLink} data-copy-link>
         {copy(language, copied ? "parent_link_copied" : "parent_copy_link", {}, CATEGORY)}
       </Button>
     </div>
@@ -520,6 +541,7 @@ function SignedIn({
   conversations,
   engine,
   uploadDeps,
+  readAttachment,
   language,
   route,
   learner,
@@ -533,6 +555,8 @@ function SignedIn({
   engine: LessonEngine | null;
   /** What the first screen's photos upload through; null keeps them off. */
   uploadDeps: UploadDeps | null;
+  /** How the thread reads a sent photo's link; null shows no photos under a message. */
+  readAttachment: ReadAttachment | null;
   language: Language;
   route: ParentRoute;
   /** The attempt page's ?learner. */
@@ -758,6 +782,7 @@ function SignedIn({
             <li key={learner.id}>
               <Button
                 type="button"
+                variant="outline"
                 size="control"
                 className="w-full"
                 data-learner={learner.id}
@@ -792,6 +817,7 @@ function SignedIn({
             learners={learners}
             lessons={family.rows}
             onArchive={family.archive}
+            onRetry={family.reload}
           />
         </ParentPage>,
       );
@@ -818,16 +844,15 @@ function SignedIn({
           onForChange={setForLearner}
           onAddChild={() => setAdding("dla")}
           api={api}
+          readAttachment={readAttachment}
         />,
-        <ChatFoldToggle language={language} />,
-        <LessonToggle language={language} />,
       );
     }
     case "history":
       return shell(
         { kind: "history" },
         [{ label: t("parent_nav_history") }],
-        <ParentPage>
+        <ParentPage wide>
           <HistoryTable api={api} language={language} learners={learners} />
         </ParentPage>,
       );
@@ -849,6 +874,7 @@ function SignedIn({
           learner={child}
           language={language}
           notice={notice === null ? null : t(notice)}
+          tone={learnerTone(learners, child.id)}
         />,
       );
     }

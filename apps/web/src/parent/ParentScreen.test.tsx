@@ -133,6 +133,12 @@ const press = async (selector: string): Promise<void> => {
   if (target === null) throw new Error(`no ${selector}`);
   await act(async () => fireEvent.click(target));
 };
+/** Opens Dla and picks its footer, "Dodaj dziecko…", which opens the dialog once Dla has closed. */
+const addFromDla = async (): Promise<void> => {
+  await act(async () => fireEvent.click(screen.getByRole("combobox", { name: "Dla" })));
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: /Dodaj dziecko…/ })));
+  await screen.findByRole("dialog", { name: "Dodaj dziecko" });
+};
 
 beforeEach(() => {
   window.sessionStorage.clear();
@@ -232,6 +238,33 @@ describe("ParentScreen", () => {
     expect(api.createAccount).toHaveBeenCalledWith({ language: "en" });
   });
 
+  it("takes the code in the 6-cell field, typed digit by digit or pasted whole (dl-uukj.47.67.11)", async () => {
+    const auth = signedOutAuth();
+    const api = client({ getMe: vi.fn(async () => me([])) });
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+
+    const email = await screen.findByRole("textbox", { name: "Twój e-mail" });
+    expect(
+      screen.getByText("Wyślemy na ten adres kod z 6 cyfr. Hasło nie jest potrzebne."),
+    ).toBeTruthy();
+    fireEvent.change(email, { target: { value: "rodzic@example.com" } });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyślij kod" })));
+
+    const code = screen.getByRole("textbox", { name: "Kod z e-maila, 6 cyfr" }) as HTMLInputElement;
+    const cells = () =>
+      [...document.querySelectorAll('[data-slot="input-otp"] > span')].map((c) => c.textContent);
+    // Typed: each digit takes the next cell.
+    fireEvent.change(code, { target: { value: "1" } });
+    fireEvent.change(code, { target: { value: "12" } });
+    expect(cells()).toEqual(["1", "2", "", "", "", ""]);
+    // Pasted, with the spaces an email puts in: the 6 digits, and nothing else.
+    fireEvent.change(code, { target: { value: "123 456" } });
+    expect(code.value).toBe("123456");
+    expect(cells()).toEqual(["1", "2", "3", "4", "5", "6"]);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zaloguj się" })));
+    expect(auth.verifyCode).toHaveBeenCalledWith("rodzic@example.com", "123456");
+  });
+
   it("speaks the pod's language once /me says it, unless the parent picked another", async () => {
     const auth = signedOutAuth();
     auth.signedIn = true;
@@ -239,9 +272,14 @@ describe("ParentScreen", () => {
     const api = client({ getMe: async () => english });
     render(<Wired auth={auth} client={api} />);
     await screen.findByRole("button", { name: "Add a child" });
-    // The language lives in the account menu at the sidebar's foot.
-    await press("[data-account]");
-    await press('[data-language-pick] [role="radio"][value="pl"]');
+    // The language lives in the account menu, under Page language (S10).
+    fireEvent.keyDown(document.querySelector("[data-account]") as Element, { key: "Enter" });
+    fireEvent.keyDown(await screen.findByRole("menuitem", { name: "Page language" }), {
+      key: "ArrowRight",
+    });
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitemradio", { name: "Polski" })),
+    );
     await screen.findByRole("button", { name: "Dodaj dziecko" });
   });
 
@@ -352,6 +390,33 @@ describe("ParentScreen", () => {
       "Tu pojawi się tydzień po tygodniu, jak idzie nauka, po pierwszej lekcji.",
     );
     expect(api.createAccount).toHaveBeenCalledTimes(1);
+  });
+
+  it("gives the child page's disc the child's tone, by when each child was added (dl-uukj.47.67.20)", async () => {
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    const KUBA = "lrn_7qre3atahx8cpak6xbjtz73var";
+    const kuba = {
+      ...snapshot,
+      learner: {
+        ...snapshot.learner,
+        id: KUBA,
+        handle: "kuba",
+        first_name: "Kuba",
+        created_at: "2026-10-30T00:00:00.000Z",
+      },
+    } as unknown as LearnerSnapshot;
+    const api = client({
+      getMe: async () => me([kuba, snapshot]),
+      getLearnerAttempts: async () =>
+        ({ learner: kuba.learner, attempts: [] }) as unknown as LearnerAttempts,
+    });
+    window.history.replaceState(null, "", `/parent/children/${KUBA}`);
+    render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
+    await screen.findByRole("heading", { level: 1, name: "Kuba" });
+    const disc = document.querySelector("[data-child-header] [data-slot=disc]");
+    // Ola was added first (tone 0), so Kuba is tone 1.
+    expect(disc?.className).toContain("jw-tone-1");
   });
 
   it("draws each lesson on the child's page as a row of tiles, links it to its attempt page, and opens it", async () => {
@@ -467,8 +532,7 @@ describe("ParentScreen", () => {
     const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
     fireEvent.change(field, { target: { value: "Odejmowanie przez 10" } });
 
-    await press("[data-dla]");
-    await act(async () => fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem")));
+    await addFromDla();
     const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
     expect(within(dialog).getByText(/Nie trafia do lekcji/)).toBeDefined();
     expect(within(dialog).getByRole("radiogroup", { name: "Klasa" })).toBeDefined();
@@ -477,9 +541,10 @@ describe("ParentScreen", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(api.createLearner).toHaveBeenCalledWith({ first_name: "Ola" });
-    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    const dla = screen.getByRole("combobox", { name: "Dla" });
+    expect(dla.textContent).toContain("Ola");
     // The focus comes back to Dla, where the dialog was opened from (dl-uukj.47.20).
-    await waitFor(() => expect(document.activeElement).toBe(document.querySelector("[data-dla]")));
+    await waitFor(() => expect(document.activeElement).toBe(dla));
     expect(document.querySelector(`[data-child-row="${LEARNER}"]`)).not.toBeNull();
     expect(
       (screen.getByRole("textbox", { name: "Opisz zadanie domowe" }) as HTMLTextAreaElement).value,
@@ -504,8 +569,7 @@ describe("ParentScreen", () => {
     });
     render(<ParentScreen language="pl" query={new URLSearchParams()} auth={auth} client={api} />);
     await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
-    await press("[data-dla]");
-    await act(async () => fireEvent.click(within(screen.getByRole("menu")).getByRole("menuitem")));
+    await addFromDla();
     const dialog = screen.getByRole("dialog", { name: "Dodaj dziecko" });
     fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "Ola" } });
     await press("[data-add-child-dialog] [data-add]");
@@ -543,8 +607,10 @@ describe("ParentScreen", () => {
       />,
     );
     const account = await screen.findByRole("button", { name: "Account and settings" });
-    await act(async () => fireEvent.click(account));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign out" })));
+    await act(async () => fireEvent.keyDown(account, { key: "Enter" }));
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Sign out" })),
+    );
     await screen.findByText("Send the code");
     expect(window.location.pathname).toBe("/parent");
     expect(window.location.search).toBe("?lang=en");
@@ -577,7 +643,7 @@ describe("ParentScreen", () => {
         lessons={lessons([])}
       />,
     );
-    await screen.findByText("Tu pojawią się lekcje, które przygotujesz.");
+    await screen.findByText("Tu będą lekcje");
     expect(document.querySelector("[data-menu-empty]")).not.toBeNull();
     cleanup();
 
@@ -591,11 +657,10 @@ describe("ParentScreen", () => {
         lessons={one}
       />,
     );
-    const link = await screen.findByRole("link", { name: "Odejmowanie przez 10" });
-    expect(link.getAttribute("href")).toBe(`/parent/lessons/${CONVERSATION}`);
+    const table = await screen.findByRole("table", { name: "Lekcje" });
     expect(document.querySelector("[data-menu-empty]")).toBeNull();
-    // Opening it moves to its workspace's address.
-    await act(async () => fireEvent.click(link));
+    // Opening its row moves to its workspace's address.
+    await act(async () => fireEvent.click(within(table).getByText("Odejmowanie przez 10")));
     expect(window.location.pathname).toBe(`/parent/lessons/${CONVERSATION}`);
   });
 
@@ -650,6 +715,7 @@ describe("ParentScreen", () => {
       },
       consent: { getMe: vi.fn(async () => me([])), patchPod: vi.fn(async () => ({})) },
       ratings: null,
+      give: null,
     };
     return engine as unknown as LessonEngine & typeof engine;
   }
@@ -683,7 +749,8 @@ describe("ParentScreen", () => {
       ),
     );
     expect(window.sessionStorage.getItem(`jw.parent.first.${CONVERSATION}`)).toBeNull();
-    await screen.findByRole("region", { name: "Lekcja" });
+    // The workspace is the chat alone (dl-1eieq.1).
+    await screen.findByRole("region", { name: "Rozmowa" });
   });
 
   it("asks for consent when the route refuses, and goes on with the same words once given", async () => {
@@ -779,8 +846,10 @@ describe("ParentScreen", () => {
     );
 
     const account = await screen.findByRole("button", { name: "Konto i ustawienia" });
-    await act(async () => fireEvent.click(account));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await act(async () => fireEvent.keyDown(account, { key: "Enter" }));
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Wyloguj się" })),
+    );
     await screen.findByText("Wyślij kod");
     expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
     expect(window.sessionStorage.getItem("jw.chat.next.cnv_00000000000000000000000001")).toBeNull();
@@ -804,8 +873,10 @@ describe("ParentScreen", () => {
     const field = await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
     fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
     const account1 = await screen.findByRole("button", { name: "Konto i ustawienia" });
-    await act(async () => fireEvent.click(account1));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await act(async () => fireEvent.keyDown(account1, { key: "Enter" }));
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Wyloguj się" })),
+    );
 
     who = other;
     await screen.findByText("Wyślij kod");
@@ -890,8 +961,10 @@ describe("ParentScreen", () => {
     fireEvent.change(field, { target: { value: "Ola myli odejmowanie przez 10" } });
     await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
     const account1 = await screen.findByRole("button", { name: "Konto i ustawienia" });
-    await act(async () => fireEvent.click(account1));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyloguj się" })));
+    await act(async () => fireEvent.keyDown(account1, { key: "Enter" }));
+    await act(async () =>
+      fireEvent.click(await screen.findByRole("menuitem", { name: "Wyloguj się" })),
+    );
     await screen.findByText("Wyślij kod");
     await act(async () => fail(new TypeError("Failed to fetch")));
     expect(window.sessionStorage.getItem("jw.parent.draft")).toBeNull();
@@ -910,7 +983,7 @@ describe("ParentScreen", () => {
       />,
     );
     await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
-    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    expect(screen.getByRole("combobox", { name: "Dla" }).textContent).toContain("Ola");
   });
 
   it("shows no provider button when the build turns none on", async () => {

@@ -1,0 +1,25 @@
+{#- group: two columns with a dot each; the child draws a line from each item to where it goes. -#}
+{% import "parts.html.j2" as parts %}
+
+{% macro _card(c, text) %}
+{% if c.picture and text.src(c.picture.src) %}<img src="{{ text.src(c.picture.src) }}" alt="{{ c.picture.alt }}"> {% endif %}{{ text.rich(c.label) }}
+{%- endmacro %}
+
+{% macro _join(q, text, zones) %}
+{% set n = [q.data.items|length, q.data.groups|length]|max %}
+<table class="join">
+{% for i in range(n) %}
+  <tr>
+    <td class="left">{% if i < q.data.items|length %}{{ _card(q.data.items[i], text) }}<span class="dot"></span>{% endif %}</td>
+    <td class="gapcol"></td>
+    <td>{% if i < q.data.groups|length %}<span class="dot"></span>{% if zones %}<span class="zone">{{ _card(q.data.groups[i], text) }}</span>{% else %}{{ _card(q.data.groups[i], text) }}{% endif %}{% endif %}</td>
+  </tr>
+{% endfor %}
+</table>
+{%- endmacro %}
+
+{#- Items on the left, the groups as labelled boxes on the right. -#}
+{% macro bucket(q, text, sheet) %}{{ parts.stem(q.data.stem, text) }}{{ _join(q, text, true) }}{% endmacro %}
+
+{#- Two columns of dots: "połącz w pary". -#}
+{% macro match(q, text, sheet) %}{{ parts.stem(q.data.stem, text) }}{{ _join(q, text, false) }}{% endmacro %}

@@ -42,10 +42,25 @@ heading and a label at 17 px with a line height of 1.5. A lesson keeps the child
 Inside the signed-in parent app the sizes are denser, because a parent works there at a desk
 (decision `dl-xo0q`). `DensityScope value="parent"` sets `data-density="parent"`, and a dialog,
 sheet or popover opened inside it carries the attribute through its portal. There, body text is
-14 px and a small line 12.5 px (`--jw-page-small`), a section title 20 px, a control 34 px high,
-corners 10 px and 8 px, lines 1 px (`--jw-border`), and the action stands on a 3 px edge. Sign-in
-and public pages keep the sizes above. A lesson shown inside the parent app, such as a step's
-preview, gets every child size back.
+14 px and a small line 12.5 px (`--jw-page-small`), a section title 22 px, a card's or a dialog's
+title 16 px, and a control 34 px high (28 px small). Sign-in and public pages keep the sizes above.
+A lesson shown inside the parent app, such as a step's preview, gets every child size back.
+
+### Two audiences
+
+The app speaks to two audiences, and they look different on purpose (the owner's parent design
+system, 2026-11-02, epic `dl-uukj.47.67`). `<html data-audience="adult">` marks the parent app,
+sign-in, consent and jadwigo.pl's frame; the app sets it by route (`setAudience`). There the face is
+Geist (400, 500, 600; Geist Mono for codes), lines are 1 px, corners 6 px on a control and 10 px on
+a card, nothing stands on a pressed edge, the action is ink blue (`#3a5fa8`) with white text and
+darker under the mouse, fields sit on a lighter warm edge, and keyboard focus is a soft 3 px halo.
+It is light only for now. Hover and secondary fills are stone (`--jw-hover`), the sidebar
+`--jw-side`, and green, help yellow and red stay in results.
+
+Everything a child reads keeps Zeszyt: `LessonTheme` marks its root `data-audience="kid"`, and so
+do jadwigo.pl's question sheet and lesson cards. Inside an adult page such a subtree gets every
+role, corner, line and the pressed edge back, and Andika, so a preview shows exactly what the child
+will see. With no attribute, a page is Zeszyt.
 
 The app frame has its own sizes, each a utility (`w-jw-shell-side`, `h-jw-shell-bar`):
 

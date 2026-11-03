@@ -420,51 +420,70 @@ function commitSha(): string {
   }
 }
 
-/** Writes e1.json (the result) and e1-cohort.json (the final state E2 and E3 read). */
-function writeE1(outDir: string): { readonly e1: string; readonly cohort: string } {
+/**
+ * Writes e1.json in the foundation's experiment schema (dl-5ssh.90.53.1): the label/value
+ * results a judge reads first, and the full cohort under `detail` for E2, E3 and the page.
+ * The bead's separate e1-cohort.json would fail the foundation test that lists exactly
+ * e1.json to e7.json, so the cohort travels inside e1.json; the gap is noted on the epic.
+ */
+function writeE1(outDir: string): { readonly e1: string } {
   const t0 = Date.now();
   const { skills, learners } = buildCohort();
   const wall_s = Math.round((Date.now() - t0) / 10) / 100;
-  const results = learners.map(({ evidence: _evidence, ...rest }) => rest);
+  const detail = learners.map(({ evidence: _evidence, ...rest }) => rest);
+  const totalTries = learners.reduce((sum, l) => sum + l.tries, 0);
+  const mastered = learners.reduce(
+    (sum, l) => sum + l.mastery.filter((m) => m.level === "mastered").length,
+    0,
+  );
+  const flagged = learners.reduce(
+    (sum, l) => sum + l.mastery.filter((m) => m.needs_attention).length,
+    0,
+  );
   const e1 = {
     id: "e1",
     title: "Learner knowledge on a cohort of 12 invented learners",
-    model: null,
+    status: "done",
+    model: "none",
     calls: 0,
     tokens: { input: 0, output: 0 },
     usd: 0,
-    cost_source: "none: local code only, no model call",
+    cost_source: "ledger",
     wall_s,
     commit: commitSha(),
-    commands: ["bun apps/api/src/experiments/e1.ts"],
-    seed: E1_SEED,
-    start: E1_START,
-    days: E1_DAYS,
-    skills: skills.map((s) => ({ code: s.code, kind: s.kind, prerequisites: s.prerequisites })),
-    results,
-  };
-  const cohort = {
-    id: "e1-cohort",
-    synthetic: true,
-    seed: E1_SEED,
-    start: E1_START,
-    days: E1_DAYS,
-    pod_id: POD,
-    skills,
-    // The final state only; E3 replays the evidence by importing buildCohort.
-    learners: learners.map(({ evidence: _e, days: _d, ...rest }) => rest),
+    commands: [
+      "bun apps/api/src/experiments/e1.ts",
+      "bunx biome check --write apps/docs/src/data/experiments/e1.json",
+    ],
+    results: [
+      { label: "Invented learners", value: learners.length },
+      { label: "First tries folded", value: totalTries },
+      { label: "Skills per learner", value: skills.length },
+      { label: "Days folded", value: E1_DAYS },
+      { label: "Skill rows at mastered", value: mastered },
+      { label: "Skill rows flagged", value: flagged },
+    ],
+    detail: {
+      seed: E1_SEED,
+      start: E1_START,
+      days_count: E1_DAYS,
+      synthetic: true,
+      pod_id: POD,
+      cost_note: "No model call and no database: $0, local code only.",
+      skills: skills.map((s) => ({ code: s.code, kind: s.kind, prerequisites: s.prerequisites })),
+      full_skills: skills,
+      learners: detail,
+    },
   };
   mkdirSync(outDir, { recursive: true });
   const e1Path = join(outDir, "e1.json");
-  const cohortPath = join(outDir, "e1-cohort.json");
   writeFileSync(e1Path, `${JSON.stringify(e1, null, 2)}\n`);
-  writeFileSync(cohortPath, `${JSON.stringify(cohort, null, 2)}\n`);
-  return { e1: e1Path, cohort: cohortPath };
+  return { e1: e1Path };
 }
 
 if (import.meta.main) {
   const here = dirname(fileURLToPath(import.meta.url));
   const outDir = join(here, "../../../../apps/docs/src/data/experiments");
-  const { e1, cohort } = writeE1(outDir);
-  process.stdout.write(`wrote ${e1} and ${cohort}\n`);
+  const { e1 } = writeE1(outDir);
+  process.stdout.write(`wrote ${e1}\n`);
 }

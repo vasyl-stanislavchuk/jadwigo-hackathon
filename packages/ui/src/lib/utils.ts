@@ -26,6 +26,7 @@ const SIZES = [
   "jw-page-h2",
   "jw-page-body",
   "jw-page-small",
+  "jw-page-micro",
   "jw-page-question",
 ];
 const SPACING = [
@@ -37,6 +38,7 @@ const SPACING = [
   "kid-credit",
   "jw-control",
   "jw-control-sm",
+  "jw-control-lg",
   "jw-shell-side",
   "jw-shell-rail",
   "jw-shell-bar",

@@ -1,0 +1,24 @@
+[project]
+name = "printer"
+version = "0.0.1"
+description = "The print Lambda: a lesson's PrintSheet becomes a compact A4 PDF a child answers in place"
+# The Lambda's base image is public.ecr.aws/lambda/python:3.12 (Dockerfile); .python-version keeps the tests on it
+requires-python = ">=3.12"
+dependencies = [
+  "weasyprint==70.0", # lays out the paper HTML and CSS into the PDF (src/printer/render.py)
+  "jinja2==3.1.6", # the sheet template and one macro per question type (src/printer/templates/)
+  "pydantic==2.14.1", # the PrintSheet models, extra="forbid" like the contract (src/printer/sheet.py)
+  "boto3==1.43.120", # the S3 get and puts in the uploads bucket (src/printer/handler.py)
+]
+
+[dependency-groups]
+dev = [
+  "pytest==9.2.0", # the tests in tests/
+  "moto[s3]==5.2.5", # an in-process S3 for the handler tests (tests/test_handler.py)
+  "pypdf==6.21.3", # reads the rendered PDF back: page size, fonts, text (tests/)
+  "jsonschema==4.26.0", # checks the fixture against the contract's JSON Schema snapshot (tests/test_sheet.py)
+]
+
+[build-system]
+requires = ["uv_build==0.13.5"]
+build-backend = "uv_build"

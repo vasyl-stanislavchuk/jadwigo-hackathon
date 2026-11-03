@@ -26,12 +26,12 @@ export function useRegister(): Register {
 }
 
 /**
- * The keyboard's frame on an app page, as the lesson's link draws it: a 3 px outline of the focus
- * ink, 3 px out, on :focus-visible only. It replaces shadcn's 4 px soft ring; parents tab through
- * forms, so it is always drawn there.
+ * The keyboard's frame on an app page, on :focus-visible only; parents tab through forms, so it is
+ * always drawn there. In the adult audience (dl-uukj.47.67 D15) it is a soft 3 px halo of the ink at
+ * 28 % hugging the control; elsewhere, as the lesson's link draws it, a 3 px outline 3 px out.
  */
 export const PAGE_FOCUS =
-  "focus-visible:outline-3 focus-visible:outline-offset-3 focus-visible:outline-jw-focus";
+  "not-in-data-[audience=adult]:focus-visible:outline-3 not-in-data-[audience=adult]:focus-visible:outline-offset-3 not-in-data-[audience=adult]:focus-visible:outline-jw-focus in-data-[audience=adult]:focus-visible:outline-none in-data-[audience=adult]:focus-visible:ring-3 in-data-[audience=adult]:focus-visible:ring-ring/30";
 
 /** The body size each register reads: a label, a third heading, a line the page says. */
 export const BODY: Record<Register, string> = {

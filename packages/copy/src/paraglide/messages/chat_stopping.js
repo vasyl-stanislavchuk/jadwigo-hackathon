@@ -20,5 +20,5 @@ export const chat_stopping = /** @type {((inputs?: Chat_StoppingInputs, options?
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Stopping…")
-	return /** @type {LocalizedString} */ ("Zatrzymywanie…")
+	return /** @type {LocalizedString} */ ("Zatrzymuję…")
 });

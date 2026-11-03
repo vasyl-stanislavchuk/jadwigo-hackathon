@@ -26,6 +26,7 @@ import {
   AttemptAnswer,
   AttemptResult,
   Brief,
+  Credit,
   Ended,
   Goal,
   GoalProgress,
@@ -132,6 +133,36 @@ export const ReleasedHelp = z.object({
 });
 export type ReleasedHelp = z.infer<typeof ReleasedHelp>;
 
+/**
+ * A borrowed question's credit as the page draws it (dl-1eieq.3): the lesson question's credit
+ * (decision `2026-10-27-a-lesson-question-s-credit-is-source-ref-url-licence-original-la`) less
+ * the original's url, which is never shown, and `checked`, which only the import reads. `adapted`
+ * is whether the lesson changed the item (`based_on.changes` not empty): with `original_lang` and
+ * the language the question is shown in, it picks the card's licence line.
+ */
+export const PageCredit = Credit.pick({
+  source: true,
+  ref: true,
+  licence: true,
+  original_lang: true,
+}).extend({ adapted: z.boolean() });
+export type PageCredit = z.infer<typeof PageCredit>;
+
+/** A lesson question's credit as the page sees it, or null for our own and bank questions. */
+export function pageCredit(
+  question: Pick<LessonQuestion, "credit" | "based_on">,
+): PageCredit | null {
+  const { credit } = question;
+  if (credit === null) return null;
+  return {
+    source: credit.source,
+    ref: credit.ref,
+    licence: credit.licence,
+    original_lang: credit.original_lang,
+    adapted: (question.based_on?.changes.length ?? 0) > 0,
+  };
+}
+
 /** An attempt question as the page sees it: the page's half of the lesson question, never its key. */
 export const PageAttemptQuestion = z.object({
   seq: Count,
@@ -139,6 +170,11 @@ export const PageAttemptQuestion = z.object({
   question_type: QuestionType,
   say: z.string(),
   question: PageFamilyQuestion,
+  /**
+   * Who made it and on what terms, when it is borrowed: the page draws "z Khan Academy". Null
+   * when left out, so a page and an api released apart still read each other.
+   */
+  credit: PageCredit.nullable().default(null),
   added: Added,
   placed: Placed.nullable(),
   added_for: Count.nullable(),
@@ -969,6 +1005,10 @@ export const ERROR_STATUS = {
    * replaced it, or it holds more than `LIMITS.questionsPerLesson` questions (dl-5ssh.136).
    */
   LessonNotPublishable: 409,
+  /** A lesson that holds a question type with no paper form (today only `explain`), dl-1eieq.8. */
+  LessonNotPrintable: 409,
+  /** The print Lambda is not set up where the API runs, so no PDF can be made. */
+  PrintUnavailable: 502,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

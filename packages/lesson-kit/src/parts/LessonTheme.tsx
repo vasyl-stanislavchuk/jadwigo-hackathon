@@ -10,7 +10,8 @@
  *
  * It also sets the lesson register (@jadwigo/ui lib/register.tsx), so a lesson drawn inside a
  * parent's page (a try on the attempt page) keeps the lesson's sizes and controls rather than the
- * page's adult ones (dl-uukj.32.22).
+ * page's adult ones (dl-uukj.32.22), and marks the child's audience (dl-uukj.47.67), so inside an adult
+ * page foundation.css gives it Zeszyt's roles, shape and Andika back.
  */
 
 import { RegisterProvider } from "@jadwigo/ui";
@@ -27,7 +28,7 @@ export function LessonTheme({ children }: { children: ReactNode }): JSX.Element 
     installKeyboardFocus();
   }, []);
   return (
-    <div data-lesson-theme="zeszyt">
+    <div data-lesson-theme="zeszyt" data-audience="kid">
       <RegisterProvider value="lesson">{children}</RegisterProvider>
     </div>
   );

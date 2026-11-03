@@ -84,13 +84,17 @@ describe("the workspace's dev route", () => {
     expect(messagesPath("stall")).toBe("/__engine/messages?pace=stall");
   });
 
-  it("plays the first words once in the 3 columns, and a reload sends nothing more", async () => {
+  it("plays the first words once in the chat, and a reload sends nothing more", async () => {
     const { transport, sent } = standIn();
     await open(transport);
     expect(sent.map((b) => b.kind === "message" && b.text)).toEqual([FIRST_WORDS]);
     expect(await screen.findByText("Your lesson is ready on the right.")).toBeTruthy();
-    expect(screen.getByText("Wersja 2")).toBeTruthy();
-    expect(document.querySelector("[data-page='workspace'] #parent-chat")).not.toBeNull();
+    // The lesson card under the turn names the revision (dl-1eieq.1: no column beside the chat).
+    expect(
+      document.querySelector("[data-object-card='lesson']")?.getAttribute("data-revision"),
+    ).toBe("2");
+    expect(document.querySelector("[data-page='workspace'] [data-chat-body]")).not.toBeNull();
+    expect(document.querySelector("[data-lesson-column]")).toBeNull();
     // No details panel (design review 2026-11-02): who and what move into the chat's widgets.
     expect(document.querySelector("[data-page='workspace'] #parent-details")).toBeNull();
 

@@ -1,0 +1,128 @@
+{#- slots: answer places inside a sentence, a table, a picture, a column sum or a pyramid. -#}
+{% import "parts.html.j2" as parts %}
+{% import "figures.html.j2" as figures %}
+
+{#- One gap where it stands: a box to write in, or its words to circle in small brackets under it. -#}
+{% macro _gap(gap) %}
+{% if gap.kind == "choose" %}<span class="gap-words">{{ parts.box("digit") }}<small>({% for o in gap.options %}{{ o.label }}{% if not loop.last %} / {% endif %}{% endfor %})</small></span>
+{% elif gap.input == "fraction" %}{{ parts.frac_box(gap.whole) }}
+{% elif gap.input == "text" %}{{ parts.write_line() }}
+{% elif (gap.max_length and gap.max_length <= 2) or (gap.range and gap.range[1] < 100) %}{{ parts.box("digit") }}
+{% else %}{{ parts.box() }}{% endif %}
+{%- endmacro %}
+
+{#- A template with each `{gN}` drawn as its gap. -#}
+{% macro _template(q, text) %}
+{% set by_id = gaps_by_id(q.data.gaps) %}
+{% if q.data.template %}
+<div class="template">
+{%- for kind, piece in text.split(q.data.template) -%}
+{% if kind == "text" %}{{ text.rich(piece) }}{% elif piece in by_id %}{{ _gap(by_id[piece]) }}{% else %}{{ "{" ~ piece ~ "}" }}{% endif %}
+{%- endfor -%}
+</div>
+{% endif %}
+{%- endmacro %}
+
+{#- Everything a slots body may carry, in the order the screen draws it. -#}
+{% macro _body(q, text) %}
+{{ parts.stem(q.data.stem, text) }}
+{% if q.data.figure %}{{ figures.figure(q.data.figure, text) }}{% endif %}
+{% if q.data.table %}{{ _table(q, text) }}{% endif %}
+{% if q.data.picture %}{{ _picture(q, text) }}{% endif %}
+{% if q.data.column %}{{ _column(q.data.column) }}{% endif %}
+{% if q.data.pyramid %}{{ _pyramid(q, text) }}{% endif %}
+{{ _template(q, text) }}
+{%- endmacro %}
+
+{#- Given cells grey, empty cells white with a thicker border: a white cell is the child's job. -#}
+{% macro _table(q, text) %}
+{% set by_id = gaps_by_id(q.data.gaps) %}
+<table class="grid">
+  {% if q.data.table.header %}<tr>{% for h in q.data.table.header %}<th>{{ text.rich(h) }}</th>{% endfor %}</tr>{% endif %}
+  {% for row in q.data.table.rows %}
+  <tr>
+  {% for cell in row %}
+    {% set parts_ = text.split(cell) %}
+    {% if parts_|length == 1 and parts_[0][0] == "marker" and parts_[0][1] in by_id %}<td class="open">{% if by_id[parts_[0][1]].kind == "choose" %}{{ _gap(by_id[parts_[0][1]]) }}{% endif %}</td>
+    {% else %}<td>{% for kind, piece in parts_ %}{% if kind == "text" %}{{ text.rich(piece) }}{% elif piece in by_id %}{{ _gap(by_id[piece]) }}{% endif %}{% endfor %}</td>{% endif %}
+  {% endfor %}
+  </tr>
+  {% endfor %}
+</table>
+{%- endmacro %}
+
+{#- The picture with numbered dots at the gaps, and a numbered line for each under it. -#}
+{% macro _picture(q, text) %}
+{% set p = q.data.picture %}
+{% set w = [p.width * 25.4 / 96, geom.PICTURE_MAX_W_MM]|min %}
+<div class="picture-wrap" style="width: {{ w|mm }}">
+  {% if text.src(p.src) %}<img src="{{ text.src(p.src) }}" alt="{{ p.alt }}" style="width: {{ w|mm }}">{% endif %}
+  {% for gap in q.data.gaps if gap.at %}<span class="pin" style="left: {{ gap.at.x }}%; top: {{ gap.at.y }}%">{{ loop.index }}</span>{% endfor %}
+</div>
+<div class="labels-under">
+{% for gap in q.data.gaps if gap.at %}<span>{{ loop.index }} {% if gap.kind == "choose" %}{{ parts.write_line() }}{% else %}{{ _gap(gap) }}{% endif %}</span>{% endfor %}
+</div>
+{% set bank = q.data.gaps|selectattr("kind", "equalto", "choose")|list %}
+{% if bank %}<div class="word-bank">{% for o in bank[0].options %}{{ o.label }}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+{%- endmacro %}
+
+{#- Squared paper: operands right-aligned one digit per cell, a small carry row on top, an empty
+    answer row under the line. -#}
+{% macro _column(col) %}
+{% set c = geom.COLUMN_CELL_MM %}
+{% set a, b = col.operands %}
+{% set sign = {"add": "+", "sub": "−", "mul": "×"}[col.op] %}
+{% set cols = [a|string|length, b|string|length]|max + 2 %}
+{% set rows = 4 if col.carry_row else 3 %}
+{% set fs = geom.FIGURE_PT / geom.PT_PER_MM %}
+{% set top = 1 if col.carry_row else 0 %}
+<div class="figure">
+<svg width="{{ (cols * c)|mm }}" height="{{ (rows * c)|mm }}" viewBox="0 0 {{ cols * c }} {{ rows * c }}" xmlns="http://www.w3.org/2000/svg">
+  {% for i in range(cols + 1) %}<path d="M{{ i * c }} 0V{{ rows * c }}" stroke="{{ geom.GREY }}" stroke-width="{{ geom.STROKE_MM * 0.5 }}"/>{% endfor %}
+  {% for j in range(rows + 1) %}<path d="M0 {{ j * c }}H{{ cols * c }}" stroke="{{ geom.GREY }}" stroke-width="{{ geom.STROKE_MM * 0.5 }}"/>{% endfor %}
+  {% for line in [a|string, b|string] %}
+  {% set y = (top + loop.index0 + 0.5) * c + fs * 0.35 %}
+  {% for ch in line %}<text x="{{ (cols - line|length + loop.index0 + 0.5) * c }}" y="{{ y }}" font-size="{{ fs }}" text-anchor="middle">{{ ch }}</text>{% endfor %}
+  {% endfor %}
+  <text x="{{ 0.5 * c }}" y="{{ (top + 1.5) * c + fs * 0.35 }}" font-size="{{ fs }}" text-anchor="middle">{{ sign }}</text>
+  <path d="M{{ 0.2 * c }} {{ (top + 2) * c }}H{{ (cols - 0.1) * c }}" stroke="#000" stroke-width="{{ geom.STROKE_MM * 2 }}"/>
+</svg>
+</div>
+{%- endmacro %}
+
+{#- Bricks, top row first: given numbers printed, empty bricks white for the child. -#}
+{% macro _pyramid(q, text) %}
+{% set bw, bh = geom.BRICK_W_MM, geom.BRICK_H_MM %}
+{% set rows = q.data.pyramid %}
+{% set n = rows|map("length")|max %}
+{% set fs = geom.FIGURE_PT / geom.PT_PER_MM %}
+<div class="figure">
+<svg width="{{ (n * bw)|mm }}" height="{{ (rows|length * bh)|mm }}" viewBox="0 0 {{ n * bw }} {{ rows|length * bh }}" xmlns="http://www.w3.org/2000/svg">
+  {% for row in rows %}
+  {% set y = loop.index0 * bh %}
+  {% set ox = (n - row|length) * bw / 2 %}
+  {% for cell in row %}
+  {% set is_gap = cell is string and cell.startswith("{") %}
+  <rect x="{{ ox + loop.index0 * bw + geom.STROKE_MM }}" y="{{ y + geom.STROKE_MM }}" width="{{ bw - 2 * geom.STROKE_MM }}" height="{{ bh - 2 * geom.STROKE_MM }}"
+        fill="{{ '#fff' if is_gap else geom.SHADE }}" stroke="#000" stroke-width="{{ geom.STROKE_MM * (2.5 if is_gap else 1) }}"/>
+  {% if not is_gap %}<text x="{{ ox + (loop.index0 + 0.5) * bw }}" y="{{ y + bh / 2 + fs * 0.35 }}" font-size="{{ fs }}" text-anchor="middle">{{ cell|num if cell is number else cell }}</text>{% endif %}
+  {% endfor %}
+  {% endfor %}
+</svg>
+</div>
+{%- endmacro %}
+
+{% macro fill_gaps(q, text, sheet) %}{{ _body(q, text) }}{% endmacro %}
+{% macro fill_table(q, text, sheet) %}{{ _body(q, text) }}{% endmacro %}
+{% macro label_picture(q, text, sheet) %}{{ _body(q, text) }}{% endmacro %}
+{% macro column(q, text, sheet) %}{{ _body(q, text) }}{% endmacro %}
+{% macro pyramid(q, text, sheet) %}{{ _body(q, text) }}{% endmacro %}
+{#- The clock with "[ ] : [ ]" beside it: clock and answer read together. -#}
+{% macro clock_read(q, text, sheet) %}
+{% if q.data.figure and q.data.figure.kind == "clock" and not q.data.table and not q.data.picture %}
+{{ parts.stem(q.data.stem, text) }}
+<div class="beside">{{ figures.figure(q.data.figure, text) }}{{ _template(q, text) }}</div>
+{% else %}{{ _body(q, text) }}{% endif %}
+{%- endmacro %}
+{#- The coins come from the figure; the template writes "Razem: [ ] zł [ ] gr". -#}
+{% macro money_count(q, text, sheet) %}{{ _body(q, text) }}{% endmacro %}

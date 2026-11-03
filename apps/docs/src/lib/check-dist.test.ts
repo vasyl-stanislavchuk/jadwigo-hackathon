@@ -121,6 +121,14 @@ describe("checkDist", () => {
     ]);
   });
 
+  it("fails a page that embeds a diagram src/lib/diagrams does not hold", () => {
+    writeGoodDist();
+    writeFileSync(join(dist, "guides/diagram.html"), '<figure data-diagram="nope"></figure>');
+    expect(checkDist(dist)).toEqual([
+      'dist/guides/diagram.html embeds diagram "nope", which is not in src/lib/diagrams',
+    ]);
+  });
+
   it("asks for a build when there is no dist/", () => {
     expect(checkDist(join(dist, "nope"))).toEqual([
       `${join(dist, "nope")} does not exist: run the build first`,

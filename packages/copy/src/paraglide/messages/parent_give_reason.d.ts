@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "“Give the lesson” works once the lesson passes its check" |
+* | "“Give the lesson” and “Print” work once the lesson passes its check" |
 *
 * @param {Parent_Give_ReasonInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

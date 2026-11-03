@@ -19,6 +19,61 @@ export interface SidebarGroup {
  * group here, and a new section is a new group. A slug with no page fails the build.
  */
 export const SIDEBAR: readonly SidebarGroup[] = [
+  // Judges first (dl-5ssh.90.53.1): what Jadwigo is and what is live, its story, where it is
+  // going and the experiments that show it, then how it is built. The developer sections follow
+  // in their old order. Every lane of the epic fills these pages; none edits this list.
+  { label: "What Jadwigo is", items: ["index"] },
+  {
+    label: "Features",
+    items: [
+      "features/photo-to-lesson",
+      "features/chat-and-workspace",
+      "features/share-and-play",
+      "features/player-and-families",
+      "features/celebration",
+      "features/credits",
+      "features/print",
+      "features/connect-your-ai",
+      "features/sign-in-and-consent",
+      "features/question-bank",
+    ],
+  },
+  { label: "The story", items: ["story"] },
+  {
+    label: "Vision",
+    items: [
+      "vision",
+      "vision/learner-knowledge",
+      "vision/next-lesson",
+      "vision/dreaming",
+      "vision/goals-loop",
+      "vision/growing-the-bank",
+      "vision/judging-answers",
+    ],
+  },
+  {
+    label: "Experiments",
+    items: [
+      "experiments",
+      "experiments/e1",
+      "experiments/e2",
+      "experiments/e3",
+      "experiments/e4",
+      "experiments/e5",
+      "experiments/e6",
+      "experiments/e7",
+    ],
+  },
+  {
+    label: "How it is built",
+    items: [
+      "architecture",
+      "architecture/monorepo",
+      "architecture/contracts",
+      "architecture/ai-engine",
+      "architecture/building-with-agents",
+    ],
+  },
   {
     label: "Start here",
     items: [
@@ -49,10 +104,6 @@ export const SIDEBAR: readonly SidebarGroup[] = [
       "design-system/copy",
       "design-system/illustration",
     ],
-  },
-  {
-    label: "Architecture",
-    items: ["architecture", "architecture/monorepo", "architecture/contracts"],
   },
 ];
 

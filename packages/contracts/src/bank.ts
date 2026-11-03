@@ -287,6 +287,14 @@ export const QuestionSetId = z
 export type QuestionSetId = z.infer<typeof QuestionSetId>;
 
 /**
+ * The bank's mark on a skill id its enrichment proposed rather than took from the curriculum, as in
+ * `proposed:maths.addition.add-1-or-10-mentally`. A drafted lesson's skill ids drop it (decision
+ * `jadwigo-ai-workflows/decisions/2026-10-29-a-drafted-lesson-s-skill-ids-drop-the-bank-s-proposed-prefix-dl`),
+ * so they pass `SkillId`, which stays lowercase words joined by dots.
+ */
+export const PROPOSED_SKILL_MARK = "proposed:";
+
+/**
  * One question set's public page (dl-e8ov.5.2.22): which questions it holds and which of them are
  * lesson-ready in each language, so a lesson draws only those (decisions dl-kaxj and dl-be2l). It
  * names questions by id and never carries a body or a key; a field the schema does not name is

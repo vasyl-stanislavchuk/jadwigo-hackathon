@@ -2,7 +2,8 @@
 /**
  * The "Następne" queue (dl-uukj.47.34): words sent while a turn runs wait in the tab, never in the
  * running turn's inbox; "Wyślij teraz" sends one now as a chat steer; when a turn ends the rest go
- * in order, one turn each; a reload keeps them; the pane draws them under the composer.
+ * in order, one turn each; a reload keeps them, photos included; the pane draws them above the
+ * composer (D6), a photo-only row as its count.
  */
 
 import { ApiError } from "@jadwigo/api-client";
@@ -11,7 +12,7 @@ import { RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ChatPane } from "./ChatPane.tsx";
-import { clearChatQueues, heldQueue } from "./queue.ts";
+import { clearChatQueues, heldQueue, useNextQueue } from "./queue.ts";
 import { type EngineTransport, useConversation } from "./useConversation.ts";
 import type { SendBody } from "./wire.ts";
 
@@ -124,7 +125,9 @@ describe("the Następne queue", () => {
     expect(again.result.current.next).toEqual(["Druga"]);
   });
 
-  it("draws the rows under the composer, with Wyślij teraz, Zmień back to the composer and Usuń", async () => {
+  // Rewritten for the chat handoff's D6 (dl-uukj.47.71.5, the lead's call): the rows wait above
+  // the composer with Wyślij teraz and ×; Zmień and the "Następne" heading are gone.
+  it("draws the rows above the composer, with Wyślij teraz and × (D6)", async () => {
     const taken: number[] = [];
     const now: number[] = [];
     render(
@@ -146,19 +149,67 @@ describe("the Następne queue", () => {
         }}
       />,
     );
-    const list = screen.getByRole("region", { name: "Następne" });
+    const list = document.querySelector("[data-queue]") as HTMLElement;
     const form = document.querySelector("form") as HTMLElement;
-    expect(form.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect([...list.querySelectorAll("[data-next-row] span")].map((r) => r.textContent)).toEqual([
+    expect(list.compareDocumentPosition(form) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByRole("region", { name: "Następne" })).toBeNull();
+    expect([...list.querySelectorAll("[data-queue-words]")].map((r) => r.textContent)).toEqual([
       "A",
       "B",
     ]);
+    expect(list.querySelector("[data-next-row]")?.textContent).toContain("Wyślę, gdy skończę");
+    expect(screen.queryByRole("button", { name: "Zmień" })).toBeNull();
     fireEvent.click(screen.getAllByRole("button", { name: "Wyślij teraz" })[0] as HTMLElement);
     expect(now).toEqual([0]);
-    fireEvent.click(screen.getAllByRole("button", { name: "Zmień" })[1] as HTMLElement);
-    expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe("B");
-    fireEvent.click(screen.getAllByRole("button", { name: "Usuń" })[0] as HTMLElement);
-    expect(taken).toEqual([1, 0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Usuń" })[1] as HTMLElement);
+    expect(taken).toEqual([1]);
+  });
+
+  it("reads a photo-only row as its count, never empty, and says why its photos wait (dl-uukj.47.70)", () => {
+    const now: number[] = [];
+    render(
+      <ChatPane
+        language="pl"
+        variant="parent"
+        turns={[]}
+        queued={[]}
+        restoring={false}
+        stopping={false}
+        sendFailed={false}
+        onSend={() => {}}
+        onStop={() => {}}
+        next={[{ text: "", attachmentIds: ["att_1", "att_2"] }]}
+        onSendNow={(i) => now.push(i)}
+        onTakeNext={() => null}
+      />,
+    );
+    const words = document.querySelector("[data-queue-words]") as HTMLElement;
+    expect(words.textContent?.trim()).not.toBe("");
+    expect(words.textContent).toContain("2");
+    const sendNow = screen.getByRole("button", { name: "Wyślij teraz" });
+    expect(sendNow.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(sendNow);
+    expect(now).toEqual([]);
+    expect(document.body.textContent).toContain("Zdjęcia wyślę dopiero po tej odpowiedzi.");
+  });
+
+  it("keeps a row's photos over a reload, and an old words-only queue still reads", () => {
+    const { result } = renderHook(() => useNextQueue(CONVERSATION, null));
+    act(() => result.current.add("", ["att_1"]));
+    act(() => result.current.add("Druga"));
+    const again = renderHook(() => useNextQueue(CONVERSATION, null));
+    expect(again.result.current.rows).toEqual([
+      { text: "", attachmentIds: ["att_1"] },
+      { text: "Druga", attachmentIds: [] },
+    ]);
+    expect(heldQueue(CONVERSATION, null)).toEqual(["", "Druga"]);
+    window.sessionStorage.setItem(
+      `jw.chat.next.${CONVERSATION}`,
+      JSON.stringify({ owner: null, items: ["Stara"] }),
+    );
+    expect(renderHook(() => useNextQueue(CONVERSATION, null)).result.current.rows).toEqual([
+      { text: "Stara", attachmentIds: [] },
+    ]);
   });
 
   it("keeps a row whose Wyślij teraz failed, and Spróbuj ponownie sends those exact words", async () => {

@@ -35,8 +35,8 @@ async function playToTheEnd(page: Page): Promise<void> {
 
 /**
  * The role the sign-in button fills with: Zeszyt's action blue, which @jadwigo/ui's default Button
- * wears on every page since epic dl-uukj.32 (dl-uukj.32.3). The button is a 48 control (decision
- * dl-og82), outside any lesson theme.
+ * wears on every page since epic dl-uukj.32 (dl-uukj.32.3). The button is a 40 control, the sign-in
+ * scale (dl-uukj.47.67 §3), outside any lesson theme.
  */
 const SEND_CODE_FILL = "--jw-act";
 
@@ -76,7 +76,8 @@ test("an adult saves a finished lesson: email code, account, a child, the claim,
   await page.locator("[data-save-link]").click();
   await expect(page).toHaveURL(/\/parent\?claim=asg_[0-9a-z]{26}/);
 
-  // The sign-in page is Zeszyt at a phone's width and a laptop's: the button in its blue, in Andika.
+  // The sign-in page is the adult audience at a phone's width and a laptop's: the button in its ink
+  // blue, in Geist (dl-uukj.47.67 D1, D5); Andika is a child's only.
   await expect(page.locator("[data-send-code]")).toBeVisible();
   for (const size of [
     { width: 390, height: 844 },
@@ -87,7 +88,7 @@ test("an adult saves a finished lesson: email code, account, a child, the claim,
     // An unset role resolves to transparent, which would match nothing on purpose.
     expect(look.role).not.toBe("rgba(0, 0, 0, 0)");
     expect(look.fill).toBe(look.role);
-    expect(look.font).toMatch(/^"?Andika/);
+    expect(look.font).toMatch(/^"?Geist/);
   }
 
   await page.locator("[data-email]").fill(email);

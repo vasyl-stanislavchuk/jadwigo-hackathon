@@ -74,25 +74,27 @@ const page = {
 </script>
 
 <style>
-  .sign-in { max-width: 26rem; padding-top: clamp(2.5rem, 7vw, 4.5rem); }
-  h1 { font-size: clamp(2rem, 5vw, 2.5rem); }
+  /* The adult sign-in scale (handoff §3): body 16, title 28, controls 40. */
+  .sign-in { max-width: 26rem; padding-top: clamp(2.5rem, 7vw, 4.5rem); font-size: 1rem; }
+  h1 { font-size: var(--jw-page-h1); }
   .lead { margin-top: 0.75rem; color: var(--jw-ink-soft); }
   .email { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 2rem; }
-  label { font-weight: 700; }
+  label { font-weight: 500; }
   input {
-    min-height: 52px; padding: 0 1rem; font: inherit; color: var(--jw-ink);
-    border: 2px solid var(--jw-line-strong); border-radius: var(--jw-radius-control); background: var(--jw-card);
+    min-height: var(--jw-control-height-lg); padding: 0 0.75rem; font: inherit; color: var(--jw-ink);
+    border: 1px solid var(--input); border-radius: var(--jw-radius-control); background: var(--jw-card);
   }
-  input:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 2px; }
-  button.btn { border: 0; font: inherit; font-weight: 700; cursor: pointer; }
-  .note { font-size: 0.95rem; color: var(--jw-ink-soft); }
+  input:focus-visible { outline: none; border-color: var(--ring); box-shadow: var(--halo); }
+  button.btn { border: 0; font: inherit; font-weight: 500; cursor: pointer; }
+  .note { font-size: 0.875rem; color: var(--jw-ink-soft); }
   .or { margin: 1.5rem 0 1rem; text-align: center; color: var(--jw-ink-soft); }
   .providers { display: flex; flex-direction: column; gap: 0.75rem; }
   .provider {
-    display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: 52px;
-    border: 1px solid var(--jw-line-strong); border-radius: var(--jw-radius-control);
-    color: var(--jw-ink); text-decoration: none; font-weight: 700; background: var(--jw-card);
+    display: flex; align-items: center; justify-content: center; gap: 0.75rem; min-height: var(--jw-control-height-lg);
+    border: 1px solid var(--input); border-radius: var(--jw-radius-control);
+    color: var(--jw-ink); text-decoration: none; font-weight: 500; background: var(--jw-card);
+    transition: background-color 120ms;
   }
-  .provider:hover { border-color: var(--jw-pick-edge); }
+  .provider:hover { background: var(--accent); }
   .provider span { display: inline-flex; line-height: 0; }
 </style>

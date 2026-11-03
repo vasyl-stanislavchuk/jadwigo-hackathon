@@ -9,7 +9,7 @@
  * made the conversation and the page that follows it are two steps a reload cannot repeat.
  */
 
-import type { ConversationClient, RunRatingClient } from "@jadwigo/api-client";
+import type { ConversationClient, LessonGiveClient, RunRatingClient } from "@jadwigo/api-client";
 import { AttachmentId, type ConversationId } from "@jadwigo/contracts";
 import type { ConsentClient } from "../../chat/ConsentScreen.tsx";
 import { apiTransport } from "../../chat/realtime.ts";
@@ -20,6 +20,8 @@ export interface LessonEngine {
   transport: EngineTransport;
   consent: ConsentClient | null;
   ratings: RunRatingClient | null;
+  /** Gives the checked lesson to play (dl-uukj.47.55); null where there is no sign-in to give with. */
+  give: LessonGiveClient | null;
   /**
    * The signed-in account, by the sign-in's token: the "Następne" queue is kept for it alone
    * (chat/queue.ts). Absent where there is no sign-in.
@@ -49,6 +51,7 @@ export function browserEngine(): LessonEngine | null {
     transport: api.transport,
     consent: api.client,
     ratings: api.client,
+    give: api.client,
     owner: async () => subOf(await api.auth.token()),
   };
 }

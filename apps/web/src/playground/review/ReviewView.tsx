@@ -22,7 +22,6 @@ import {
   useCallback,
   useState,
 } from "react";
-import { Button } from "../../chat/button.tsx";
 import type { WrittenExample } from "../examples/index.ts";
 import { LANGUAGES, resolve } from "../localize.ts";
 import { LearnerControls } from "../panels/LearnerControls.tsx";
@@ -32,6 +31,7 @@ import type { TryState } from "../panels/tryState.ts";
 import { queryLevel, queryTheme, setQuery, useLocation } from "../route.ts";
 import { Controls, Segmented } from "../shell/controls.tsx";
 import { Badge } from "../tool/badge.tsx";
+import { Button } from "../tool/button.tsx";
 import { ChecklistPanel } from "./ChecklistPanel.tsx";
 import { LEVEL_LABEL, LEVEL_TITLE, type Level, levelSpec, levelsOf } from "./levels.ts";
 import { variantsOf } from "./options.ts";

@@ -1,17 +1,18 @@
 ---
 name: jadwigo-lesson-compose
-description: "Use when a parent asks for a lesson for their child (\"6 zadań z mnożenia, klasa 3\", \"przygotuj lekcję z dodawania\"): drafts it from the question bank with the jadwigo MCP tools lesson_draft and lesson_check, writes only what the bank lacks (each question's twin and mistake cards) in short, kind words in the lesson's language (Polish or English), publishes it locally with lesson_publish, and gives the parent the card and the play link. Needs only the jadwigo MCP server; it works in an empty folder."
+description: "Use when a parent asks for a lesson for their child (\"6 zadań z mnożenia, klasa 3\", \"przygotuj lekcję z dodawania\"): drafts it from the question bank with the jadwigo MCP tools lesson_draft and lesson_check, chooses suitable or nearby sources, adapts them to the requested operation and range when needed, and writes missing twins and mistake cards in short, kind words in the lesson's language (Polish or English), publishes it locally with lesson_publish, and gives the parent the card and the play link. Needs only the jadwigo MCP server; it works in an empty folder."
 ---
 
 # Compose a lesson from the bank
 
-A parent asks for a lesson. You turn the request into a lesson that plays, through 3 tools of the
-`jadwigo` MCP server: `lesson_draft` draws the questions from the bank and copies each one whole,
+A parent asks for a lesson. Search suitable or nearby sources with `question_search`; inspect and
+adapt copied steps with `lesson_show` and `lesson_edit` when needed. Through the `jadwigo` MCP
+server, `lesson_draft` draws the questions from the bank and copies each one whole,
 `lesson_check` puts your words on the copy, checks the lesson and returns the card the parent
 reads, and `lesson_publish` publishes the checked lesson locally and returns the link it plays at.
 
 This workflow may run in a folder with nothing in it. Everything you need is in this file, in what
-the parent tells you, and in what the 3 tools return. Do not look for source code, files, scripts
+the parent tells you, and in what the tools return. Do not look for source code, files, scripts
 or a repository, and do not run shell commands. If the `jadwigo` tools are not offered to you, say
 so to the parent and stop.
 
@@ -28,8 +29,9 @@ Two decisions are in force:
 
 ## What you never do
 
-- Judge whether an answer is right. The bank's key and the check decide that. You never change a
-  copied key unless the parent asked for other numbers.
+- Override an unchanged source question's key just to silence a check. Keep the copied key
+  for unchanged numbers. When adapting the numbers to the parent's requested range, recompute
+  the key and update the supporting help consistently.
 - Write a lesson, a record or a file yourself, or edit what a tool wrote. Every word goes in
   through `lesson_check`.
 - Write a script, a loop or a template that fills the questions. You write each question's words
@@ -38,6 +40,37 @@ Two decisions are in force:
   `make` or an import command, and never publish to jadwigo-dev or prod: those are the owner's.
   You never deploy, send anything, or start anything that costs money.
 - Put a family member's name in anything you write for the lesson.
+
+## Selecting nearby material
+
+The owner's direction (2026-11-03, `dl-n9fr.76`): when the bank lacks an exact fit, show similar
+or nearby questions and let the composing model choose whether to use or adapt them. A search
+rank is a candidate ordering, not a guarantee that the question satisfies the request.
+
+Read the source descriptions and inspect the questions. If a narrow search returns nothing,
+retry once with broader words for the same operation or topic (for example, "dodawanie").
+Keep the original range and other requirements when deciding how to use the results. For example, "Add 1 or 10" can contain
+36 + 1; it is nearby addition practice, not addition with a sum at most 10. You may use its
+question structure as a starting point and adapt the numbers to the parent's range without
+asking the parent to choose sources. Pin chosen sets in `lesson_draft` when available.
+
+If the copied questions already fit, keep them. Otherwise use `lesson_show` and `lesson_edit`
+to adapt them, recording `change` and a `why` tied to the parent's request. Keep the source
+reference; update the data, answer key, hints, worked solution, twin and mistake-specific help
+consistently. Recompute the answer for the adapted question; do not retain the old key when
+its numbers change. Run `lesson_check` and inspect the final questions against the requested
+operation, range and count. A structurally valid lesson can still miss the topic. Read the actual `question` data on the
+draft card before choosing what to adapt; do not infer its content from `say` or its title. Changing only `say` to "dodawanie"
+does not turn a subtraction still present in `question.data` into addition. Preserve the
+family shapes when editing help: `look`/`boost` are `{text}`, `almost`/`worked` are arrays,
+and `twin` has its own `say`, `data` and `key`. A model-written twin inherits its parent
+question's family when omitted; repair the twin at `question.help.twin`, not the main family. Do not present a failed `lesson_check` as ready. Edits introducing new family-contract errors
+leave the draft unchanged; correct the path and shape named by the error, then
+retry. After repairing the draft, run `lesson_check` on the current revision.
+
+Do not silently broaden the request to harder or unrelated practice. If none of the nearby
+questions can be adapted faithfully, explain the shortage instead of treating a high search
+score as proof of a fit.
 
 ## 1. Ask what is missing
 

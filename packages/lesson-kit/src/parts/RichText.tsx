@@ -23,6 +23,7 @@ import { Fragment, type ReactNode } from "react";
 import { gapFit, rem, usePhoneCells } from "./gapFit.ts";
 import { CodeChip } from "./InlineCode.tsx";
 import { notationTex, notationText, useNotation } from "./notation.ts";
+import { plainTex } from "./plainTex.ts";
 import { renderTex, texWords } from "./richTextMacros.ts";
 import { type Block, type Inline, parseInline, parseRichText } from "./richTextParse.ts";
 import { Term } from "./Term.tsx";
@@ -41,31 +42,6 @@ export interface RichTextProps {
   /** The printed look for code chips. */
   paper?: boolean | undefined;
   className?: string | undefined;
-}
-
-/** TeX that is only numbers and signs, with the macros that name a sign: drawn as text. A letter,
- * a brace or any other macro (a variable, a colour, a fraction) leaves it to KaTeX. */
-const PLAIN_TEX =
-  /^(?:[\d \t\n.,:?!()<>=+\-−×·÷]|\{,\}|\\(?:times|cdot|div|,|;|mathbin\{:\})(?![A-Za-z]))*$/;
-const PLAIN_SIGNS: Record<string, string> = {
-  "\\times": "×",
-  "\\cdot": "·",
-  "\\div": "÷",
-  "\\mathbin{:}": ":",
-  "\\,": " ",
-  ";": " ",
-  "{,}": ",",
-};
-
-/** The text a plain TeX span reads as, or null when it needs KaTeX. */
-export function plainTex(tex: string): string | null {
-  if (!PLAIN_TEX.test(tex)) return null;
-  const text = tex
-    .replace(/[ \t\n]+/g, "")
-    .replace(/\\(?:times|cdot|div|mathbin\{:\}|,|;)|\{,\}/g, (m) => PLAIN_SIGNS[m] ?? m)
-    .replace(/-/g, "−");
-  // TeX ignores spaces: a sign between two terms takes one on each side, as in the lesson's text.
-  return text.replace(/(?<=[\d)])([=+−×·÷:<>])(?=[\d(−])/g, " $1 ");
 }
 
 function Tex({ tex: written, display }: { tex: string; display: boolean }): JSX.Element {

@@ -3,8 +3,23 @@
 // PageTitle turns off the plugin's own injection, so the menu is placed here, and Copy for Muse
 // joins it: Muse Code is a terminal agent with no URL to open, so it gets a prompt to paste.
 import Default from "@astrojs/starlight/components/PageTitle.astro";
+import type { StarlightRouteData } from "@astrojs/starlight/route-data";
 import PageActions from "starlight-llm-actions/components/PageActions.astro";
+import Status from "./Status.astro";
 import "../styles/llm-actions.css";
+
+// A feature or vision page's status badge, from its frontmatter (dl-5ssh.90.53.1). Starlight
+// gives PageTitle no props; the route sits on locals, which only Starlight's own types name, so
+// it is read through its route-data type here. The splash and the API reference have no entry of
+// the docs collection here, so the badge stays absent.
+const route = (Astro.locals as { starlightRoute?: StarlightRouteData }).starlightRoute;
+const entry = route?.entry;
+const status = entry && "status" in entry.data ? entry.data.status : undefined;
+const asOf =
+  entry && "as_of" in entry.data && entry.data.as_of
+    ? entry.data.as_of.toISOString().slice(0, 10)
+    : undefined;
+const prs = entry && "prs" in entry.data ? (entry.data.prs ?? []) : [];
 ---
 
 <div class="jw-page-title">
@@ -23,6 +38,7 @@ import "../styles/llm-actions.css";
     </svg>
   </button>
 </div>
+{status && <Status status={status} asOf={asOf} prs={prs} />}
 
 <style>
   .jw-page-title {

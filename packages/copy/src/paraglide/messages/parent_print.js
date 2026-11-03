@@ -20,5 +20,5 @@ export const parent_print = /** @type {((inputs?: Parent_PrintInputs, options?: 
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Print")
-	return /** @type {LocalizedString} */ ("Wydrukuj")
+	return /** @type {LocalizedString} */ ("Drukuj")
 });

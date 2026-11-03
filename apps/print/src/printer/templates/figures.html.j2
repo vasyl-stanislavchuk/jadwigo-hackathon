@@ -1,0 +1,197 @@
+{#- The figures, drawn as SVG in millimetres from geometry.py: every viewBox unit is 1 mm, so a
+    printer's "fit to page" scales the drawing and its numbers together. -#}
+{% set g = geom %}
+{% set FS = g.FIGURE_PT / g.PT_PER_MM %}
+{% set SW = g.STROKE_MM %}
+
+{% macro figure(f, text) %}
+<div class="figure">
+{% if f.kind == "expression" %}{{ text.rich(f.text) }}
+{% elif f.kind == "number_line" %}{{ number_line(f.min, f.max, f.step, f.labelled, f.marker) }}
+{% elif f.kind == "dots" %}{{ dots(f.rows, f.cols) }}
+{% elif f.kind == "groups" %}{{ groups(f.groups, f.each, f.icon) }}
+{% elif f.kind == "ruler" %}{{ ruler(f, text) }}
+{% elif f.kind == "clock" %}{{ clock(g.CLOCK_READ_MM, f.h, f.m, f.numbers != "none") }}
+{% elif f.kind == "coins" %}{{ coins(f.items) }}
+{% elif f.kind == "fraction_bars" %}{% for it in f.items %}{{ fraction_shape(f.shape, it.d, it.n) }} {% endfor %}
+{% endif %}
+</div>
+{%- endmacro %}
+
+{#- A number line the whole content width, ticks at each step, the labelled values written under
+    their ticks, and a marker above the value to read (when there is one). -#}
+{% macro number_line(lo, hi, step, labelled, marker=none, width=g.CONTENT_W_MM - 2 * g.CARD_PAD_MM - 4) %}
+{% set pad = g.LINE_PAD_MM %}
+{% set span = hi - lo %}
+{% set count = ((span / step)|round(0, "floor")|int) if step > 0 else 1 %}
+{% set w = [width, count * g.LINE_TICK_MIN_MM + 2 * pad]|max %}
+{% set inner = w - 2 * pad %}
+{% set y = g.LINE_H_MM / 2 %}
+<svg width="{{ w|mm }}" height="{{ (g.LINE_H_MM + FS)|mm }}" viewBox="0 0 {{ w }} {{ g.LINE_H_MM + FS }}" xmlns="http://www.w3.org/2000/svg">
+  <path d="M{{ pad - 3 }} {{ y }}H{{ w - pad + 3 }}" stroke="#000" stroke-width="{{ SW * 1.5 }}"/>
+  <path d="M{{ w - pad + 1 }} {{ y - 1.6 }}l2.2 1.6-2.2 1.6M{{ pad - 1 }} {{ y - 1.6 }}l-2.2 1.6 2.2 1.6" fill="none" stroke="#000" stroke-width="{{ SW * 1.5 }}"/>
+  {% for i in range(count + 1) %}
+  {% set x = pad + inner * i / count %}
+  <path d="M{{ x }} {{ y - 2.5 }}V{{ y + 2.5 }}" stroke="#000" stroke-width="{{ SW }}"/>
+  {% endfor %}
+  {% for v in labelled %}
+  {% set x = pad + inner * (v - lo) / span %}
+  <path d="M{{ x }} {{ y - 3.5 }}V{{ y + 3.5 }}" stroke="#000" stroke-width="{{ SW * 1.5 }}"/>
+  <text x="{{ x }}" y="{{ y + 3.5 + FS }}" font-size="{{ FS }}" text-anchor="middle">{{ v|num }}</text>
+  {% endfor %}
+  {% if marker is not none %}
+  {% set x = pad + inner * (marker - lo) / span %}
+  <path d="M{{ x }} {{ y - 2 }}l-2.2 -4h4.4z" fill="#000"/>
+  {% endif %}
+</svg>
+{%- endmacro %}
+
+{% macro dots(rows, cols) %}
+{% set p = g.DOT_PITCH_MM %}
+<svg width="{{ (cols * p)|mm }}" height="{{ (rows * p)|mm }}" viewBox="0 0 {{ cols * p }} {{ rows * p }}" xmlns="http://www.w3.org/2000/svg">
+{% for r in range(rows) %}{% for c in range(cols) %}<circle cx="{{ (c + 0.5) * p }}" cy="{{ (r + 0.5) * p }}" r="{{ g.DOT_MM / 2 }}"/>{% endfor %}{% endfor %}
+</svg>
+{%- endmacro %}
+
+{#- Groups of the same small drawing, each group in its own ring. -#}
+{% macro groups(n, each, icon) %}
+{% set p = g.DOT_PITCH_MM %}
+{% set per_row = [each, 5]|min %}
+{% set rows = ((each + per_row - 1) // per_row) %}
+{% set gw = per_row * p + 4 %}
+{% set gh = rows * p + 4 %}
+<svg width="{{ (n * (gw + 3))|mm }}" height="{{ gh|mm }}" viewBox="0 0 {{ n * (gw + 3) }} {{ gh }}" xmlns="http://www.w3.org/2000/svg">
+{% for k in range(n) %}
+  {% set ox = k * (gw + 3) %}
+  <rect x="{{ ox + SW }}" y="{{ SW }}" width="{{ gw - 2 * SW }}" height="{{ gh - 2 * SW }}" rx="3" fill="none" stroke="#000" stroke-width="{{ SW }}"/>
+  {% for i in range(each) %}
+  {{ glyph(icon, ox + 2 + (i % per_row + 0.5) * p, 2 + (i // per_row + 0.5) * p, p * 0.4) }}
+  {% endfor %}
+{% endfor %}
+</svg>
+{%- endmacro %}
+
+{#- A small line drawing of one of the figure icons, centred on (x, y), radius r. -#}
+{% macro glyph(icon, x, y, r) %}
+{% if icon == "star" %}<path transform="translate({{ x }} {{ y }}) scale({{ r / 10 }})" d="M0-10l2.9 6 6.6.9-4.8 4.6 1.2 6.5L0 4.9l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z" fill="none" stroke="#000" stroke-width="{{ SW * 10 / r }}"/>
+{% elif icon == "heart" %}<path transform="translate({{ x }} {{ y }}) scale({{ r / 10 }})" d="M0 9C-14 0-9-12 0-5c9-7 14 5 0 14z" fill="none" stroke="#000" stroke-width="{{ SW * 10 / r }}"/>
+{% elif icon == "fish" %}<path transform="translate({{ x }} {{ y }}) scale({{ r / 10 }})" d="M-9 0c4-7 12-7 15 0-3 7-11 7-15 0zM6 0l5-5v10z" fill="none" stroke="#000" stroke-width="{{ SW * 10 / r }}"/>
+{% elif icon == "flower" %}<g fill="none" stroke="#000" stroke-width="{{ SW }}">{% for a in [0, 72, 144, 216, 288] %}<circle cx="{{ x }}" cy="{{ y - r * 0.55 }}" r="{{ r * 0.4 }}" transform="rotate({{ a }} {{ x }} {{ y }})"/>{% endfor %}<circle cx="{{ x }}" cy="{{ y }}" r="{{ r * 0.25 }}" fill="#000"/></g>
+{% elif icon == "cherry" %}<g fill="none" stroke="#000" stroke-width="{{ SW }}"><circle cx="{{ x - r * 0.45 }}" cy="{{ y + r * 0.4 }}" r="{{ r * 0.45 }}"/><circle cx="{{ x + r * 0.45 }}" cy="{{ y + r * 0.4 }}" r="{{ r * 0.45 }}"/><path d="M{{ x - r * 0.45 }} {{ y }}Q{{ x }} {{ y - r }} {{ x + r * 0.3 }} {{ y - r }}M{{ x + r * 0.45 }} {{ y }}L{{ x + r * 0.3 }} {{ y - r }}"/></g>
+{% else %}<g fill="none" stroke="#000" stroke-width="{{ SW }}"><circle cx="{{ x }}" cy="{{ y + r * 0.1 }}" r="{{ r * 0.85 }}"/><path d="M{{ x }} {{ y - r * 0.7 }}v{{ -r * 0.4 }}"/></g>
+{% endif %}
+{%- endmacro %}
+
+{#- An analogue clock `size` mm across: 12 numbers, 60 minute ticks, the centre dot, and the hands
+    when a time is given (a blank face for clock_set). -#}
+{% macro clock(size, h=none, m=none, numbers=true) %}
+{% set c = size / 2 %}
+{% set R = c - SW %}
+<svg width="{{ size|mm }}" height="{{ size|mm }}" viewBox="0 0 {{ size }} {{ size }}" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="{{ c }}" cy="{{ c }}" r="{{ R }}" fill="#fff" stroke="#000" stroke-width="{{ SW * 2 }}"/>
+  {% for i in range(60) %}
+  {% set long = i % 5 == 0 %}
+  <path d="M{{ c }} {{ c - R + SW }}v{{ (2.6 if long else 1.2) * size / 40 }}" stroke="#000" stroke-width="{{ SW * (1.6 if long else 0.8) }}" transform="rotate({{ i * 6 }} {{ c }} {{ c }})"/>
+  {% endfor %}
+  {% if numbers %}
+  {% set fs = FS * size / 50 %}
+  {% for i in range(1, 13) %}
+  {% set a = i * 30 %}
+  <text x="{{ c + (R - fs * 1.1) * sin_deg(a) }}" y="{{ c - (R - fs * 1.1) * cos_deg(a) + fs * 0.36 }}" font-size="{{ fs }}" text-anchor="middle">{{ i }}</text>
+  {% endfor %}
+  {% endif %}
+  {% if h is not none %}
+  {% set ha = ((h % 12) + m / 60) * 30 %}
+  <path d="M{{ c }} {{ c }}v{{ -R * 0.5 }}" stroke="#000" stroke-width="{{ SW * 4 }}" stroke-linecap="round" transform="rotate({{ ha }} {{ c }} {{ c }})"/>
+  <path d="M{{ c }} {{ c }}v{{ -R * 0.78 }}" stroke="#000" stroke-width="{{ SW * 2.5 }}" stroke-linecap="round" transform="rotate({{ m * 6 }} {{ c }} {{ c }})"/>
+  {% endif %}
+  <circle cx="{{ c }}" cy="{{ c }}" r="{{ size / 40 }}"/>
+</svg>
+{%- endmacro %}
+
+{#- Coins as plain ink discs, a bigger value drawn a little bigger, with their value written in;
+    notes as rectangles. They read like money and print in black and white. -#}
+{% set DENOMS = {"gr1": ["1", "gr", 0], "gr2": ["2", "gr", 1], "gr5": ["5", "gr", 2], "gr10": ["10", "gr", 3], "gr20": ["20", "gr", 4], "gr50": ["50", "gr", 5], "zl1": ["1", "zł", 6], "zl2": ["2", "zł", 7], "zl5": ["5", "zł", 8], "zl10": ["10", "zł", 20], "zl20": ["20", "zł", 20], "zl50": ["50", "zł", 20], "zl100": ["100", "zł", 20], "zl200": ["200", "zł", 20]} %}
+{% macro coin(d) %}
+{% set value, unit, rank = DENOMS[d] %}
+{% if rank >= 20 %}
+{% set w, h = g.NOTE_W_MM, g.NOTE_H_MM %}
+<svg width="{{ w|mm }}" height="{{ h|mm }}" viewBox="0 0 {{ w }} {{ h }}" xmlns="http://www.w3.org/2000/svg">
+  <rect x="{{ SW }}" y="{{ SW }}" width="{{ w - 2 * SW }}" height="{{ h - 2 * SW }}" rx="1.5" fill="#fff" stroke="#000" stroke-width="{{ SW * 2 }}"/>
+  <text x="{{ w / 2 }}" y="{{ h / 2 + FS * 0.35 }}" font-size="{{ FS }}" font-weight="700" text-anchor="middle">{{ value }} {{ unit }}</text>
+</svg>
+{% else %}
+{% set dia = g.COIN_MIN_MM + rank * g.COIN_STEP_MM %}
+{% set fs = FS * (0.62 if value|length > 1 else 0.72) %}
+<svg width="{{ dia|mm }}" height="{{ dia|mm }}" viewBox="0 0 {{ dia }} {{ dia }}" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="{{ dia / 2 }}" cy="{{ dia / 2 }}" r="{{ dia / 2 - SW }}" fill="#fff" stroke="#000" stroke-width="{{ SW * 2 }}"/>
+  {% if unit == "zł" %}<circle cx="{{ dia / 2 }}" cy="{{ dia / 2 }}" r="{{ dia / 2 - 1.2 }}" fill="none" stroke="#000" stroke-width="{{ SW }}"/>{% endif %}
+  <text x="{{ dia / 2 }}" y="{{ dia / 2 - 0.2 }}" font-size="{{ fs }}" font-weight="700" text-anchor="middle">{{ value }}</text>
+  <text x="{{ dia / 2 }}" y="{{ dia / 2 + fs * 0.85 }}" font-size="{{ fs * 0.7 }}" text-anchor="middle">{{ unit }}</text>
+</svg>
+{% endif %}
+{%- endmacro %}
+
+{% macro coins(items) %}
+<span class="coins">{% for d in items %}{{ coin(d) }} {% endfor %}</span>
+{%- endmacro %}
+
+{#- A shape split into `parts` outlined parts, `shaded` of them filled (a figure to read), or none
+    (fraction_shade, for the child to colour). -#}
+{% macro fraction_shape(shape, parts, shaded=0, rows=1) %}
+{% if shape == "circle" %}
+{% set d = g.FRACTION_CIRCLE_MM %}{% set c = d / 2 %}{% set R = c - SW %}
+<svg width="{{ d|mm }}" height="{{ d|mm }}" viewBox="0 0 {{ d }} {{ d }}" xmlns="http://www.w3.org/2000/svg">
+  {% for i in range(parts) %}
+  {% set a0 = i * 360 / parts %}{% set a1 = (i + 1) * 360 / parts %}
+  <path d="M{{ c }} {{ c }}L{{ c + R * sin_deg(a0) }} {{ c - R * cos_deg(a0) }}A{{ R }} {{ R }} 0 {{ 1 if (a1 - a0) > 180 else 0 }} 1 {{ c + R * sin_deg(a1) }} {{ c - R * cos_deg(a1) }}Z"
+        fill="{{ g.FILL if i < shaded else '#fff' }}" stroke="#000" stroke-width="{{ SW * 1.5 }}"/>
+  {% endfor %}
+</svg>
+{% else %}
+{% set cols = (parts // rows) if rows > 1 else parts %}
+{% set w = g.FRACTION_W_MM %}{% set h = g.FRACTION_H_MM * rows %}
+{% set cw = w / cols %}{% set ch = h / rows %}
+<svg width="{{ w|mm }}" height="{{ h|mm }}" viewBox="0 0 {{ w }} {{ h }}" xmlns="http://www.w3.org/2000/svg">
+  {% for i in range(parts) %}
+  <rect x="{{ (i % cols) * cw + SW }}" y="{{ (i // cols) * ch + SW }}" width="{{ cw - 2 * SW }}" height="{{ ch - 2 * SW }}"
+        fill="{{ g.FILL if i < shaded else '#fff' }}" stroke="#000" stroke-width="{{ SW * 1.5 }}"/>
+  {% endfor %}
+</svg>
+{% endif %}
+{%- endmacro %}
+
+{#- A dot grid `size` by `size` at the grid pitch: the child colours or joins the dots. -#}
+{% macro dot_grid(size, cells="dots") %}
+{% set p = g.GRID_PITCH_MM %}{% set w = size * p %}
+<svg width="{{ w|mm }}" height="{{ w|mm }}" viewBox="0 0 {{ w }} {{ w }}" xmlns="http://www.w3.org/2000/svg">
+{% if cells == "squares" %}
+  {% for i in range(size + 1) %}<path d="M{{ i * p }} 0V{{ w }}M0 {{ i * p }}H{{ w }}" stroke="{{ g.GREY }}" stroke-width="{{ SW * 0.6 }}"/>{% endfor %}
+{% else %}
+  {% for r in range(size) %}{% for c in range(size) %}<circle cx="{{ (c + 0.5) * p }}" cy="{{ (r + 0.5) * p }}" r="{{ g.GRID_DOT_MM / 2 }}"/>{% endfor %}{% endfor %}
+{% endif %}
+</svg>
+{%- endmacro %}
+
+{#- An object over a ruler, both drawn to the figure's own scale: one unit is `unit_mm` on paper,
+    and the picture is drawn at pixels_per_unit to match, so "fit to page" changes nothing. -#}
+{% macro ruler(f, text) %}
+{% set ticks = (f.ticks or f.length)|int %}
+{% set avail = g.CONTENT_W_MM - 2 * g.CARD_PAD_MM - 10 %}
+{% set unit_mm = [avail / (ticks + 1), g.LINE_TICK_MIN_MM * 1.5]|min %}
+{% set img_w = f.picture.width / f.pixels_per_unit * unit_mm %}
+{% set w = (ticks + 1) * unit_mm %}
+{% set start = f.start or 0 %}
+<div style="width: {{ w|mm }}; margin: 0 auto; text-align: left">
+  {% if text.src(f.picture.src) %}<img src="{{ text.src(f.picture.src) }}" alt="{{ f.picture.alt }}" style="width: {{ img_w|mm }}; margin-left: {{ (unit_mm / 2 + start * unit_mm)|mm }}">{% endif %}
+  <svg width="{{ w|mm }}" height="{{ g.RULER_H_MM|mm }}" viewBox="0 0 {{ w }} {{ g.RULER_H_MM }}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="{{ SW }}" y="{{ SW }}" width="{{ w - 2 * SW }}" height="{{ g.RULER_H_MM - 2 * SW }}" fill="#fff" stroke="#000" stroke-width="{{ SW * 1.5 }}"/>
+    {% for i in range(ticks + 1) %}
+    {% set x = unit_mm / 2 + i * unit_mm %}
+    <path d="M{{ x }} {{ SW }}v4" stroke="#000" stroke-width="{{ SW * 1.5 }}"/>
+    {% if i < ticks %}<path d="M{{ x + unit_mm / 2 }} {{ SW }}v2.2" stroke="#000" stroke-width="{{ SW }}"/>{% endif %}
+    <text x="{{ x }}" y="{{ 4 + FS * 0.8 }}" font-size="{{ FS * 0.7 }}" text-anchor="middle">{{ i }}</text>
+    {% endfor %}
+  </svg>
+</div>
+{%- endmacro %}

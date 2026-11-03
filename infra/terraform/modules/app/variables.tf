@@ -90,6 +90,18 @@ variable "content_bucket_param_arn" {
   description = "The SSM parameter the api reads the content bucket's name from (dl-n9fr.51)"
 }
 
+variable "media_url" {
+  description = "Where lesson pictures are served from (the root's module.content.media_url), as apps/web's VITE_MEDIA_URL. The print route resolves a sheet's pictures against it (dl-1eieq.8.4); blank gives the api no MEDIA_URL"
+  type        = string
+  default     = ""
+}
+
+variable "print_function_arn" {
+  description = "The print Lambda (the root's module.print.function_arn, dl-1eieq.8.3). The print route invokes it with InvocationType Event (decision dl-o05aa); blank gives the api no invoke grant, no PRINT_FUNCTION and no prints/ grant"
+  type        = string
+  default     = ""
+}
+
 variable "runner_alias_arn" {
   description = "The step host's live alias ARN (the root's module.runner.live_alias_arn, dl-z5ja.20). The api pokes it after a message's unit commits (dl-z5ja.88); blank gives the api no invoke grant and no poke"
   type        = string

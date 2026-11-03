@@ -6,7 +6,7 @@ description = "The attachments converter Lambda: a parent's PDF, DOCX or HEIC be
 requires-python = ">=3.12"
 dependencies = [
   "pillow==13.0.0", # every page's re-encode to a metadata-free JPEG (src/converter/encode.py)
-  "boto3==1.43.118", # the S3 get and puts in the uploads bucket (src/converter/handler.py)
+  "boto3==1.43.119", # the S3 get and puts in the uploads bucket (src/converter/handler.py)
 ]
 
 [dependency-groups]

@@ -1,6 +1,9 @@
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { GetObjectCommand } from "@aws-sdk/client-s3";
 import { describe, expect, it } from "vitest";
-import { type GetObjectClient, s3Attachments } from "./attachments.ts";
+import { fsAttachments, type GetObjectClient, s3Attachments } from "./attachments.ts";
 
 const PATH = "pods/pod_made_up/attachments/atch_1.jpg";
 const BYTES = new TextEncoder().encode("synthetic worksheet");
@@ -57,5 +60,22 @@ describe("the runner's photo reader (dl-z5ja.11.4)", () => {
       fake(() => Promise.reject(new Error("down"))).client,
     );
     await expect(down.read(PATH)).rejects.toThrow("down");
+  });
+});
+
+describe("the dev step host's photo reader (dl-z5ja.11.19)", () => {
+  it("reads a photo from the folder, undefined when none, and refuses a path out of it", async () => {
+    const root = await mkdtemp(join(tmpdir(), "dev-photos-"));
+    try {
+      await mkdir(join(root, "pods/pod_made_up/attachments"), { recursive: true });
+      await writeFile(join(root, PATH), BYTES);
+      const reader = fsAttachments(root);
+      expect(await reader.read(PATH)).toEqual(BYTES);
+      expect(await reader.read("pods/pod_made_up/attachments/atch_2.jpg")).toBeUndefined();
+      await expect(reader.read("../outside.jpg")).rejects.toThrow(/under the folder/);
+      await expect(reader.read("/etc/hosts")).rejects.toThrow(/under the folder/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 });
