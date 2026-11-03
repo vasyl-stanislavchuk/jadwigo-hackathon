@@ -38,3 +38,18 @@ data "aws_iam_policy_document" "uploads" {
     }
   }
 }
+
+# A lesson's printed sheet (dl-1eieq.8.3, decision dl-o05aa): the print route puts the sheet at
+# pods/<pod>/prints/<id>.json, then finds <id>.pdf or <id>.error.json beside it and presigns the PDF.
+# Every put is tagged kind=print, which the bucket expires (modules/uploads). Only with both the
+# bucket and the print Lambda named; no Delete, no List.
+data "aws_iam_policy_document" "prints" {
+  dynamic "statement" {
+    for_each = var.uploads_bucket_name == "" || var.print_function_arn == "" ? [] : [var.uploads_bucket_name]
+    content {
+      sid       = "PutsAndGetsPrints"
+      actions   = ["s3:PutObject", "s3:PutObjectTagging", "s3:GetObject"]
+      resources = ["arn:aws:s3:::${statement.value}/pods/*/prints/*"]
+    }
+  }
+}
