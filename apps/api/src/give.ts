@@ -202,7 +202,9 @@ export async function publishLesson(
   const assignment = await store.putAssignment(pod, {
     id: featuredAssignmentId(named, pod),
     lesson_id: lesson.id,
-    audience: "learners",
+    // Anyone holding the link may play: a named child confirms, anyone else types a name or none
+    // (decision 2026-11-03-a-play-link-opens-on-a-first-screen-title-and-question-count-the).
+    audience: "anyone",
     identity: "pick",
   });
   return { assignment, lesson_version };

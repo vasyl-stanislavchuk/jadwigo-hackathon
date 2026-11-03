@@ -225,10 +225,13 @@ export const AttemptSnapshot = z.object({
 });
 export type AttemptSnapshot = z.infer<typeof AttemptSnapshot>;
 
+/** The longest name a player may type on a play link's first screen. */
+const PLAYER_NAME_CHARS = 40;
+
 /** `POST /api/v1/assignments/{id}/attempts`. */
 export const AttemptStart = z.strictObject({
   learner_id: LearnerId.nullable().optional(),
-  player_name: z.string().min(1).nullable().optional(),
+  player_name: z.string().trim().min(1).max(PLAYER_NAME_CHARS).nullable().optional(),
   mode: z.enum(["real", "preview"]).optional(),
 });
 export type AttemptStart = z.infer<typeof AttemptStart>;
@@ -674,6 +677,7 @@ export const LIMITS = {
   attemptsPerAssignment: 100,
   bodyBytes: 16_384,
   enteredChars: 200,
+  playerNameChars: PLAYER_NAME_CHARS,
   /** The reports one learner's list returns (`getLearnerReports`), newest first. */
   reportsPerLearner: 50,
   /**
@@ -914,6 +918,24 @@ export const FeaturedLesson = z.object({
   first_say: z.string().min(1).nullable(),
 });
 export type FeaturedLesson = z.infer<typeof FeaturedLesson>;
+
+/**
+ * `GET /api/v1/assignments/{id}`: what a play link's first screen says before any attempt
+ * exists (decision 2026-11-03-a-play-link-opens-on-a-first-screen-title-and-question-count-the).
+ */
+export const AssignmentIntro = z.object({
+  title: z.string().min(1),
+  language: Language,
+  /** The planned questions the child will answer; 0 when none is published. */
+  question_count: z.int().min(0),
+  /** How players say who they are; `none` opens straight into the lesson. */
+  identity: Assignment.shape.identity,
+  /** Whether someone with no learner may start it, so the page may offer a name. */
+  open: z.boolean(),
+  /** The first name of the learner the link names, or null when it names none of this pod's. */
+  first_name: z.string().min(1).nullable(),
+});
+export type AssignmentIntro = z.infer<typeof AssignmentIntro>;
 
 /** `GET /api/v1/featured-lessons`: the featured pod's open `anyone` assignments, oldest first. */
 export const Featured = z.object({ lessons: z.array(FeaturedLesson) });
