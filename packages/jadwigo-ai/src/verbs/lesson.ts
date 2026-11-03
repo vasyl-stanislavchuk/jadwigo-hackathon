@@ -436,9 +436,14 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
       .filter((finding) => finding.level === "error")
       .map((finding) => JSON.stringify([finding.path, finding.rule, finding.text])),
   );
+  // compile skips a twin while its question fails, so fixing the question can bring out a twin's
+  // old problem. A patch that leaves the twin alone did not introduce that: it answers as a finding
+  // for the model to read, and lesson_check still stands in the way of publishing (dl-hin8.34).
+  const twinStep = helpPatch["twin"] === undefined ? `${step_id}t` : null;
   const introduced = findings.filter(
     (finding) =>
       finding.level === "error" &&
+      finding.step_id !== twinStep &&
       (finding.rule === "contract" || finding.rule === "question-type-family") &&
       !before.has(JSON.stringify([finding.path, finding.rule, finding.text])),
   );
