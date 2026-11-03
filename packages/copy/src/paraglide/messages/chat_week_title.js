@@ -19,5 +19,5 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_week_title = /** @type {((inputs: Chat_Week_TitleInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Week_TitleInputs, { locale?: "pl" | "en" }, {}>} */ ((i, options = {}) => {
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ (`${i?.name}'s week`)
-	return /** @type {LocalizedString} */ (`Tydzień ${i?.name}`)
+	return /** @type {LocalizedString} */ (`Tydzień: ${i?.name}`)
 });
