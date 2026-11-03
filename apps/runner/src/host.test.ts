@@ -58,7 +58,7 @@ async function setup(muse: EngineDeps["muse"] = new ProbeMuse()) {
   const warnings: string[] = [];
   const deps = (more: Partial<HostDeps> = {}): HostDeps => ({
     engine,
-    max_steps: 20,
+    max_drain_ms: 240_000,
     warn: (line) => warnings.push(line),
     ...more,
   });
@@ -134,13 +134,32 @@ describe("the step host", () => {
     expect(tries).toBe(2);
   });
 
-  it("stops at max_steps and leaves the rest queued for the next invoke", async () => {
-    const t = await setup();
+  it("stops starting steps at its time limit and leaves the rest queued for the next invoke", async () => {
+    const meter = fakeMeter();
+    // Each model call takes a minute on the clock, past the 30 s limit.
+    class SlowMuse extends ProbeMuse {
+      override respond(request: Parameters<ProbeMuse["respond"]>[0]) {
+        meter.spend(60_000, 0);
+        return super.respond(request);
+      }
+    }
+    const t = await setup(new SlowMuse());
     await t.say("one");
-    const host = createHost(() => Promise.resolve(t.deps({ max_steps: 1 })), fakeMeter());
+    const host = createHost(() => Promise.resolve(t.deps({ max_drain_ms: 30_000 })), meter);
 
     expect((await host()).outcomes).toEqual(["continue"]);
     expect((await host()).outcomes).toEqual(["turn_complete"]);
+  });
+
+  it("under its time limit, runs on past 20 steps in one invoke", async () => {
+    const read = { tool_calls: [{ verb: "lesson_show" as const, input: {} }], cost_usd: 0 };
+    const reads = Array.from({ length: 25 }, () => read);
+    const t = await setup(new ScriptedMuse([...reads, { text: "Gotowe.", cost_usd: 0 }]));
+    await t.say("one");
+    const report = await createHost(() => Promise.resolve(t.deps()), fakeMeter())();
+
+    expect(report.steps).toBe(26);
+    expect(report.outcomes.at(-1)).toBe("turn_complete");
   });
 
   it("names the runs it worked and counts the calls verbs refused, without their words", async () => {
