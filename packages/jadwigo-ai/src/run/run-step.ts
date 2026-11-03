@@ -1854,10 +1854,16 @@ export async function drain(
         (await failRun(deps, queued.message.run_id).catch(() => false))
       ) {
         await deps.queue.archive(queued.msg_id);
-      } else if (queued.read_ct < MAX_READS && options.retry !== undefined) {
+      } else if (
+        queued.read_ct < MAX_READS &&
+        options.retry !== undefined &&
+        options.keep_going?.() !== false
+      ) {
         // This host is free and the step has reads left: no one else need wake for it. A fault in
-        // moving it only leaves the step on its visibility, as before.
+        // moving it only leaves the step on its visibility, as before. The beats stop first: one
+        // during the wait would hide the step again for a whole visibility.
         const after_s = options.retry.after_s[queued.read_ct - 1] ?? 0;
+        stop();
         try {
           await deps.queue.extend?.(queued.msg_id, after_s);
           await options.retry.sleep(after_s * 1000);
