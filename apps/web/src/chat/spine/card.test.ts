@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { cardStateOf, cardStatesOf, RULE_WORDS } from "./card.ts";
 import { plainPrompt } from "./lessonFile.ts";
 import { checkOf } from "./lines.ts";
-import { complete } from "./logs.test-helpers.ts";
+import { append, complete } from "./logs.test-helpers.ts";
 
 const parsed = (name: string): RunEvent[] => {
   const log = RUN_LOGS.find((l) => l.name === name);
@@ -237,5 +237,49 @@ describe("a finding in plain words by its rule (dl-uukj.47.71.31)", () => {
     // The unknown rule's finding sits at s02's place, as the real empty-rung finding on s02 does.
     const s02 = findings.find((f) => f.words.copyKey === "chat_finding_empty_rung")?.step;
     expect(findings.find((f) => f.words.copyKey === "chat_check_level_warning")?.step).toBe(s02);
+  });
+});
+
+describe("a lesson the engine checked by itself (dl-uukj.47.71.48)", () => {
+  const checked = (publishable: boolean) =>
+    [
+      {
+        type: "tool_call",
+        payload: { call_id: "made-up-steer", verb: "lesson_check", input: {} },
+      },
+      {
+        type: "tool_result",
+        payload: {
+          call_id: "made-up-steer",
+          verb: "lesson_check",
+          output: { publishable, findings: [] },
+          error: null,
+        },
+      },
+    ] as const;
+
+  /** A finished turn with its lesson, and the parent's edit of it as a turn of its own. */
+  function editedTurns(publishable: boolean) {
+    const first = complete(upTo("happy-turn"));
+    const latest = first.findLast((e) => e.type === "lesson_revision");
+    if (latest?.type !== "lesson_revision") throw new Error("no revision");
+    // As the engine writes it: the check, then the revision it stands for, under the steer's id.
+    const edit = append([], ...checked(publishable), {
+      type: "lesson_revision",
+      payload: {
+        revision: latest.payload.revision + 1,
+        call_id: "made-up-steer",
+        lesson_file: latest.payload.lesson_file,
+      },
+    });
+    return cardStatesOf([first, complete(edit)]);
+  }
+
+  it("shows the parent's edit as ready when its check passed", () => {
+    expect(editedTurns(true).map((c) => c?.kind)).toEqual(["superseded", "ready"]);
+  });
+
+  it("shows it as needing a fix when its check did not pass", () => {
+    expect(editedTurns(false).map((c) => c?.kind)).toEqual(["superseded", "fix"]);
   });
 });
