@@ -4,7 +4,7 @@
  * kinds of question it holds. The runner never calls it. `apiBank` (bank-api.ts) is the real bank;
  * `fixtureBank` is the dev page's and the tests'.
  */
-import { familyOf, PROPOSED_SKILL_MARK, QuestionType } from "@jadwigo/contracts";
+import { type Credit, familyOf, PROPOSED_SKILL_MARK, QuestionType } from "@jadwigo/contracts";
 
 export type BankLanguage = "pl" | "uk" | "en";
 
@@ -78,6 +78,8 @@ interface BankQuestion {
   skill_ids: readonly string[];
   say: string;
   question: { family: string; data: unknown; key: unknown; help: Record<string, unknown> };
+  /** Who made it and on what terms, as the lesson file's step keeps it: a Khan or Alfik item's. */
+  credit?: Credit;
 }
 
 export interface BankPort {
