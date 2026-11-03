@@ -1897,6 +1897,25 @@ describe("a parent's patch (dl-z5ja.76)", () => {
       expect(order.lastIndexOf("tool_result")).toBeLessThan(order.lastIndexOf("turn_complete"));
     });
 
+    it("is checked when the model's own check was refused", async () => {
+      const t = await setup(
+        [
+          { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
+          { calls: [{ verb: "lesson_check", input: { draft_id: "not-this-run", names: [] } }] },
+          { text: "Gotowe." },
+        ],
+        real(),
+      );
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      const results = (await t.log(run)).flatMap((e) =>
+        e.type === "tool_result" && e.payload.verb === "lesson_check"
+          ? [e.payload.error?.type ?? "ok"]
+          : [],
+      );
+      expect(results).toEqual(["unknown-draft", "ok"]);
+    });
+
     it("is not checked twice when the model already checked it", async () => {
       const t = await setup([drafting(), { text: "Gotowe." }], real());
       const run = await t.say("Adding within 20, grade 1.");
