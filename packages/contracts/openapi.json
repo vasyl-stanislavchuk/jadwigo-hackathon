@@ -122,6 +122,54 @@
         }
       }
     },
+    "/api/v1/assignments/{id}": {
+      "get": {
+        "operationId": "getAssignmentIntro",
+        "summary": "Reads what a play link's first screen says, before any attempt exists.",
+        "description": "No sign-in: holding the link is the access. It names a learner's first name only when the link's `learner_id` is in the assignment's pod.",
+        "tags": [
+          "attempts"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/AssignmentId"
+            }
+          },
+          {
+            "name": "learner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^lrn_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignmentIntro"
+                }
+              }
+            }
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/assignments/{id}/attempts": {
       "post": {
         "operationId": "startAttempt",
@@ -1479,6 +1527,60 @@
             "$ref": "#/components/responses/Error"
           }
         }
+      },
+      "patch": {
+        "operationId": "renameLesson",
+        "summary": "Renames the conversation's latest lesson, which stays ready to give.",
+        "description": "The new title goes through the lesson's check, so a harsh word is 409 `LessonNotPublishable` and nothing changes. While a turn is working on the lesson it is 409 `AnswerConflict`. A link already given keeps its title.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ConversationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LessonRename"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonRenamed"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
       }
     },
     "/api/v1/conversations/{id}/prints": {
@@ -2467,6 +2569,54 @@
         "type": "string",
         "pattern": "^asg_[0-7][0-9a-hjkmnp-tv-z]{25}$"
       },
+      "AssignmentIntro": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "language": {
+            "$ref": "#/components/schemas/Language"
+          },
+          "question_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "identity": {
+            "type": "string",
+            "enum": [
+              "pick",
+              "type",
+              "none"
+            ]
+          },
+          "open": {
+            "type": "boolean"
+          },
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "title",
+          "language",
+          "question_count",
+          "identity",
+          "open",
+          "first_name"
+        ],
+        "additionalProperties": false
+      },
       "Attachment": {
         "type": "object",
         "properties": {
@@ -3317,7 +3467,8 @@
             "anyOf": [
               {
                 "type": "string",
-                "minLength": 1
+                "minLength": 1,
+                "maxLength": 40
               },
               {
                 "type": "null"
@@ -7098,6 +7249,34 @@
       "LessonQuestionId": {
         "type": "string",
         "pattern": "^lq_[0-7][0-9a-hjkmnp-tv-z]{25}$"
+      },
+      "LessonRename": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "additionalProperties": false
+      },
+      "LessonRenamed": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "additionalProperties": false
       },
       "LessonRevisionEvent": {
         "type": "object",

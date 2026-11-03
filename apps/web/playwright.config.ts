@@ -31,11 +31,11 @@ const laptop = { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 
  * social-sign-in.spec.ts (dl-e8ov.2.51); and a lesson given to one child, play-learner.spec.ts
  * (dl-1u6fn.13). */
 const API =
-  /(play|play-learner|play-given|no-jump|parent|review|parent-review|parent-overview|parent-shell|child-page|social-sign-in)\.spec\.ts$/;
+  /(play|play-learner|play-given|play-share|no-jump|parent|review|parent-review|parent-overview|parent-shell|child-page|social-sign-in)\.spec\.ts$/;
 const phone = { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } };
 /** The specs that need the builder's dev server: only the "builder" project runs them. The chat
  * page's engine (dev/engine-plugin.ts, dl-z5ja.17) runs only while `vite` serves, as the builder's does. */
-const BUILDER = /(lesson-builder|chat)\.spec\.ts$/;
+const BUILDER = /(lesson-builder|chat|chat-spine)\.spec\.ts$/;
 /** The builder's dev server, beside the preview one, on a port of its own. */
 const builder = builderPort();
 const drafts = join(tmpdir(), `jw-e2e-drafts-${builder}`);

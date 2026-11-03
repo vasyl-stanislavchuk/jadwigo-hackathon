@@ -44,6 +44,7 @@ export {
   authorizeRun,
   drain,
   type EngineDeps,
+  type EngineRefusal,
   type EngineWarning,
   type FailedStep,
   type InboxEntry,

@@ -171,7 +171,7 @@ export function lessonSuite(
         `https://app.jadwigo.test/parent/assignments/${assignment_id}`,
       );
       const assignment = await store.getAssignment(pod as never, assignment_id as never);
-      expect(assignment).toMatchObject({ audience: "learners" });
+      expect(assignment).toMatchObject({ audience: "anyone", identity: "pick" });
       const version = await store.getLessonVersion(
         pod as never,
         given["lesson_version_id"] as never,
