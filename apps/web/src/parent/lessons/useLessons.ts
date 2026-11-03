@@ -17,11 +17,13 @@ export interface Lessons {
   rows: LessonRows;
   /** Archives one; rejects when the route fails, and the row stays. */
   archive: (id: ConversationId) => Promise<void>;
+  /** Reads the rows again, after a failed read (Spróbuj ponownie). */
+  reload: () => void;
 }
 
 export function useLessons(list: ConversationListClient | null, again: string): Lessons {
   const [rows, setRows] = useState<LessonRows>(list === null ? [] : null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `again` is the cue to read once more
+  const [tries, setTries] = useState(0);
   useEffect(() => {
     if (list === null) return;
     let live = true;
@@ -32,7 +34,7 @@ export function useLessons(list: ConversationListClient | null, again: string): 
     return () => {
       live = false;
     };
-  }, [list, again]);
+  }, [list, again, tries]);
 
   const archive = useCallback(
     async (id: ConversationId): Promise<void> => {
@@ -43,5 +45,10 @@ export function useLessons(list: ConversationListClient | null, again: string): 
     [list],
   );
 
-  return { rows, archive };
+  const reload = useCallback(() => {
+    setRows(null);
+    setTries((n) => n + 1);
+  }, []);
+
+  return { rows, archive, reload };
 }

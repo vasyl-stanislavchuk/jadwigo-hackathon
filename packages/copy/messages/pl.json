@@ -1086,6 +1086,99 @@
   "parent_col_result": "Wynik",
   "parent_list_no_match": "Nic tu nie pasuje do wyboru.",
   "parent_lesson_untitled": "Lekcja bez tytułu",
+  "parent_list_for": "Dla",
+  "parent_list_date": "Data",
+  "parent_list_today": "Dziś",
+  "parent_list_week": "Ten tydzień",
+  "parent_list_month": "Ten miesiąc",
+  "parent_list_last": "Ostatnio",
+  "parent_list_when": "Kiedy",
+  "parent_list_clear_choice": "Wyczyść wybór",
+  "parent_list_chosen": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "{n} wybrana",
+        "n_noun=few": "{n} wybrane",
+        "n_noun=many": "{n} wybranych",
+        "n_noun=other": "{n} wybranych"
+      }
+    }
+  ],
+  "parent_list_clear": "Wyczyść",
+  "parent_list_filters": "Filtry",
+  "parent_list_filters_count": "Filtry ({n})",
+  "parent_list_close": "Zamknij",
+  "parent_list_show": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "Pokaż {n} lekcję",
+        "n_noun=few": "Pokaż {n} lekcje",
+        "n_noun=many": "Pokaż {n} lekcji",
+        "n_noun=other": "Pokaż {n} lekcji"
+      }
+    }
+  ],
+  "parent_list_view": "Widok",
+  "parent_list_columns": "Kolumny",
+  "parent_list_density": "Gęstość",
+  "parent_list_comfortable": "Wygodnie",
+  "parent_list_compact": "Gęsto",
+  "parent_list_sort": "Sortuj",
+  "parent_list_sort_newest": "Ostatnio, od najnowszych",
+  "parent_list_sort_oldest": "Ostatnio, od najstarszych",
+  "parent_list_sort_title": "Lekcja, A–Z",
+  "parent_list_sort_best": "Wynik, od najlepszych",
+  "parent_list_sort_when_newest": "Kiedy, od najnowszych",
+  "parent_list_sort_when_oldest": "Kiedy, od najstarszych",
+  "parent_list_select_all": "Zaznacz wszystkie",
+  "parent_list_select_row": "Zaznacz: {title}",
+  "parent_list_selected": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "{n} zaznaczona",
+        "n_noun=few": "{n} zaznaczone",
+        "n_noun=many": "{n} zaznaczonych",
+        "n_noun=other": "{n} zaznaczonych"
+      }
+    }
+  ],
+  "parent_list_unselect": "Odznacz wszystkie",
+  "parent_list_more": "Więcej: {title}",
+  "parent_list_open": "Otwórz",
+  "parent_list_range": "{from}–{to} z {total}",
+  "parent_list_page": "Strona {page} z {pages}",
+  "parent_list_pages": "Strony",
+  "parent_list_previous": "Poprzednia strona",
+  "parent_list_next": "Następna strona",
+  "parent_list_load_more": "Pokaż więcej",
+  "parent_list_first_title": "Tu będą lekcje",
+  "parent_list_first_line": "Napisz, czego dziecko się uczy, albo wrzuć zdjęcie zadania.",
+  "parent_list_history_first_title": "Tu będzie historia",
+  "parent_list_filtered_title": "Nic nie pasuje do filtrów",
+  "parent_list_clear_filters": "Wyczyść filtry",
+  "parent_list_failed_lessons": "Nie udało się wczytać lekcji",
+  "parent_list_failed_history": "Nie udało się wczytać historii",
+  "parent_list_failed_line": "Sprawdź internet. Twoje lekcje są bezpieczne.",
+  "parent_list_retry": "Spróbuj ponownie",
+  "parent_list_score": "{right} z {total}",
+  "parent_list_archive_title": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "Zarchiwizować lekcję?",
+        "n_noun=few": "Zarchiwizować {n} lekcje?",
+        "n_noun=many": "Zarchiwizować {n} lekcji?",
+        "n_noun=other": "Zarchiwizować {n} lekcji?"
+      }
+    }
+  ],
   "parent_expand_all": "Rozwiń wszystkie",
   "parent_collapse_all": "Zwiń wszystkie",
   "parent_step_coming": "Kolejne zadanie w drodze",

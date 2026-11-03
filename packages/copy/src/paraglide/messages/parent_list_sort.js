@@ -1,0 +1,24 @@
+/* eslint-disable */
+import { getLocale, experimentalStaticLocale } from '../runtime.js';
+
+/** @typedef {import('../runtime.js').LocalizedString} LocalizedString */
+
+/** @typedef {{}} Parent_List_SortInputs */
+
+
+
+/**
+* | output |
+* | --- |
+* | "Sort" |
+*
+* @param {Parent_List_SortInputs} inputs
+* @param {{ locale?: "pl" | "en" }} options
+* @returns {LocalizedString}
+*/
+export const parent_list_sort = /** @type {((inputs?: Parent_List_SortInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_List_SortInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
+	void inputs;
+	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
+	if (locale === "en") return /** @type {LocalizedString} */ ("Sort")
+	return /** @type {LocalizedString} */ ("Sortuj")
+});

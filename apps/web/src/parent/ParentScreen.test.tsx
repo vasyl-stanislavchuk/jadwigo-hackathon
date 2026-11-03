@@ -638,7 +638,7 @@ describe("ParentScreen", () => {
         lessons={lessons([])}
       />,
     );
-    await screen.findByText("Tu pojawią się lekcje, które przygotujesz.");
+    await screen.findByText("Tu będą lekcje");
     expect(document.querySelector("[data-menu-empty]")).not.toBeNull();
     cleanup();
 
@@ -652,11 +652,10 @@ describe("ParentScreen", () => {
         lessons={one}
       />,
     );
-    const link = await screen.findByRole("link", { name: "Odejmowanie przez 10" });
-    expect(link.getAttribute("href")).toBe(`/parent/lessons/${CONVERSATION}`);
+    const table = await screen.findByRole("table", { name: "Lekcje" });
     expect(document.querySelector("[data-menu-empty]")).toBeNull();
-    // Opening it moves to its workspace's address.
-    await act(async () => fireEvent.click(link));
+    // Opening its row moves to its workspace's address.
+    await act(async () => fireEvent.click(within(table).getByText("Odejmowanie przez 10")));
     expect(window.location.pathname).toBe(`/parent/lessons/${CONVERSATION}`);
   });
 

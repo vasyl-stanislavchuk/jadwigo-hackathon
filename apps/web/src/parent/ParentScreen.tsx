@@ -804,6 +804,7 @@ function SignedIn({
             learners={learners}
             lessons={family.rows}
             onArchive={family.archive}
+            onRetry={family.reload}
           />
         </ParentPage>,
       );
@@ -839,7 +840,7 @@ function SignedIn({
       return shell(
         { kind: "history" },
         [{ label: t("parent_nav_history") }],
-        <ParentPage>
+        <ParentPage wide>
           <HistoryTable api={api} language={language} learners={learners} />
         </ParentPage>,
       );
