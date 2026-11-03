@@ -154,7 +154,7 @@ const DEFAULT_TIER: ModelTier = "contributor";
  */
 const MAX_TOOL_CALLS = 40;
 const OUT_OF_CALLS =
-  "You have used all the tool calls this turn may make. Answer the parent now, with no tools: say what the lesson holds and what is not finished. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
+  "You have used all the tool calls this turn may make. This message ends your turn and no tool runs after it, so never say you are doing or will do something. Say what the lesson holds now, what did not change, and that the parent can send another message to go on. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -610,7 +610,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
-    const outOfCalls = w.log.filter((e) => e.type === "tool_result").length >= MAX_TOOL_CALLS;
+    // Counted from the parent's last word: a message after the limit is a new request to act on.
+    // Checked before a model call, so one response's batch may pass the limit by its own size.
+    const spokeAt = w.log.findLast((e) => parentSpokeAfter([e], 0))?.seq ?? 0;
+    const outOfCalls =
+      w.log.filter((e) => e.type === "tool_result" && e.seq > spokeAt).length >= MAX_TOOL_CALLS;
     if (outOfCalls) instructions.push(OUT_OF_CALLS);
     instructions.push(...prior.edits);
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer, w.log));
