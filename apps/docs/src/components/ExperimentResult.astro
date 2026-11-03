@@ -1,0 +1,113 @@
+---
+// One experiment's run, from src/data/experiments/<id>.json (dl-5ssh.90.53.1): its status, the
+// model and the cost with the source each number came from, how to re-run it, and its outcomes.
+// The JSON is validated as it is read, so a page never shows a result the schema refused.
+import { parseExperiment } from "../lib/experiments.ts";
+
+interface Props {
+  /** The experiment's id: `e1` to `e7`, its JSON file's stem. */
+  id: string;
+}
+
+const { id } = Astro.props;
+const files = import.meta.glob<unknown>("../data/experiments/*.json", {
+  import: "default",
+  eager: true,
+});
+const json = files[`../data/experiments/${id}.json`];
+if (json === undefined)
+  throw new Error(`no experiment "${id}": src/data/experiments/${id}.json is missing`);
+const parsed = parseExperiment(json);
+if (!parsed.ok)
+  throw new Error(
+    `src/data/experiments/${id}.json does not fit the schema:\n${parsed.problems.join("\n")}`,
+  );
+const run = parsed.data;
+const costFrom =
+  run.cost_source === "ledger" ? "the product ledger" : "muse trace (muse exec runs)";
+---
+
+<section class="jw-experiment not-content" data-experiment={run.id}>
+  <p class="jw-experiment-status">
+    <span class:list={["jw-experiment-badge", `is-${run.status}`]}>
+      {run.status === "done" ? "Run" : "Running"}
+    </span>
+    <span>
+      {run.model} · {run.calls} calls · {run.tokens.input} input and {run.tokens.output} output
+      tokens · ${run.usd} from {costFrom} · {run.wall_s}s at {run.commit}
+    </span>
+  </p>
+  {
+    run.results.length > 0 ? (
+      <dl class="jw-experiment-results">
+        {run.results.map((result) => (
+          <div>
+            <dt>{result.label}</dt>
+            <dd>{result.value}</dd>
+          </div>
+        ))}
+      </dl>
+    ) : (
+      <p>No result yet: this experiment is still running, and its numbers land here.</p>
+    )
+  }
+  {
+    run.commands.length > 0 && (
+      <>
+        <p>Re-run it:</p>
+        {run.commands.map((command) => (
+          <p>
+            <code>{command}</code>
+          </p>
+        ))}
+      </>
+    )
+  }
+</section>
+
+<style>
+  .jw-experiment {
+    border: var(--jw-border) solid var(--jw-line);
+    border-radius: var(--jw-radius-card);
+    padding: var(--jw-space-3) var(--jw-space-4);
+    margin-block: var(--jw-space-4);
+  }
+
+  .jw-experiment-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--jw-space-2);
+  }
+
+  .jw-experiment-badge {
+    border: var(--jw-border) solid var(--jw-help-edge);
+    border-radius: var(--jw-radius-chip);
+    padding: 0 var(--jw-space-2);
+    background-color: var(--jw-help);
+    color: var(--jw-help-ink);
+    font-weight: var(--jw-weight-strong);
+  }
+
+  .jw-experiment-badge.is-done {
+    border-color: var(--jw-right-edge);
+    background-color: var(--jw-right);
+    color: var(--jw-right-ink);
+  }
+
+  .jw-experiment-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: var(--jw-space-3);
+  }
+
+  .jw-experiment-results dt {
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+
+  .jw-experiment-results dd {
+    margin: 0;
+    font-weight: var(--jw-weight-strong);
+  }
+</style>

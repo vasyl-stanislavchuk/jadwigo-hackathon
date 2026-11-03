@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 440" role="img" aria-labelledby="containers-light-title containers-light-desc">
+<title id="containers-light-title">The containers</title>
+<desc id="containers-light-desc">Jadwigo's parts: the web app, the API, the database and the question bank, and who calls whom.</desc>
+<defs><marker id="a-m-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#50535c"/></marker><marker id="a-a-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3a5fa8"/></marker><marker id="a-l-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2f63b8"/></marker></defs>
+<rect x="0" y="0" width="960" height="440" fill="#ffffff"/>
+<rect x="40" y="24" width="150" height="52" rx="16" fill="#ffffff" stroke="#50535c" stroke-width="1" stroke-dasharray="5,4"/>
+<text x="115.0" y="47.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Child</text>
+<text x="115.0" y="61.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">plays, no login</text>
+<rect x="230" y="24" width="170" height="52" rx="16" fill="#ffffff" stroke="#50535c" stroke-width="1" stroke-dasharray="5,4"/>
+<text x="315.0" y="47.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Parent</text>
+<text x="315.0" y="61.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">signs in, reads results</text>
+<rect x="700" y="24" width="220" height="52" rx="16" fill="#ffffff" stroke="#50535c" stroke-width="1" stroke-dasharray="5,4"/>
+<text x="810.0" y="47.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Lesson author or agent</text>
+<text x="810.0" y="61.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">searches the bank</text>
+<rect x="24" y="110" width="640" height="300" rx="8" fill="none" stroke="#e8e2d5" stroke-width="1.5"/>
+<text x="36" y="130" font-family="ui-monospace, monospace" font-size="9" letter-spacing="1.5" fill="#726f68">AWS, EU-CENTRAL-1</text>
+<rect x="48" y="148" width="180" height="56" rx="6" fill="#dce8fb" stroke="#3a5fa8" stroke-width="1"/>
+<text x="138.0" y="173.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Web app</text>
+<text x="138.0" y="187.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">React, static in S3</text>
+<rect x="272" y="148" width="180" height="56" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="362.0" y="173.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">HTTP API</text>
+<text x="362.0" y="187.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">API Gateway, throttled</text>
+<rect x="48" y="240" width="180" height="56" rx="6" fill="#dce8fb" stroke="#3a5fa8" stroke-width="1"/>
+<text x="138.0" y="265.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">API</text>
+<text x="138.0" y="279.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">one Lambda, every route</text>
+<rect x="272" y="240" width="180" height="56" rx="6" fill="#f2eee6" stroke="#50535c" stroke-width="1"/>
+<text x="362.0" y="265.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Content bucket</text>
+<text x="362.0" y="279.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">S3: questions</text>
+<rect x="476" y="240" width="164" height="56" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="558.0" y="265.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Bank search</text>
+<text x="558.0" y="279.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">its own Lambda</text>
+<rect x="48" y="332" width="180" height="52" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="138.0" y="355.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">jadwigo.pl</text>
+<text x="138.0" y="369.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">marketing, static</text>
+<rect x="272" y="332" width="180" height="52" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="362.0" y="355.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">docs.jadwigo.pl</text>
+<text x="362.0" y="369.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">these docs, static</text>
+<rect x="700" y="110" width="236" height="210" rx="8" fill="none" stroke="#e8e2d5" stroke-width="1.5"/>
+<text x="712" y="130" font-family="ui-monospace, monospace" font-size="9" letter-spacing="1.5" fill="#726f68">SUPABASE, FRANKFURT</text>
+<rect x="724" y="148" width="188" height="56" rx="6" fill="#f2eee6" stroke="#50535c" stroke-width="1"/>
+<text x="818.0" y="173.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Postgres</text>
+<text x="818.0" y="187.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">records, RLS per pod</text>
+<rect x="724" y="240" width="188" height="56" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="818.0" y="265.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Supabase Auth</text>
+<text x="818.0" y="279.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">6-digit email code</text>
+<rect x="700" y="348" width="236" height="56" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="818.0" y="373.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">jw and its MCP server</text>
+<text x="818.0" y="387.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">Python CLI, author's machine</text>
+<polyline points="115,76 115,110 138,110 138,148" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<polyline points="315,76 315,120 170,120 170,148" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<polyline points="228,176 272,176" fill="none" stroke="#2f63b8" stroke-width="1.2" marker-end="url(#a-l-light)"/>
+<rect x="219.0" y="158" width="62" height="16" fill="#ffffff"/>
+<text x="250" y="169" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">HTTPS JSON</text>
+<polyline points="228,190 688,190 688,268 724,268" fill="none" stroke="#2f63b8" stroke-width="1.2" marker-end="url(#a-l-light)"/>
+<rect x="437.0" y="172" width="46" height="16" fill="#ffffff"/>
+<text x="460" y="183" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">SIGN-IN</text>
+<polyline points="362,204 362,222 138,222 138,240" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<polyline points="228,268 272,268" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<rect x="209.0" y="250" width="82" height="16" fill="#ffffff"/>
+<text x="250" y="261" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">READ QUESTIONS</text>
+<polyline points="452,268 476,268" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<rect x="443.5" y="250" width="41" height="16" fill="#ffffff"/>
+<text x="464" y="261" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">INVOKE</text>
+<polyline points="228,282 688,282 688,176 724,176" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<rect x="426.0" y="292" width="88" height="16" fill="#ffffff"/>
+<text x="470" y="303" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">ONE TRANSACTION</text>
+<polyline points="810,76 810,348" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#a-m-light)"/>
+<polyline points="700,376 680,376 680,190 452,190" fill="none" stroke="#2f63b8" stroke-width="1.2" marker-end="url(#a-l-light)"/>
+<rect x="508.5" y="358" width="103" height="16" fill="#ffffff"/>
+<text x="560" y="369" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#726f68">HTTPS + BANK TOKEN</text>
+</svg>

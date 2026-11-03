@@ -29,11 +29,13 @@ export function workspaceEdges(root: string = ROOT): string[] {
 }
 
 /**
- * The `a --> b` edges of the mermaid blocks in a page, with each node id read back as its name:
- * `api_client` is `api-client`, as the page writes an id that holds a dash.
+ * The `a --> b` edges of a diagram's mermaid source (src/lib/diagrams/monorepo.mmd since
+ * dl-5ssh.90.53.1; a fenced block in a page is read the same way), with each node id read back
+ * as its name: `api_client` is `api-client`, as the source writes an id that holds a dash.
  */
 export function diagramEdges(markdown: string): string[] {
-  const blocks = [...markdown.matchAll(/```mermaid\n([\s\S]*?)```/g)].map((m) => m[1] ?? "");
+  const fenced = [...markdown.matchAll(/```mermaid\n([\s\S]*?)```/g)].map((m) => m[1] ?? "");
+  const blocks = fenced.length > 0 ? fenced : [markdown];
   return blocks
     .flatMap((block) => [...block.matchAll(/^\s*(\w+) --> (\w+)\s*$/gm)])
     .map(([, from = "", to = ""]) => `${from.replaceAll("_", "-")} --> ${to.replaceAll("_", "-")}`)
