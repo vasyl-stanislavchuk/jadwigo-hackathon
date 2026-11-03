@@ -8,10 +8,10 @@
  * `@jadwigo/copy`.
  *
  * `variant="parent"` is the same pane inside the parent app's lesson workspace (dl-z5ja.108,
- * decision dl-xo0q): no heading (the panel has one), no starters (the first screen asked), no Stop
- * button (Esc still stops), the run's state in the workspace's band instead (`statusOf`), and a
- * Claude-like composer (design review 2026-11-02): one rounded box, "Możesz pisać dalej…" on top,
- * then Dla (`composerLead`) on the left and an explicit "Wyślij" button, quiet while empty.
+ * decision dl-xo0q): no heading (the panel has one), no starters (the first screen asked), the
+ * run's state in the workspace's band instead (`statusOf`), and the composer of the chat handoff
+ * (dl-uukj.47.71 §4.5, Composer.tsx): one rounded box with one focus ring, Dla on the left,
+ * Zatrzymaj while a turn runs (Esc too) and Wyślij, quiet while empty; the waiting rows sit above it.
  *
  * The two sides read apart (dl-uukj.47.28; owner's calls of 2026-11-02): the parent's words are a
  * quiet box in the soft paper fill on the right, "Ty" kept for screen readers; Jadwigo AI's turn is plain prose on
@@ -30,11 +30,12 @@ import "./chat.css";
 import type { ReadAttachment } from "./attachments/ThreadAttachments.tsx";
 import { ChatThread, lessMotion } from "./ChatThread.tsx";
 import { Composer, openChoose } from "./Composer.tsx";
-import { ComposerLines, contextLine, NextQueue } from "./ComposerLines.tsx";
+import { ComposerLines } from "./ComposerLines.tsx";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import type { ObjectRef } from "./objects/ref.ts";
 import type { RunPhase } from "./phase.ts";
-import type { LineContext } from "./toolLine.ts";
+import type { Waiting } from "./queue.ts";
+import type { LineContext } from "./spine/lines.ts";
 
 export interface ChatPaneProps {
   language: Language;
@@ -62,10 +63,13 @@ export interface ChatPaneProps {
   pending?: string | null;
   /** Spróbuj ponownie on a stalled turn. */
   onRetry?: (() => void) | undefined;
-  /** A learner's first name by id, for a tool line about a child (toolLine.ts). */
+  /** A learner's first name by id, for a tool line about a child (spine/lines.ts). */
   nameOf?: ((learner: string) => string | null) | undefined;
-  /** The "Następne" queue (queue.ts): what waits to go once the turn ends. */
-  next?: readonly string[];
+  /**
+   * The queue (queue.ts): what waits to go once the turn ends, drawn as rows above the composer
+   * (D6). A row with photos reads their count when it has no words (dl-uukj.47.70).
+   */
+  next?: readonly (string | Waiting)[];
   /**
    * "Spróbuj ponownie" after a failed send, from the conversation: the exact words that failed,
    * a queued row's included. Without it the pane sends its own last words again.
@@ -73,11 +77,13 @@ export interface ChatPaneProps {
   onResend?: (() => void) | undefined;
   /** "Wyślij teraz" on one waiting row. */
   onSendNow?: ((index: number) => void) | undefined;
-  /** Takes one waiting row out, answering its words ("Zmień" puts them back in the composer). */
+  /** Takes one waiting row out (its ×). */
   onTakeNext?: ((index: number) => string | null) | undefined;
-  /** The parent closed the context chip for this conversation: it stays closed. */
+  /**
+   * The "Jadwigo AI widzi" chip is gone (handoff dl-uukj.47.71 S21), so these two draw nothing;
+   * they stay until the workspace stops passing them (dl-uukj.47.71.13).
+   */
   contextClosed?: boolean;
-  /** The chip's ×; without it the chip has none. */
   onCloseContext?: (() => void) | undefined;
   /**
    * A choose form's answers, by the approval's call (dl-uukj.47.35). A stand-in for now: no route
@@ -123,8 +129,6 @@ export function ChatPane({
   onResend,
   onSendNow,
   onTakeNext,
-  contextClosed = false,
-  onCloseContext,
   onChoose,
   composerLead,
   lessonObject,
@@ -149,7 +153,6 @@ export function ChatPane({
     if (wasAsking.current && asking === null) composer.current?.focus({ preventScroll: true });
     wasAsking.current = asking !== null;
   }, [asking]);
-  const context = contextClosed ? null : contextLine(turns, nameOf, language);
   const parent = variant === "parent";
   const [draft, setDraft] = useState("");
   /** The last words sent, so a send that did not reach the server can go again. */
@@ -204,6 +207,7 @@ export function ChatPane({
         onOpen={onOpen}
         lessonActions={lessonActions}
         readAttachment={readAttachment}
+        stop={{ running: open, stopping, onStop }}
       />
       <ComposerLines
         language={language}
@@ -218,8 +222,13 @@ export function ChatPane({
         lastSent={lastSent}
         send={send}
         resend={resend}
-        context={context}
-        onCloseContext={onCloseContext}
+        next={next.map((row) =>
+          typeof row === "string"
+            ? { text: row, photos: 0 }
+            : { text: row.text, photos: row.attachmentIds.length },
+        )}
+        onSendNow={onSendNow}
+        onTakeNext={onTakeNext}
       />
       <Composer
         language={language}
@@ -238,13 +247,6 @@ export function ChatPane({
         onStop={onStop}
         composerLead={composerLead}
         textarea={composer}
-      />
-      <NextQueue
-        language={language}
-        next={next}
-        onSendNow={onSendNow}
-        onTakeNext={onTakeNext}
-        setDraft={setDraft}
       />
     </section>
   );

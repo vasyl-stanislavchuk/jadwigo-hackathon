@@ -33,11 +33,12 @@ import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
 import type { ObjectRef } from "./objects/ref.ts";
 import type { RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
+import type { LineContext } from "./spine/lines.ts";
 import { spineOf } from "./spine/spineOf.ts";
 import type { TurnSpine as Spine } from "./spine/types.ts";
 import { type SpineActions, TurnSpine } from "./TurnSpine.tsx";
 import { TurnSummary } from "./TurnSummary.tsx";
-import type { LineContext } from "./toolLine.ts";
+import { type StopKey, useStopKey } from "./useStopKey.ts";
 import { toolResult } from "./widgets/Widgets.tsx";
 
 /** The parent's words: a quiet box in the soft paper fill on the right. */
@@ -311,6 +312,8 @@ export interface ChatThreadProps {
   onOpen?: ((object: ObjectRef) => void) | undefined;
   lessonActions?: ReactNode;
   readAttachment?: ReadAttachment | undefined;
+  /** Esc stops a running turn with focus anywhere in the thread (S6, §3; lane D's hook). */
+  stop: StopKey;
 }
 
 export function ChatThread({
@@ -329,6 +332,7 @@ export function ChatThread({
   onOpen,
   lessonActions,
   readAttachment,
+  stop,
 }: ChatThreadProps): ReactElement {
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
@@ -339,6 +343,8 @@ export function ChatThread({
   // Only the list's own box moves: scrollIntoView scrolls every scrollable ancestor too, the window
   // included (dl-uukj.47.68).
   const list = useRef<HTMLOListElement>(null);
+  const root = useRef<HTMLDivElement>(null);
+  useStopKey(root, stop);
   const atBottom = useRef(true);
   const [away, setAway] = useState(false);
   const rowCount = turns.reduce((n, t) => n + t.view.chat.length, 0);
@@ -471,7 +477,7 @@ export function ChatThread({
   };
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col" data-thread>
+    <div ref={root} className="relative flex min-h-0 flex-1 flex-col" data-thread>
       <ol
         ref={list}
         aria-label={say("chat_messages")}

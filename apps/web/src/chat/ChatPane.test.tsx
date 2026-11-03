@@ -289,6 +289,16 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
+  it("Escape in the thread stops a running turn once, and does nothing once it has ended (S6)", () => {
+    const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
+    fireEvent.keyDown(document.querySelector("[data-spine]") as HTMLElement, { key: "Escape" });
+    expect(onStop).toHaveBeenCalledTimes(1);
+    cleanup();
+    const done = pane({ turns: [turnOf("happy-turn")] });
+    fireEvent.keyDown(document.querySelector("[data-spine]") as HTMLElement, { key: "Escape" });
+    expect(done.onStop).not.toHaveBeenCalled();
+  });
+
   it("scrolls to the newest row without motion when the parent asks for less", () => {
     // Only the list's own box moves, never the page around it (dl-uukj.47.68): scrollIntoView
     // would scroll every scrollable ancestor too.
@@ -482,52 +492,24 @@ describe("one spine per turn, no plan card (D1, S9)", () => {
   });
 });
 
-describe("the context chip and the footnote (dl-uukj.47.32)", () => {
-  const chip = () => document.querySelector("[data-context-chip]")?.textContent ?? null;
+describe("no context chip, and no footnote (dl-uukj.47.32, S21)", () => {
   const OLA = "lrn_2h4m8gyw0fb1cvz2nkqw0px8fq";
   const nameOf = (id: string) => (id === OLA ? "Ola" : null);
-  /** happy-turn with its parent message sent from `context`. */
-  const turns = (context: unknown): Turn[] => [
-    turnOf("happy-turn", (view) => {
-      const message = view.chat[0];
-      if (message?.kind === "message" && context !== undefined)
-        message.context = context as NonNullable<typeof message.context>;
-    }),
-  ];
 
-  it("says no child when the last message went with none", () => {
-    pane({ variant: "parent", nameOf, turns: turns(undefined) });
-    expect(chip()).toBe("Jadwigo AI widzi: bez dziecka");
-  });
-
-  it("follows the last message's context, never an earlier one", () => {
-    pane({ variant: "parent", nameOf, turns: turns({ learner_id: OLA }) });
-    expect(chip()).toBe("Jadwigo AI widzi: Ola");
-    cleanup();
+  it("draws no 'Jadwigo AI widzi' chip once a message went (S21: Dla already says it)", () => {
     pane({
       variant: "parent",
       nameOf,
       turns: [
-        ...turns({ learner_id: OLA }),
         turnOf("happy-turn", (view) => {
           const message = view.chat[0];
-          if (message?.kind === "message") delete message.context;
+          if (message?.kind === "message")
+            message.context = { learner_id: OLA } as NonNullable<typeof message.context>;
         }),
       ],
     });
-    expect(chip()).toBe("Jadwigo AI widzi: bez dziecka");
-    cleanup();
-    pane({
-      variant: "parent",
-      nameOf,
-      turns: turns({ lesson_id: "lsn_2h4m8gyw0fb1cvz2nkqw0px8fq" }),
-    });
-    expect(chip()).toBe("Jadwigo AI widzi: tę lekcję");
-  });
-
-  it("shows no chip before the parent has sent anything", () => {
-    pane({ variant: "parent", nameOf });
-    expect(chip()).toBeNull();
+    expect(document.querySelector("[data-context-chip]")).toBeNull();
+    expect(screen.queryByText(/Jadwigo AI widzi/)).toBeNull();
   });
 
   it("has no footnote under the composer (design review 2026-11-02)", () => {
