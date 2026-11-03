@@ -132,7 +132,7 @@ export function e4Detail(rows: readonly MuseRow[]) {
 }
 
 /** Every call in `logDir`'s day files, oldest day first. */
-export function readMuseLog(logDir: string): MuseRow[] {
+function readMuseLog(logDir: string): MuseRow[] {
   return readdirSync(logDir)
     .filter((f) => f.endsWith(".jsonl"))
     .sort()
