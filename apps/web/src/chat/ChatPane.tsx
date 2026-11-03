@@ -31,7 +31,7 @@ import {
 } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
-import { cn, Button as UiButton } from "@jadwigo/ui";
+import { Button, cn, RegisterProvider } from "@jadwigo/ui";
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -49,7 +49,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { Button } from "./button.tsx";
 import { ChatMarkdown } from "./ChatMarkdown.tsx";
 import { type ChooseAnswers, ChooseForm, recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
@@ -77,7 +76,7 @@ const STARTERS: readonly CopyKey[] = ["chat_starter_1", "chat_starter_2", "chat_
 
 /** The parent's words: a quiet box in the soft paper fill on the right, Jadwigo AI's answer plain prose beside it. */
 const PARENT_BOX =
-  "rounded-jw-box border-jw border-jw-line bg-jw-act-quiet px-3.5 shadow-sm py-2.5 whitespace-pre-wrap text-jw-ink";
+  "rounded-jw-box border-jw border-jw-line bg-jw-act-quiet px-3.5 py-2.5 whitespace-pre-wrap text-jw-ink";
 
 type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 type ApprovalItem = Extract<ChatItem, { kind: "approval" }>;
@@ -225,7 +224,7 @@ function ToolGroup({
       : [];
   });
   return (
-    <div className="flex flex-col gap-1 text-sm" data-tools>
+    <div className="flex flex-col gap-1 text-jw-page-body" data-tools>
       {/* Small and quiet (design review 2026-11-02): parents rarely open it, the lesson is the
           goal. One muted line, the steps under a thin rule on the left once opened. */}
       <details className="group text-jw-page-small text-jw-ink-soft" data-tool-group>
@@ -284,7 +283,7 @@ function CopyDetails({ details, language }: { details: string; language: Languag
   return (
     <Button
       variant="outline"
-      size="xs"
+      size="sm"
       data-details={details}
       onClick={() => {
         void navigator.clipboard?.writeText(details).then(() => setCopied(true));
@@ -308,7 +307,11 @@ function ErrorRow({
 }): ReactElement {
   const details = `run ${run} attempt ${item.attempt}: ${item.error.type}`;
   return (
-    <div role="alert" data-row="error" className="rounded-md border p-2 text-sm">
+    <div
+      role="alert"
+      data-row="error"
+      className="flex flex-col items-start gap-2 rounded-jw-card border-jw border-jw-line p-3 text-jw-page-body"
+    >
       <p>{problemOf(item.error, item.retryable, language)}</p>
       <CopyDetails details={details} language={language} />
     </div>
@@ -368,7 +371,7 @@ function RowView({
       return <ToolGroup tools={row.tools} language={language} context={context} />;
     case "steer":
       return (
-        <p data-row="steer" data-level={row.level} className="text-sm">
+        <p data-row="steer" data-level={row.level} className="text-jw-page-body">
           {copy(
             language,
             row.level === "steer" ? "chat_budget_steer" : "chat_budget_stop",
@@ -389,7 +392,7 @@ function RowView({
       const answers =
         context.chosen?.(row.call_id) ?? (row.decision === null ? undefined : row.answers);
       return (
-        <div data-row="approval" className="flex flex-col gap-0.5 text-sm">
+        <div data-row="approval" className="flex flex-col gap-0.5 text-jw-page-body">
           <p>{copy(language, key, { summary: row.summary }, "adult")}</p>
           {row.choose !== undefined &&
             answers !== undefined &&
@@ -758,21 +761,23 @@ export function ChatPane({
     send(draft);
   };
 
-  return (
+  // An adult's surface: the kit's Button draws flat and at the parent's sizes here (D4), while a
+  // lesson preview elsewhere keeps the child's register.
+  const body = (
     <section
       aria-label={say("chat_title")}
       // The parent's pane fills its panel: the messages scroll, the composer stays at the foot.
       className={cn("flex min-h-0 flex-col", parent ? "flex-1 gap-2 px-3 pt-2 pb-3" : "gap-3")}
       data-variant={variant}
     >
-      {!parent && <h2 className="text-base font-medium">{say("chat_title")}</h2>}
+      {!parent && <h2 className="text-jw-page-h2 font-semibold">{say("chat_title")}</h2>}
       {restoring && (
-        <p data-row="restoring" className="text-muted-foreground text-sm">
+        <p data-row="restoring" className="text-jw-page-body text-muted-foreground">
           {say("chat_restoring")}
         </p>
       )}
       {/* In the workspace the list reaches the panel's edges, so its scrollbar sits on the right
-          edge, and pads its rows back in line with the composer. */}
+        edge, and pads its rows back in line with the composer. */}
       <ol
         aria-label={say("chat_messages")}
         className={cn("flex flex-1 flex-col gap-3 overflow-y-auto", parent && "-mx-3 px-3")}
@@ -895,7 +900,7 @@ export function ChatPane({
         </div>
       )}
       {queued.length > 0 && (
-        <ul aria-label={say("chat_queued")} className="text-muted-foreground text-sm">
+        <ul aria-label={say("chat_queued")} className="text-jw-page-body text-muted-foreground">
           {queued.map((text, i) => (
             // A follow-up may repeat; its place in the queue does not.
             <li key={`${i}-${text}`} data-row="queued">
@@ -905,7 +910,7 @@ export function ChatPane({
         </ul>
       )}
       {retryText !== null && (
-        <div data-row="retry-turn" className="flex items-center gap-2 text-sm">
+        <div data-row="retry-turn" className="flex items-center gap-2 text-jw-page-body">
           <p>{say("chat_turn_unfinished")}</p>
           <Button variant="outline" size="sm" onClick={() => resend(retryText)}>
             {say("chat_retry_turn")}
@@ -917,7 +922,7 @@ export function ChatPane({
         <>
           <p
             data-status={phase === undefined ? (status ?? "none") : (phase?.kind ?? "none")}
-            className="text-sm"
+            className="text-jw-page-body"
           >
             {phase === undefined
               ? status === null
@@ -933,17 +938,26 @@ export function ChatPane({
         </>
       )}
       {!online && (
-        <p data-row="offline" className="text-sm">
+        <p data-row="offline" className="text-jw-page-body">
           {say("chat_offline")}
         </p>
       )}
       {sendFailed && sendLimit !== null && (
-        <p role="alert" data-row="send-limited" data-limit={sendLimit} className="text-sm">
+        <p
+          role="alert"
+          data-row="send-limited"
+          data-limit={sendLimit}
+          className="text-jw-page-body"
+        >
           {say(LIMIT_LINE[sendLimit])}
         </p>
       )}
       {sendFailed && sendLimit === null && (
-        <div role="alert" data-row="send-failed" className="flex items-center gap-2 text-sm">
+        <div
+          role="alert"
+          data-row="send-failed"
+          className="flex items-center gap-2 text-jw-page-body"
+        >
           <p>{say("chat_send_again")}</p>
           {(onResend !== undefined || lastSent !== null) && (
             <Button
@@ -970,7 +984,7 @@ export function ChatPane({
               type="button"
               aria-label={say("chat_context_close")}
               onClick={onCloseContext}
-              className="-mr-1 grid size-5 shrink-0 place-items-center rounded-full hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+              className="-mr-1 grid size-5 shrink-0 place-items-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
               data-context-close
             >
               <XIcon aria-hidden className="size-3" />
@@ -993,7 +1007,7 @@ export function ChatPane({
         // on top, then Dla on the left and an explicit Wyślij on the right.
         <form
           onSubmit={submit}
-          className="flex flex-col gap-2 rounded-jw-box border-jw border-jw-line bg-jw-card px-3 pt-3 pb-2 shadow-sm transition-colors duration-jw-fast focus-within:border-jw-ink-soft"
+          className="flex flex-col gap-2 rounded-jw-box border-jw border-input bg-background px-3 pt-3 pb-2 transition-[border-color,box-shadow] duration-jw-fast focus-within:border-jw-focus focus-within:ring-2 focus-within:ring-selected"
           data-composer
         >
           <label className="flex flex-col">
@@ -1022,21 +1036,21 @@ export function ChatPane({
             {composerLead}
             <span className="flex-1" />
             {/* The design system's action, as the first screen's "Zrób lekcję": quiet while empty. */}
-            <UiButton type="submit" size="control" aria-disabled={draft.trim() === ""} data-send>
+            <Button type="submit" size="control" aria-disabled={draft.trim() === ""} data-send>
               {say("chat_send")}
               <ArrowRightIcon aria-hidden />
-            </UiButton>
+            </Button>
           </div>
         </form>
       ) : (
         <form onSubmit={submit} className="flex items-end gap-2">
-          <label className="flex flex-1 flex-col gap-1 text-sm">
+          <label className="flex flex-1 flex-col gap-1 text-jw-page-body">
             <span>{say("chat_composer_label")}</span>
             <textarea
               ref={composer}
               value={draft}
               rows={2}
-              className="rounded-md border px-2 py-1"
+              className="rounded-jw-control border-jw border-input bg-background px-2.5 py-2 text-jw-page-body text-foreground outline-none focus-visible:border-jw-focus focus-visible:ring-2 focus-visible:ring-selected"
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -1051,9 +1065,17 @@ export function ChatPane({
               }}
             />
           </label>
-          <Button type="submit">{say("chat_send")}</Button>
+          <Button type="submit" size="control">
+            {say("chat_send")}
+          </Button>
           {open && (
-            <Button type="button" variant="outline" disabled={stopping} onClick={onStop}>
+            <Button
+              type="button"
+              variant="outline"
+              size="control"
+              disabled={stopping}
+              onClick={onStop}
+            >
               {stopping ? say("chat_stopping") : say("chat_stop")}
             </Button>
           )}
@@ -1069,12 +1091,12 @@ export function ChatPane({
               // A waiting row may repeat; its place in the queue does not.
               <li
                 key={`${i}-${text}`}
-                className="flex items-center gap-2 rounded-jw-small border-jw border-jw-line bg-jw-card px-2 py-1 text-sm"
+                className="flex items-center gap-2 rounded-jw-small border-jw border-jw-line bg-jw-card px-2 py-1 text-jw-page-body"
                 data-next-row
               >
                 <span className="min-w-0 flex-1 truncate text-jw-ink">{text}</span>
                 {onSendNow !== undefined && (
-                  <Button variant="outline" size="xs" onClick={() => onSendNow(i)} data-send-now>
+                  <Button variant="outline" size="sm" onClick={() => onSendNow(i)} data-send-now>
                     {say("chat_queue_send_now")}
                   </Button>
                 )}
@@ -1082,7 +1104,7 @@ export function ChatPane({
                   <>
                     <Button
                       variant="outline"
-                      size="xs"
+                      size="sm"
                       onClick={() => {
                         const words = onTakeNext(i);
                         if (words !== null) setDraft(words);
@@ -1093,7 +1115,7 @@ export function ChatPane({
                     </Button>
                     <Button
                       variant="outline"
-                      size="xs"
+                      size="sm"
                       onClick={() => onTakeNext(i)}
                       data-next-remove
                     >
@@ -1108,4 +1130,5 @@ export function ChatPane({
       )}
     </section>
   );
+  return <RegisterProvider value="app">{body}</RegisterProvider>;
 }

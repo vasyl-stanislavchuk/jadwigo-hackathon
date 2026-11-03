@@ -508,6 +508,8 @@ export * from "./parent_goal_status_not_started.js";
 export * from "./parent_goal_status_on_its_way.js";
 export * from "./parent_google_in_app.js";
 export * from "./parent_grade.js";
+export * from "./parent_grade_age.js";
+export * from "./parent_grade_n.js";
 export * from "./parent_guardian.js";
 export * from "./parent_history_empty.js";
 export * from "./parent_language.js";

@@ -28,7 +28,7 @@
  */
 
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { cn, PanelToggle } from "@jadwigo/ui";
+import { Button, cn, PanelToggle, RegisterProvider } from "@jadwigo/ui";
 import { BookOpenIcon } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import { CATEGORY } from "../adult.ts";
@@ -166,23 +166,24 @@ export function LessonToggle({ language }: { language: Language }): ReactElement
   const inspector = useInspector();
   const open = inspector.isOpen;
   const label = copy(language, open ? "parent_lesson_hide" : "parent_lesson_show", {}, CATEGORY);
+  // The kit's secondary (handoff §6.1 names Pokaż lekcję as its use): the chat's send is the one
+  // primary in the view.
   return (
-    <button
-      type="button"
-      aria-expanded={open}
-      aria-controls={LESSON_ID}
-      onClick={() => (open ? inspector.close() : inspector.open(null))}
-      className={cn(
-        "flex min-h-jw-control shrink-0 items-center gap-1.5 rounded-jw-small border-jw px-2.5 text-jw-page-small font-bold focus-visible:outline-3 focus-visible:outline-jw-focus max-lg:hidden",
-        open
-          ? "border-jw-pick-edge bg-jw-pick text-jw-pick-ink"
-          : "border-jw-line text-jw-ink hover:bg-jw-act-quiet",
-      )}
-      data-lesson-toggle
-    >
-      <BookOpenIcon aria-hidden className="size-4" />
-      {label}
-    </button>
+    <RegisterProvider value="app">
+      <Button
+        type="button"
+        variant="secondary"
+        size="control"
+        aria-expanded={open}
+        aria-controls={LESSON_ID}
+        onClick={() => (open ? inspector.close() : inspector.open(null))}
+        className="max-lg:hidden"
+        data-lesson-toggle
+      >
+        <BookOpenIcon aria-hidden />
+        {label}
+      </Button>
+    </RegisterProvider>
   );
 }
 
@@ -253,10 +254,10 @@ export function Workspace({
             aria-selected={front === pane}
             onClick={() => show(pane)}
             className={cn(
-              "relative flex min-h-jw-control flex-1 items-center justify-center rounded-jw-small border-jw font-bold",
+              "relative flex min-h-jw-control flex-1 items-center justify-center rounded-jw-control border-jw font-medium transition-colors duration-jw-fast focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30",
               front === pane
-                ? "border-jw-pick-edge bg-jw-pick text-jw-pick-ink"
-                : "border-transparent text-jw-ink-soft hover:bg-jw-act-quiet",
+                ? "border-selected-edge bg-selected text-selected-foreground"
+                : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
             data-tab={pane}
           >
@@ -264,7 +265,7 @@ export function Workspace({
             {pane === "lesson" && changed && (
               <span
                 aria-hidden
-                className="absolute top-1.5 right-2 size-2 rounded-full bg-jw-act"
+                className="absolute top-1.5 right-2 size-2 rounded-full bg-primary"
                 data-changed
               />
             )}

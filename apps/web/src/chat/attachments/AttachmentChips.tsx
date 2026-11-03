@@ -196,7 +196,7 @@ function Chip({
             type="button"
             aria-label={copy(language, "attach_retry")}
             onClick={() => void upload.retry()}
-            className="grid size-8 place-items-center rounded-full border-jw border-jw-line bg-jw-card text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+            className="grid size-8 place-items-center rounded-full border-jw border-jw-line bg-jw-card text-jw-ink hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
             data-retry
           >
             <RotateCwIcon aria-hidden className="size-4" />
@@ -210,7 +210,7 @@ function Chip({
           upload.dispose();
           onRemove(upload);
         }}
-        className="absolute -top-2 -right-2 grid size-6 place-items-center rounded-full border-jw border-jw-line bg-jw-card text-jw-ink-soft hover:text-jw-ink focus-visible:outline-3 focus-visible:outline-jw-focus"
+        className="absolute -top-2 -right-2 grid size-6 place-items-center rounded-full border-jw border-jw-line bg-jw-card text-jw-ink-soft hover:text-jw-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
         data-remove
       >
         <XIcon aria-hidden className="size-3.5" />

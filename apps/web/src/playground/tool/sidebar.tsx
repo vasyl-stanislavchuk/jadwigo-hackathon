@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 import { Slot } from "radix-ui";
 import * as React from "react";
-import { Button } from "../../chat/button.tsx";
+import { Button } from "./button.tsx";
 import { Input } from "./input.tsx";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./tooltip.tsx";
 import { useIsMobile } from "./use-mobile.ts";
