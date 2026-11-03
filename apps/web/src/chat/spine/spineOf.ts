@@ -74,6 +74,12 @@ export interface SpineContext {
 
 /** No stage: a line made before the plan, or in a turn without one. */
 const LOOSE = -1;
+/**
+ * Not placed yet: made while the plan had no stage in progress. The engine writes a call before the
+ * plan event that starts its stage (jadwigo-ai run-step.ts, `runTool`), so the line joins the next
+ * stage to start, else the last one that ran (dl-uukj.47.71.36).
+ */
+const NEXT = -2;
 
 /** A line placed in the turn: its stage, and the order it came in. */
 interface Placed {
@@ -151,7 +157,7 @@ export function spineOf(
   let lastActive: number | null = null;
   const calls = new Map<string, Call>();
   const placed: Placed[] = [];
-  const agent: { text: string; seq: number; at: number }[] = [];
+  const agent: { text: string; seq: number; at: number; stage: number }[] = [];
   const revisions: { revision: number; call_id: string; seq: number; file: unknown }[] = [];
   const reads: { seq: number; ids: string[] }[] = [];
   const retried = new Set<number>();
@@ -159,29 +165,65 @@ export function spineOf(
   let sawParent = false;
   let endedAt: number | undefined;
 
+  const inProgress = (): number => entries.findIndex((e) => e.status === "in_progress");
+  /** The stage open at the end, or the last that ran: where the now, wait and slow lines go. */
   const activeStage = (): number => {
-    const open = entries.findIndex((e) => e.status === "in_progress");
+    const open = inProgress();
     if (open !== -1) return open;
     if (lastActive !== null) return lastActive;
     return entries.length > 0 ? 0 : LOOSE;
   };
+  /** Where a line made now lands: the stage in progress, else the next one to start. */
+  const stageNow = (): number => {
+    const open = inProgress();
+    if (open !== -1) return open;
+    return entries.length > 0 ? NEXT : LOOSE;
+  };
+  /** Gives every line and call still waiting for a stage the one that just started. */
+  const place = (stage: number): void => {
+    for (const p of placed) if (p.stage === NEXT) p.stage = stage;
+    for (const m of agent) if (m.stage === NEXT) m.stage = stage;
+    for (const c of calls.values())
+      if (c.stage === NEXT) {
+        c.stage = stage;
+        c.visit = visits[stage] ?? 0;
+      }
+  };
+  // The engine settles the plan as the turn ends: every stage not done reads failed (jadwigo-ai
+  // plan.ts `settlePlan`), a stopped or completed turn too. That says nothing about the stages, so
+  // the plan before it stands (dl-uukj.47.71.37).
+  const settles = new Set(
+    log.flatMap((e, i) => {
+      const next = log[i + 1];
+      return e.type === "plan" &&
+        next?.type === "status" &&
+        ["completed", "failed", "cancelled"].includes(next.payload.status)
+        ? [e.seq]
+        : [];
+    }),
+  );
 
   for (const e of log) {
     switch (e.type) {
       case "plan": {
+        if (settles.has(e.seq)) break;
         const next = e.payload.entries;
+        let started: number | null = null;
         next.forEach((entry, i) => {
           const was = entries[i]?.status;
-          if (entry.status === "in_progress" && was !== "in_progress")
+          if (entry.status === "in_progress" && was !== "in_progress") {
             visits[i] = (visits[i] ?? 0) + 1;
+            started ??= i;
+          }
           if (entry.status === "in_progress") lastActive = i;
         });
         entries = next.map((entry) => ({ text: entry.text, status: entry.status }));
+        if (started !== null) place(started);
         break;
       }
       case "tool_call": {
         if (calls.has(e.payload.call_id)) break;
-        const stage = activeStage();
+        const stage = stageNow();
         calls.set(e.payload.call_id, {
           call_id: e.payload.call_id,
           verb: e.payload.verb,
@@ -189,13 +231,20 @@ export function spineOf(
           seq: e.seq,
           at: at(e),
           stage,
-          visit: stage === LOOSE ? 0 : (visits[stage] ?? 0),
+          visit: stage < 0 ? 0 : (visits[stage] ?? 0),
         });
         break;
       }
       case "tool_result": {
         const call = calls.get(e.payload.call_id);
         if (call === undefined || call.result !== undefined) break;
+        // A call belongs to the stage under way while it ran: the engine starts it after the call
+        // and ends it after the result, and a model reply with several calls runs them in turn.
+        const open = inProgress();
+        if (open !== -1) {
+          call.stage = open;
+          call.visit = visits[open] ?? 0;
+        }
         call.result = { seq: e.seq, output: e.payload.output, failed: e.payload.error !== null };
         const steps = e.payload.output?.["steps"];
         if (call.verb === "lesson_show" && Array.isArray(steps))
@@ -212,7 +261,7 @@ export function spineOf(
         break;
       case "message": {
         if (e.payload.from === "agent") {
-          agent.push({ text: e.payload.text, seq: e.seq, at: at(e) });
+          agent.push({ text: e.payload.text, seq: e.seq, at: at(e), stage: stageNow() });
           break;
         }
         // The first parent message is the turn's own bubble; a later one entered mid-turn (S17).
@@ -225,7 +274,7 @@ export function spineOf(
         if (words === "" && photos === 0) break;
         placed.push({
           seq: e.seq,
-          stage: activeStage(),
+          stage: stageNow(),
           line:
             words === ""
               ? {
@@ -245,24 +294,21 @@ export function spineOf(
             ? { kind: "steer", copyKey: "chat_steered_edit", values: {} }
             : { kind: "steer", ...sayWords(words), steerLabel: true, quote: words };
         if (e.payload.source === "lesson_edit" || words !== "")
-          placed.push({ seq: e.seq, stage: activeStage(), line });
+          placed.push({ seq: e.seq, stage: stageNow(), line });
         break;
       }
       case "error": {
         tries = Math.max(tries, e.payload.attempt);
         if (e.payload.error.type !== RUN_ERROR_TYPE.stepTimedOut) break;
-        const stage = activeStage();
+        const stage = stageNow();
         // One quiet retry line per stage, however many deliveries timed out (S5).
-        if (retried.has(stage)) break;
-        retried.add(stage);
-        const name = stage === LOOSE ? null : entries[stage]?.text;
+        if (stage !== NEXT && retried.has(stage)) break;
+        if (stage !== NEXT) retried.add(stage);
+        // Named once it has a stage: one that starts after it may still take it in.
         placed.push({
           seq: e.seq,
           stage,
-          line:
-            name === null || name === undefined
-              ? { kind: "retry", copyKey: "chat_line_retry_plain", values: {} }
-              : { kind: "retry", copyKey: "chat_line_retry", values: { stage: name } },
+          line: { kind: "retry", copyKey: "chat_line_retry_plain", values: {} },
         });
         break;
       }
@@ -275,6 +321,24 @@ export function spineOf(
       default:
         break;
     }
+  }
+
+  // Nothing started after them: they join the last stage that ran, else the first.
+  place(lastActive ?? 0);
+  // One quiet retry line per stage (S5), however many timed out before their stage started.
+  const firstRetry = new Map<number, Placed>();
+  for (const p of placed)
+    if (p.line.kind === "retry" && !firstRetry.has(p.stage)) firstRetry.set(p.stage, p);
+  for (let i = placed.length - 1; i >= 0; i -= 1) {
+    const p = placed[i];
+    if (p?.line.kind === "retry" && firstRetry.get(p.stage) !== p) placed.splice(i, 1);
+  }
+  for (const p of placed) {
+    if (p.line.kind !== "retry") continue;
+    retried.add(p.stage);
+    const name = p.stage < 0 ? undefined : entries[p.stage]?.text;
+    if (name !== undefined)
+      p.line = { kind: "retry", copyKey: "chat_line_retry", values: { stage: name } };
   }
 
   const all = [...calls.values()];
@@ -330,6 +394,15 @@ export function spineOf(
       ? lastAgent
       : undefined;
 
+  // A turn that ended with no reply (stopped or failed mid-call): its last sentence stays a line
+  // in the stage it was said in, never the reply (§2 item 5, dl-uukj.47.71.38).
+  if (ended && reply === undefined && lastAgent !== undefined && lastAgent.text.trim() !== "")
+    placed.push({
+      seq: Number.MAX_SAFE_INTEGER,
+      stage: lastAgent.stage,
+      line: { kind: "now", ...sayWords(lastAgent.text.trim()) },
+    });
+
   // The open stage's tail: the now line, the waiting line, the slow line.
   const here = activeStage();
   const tail: SpineLine[] = [];
@@ -362,11 +435,16 @@ export function spineOf(
     : [];
   const looseLines = staged ? [] : [...ordered.map((p) => p.line), ...tail];
 
-  // A failed turn whose plan never said which stage failed: the open one did.
+  // A failed turn whose plan never said which stage failed: the open one did, or, when the last
+  // stage that ran had finished, the next one, which never got going.
   if (staged && kind === "failed" && !stages.some((s) => s.status === "failed")) {
-    const open = stages[here];
+    const at =
+      stages[here]?.status === "done"
+        ? stages.findIndex((s, i) => i > here && s.status === "todo")
+        : here;
+    const open = stages[at];
     if (open !== undefined) {
-      stages[here] = {
+      stages[at] = {
         ...open,
         status: "failed",
         summary: { copyKey: "chat_stage_failed_sum", values: { n: Math.max(1, tries) } },
@@ -438,14 +516,14 @@ function nowLine(
 /** A stage's mark from its plan status, the open stage taking the turn's phase (§4.1). */
 function stageStatus(plan: string, open: boolean, phase: SpinePhase): StageStatus {
   if (plan === "done") return "done";
+  // A stopped turn: the stage it stopped in takes the square, the rest never ran (S15).
+  if (phase === "cancelled") return open && plan === "in_progress" ? "stopped" : "todo";
   if (plan === "failed") return "failed";
   if (plan === "pending" && !open) return "todo";
   if (!open) return phase === "done" ? "done" : plan === "in_progress" ? "active" : "todo";
   switch (phase) {
     case "awaiting_input":
       return "waiting";
-    case "cancelled":
-      return "stopped";
     case "failed":
       return plan === "in_progress" ? "failed" : "todo";
     case "done":
