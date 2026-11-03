@@ -14,7 +14,8 @@
   "bank_commit": "803a979e123e2a06893e181e6c63dff92b4c8045",
   "commands": [
     "uv run python -m tools.experiments.e4 ledger --out experiments/e4/ledger.json (in jadwigo-bank, lane/e4-e5)",
-    "JADWIGO_MUSE_CAP_USD=500 uv run python -m tools.experiments.e4 live --out experiments/e4/live.json (in jadwigo-bank)"
+    "JADWIGO_MUSE_CAP_USD=500 uv run python -m tools.experiments.e4 live --out experiments/e4/live.json (in jadwigo-bank)",
+    "bun apps/api/src/experiments/e4-detail.ts <jadwigo-bank main checkout>/runs/muse (in this repo: detail.ledger_before_e4, detail.by_step, detail.by_task)"
   ],
   "detail": {
     "ledger_before_e4": {
@@ -31,7 +32,7 @@
         "cached_tokens": 0,
         "output_tokens": 0,
         "reasoning_tokens": 0,
-        "usd": 0.0,
+        "usd": 0,
         "seconds_total": 19.2,
         "seconds_median": 19.2
       },
@@ -83,7 +84,7 @@
         "reasoning_tokens": 5765,
         "usd": 0.0128,
         "seconds_total": 137.1,
-        "seconds_median": 45.0
+        "seconds_median": 45
       },
       "enrich": {
         "calls": 572,
@@ -151,7 +152,7 @@
         "cached_tokens": 0,
         "output_tokens": 0,
         "reasoning_tokens": 0,
-        "usd": 0.0,
+        "usd": 0,
         "seconds_total": 24.3,
         "seconds_median": 5.6
       },
@@ -162,8 +163,8 @@
         "output_tokens": 38,
         "reasoning_tokens": 22,
         "usd": 0.0024,
-        "seconds_total": 5.0,
-        "seconds_median": 5.0
+        "seconds_total": 5,
+        "seconds_median": 5
       }
     },
     "by_task": {
@@ -215,7 +216,7 @@
         },
         "prompt_chars": 26968,
         "spark": {
-          "seconds": 45.0,
+          "seconds": 45,
           "grounds_total": 15,
           "grounds_dropped": 1,
           "hint_leaks": [],
@@ -264,10 +265,10 @@
             "jaccard": 0.154
           },
           "prerequisites": {
-            "jaccard": 1.0
+            "jaccard": 1
           },
           "skill_ids": {
-            "jaccard": 0.0
+            "jaccard": 0
           },
           "curriculum_tags": {
             "jaccard": 0.75
@@ -335,13 +336,13 @@
             "jaccard": 0.1
           },
           "contexts": {
-            "jaccard": 1.0
+            "jaccard": 1
           },
           "prerequisites": {
             "jaccard": 0.5
           },
           "skill_ids": {
-            "jaccard": 0.0
+            "jaccard": 0
           },
           "curriculum_tags": {
             "jaccard": 0.667
@@ -412,7 +413,7 @@
             "jaccard": 0.158
           },
           "prerequisites": {
-            "jaccard": 1.0
+            "jaccard": 1
           },
           "skill_ids": {
             "jaccard": 0.333
@@ -421,7 +422,7 @@
             "jaccard": 0.6
           },
           "mistake_classes": {
-            "jaccard": 0.0
+            "jaccard": 0
           },
           "synthetic_needs": {
             "spark": 10,
@@ -499,7 +500,7 @@
       },
       "smoke-2026-10-28:(none)": {
         "calls": 7,
-        "usd": 0.0,
+        "usd": 0,
         "input_tokens": 0
       },
       "cost-sample-2026-10-28:(none)": {
@@ -524,7 +525,7 @@
       },
       "(untagged):(none)": {
         "calls": 1,
-        "usd": 0.0,
+        "usd": 0,
         "input_tokens": 0
       },
       "smoke-usage:(none)": {
