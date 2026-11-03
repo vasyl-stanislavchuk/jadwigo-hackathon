@@ -1361,7 +1361,7 @@
   "chat_line_mistakes": "Sprawdziłam, co sprawiło trudność",
   "chat_line_topics": "Przejrzałam tematy z podstawy programowej",
   "chat_line_ideas": "Zebrałam pomysły na lekcje",
-  "chat_week_title": "Tydzień {name}",
+  "chat_week_title": "Tydzień: {name}",
   "chat_week_meta": [
     {
       "declarations": ["input from", "input to", "input n", "local lessons_noun = n: plural"],
