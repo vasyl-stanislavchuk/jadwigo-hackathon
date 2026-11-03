@@ -23,6 +23,7 @@ import { ApiError, type ParentClient } from "@jadwigo/api-client";
 import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef, useState } from "react";
+import type { ReadAttachment } from "../../chat/attachments/ThreadAttachments.tsx";
 import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { LessonPane } from "../../chat/LessonPane.tsx";
@@ -52,6 +53,7 @@ export function LessonWorkspace({
   onForChange,
   onAddChild,
   api = null,
+  readAttachment = null,
 }: {
   language: Language;
   /** The server's conversation: the route's id. */
@@ -66,6 +68,8 @@ export function LessonWorkspace({
   onAddChild: () => void;
   /** The parent's client, for a child opened beside the chat (dl-uukj.47.59); none in a playground. */
   api?: ParentClient | null;
+  /** Reads a sent photo's link for the thread (dl-z5ja.11.6); none shows no photos. */
+  readAttachment?: ReadAttachment | null;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string | number> = {}): string =>
     copy(language, key, vars, CATEGORY);
@@ -198,6 +202,7 @@ export function LessonWorkspace({
   ) : (
     <ChatPane
       variant="parent"
+      readAttachment={readAttachment ?? undefined}
       language={language}
       turns={turns}
       queued={state.queued.map((q) => q.text)}

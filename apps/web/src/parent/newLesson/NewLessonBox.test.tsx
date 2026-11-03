@@ -19,6 +19,7 @@ import {
   harness,
   settle,
 } from "../../chat/attachments/fakes.test-helpers.ts";
+import { forgetSent, releaseSent, sentPreview } from "../../chat/attachments/sentPreviews.ts";
 import { NewLessonBox } from "./NewLessonBox.tsx";
 
 const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
@@ -206,6 +207,8 @@ describe("the first screen's photos (dl-z5ja.11.16)", () => {
   let fake: Harness;
   beforeEach(() => {
     fake = harness();
+    // A test that sent and unmounted handed its photo to the thread's registry: start from none.
+    forgetSent(() => {});
   });
   const withPhotos = (changes: Partial<Parameters<typeof NewLessonBox>[0]> = {}) =>
     box({ photos: true, uploadDeps: fake.deps, ...changes });
@@ -247,6 +250,35 @@ describe("the first screen's photos (dl-z5ja.11.16)", () => {
       attachmentIds: [photoId(1)],
       learner: null,
     });
+  });
+
+  it("keeps the photo on its chip when a send does not start, and hands it to the thread once the screen goes (dl-z5ja.11.6)", async () => {
+    const view = withPhotos();
+    await pick(photo());
+    await answer(0, 204);
+    const preview = () => document.querySelector("[data-chip] img")?.getAttribute("src");
+    const shown = preview();
+    expect(shown).toBeTruthy();
+    fireEvent.click(send());
+    expect(view.onSend).toHaveBeenCalledTimes(1);
+    // The send failed to start (no conversation made): the box stays, and so does the photo.
+    expect(preview()).toBe(shown);
+    expect(sentPreview(photoId(1))).toBeNull();
+    // The screen goes once the lesson has started: the thread now holds the local copy, unrevoked.
+    cleanup();
+    expect(sentPreview(photoId(1))).toBe(shown);
+    expect(fake.revoked).not.toContain(shown);
+    releaseSent(photoId(1));
+  });
+
+  it("revokes the photos of a box that goes without a send", async () => {
+    withPhotos();
+    await pick(photo());
+    await answer(0, 204);
+    const shown = document.querySelector("[data-chip] img")?.getAttribute("src");
+    cleanup();
+    expect(sentPreview(photoId(1))).toBeNull();
+    expect(fake.revoked).toContain(shown);
   });
 
   it("uploads a pasted photo and a dropped one, each as its own chip", async () => {
