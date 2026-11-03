@@ -115,7 +115,7 @@ function retryOf(turn: Turn, resend: (text: string) => void): (() => void) | und
   return text === null ? undefined : () => resend(text);
 }
 
-export function parentTextOf(turn: Turn): string | null {
+function parentTextOf(turn: Turn): string | null {
   for (const item of turn.view.chat)
     if (item.kind === "message" && item.from === "parent") return item.text;
   return null;
