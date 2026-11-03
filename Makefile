@@ -294,6 +294,27 @@ else
 	$(AS_API) bun run --cwd packages/lesson-import import "$(abspath $(FILE))" $(LESSON_IMPORT_FLAGS)
 endif
 
+## run-timeline CONV=cnv_…|<uuid> [ENV=dev|prod]: one conversation's runs, read-only: timing, verbs,
+## tokens, cost and refusals, never a message or a lesson (docs/runbooks/run-timeline.md, dl-hin8.37).
+## No ENV reads the local database. It has no PROD_GATE, whose terminal check would refuse `!` in
+## Claude Code, where the owner runs this. ENV=prod is still the owner's: the guard refuses it to a session.
+RUN_TIMELINE_UUID = bun -e 'import { uuidOf } from "./packages/contracts/src/ids.ts"; const id = process.argv[1] ?? ""; console.log(id.startsWith("cnv_") ? uuidOf("cnv_", id) : id)' "$(CONV)" | grep -E '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$$'
+.PHONY: run-timeline
+run-timeline:
+	@test -n "$(CONV)" || { echo "run-timeline: CONV=<cnv_ id or uuid> is required"; exit 1; }
+ifeq ($(ENV),)
+	@$(LOCAL_DB_GATE)
+	@conv=$$($(RUN_TIMELINE_UUID)) || { echo "run-timeline: $(CONV) is not a cnv_ id or a uuid"; exit 1; }; \
+	psql "$(LOCAL_DATABASE_URL)" -X -q -v ON_ERROR_STOP=1 -v conv="$$conv" -f tools/run-timeline.sql
+else
+	@conv=$$($(RUN_TIMELINE_UUID)) || { echo "run-timeline: $(CONV) is not a cnv_ id or a uuid"; exit 1; }; \
+	$(SUPABASE_LINK); \
+	url=$$(sed 's/:6543\//:5432\//' supabase/.temp/pooler-url); \
+	case "$$url" in *://postgres.$(SUPABASE_REF)@*:5432/*) ;; *) echo "$@: supabase/.temp/pooler-url does not name jadwigo-$(ENV)"; exit 1;; esac; \
+	env -i PATH="$$PATH" HOME="$$HOME" PGCONNECT_TIMEOUT=10 PGPASSWORD="$$SUPABASE_DB_PASSWORD" \
+	  psql "$$url" -X -q -v ON_ERROR_STOP=1 -v conv="$$conv" -f tools/run-timeline.sql
+endif
+
 ## lesson-withdraw LESSON=les_… | ASSIGNMENT=asg_… [UNDO=1]: withdraws a featured lesson by
 ## archiving it (decision dl-w0b4.111, dl-9t2o.12), in the local jadwigo database. The featured
 ## list drops it at once; its /play/ links keep playing, on purpose. ASSIGNMENT names it by its
