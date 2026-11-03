@@ -92,7 +92,9 @@ export function cardStateOf(
 ): LessonCardState | null {
   const view = foldRun(events);
   const tools = view.chat.flatMap((i) => (i.kind === "tool" && i.state === "done" ? [i] : []));
-  if (view.lesson === null || !tools.some((t) => WRITES.has(t.verb))) return null;
+  // A check counts too: a parent's edit in a turn of its own is checked there (dl-uukj.47.71.48).
+  const carded = tools.some((t) => WRITES.has(t.verb) || t.verb === "lesson_check");
+  if (view.lesson === null || !carded) return null;
   const file = view.lesson.lesson_file;
   const facts = lessonFacts(file);
   const base = { lessonId: facts.id, version: view.lesson.revision, title: facts.title };

@@ -273,11 +273,11 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     ]);
   });
 
-  it("fix with questions and no findings says the lesson changed since its check (#802's case)", () => {
+  it("fix with questions and no findings says it was not checked, and never asks to wait (dl-uukj.47.71.48)", () => {
     drawn({ ...BASE, kind: "fix", count: 4, preview: PREVIEW, findings: [] });
     const reason = card()?.querySelector("[data-fix-reason]")?.textContent ?? "";
     expect(reason).toBe(
-      "Lekcja zmieniła się od ostatniego sprawdzenia. Poczekaj, aż Jadwigo ją sprawdzi, i spróbuj znowu.",
+      "Ta wersja nie została sprawdzona. „Popraw za mnie” sprawdzi ją i poprawi.",
     );
     // It names no question to fix, since none is listed.
     expect(reason).not.toMatch(/zadania będą poprawione|poprawić/);
