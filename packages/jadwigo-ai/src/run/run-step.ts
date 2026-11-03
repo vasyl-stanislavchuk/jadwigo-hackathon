@@ -39,7 +39,7 @@ import type { AttachmentReader, Converter } from "./attachments.ts";
 import { earlierLine, refusedLine, turnFiles } from "./files.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
 import { inLanguage } from "./language.ts";
-import { lessonValidationIssue } from "./lesson-validation.ts";
+import { lessonValidationIssue, uncheckedRevision } from "./lesson-validation.ts";
 import { movePlan, planIn, settlePlan, startPlan, startsPlan } from "./plan.ts";
 
 /**
@@ -135,13 +135,14 @@ const INSTRUCTIONS = [
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
   CARD_RULE,
   "A nearby source is a starting point: inspect the actual question.data, not only say. Adapt data, key and help consistently to the requested operation and range. Renaming a subtraction does not turn it into addition.",
-  "When you already know the changes for several steps, send all their lesson_edit calls together in one response: they run in order, each on the result of the one before, and a refused one leaves the others standing. The parent is waiting, so do not spend a response on each step.",
+  "A later message about the lesson you hold changes that lesson: read it with lesson_show and edit it with lesson_edit. Draft again only when the parent asks for a different lesson.",
+  "Once you have read a step and know the changes for several steps, send all their lesson_edit calls together in one response: they run in order, each on the result of the one before, and a refused one leaves the others standing. The parent is waiting, so do not spend a response on each step.",
   "Once the questions are settled, give the lesson its title by passing title to the lesson_check that closes your work: a few plain words a child reads, naming what it practises, in the lesson's language. Never the parent's request word for word, and never a name.",
   "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key and inherits the main question family when omitted. If a check still fails, explain the limitation and do not claim the lesson is ready.",
   FENCE_RULE,
 ].join("\n");
-/** Moves on with `INSTRUCTIONS`: 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
-const PROMPT_CACHE_KEY = `${WORKFLOW}:5`;
+/** Moves on with `INSTRUCTIONS`: 6 since follow-ups edit (dl-hin8.45), 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:6`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
@@ -149,12 +150,12 @@ const PROMPT_CACHE_KEY = `${WORKFLOW}:5`;
 const DEFAULT_TIER: ModelTier = "contributor";
 /**
  * The tool calls a turn may make before its tools go away and the model must close (owner's number,
- * dl-hin8.38). At today's prices the budget stops a looping turn only after thousands of calls, so
+ * dl-hin8.38, raised from 40 for room while the tools settle). At today's prices the budget stops a looping turn only after thousands of calls, so
  * without this only the 30 minute deadline would, with a parent waiting.
  */
-const MAX_TOOL_CALLS = 40;
+const MAX_TOOL_CALLS = 60;
 const OUT_OF_CALLS =
-  "You have used all the tool calls this turn may make. Answer the parent now, with no tools: say what the lesson holds and what is not finished. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
+  "You have used all the tool calls this turn may make. This message ends your turn and no tool runs after it, so never say you are doing or will do something. Say what the lesson holds now, what did not change, and that the parent can send another message to go on. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -610,7 +611,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
-    const outOfCalls = w.log.filter((e) => e.type === "tool_result").length >= MAX_TOOL_CALLS;
+    // Counted from the parent's last word: a message after the limit is a new request to act on.
+    // Checked before a model call, so one response's batch may pass the limit by its own size.
+    const spokeAt = w.log.findLast((e) => parentSpokeAfter([e], 0))?.seq ?? 0;
+    const outOfCalls =
+      w.log.filter((e) => e.type === "tool_result" && e.seq > spokeAt).length >= MAX_TOOL_CALLS;
     if (outOfCalls) instructions.push(OUT_OF_CALLS);
     instructions.push(...prior.edits);
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer, w.log));
@@ -1219,8 +1224,63 @@ async function finish(deps: EngineDeps, w: Writer): Promise<RunStepOutcome> {
       await deps.queue.send({ run_id: w.run, attempt: w.attempt });
       return "continue";
     }
+    await checkLatest(deps, w);
     return endTurn(w, "completed", deps.now());
   });
+}
+
+/**
+ * A parent's edit on an ended turn calls no model, so its lesson is checked here, in the unit that
+ * writes it (dl-uukj.47.71.48). The check goes in before the revision under the steer's own id: the
+ * order and the `call_id` of a `lesson_check` that writes a revision, so it stands for this one.
+ */
+async function checkPatched(
+  deps: EngineDeps,
+  w: Writer,
+  run: Run,
+  steer: SteerEvent,
+  lesson: VerbContext["lesson"],
+): Promise<void> {
+  const call: ToolCall = {
+    call_id: steer.event_id,
+    verb: "lesson_check",
+    input: { draft_id: w.run, help: {}, names: [] },
+  };
+  await w.append([
+    {
+      type: "tool_call",
+      run_id: w.run,
+      event_id: await w.id("tool", call.call_id, "call"),
+      payload: call,
+    },
+  ]);
+  await runTool(deps, w, { pod: w.pod, created_by: run.created_by, run }, call, lesson);
+}
+
+/**
+ * A turn never ends on a lesson nobody checked (dl-uukj.47.71.48): the model stopped short of it.
+ * The check is code, so it runs here at no cost, as a real `lesson_check` in the log: the card, the
+ * spine and the give route read it as any other.
+ */
+async function checkLatest(deps: EngineDeps, w: Writer): Promise<void> {
+  if (!uncheckedRevision(w.log)) return;
+  const run = await deps.store.getRun(w.pod, w.run);
+  const lesson = await conversationLesson(deps.store, w.pod, w.run);
+  if (run === null || lesson === null) return;
+  const call: ToolCall = {
+    call_id: `auto_check_${lesson.revision}`,
+    verb: "lesson_check",
+    input: { draft_id: w.run, help: {}, names: [] },
+  };
+  await w.append([
+    {
+      type: "tool_call",
+      run_id: w.run,
+      event_id: await w.id("tool", call.call_id, "call"),
+      payload: call,
+    },
+  ]);
+  await runTool(deps, w, { pod: w.pod, created_by: run.created_by, run }, call, lesson);
 }
 
 async function endTurn(
@@ -1436,7 +1496,10 @@ function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null 
  * or not, with why (`stale_base`, `invalid_file`, `no_lesson`), so the pane reads the outcome
  * instead of re-deriving the rule. A patch not applied stays words for the model, told why.
  */
-async function applyPatches(w: Writer): Promise<number> {
+async function applyPatches(
+  w: Writer,
+  beforeRevision?: (steer: SteerEvent, lesson: VerbContext["lesson"]) => Promise<void>,
+): Promise<number> {
   let applied = 0;
   for (const steer of steersOf(w.log)) {
     const { patch, base_revision } = steer.payload;
@@ -1462,6 +1525,7 @@ async function applyPatches(w: Writer): Promise<number> {
       }
       const lesson_file = mergePatch(lesson.lesson_file, patch);
       if (!readable(lesson_file)) return resolve({ applied: false, reason: "invalid_file" });
+      await beforeRevision?.(steer, { revision: base_revision, lesson_file });
       // The resolution, then its revision, as the golden order keeps a tool_result before its
       // revision. A writer that wins between the check above and this fails the unit, and a
       // redelivery redoes it, now as stale_base.
@@ -1543,7 +1607,7 @@ async function patchEnded(
   });
   // A later unit applies every logged patch not yet resolved, this take's and any a step that
   // threw after its take left behind (lead decision 48): a redelivery redoes it, never loses it.
-  await applyPatches(w);
+  await applyPatches(w, (steer, lesson) => checkPatched(deps, w, found.run, steer, lesson));
   return w.appended;
 }
 
@@ -1714,6 +1778,16 @@ export interface FailedStep extends RunStepInput {
   read_ct: number;
 }
 
+/** How often a running step's visibility moves on: 3 beats fit in `STEP_VISIBILITY_S`. */
+const KEEP_ALIVE_MS = 20_000;
+
+function everyKeepAlive(beat: () => void): () => void {
+  const timer = setInterval(beat, KEEP_ALIVE_MS);
+  // A beat never holds the process open.
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
+
 /**
  * The consumer's loop, in-process: reads visible steps and runs each until none is visible. A step
  * that throws stays in the queue and comes back after its visibility timeout, as on pgmq; one that
@@ -1725,22 +1799,36 @@ export interface FailedStep extends RunStepInput {
  *
  * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
  * log it by run id (dl-z5ja.82); it stays in the queue either way.
+ *
+ * `keep_going` is asked before each read, so a host with a time limit stops between steps and never
+ * inside one (dl-hin8.33). What it leaves stays queued for the next drain.
  */
 export async function drain(
   deps: EngineDeps,
   options: {
     max_steps?: number;
+    keep_going?: () => boolean;
     onError?: (error: unknown, step: FailedStep) => void;
     /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
     onRead?: (run_id: RunId) => void;
+    /** Calls `beat` while a step runs, and answers how to stop. A test drives it by hand. */
+    keepAlive?: (beat: () => void) => () => void;
   } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
+  const keepAlive = options.keepAlive ?? everyKeepAlive;
   const outputs: RunStepOutput[] = [];
   for (let reads = 0; reads < max; reads++) {
+    if (options.keep_going?.() === false) break;
     const [queued] = await deps.queue.read(STEP_VISIBILITY_S, 1);
     if (!queued) break;
     options.onRead?.(queued.message.run_id);
+    // A healthy step can outlast its visibility: a model call with room to reason, or several edits
+    // in one response (dl-hin8.44). This host is alive, so the step stays hidden; if the host dies
+    // the beats stop and the step comes back. A beat that fails only risks that redelivery.
+    const stop = keepAlive(() => {
+      deps.queue.extend?.(queued.msg_id, STEP_VISIBILITY_S).catch(() => undefined);
+    });
     try {
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
@@ -1760,6 +1848,8 @@ export async function drain(
         (await failRun(deps, queued.message.run_id).catch(() => false))
       )
         await deps.queue.archive(queued.msg_id);
+    } finally {
+      stop();
     }
   }
   // A step that never came back to throw (its host died with it) is dead-lettered by the queue on

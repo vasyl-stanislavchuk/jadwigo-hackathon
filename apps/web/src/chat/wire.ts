@@ -44,6 +44,8 @@ const PACES = [
   "s09",
   "s11",
   "s12",
+  "s12-fixed",
+  "s12-dropped",
   "s13",
   "s14",
   "s15",

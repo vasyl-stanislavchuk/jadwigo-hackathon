@@ -125,14 +125,35 @@ describe("the dev engine's paces (dl-uukj.47.71.7)", () => {
     expect(ended(events)).toBe(false);
   });
 
-  it("s12: an edit refused once, then done, and the turn completes", async () => {
+  it("s12: question_types refused once, then the lesson is built without it", async () => {
     const p = await play("s12");
+    const events = await p.until(ended);
+    expect(statusOf(events)).toBe("completed");
+    const types = resultsOf(events, "question_types").map((e) =>
+      e.type === "tool_result" ? e.payload.error === null : null,
+    );
+    expect(types).toEqual([false]);
+    expect(resultsOf(events, "lesson_draft")).toHaveLength(1);
+  });
+
+  it("s12-fixed: an edit refused once, then the same edit goes through", async () => {
+    const p = await play("s12-fixed");
     const events = await p.until(ended);
     expect(statusOf(events)).toBe("completed");
     const edits = resultsOf(events, "lesson_edit").map((e) =>
       e.type === "tool_result" ? e.payload.error === null : null,
     );
     expect(edits).toEqual([false, true]);
+  });
+
+  it("s12-dropped: an edit refused once and never tried again, with no check after it", async () => {
+    const p = await play("s12-dropped");
+    const events = await p.until(ended);
+    const edits = resultsOf(events, "lesson_edit").map((e) =>
+      e.type === "tool_result" ? e.payload.error === null : null,
+    );
+    expect(edits).toEqual([false]);
+    expect(resultsOf(events, "lesson_check")).toHaveLength(0);
   });
 
   it("s13: the turn ends failed", async () => {

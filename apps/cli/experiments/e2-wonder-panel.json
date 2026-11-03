@@ -1,0 +1,236 @@
+{
+  "recorded": "2026-11-03, E2's first panel, before the owner's contributor-only rule",
+  "model": "muse-wonder-full-1.0",
+  "transport": "muse exec on the Muse subscription (no per-call token export)",
+  "calls": 36,
+  "learners": [
+    {
+      "label": "Learner A",
+      "profile": "steady",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "Reteaching proficient row-2 and familiar row-3 offers little incremental progress for a steady learner, though reteaching attempted row-5 is appropriate."
+        },
+        {
+          "fit": 3,
+          "reason": "Row-3 and row-5 target genuine gaps for this steady learner, but reteaching proficient row-2 wastes a third of the 18 questions."
+        },
+        {
+          "fit": 3,
+          "reason": "Reteaching familiar row-3 and attempted row-5 suits steady progress, but spending a third of the lesson reteaching already-proficient row-2 instead of familiar row-7 wastes practice time."
+        }
+      ],
+      "panel_mean_fit": 2.67
+    },
+    {
+      "label": "Learner B",
+      "profile": "forgetful",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "Reteaching attempted topics suits a forgetful learner, but three of six drawn topics contribute zero questions and rows 5-7 are ignored, leaving the review incomplete and unbalanced."
+        },
+        {
+          "fit": 3,
+          "reason": "Reteaching attempted multiplication rows suits a forgetful learner, but the three empty ortografia topics waste half the lesson and leave several attempted skills unreviewed."
+        },
+        {
+          "fit": 3,
+          "reason": "Reteaching attempted multiplication suits a forgetful learner and avoids the mastered topic, but three ortografia reteach slots contain no questions, leaving those attempted skills unreviewed."
+        }
+      ],
+      "panel_mean_fit": 2.67
+    },
+    {
+      "label": "Learner C",
+      "profile": "guesser",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "It targets attempted multiplication rows 3 and 4, but four ortografia reteach slots contain zero questions, including mastered capitals, leaving attempted ch-h and familiar topics unpracticed."
+        },
+        {
+          "fit": 2,
+          "reason": "Only the attempted/familiar multiplication rows provide usable reteach, while all four orthography needs draw zero questions and mastered capitals wastes a slot, leaving a narrow lesson poorly matched to a guess-prone learner."
+        },
+        {
+          "fit": 3,
+          "reason": "It targets the weakest multiplication rows 3, 4, and 7, but four orthography reteach items contribute zero questions, leaving those attempted and familiar gaps unaddressed."
+        }
+      ],
+      "panel_mean_fit": 2.33
+    },
+    {
+      "label": "Learner D",
+      "profile": "slow-then-click",
+      "panel": [
+        {
+          "fit": 3,
+          "reason": "Reteaching only attempted topics suits a slow-then-click learner needing repetition, but the empty rz-after-consonant set and spreading across three multiplication rows dilutes the focused practice needed for it to click."
+        },
+        {
+          "fit": 3,
+          "reason": "It correctly targets only attempted topics for reteach, but splitting 18 questions across three multiplication rows plus an empty orthography item dilutes the sustained single-topic focus a slow-then-click learner needs to finally click."
+        },
+        {
+          "fit": 3,
+          "reason": "Reteaching only attempted topics fits, but splitting across three multiplication rows plus an empty rz-after-consonant set dilutes the sustained single-topic practice a slow-then-click learner needs."
+        }
+      ],
+      "panel_mean_fit": 3.0
+    },
+    {
+      "label": "Learner E",
+      "profile": "help-heavy",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "It reteaches familiar multiplication rows 2-3 with most questions while attempted orthography and row-4 get zero or few questions, mismatching this help-heavy learner's need for supported practice on attempted skills."
+        },
+        {
+          "fit": 2,
+          "reason": "Reteach of familiar and attempted multiplication suits a help-heavy learner, but half the drawn ortografia topics contribute zero questions and weaker attempted topics like row-6 and rz-after-consonant are omitted, leaving an unbalanced 15-question maths-only lesson."
+        },
+        {
+          "fit": 2,
+          "reason": "Half the reteach slots deliver zero questions, leaving attempted ortografia topics unpractised while familiar multiplication rows 2-3 dominate over attempted row-4 for a help-heavy learner needing independent consolidation."
+        }
+      ],
+      "panel_mean_fit": 2.0
+    },
+    {
+      "label": "Learner F",
+      "profile": "rusher",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "It usefully reteaches attempted/familiar multiplication rows 3-5, but the four ortografia skills including attempted ch-h, nie, and rz-after-consonant contribute zero questions and row-6 is omitted, leaving half the learner's needs unaddressed."
+        },
+        {
+          "fit": 2,
+          "reason": "The multiplication reteach targets attempted skills, but four drawn ortografia topics deliver zero questions and no practice checks the proficient skills this careless rusher slips on."
+        },
+        {
+          "fit": 4,
+          "reason": "All 18 actual questions reteach the attempted/familiar multiplication rows 3-5 that need work, though the attempted orthography skills receive no questions."
+        }
+      ],
+      "panel_mean_fit": 2.67
+    },
+    {
+      "label": "Learner G",
+      "profile": "perfectionist",
+      "panel": [
+        {
+          "fit": 4,
+          "reason": "The lesson reteaches all three attempted multiplication rows, building confidence for a slow perfectionist, though 18 questions may feel long."
+        },
+        {
+          "fit": 4,
+          "reason": "Reteaching only the three attempted multiplication rows gives this perfectionist learner low-risk consolidation, though 18 questions is heavy for a slow, careful pace."
+        },
+        {
+          "fit": 3,
+          "reason": "It correctly targets the three attempted rows for reteach, but 18 questions solely on weakest skills with no proficient confidence-builders may overwhelm a slow perfectionist prone to skipping."
+        }
+      ],
+      "panel_mean_fit": 3.67
+    },
+    {
+      "label": "Learner H",
+      "profile": "early-plateau",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "It targets attempted and familiar skills while avoiding proficient ones, but three ortografia reteach slots contain zero questions, leaving those gaps unaddressed and narrowing the lesson to maths rows 2-4 only."
+        },
+        {
+          "fit": 2,
+          "reason": "Reteaching attempted/familiar multiplication rows 2-4 suits the plateau, but three of six topics contribute zero questions, wasting half the lesson including attempted capitals and rz-after-consonant."
+        },
+        {
+          "fit": 2,
+          "reason": "The maths reteach targets weak rows 2-4, but all three orthography reteach slots contain zero questions, leaving the attempted capitals and rz-after-consonant skills unaddressed for a plateaued learner."
+        }
+      ],
+      "panel_mean_fit": 2.0
+    },
+    {
+      "label": "Learner I",
+      "profile": "weekend-only",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "The multiplication reteach matches attempted rows 3-5, but four orthography reteach slots contain zero questions, wasting the weekend-only session and leaving attempted and familiar skills unpractised."
+        },
+        {
+          "fit": 2,
+          "reason": "Maths reteach targets attempted rows 3-5, but four ortografia topics contribute zero questions and rows 6-7 are omitted, leaving much needed practice unaddressed for a weekend-only learner."
+        },
+        {
+          "fit": 2,
+          "reason": "The multiplication reteaches target attempted skills suitable after a weekday gap, but four of seven drawn topics contain zero questions, leaving all orthography needs unserved."
+        }
+      ],
+      "panel_mean_fit": 2.0
+    },
+    {
+      "label": "Learner J",
+      "profile": "uneven",
+      "panel": [
+        {
+          "fit": 1,
+          "reason": "Although it targets the learner's weak spelling areas for reteach, the lesson contains zero questions so it provides no actual practice or learning."
+        },
+        {
+          "fit": 1,
+          "reason": "The reteach topics target the learner's weak spelling, but the lesson contains zero total questions so it provides no practice."
+        },
+        {
+          "fit": 1,
+          "reason": "Although it targets the learner's weak spelling for reteaching, the lesson contains zero questions and thus delivers no practice."
+        }
+      ],
+      "panel_mean_fit": 1.0
+    },
+    {
+      "label": "Learner K",
+      "profile": "comeback",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "Three needed ortografia reteach topics contribute zero questions, leaving only maths rows 2-4 and ignoring other attempted areas for this returning learner."
+        },
+        {
+          "fit": 2,
+          "reason": "The maths rows 2-4 recap suits a comeback learner at attempted/familiar level, but all three ortografia topics draw zero questions and rows 5-7 are ignored, leaving the lesson unbalanced and incomplete."
+        },
+        {
+          "fit": 2,
+          "reason": "Maths reteach on attempted/familiar rows suits a comeback learner needing consolidation, but three of six drawn ortografia topics contribute zero questions, leaving half the lesson empty and unbalanced."
+        }
+      ],
+      "panel_mean_fit": 2.0
+    },
+    {
+      "label": "Learner L",
+      "profile": "new-and-keen",
+      "panel": [
+        {
+          "fit": 2,
+          "reason": "The multiplication reteach matches attempted skills, but three of six drawn topics contain zero questions, wasting half the lesson for a keen daily learner."
+        },
+        {
+          "fit": 2,
+          "reason": "Maths reteach of attempted rows 2, 4 and 5 suits a keen beginner, but three ortografia topics contribute zero questions, leaving half the lesson empty."
+        },
+        {
+          "fit": 2,
+          "reason": "Reteaching attempted multiplication rows 2, 4 and 5 fits the keen beginner, but half the drawn topics (capitals, ch-h, nie) contribute zero questions so those attempted needs are ignored."
+        }
+      ],
+      "panel_mean_fit": 2.0
+    }
+  ]
+}

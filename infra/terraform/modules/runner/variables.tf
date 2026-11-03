@@ -15,7 +15,7 @@ variable "handler" {
 }
 
 variable "timeout" {
-  description = "Seconds one invocation may run: one drain of agent_step, at most MAX_STEPS steps"
+  description = "Seconds one invocation may run: one drain of agent_step, which stops starting steps at MAX_DRAIN_MS"
   type        = number
   default     = 300
 }

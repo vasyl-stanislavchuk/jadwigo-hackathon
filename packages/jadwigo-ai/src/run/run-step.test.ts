@@ -740,21 +740,118 @@ describe("runStep and drain", () => {
     expect(t.muse.calls).toHaveLength(3);
   });
 
-  it("takes the tools away at 40 tool calls, and ignores a call the model still names (dl-hin8.38)", async () => {
+  it("takes the tools away at 60 tool calls, and ignores a call the model still names (dl-hin8.38)", async () => {
     const show = { calls: [{ verb: "lesson_show" as const }] };
     const t = await setup(
-      [...Array.from({ length: 40 }, () => show), show, { text: "Here is what I have so far." }],
+      [...Array.from({ length: 60 }, () => show), show, { text: "Here is what I have so far." }],
       fakeVerbs(),
     );
     const run = await t.say("Go.");
     for (let i = 0; i < 5; i++) await drain(t.deps);
 
     const log = await t.log(run);
-    expect(log.filter((e) => e.type === "tool_result")).toHaveLength(40);
-    expect(t.muse.calls[39]?.tools.length).toBeGreaterThan(0);
-    expect(t.muse.calls[39]?.instructions).not.toContain("all the tool calls");
-    expect(t.muse.calls[40]?.tools).toEqual([]);
-    expect(t.muse.calls[40]?.instructions).toContain("all the tool calls");
+    expect(log.filter((e) => e.type === "tool_result")).toHaveLength(60);
+    expect(t.muse.calls[59]?.tools.length).toBeGreaterThan(0);
+    expect(t.muse.calls[59]?.instructions).not.toContain("all the tool calls");
+    expect(t.muse.calls[60]?.tools).toEqual([]);
+    expect(t.muse.calls[60]?.instructions).toContain("all the tool calls");
+  });
+
+  it("after the limit the turn ends completed, with the model's closing words (dl-hin8.42)", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    const t = await setup(
+      [...Array.from({ length: 60 }, () => show), { text: "Here is what I have so far." }],
+      fakeVerbs(),
+    );
+    const run = await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect((await t.run(run)).status).toBe("completed");
+    expect(t.muse.calls[60]?.instructions).toContain("never say you are doing or will do");
+    const said = (await t.log(run)).flatMap((e) =>
+      e.type === "message" && e.payload.from === "agent" ? [e.payload.text] : [],
+    );
+    expect(said.at(-1)).toBe("Here is what I have so far.");
+  });
+
+  it("lets one response's batch pass the limit, then closes", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    const batch = { calls: Array.from({ length: 5 }, () => ({ verb: "lesson_show" as const })) };
+    const t = await setup(
+      [...Array.from({ length: 59 }, () => show), batch, { text: "Closing." }],
+      fakeVerbs(),
+    );
+    const run = await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect((await t.log(run)).filter((e) => e.type === "tool_result")).toHaveLength(64);
+    expect(t.muse.calls[60]?.tools).toEqual([]);
+  });
+
+  it("gives the tools back when the parent speaks after the limit", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    let shows = 0;
+    let say: (text: string) => Promise<unknown> = () => Promise.resolve();
+    const t = await setup(
+      [...Array.from({ length: 60 }, () => show), { text: "Done." }],
+      fakeVerbs({
+        lesson_show: async () => {
+          shows += 1;
+          if (shows === 60) await say("One more thing.");
+          return { output: {} };
+        },
+      }),
+    );
+    say = (text) => t.say(text);
+    await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    expect(t.muse.calls[60]?.tools.length).toBeGreaterThan(0);
+  });
+
+  describe("a step that outlasts its visibility (dl-hin8.44)", () => {
+    /** A model call that takes `seconds`, beating once half way if `beats`, and what a read saw. */
+    async function longCall(beats: boolean) {
+      const t = await setup([{ text: "Done." }]);
+      let beat = () => {};
+      let stopped = 0;
+      const seenMidCall: number[] = [];
+      const inner = t.deps.muse;
+      const deps: EngineDeps = {
+        ...t.deps,
+        muse: {
+          respond: async (request) => {
+            t.tick(50_000);
+            if (beats) beat();
+            t.tick(50_000);
+            seenMidCall.push((await t.queue.read(STEP_VISIBILITY_S, 5)).length);
+            return inner.respond(request);
+          },
+        },
+      };
+      await t.say("Go.");
+      await drain(deps, {
+        keepAlive: (b) => {
+          beat = b;
+          return () => {
+            stopped += 1;
+          };
+        },
+      });
+      return { seenMidCall, stopped, t };
+    }
+
+    it("stays hidden while its host beats, and stops beating when it ends", async () => {
+      const { seenMidCall, stopped, t } = await longCall(true);
+      expect(seenMidCall).toEqual([0]);
+      expect(stopped).toBe(1);
+      expect(await t.queue.read(STEP_VISIBILITY_S, 5)).toEqual([]);
+    });
+
+    it("comes back when no beat arrived, as when the host died", async () => {
+      const { seenMidCall } = await longCall(false);
+      expect(seenMidCall).toEqual([1]);
+    });
   });
 
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
@@ -985,7 +1082,7 @@ describe("runStep and drain", () => {
     for (const call of t.muse.calls) {
       expect(call.instructions).toContain(CARD_RULE);
       // A new instructions text, a new cache key: no call reads a prefix cached without the rule.
-      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:5");
+      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:6");
     }
     expect(CARD_RULE).toMatch(/never list or repeat the lesson's questions/);
   });
@@ -1776,6 +1873,74 @@ describe("a parent's patch (dl-z5ja.76)", () => {
     ],
   });
   const real = () => createVerbs({ bank: fixtureBank() });
+
+  describe("a lesson nobody checked (dl-uukj.47.71.48)", () => {
+    const passes = (events: readonly RunEvent[]) =>
+      events.flatMap((e) =>
+        e.type === "tool_result" && e.payload.verb === "lesson_check"
+          ? [(e.payload.output as { ok?: unknown }).ok]
+          : [],
+      );
+
+    it("is checked when the model stops short, with no model call", async () => {
+      const t = await setup(
+        [{ calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] }, { text: "Gotowe." }],
+        real(),
+      );
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      const events = await t.log(run);
+      expect(t.muse.calls).toHaveLength(2);
+      expect(passes(events)).toEqual([true]);
+      expect((await t.run(run)).status).toBe("completed");
+      const order = events.map((e) => e.type);
+      expect(order.lastIndexOf("tool_result")).toBeLessThan(order.lastIndexOf("turn_complete"));
+    });
+
+    it("is checked when the model's own check was refused", async () => {
+      const t = await setup(
+        [
+          { calls: [{ verb: "lesson_draft", input: DRAFT_INPUT }] },
+          { calls: [{ verb: "lesson_check", input: { draft_id: "not-this-run", names: [] } }] },
+          // The answer check refuses a claim on a refused check, and asks once more.
+          { text: "Gotowe." },
+          { text: "Gotowe." },
+        ],
+        real(),
+      );
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      const results = (await t.log(run)).flatMap((e) =>
+        e.type === "tool_result" && e.payload.verb === "lesson_check"
+          ? [e.payload.error?.type ?? "ok"]
+          : [],
+      );
+      expect(results).toEqual(["unknown-draft", "ok"]);
+    });
+
+    it("is not checked twice when the model already checked it", async () => {
+      const t = await setup([drafting(), { text: "Gotowe." }], real());
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      expect(passes(await t.log(run))).toHaveLength(1);
+    });
+
+    it("is checked after a parent edits it on a finished turn", async () => {
+      const t = await setup([drafting(), { text: "Gotowe." }], real());
+      const run = await t.say("Adding within 20, grade 1.");
+      await drain(t.deps);
+      const before = (await t.log(run)).filter((e) => e.type === "lesson_revision");
+      const last = before.at(-1);
+      if (last?.type !== "lesson_revision") throw new Error("no revision");
+      await t.send(steer({ title: "Moja lekcja" }, last.payload.revision));
+      await drain(t.deps);
+
+      const events = await t.log(run);
+      expect(t.muse.calls).toHaveLength(2);
+      expect(events.some((e) => e.type === "patch_resolved" && e.payload.applied)).toBe(true);
+      expect(passes(events)).toEqual([true, true]);
+    });
+  });
 
   it("is resolved no_lesson with no model call, and told when a call is made", async () => {
     let t: Awaited<ReturnType<typeof setup>>;

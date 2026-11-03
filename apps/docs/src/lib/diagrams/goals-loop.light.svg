@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 176" role="img" aria-labelledby="goals-loop-light-title goals-loop-light-desc">
+<title id="goals-loop-light-title">The goals loop</title>
+<desc id="goals-loop-light-desc">A parent's goal draws lessons, playing makes evidence, the report shows what changed, and the next goal follows.</desc>
+<defs><marker id="a-goals-loop-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#50535c"/></marker></defs>
+<rect x="0" y="0" width="960" height="176" fill="#ffffff"/>
+<line x1="186" y1="88" x2="216" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-goals-loop-light)"/>
+<line x1="372" y1="88" x2="402" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-goals-loop-light)"/>
+<line x1="558" y1="88" x2="588" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-goals-loop-light)"/>
+<line x1="744" y1="88" x2="774" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-goals-loop-light)"/>
+<rect x="30" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="108" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">A parent's goal</text>
+<text x="108" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">in their own words</text>
+<rect x="216" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="294" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Lessons</text>
+<text x="294" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">drawn for the goal</text>
+<rect x="402" y="56" width="156" height="64" rx="6" fill="#dce8fb" stroke="#3a5fa8" stroke-width="1.5"/>
+<text x="480" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Evidence</text>
+<text x="480" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">from playing</text>
+<rect x="588" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="666" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">The report</text>
+<text x="666" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">what changed</text>
+<rect x="774" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="852" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">The next goal</text>
+<text x="852" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">the parent decides</text>
+</svg>
