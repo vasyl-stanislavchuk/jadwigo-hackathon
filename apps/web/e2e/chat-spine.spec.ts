@@ -333,12 +333,10 @@ for (const size of SIZES) {
       await expect(spineOf(page).locator("[data-stage='failed']")).toHaveCount(0);
     });
 
-    test("s14: a turn stopped before any lesson says 'Zatrzymane.' and no lesson words (dl-uukj.47.71.40)", async ({
+    test("s14: a turn stopped before any lesson says 'Zatrzymane.' and no lesson words", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.40. s03 holds the draft, so Esc stops a turn with no lesson yet.
-      // Remove this mark in the PR that fixes it.
-      test.fail();
+      // s03 holds the draft, so Esc stops a turn with no lesson yet (dl-uukj.47.71.40).
       await open(page, "s03", size);
       await phase(page, "tool");
       await composerOf(page).focus();
