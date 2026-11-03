@@ -1,0 +1,1842 @@
+{
+  "id": "e1-cohort",
+  "synthetic": true,
+  "seed": 20261012,
+  "start": "2026-10-12T08:00:00.000Z",
+  "days": 21,
+  "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+  "skills": [
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "maths.multiplication.row-2",
+      "topic_id": "top_00000000008008000000001rg0",
+      "kind": "speed",
+      "status": "proposed",
+      "can_do": {
+        "pl": {
+          "child": "Umiem mnożyć przez 2.",
+          "parent": "Mnoży przez 2 w zakresie tabliczki mnożenia, od 2×1 do 2×10.",
+          "reviewed": false
+        }
+      },
+      "aliases": ["curriculum.math.multiplication.row-2", "maths.mul.2x2", "maths.mul.2x5"],
+      "prerequisites": [],
+      "source": "bank:enrichment",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "maths.multiplication.row-3",
+      "topic_id": "top_00000000008008000000001rg0",
+      "kind": "speed",
+      "status": "proposed",
+      "can_do": {
+        "pl": {
+          "child": "Umiem mnożyć przez 3.",
+          "parent": "Mnoży przez 3 w zakresie tabliczki mnożenia, od 3×1 do 3×10.",
+          "reviewed": false
+        }
+      },
+      "aliases": ["curriculum.math.multiplication.row-3", "maths.mul.3x4"],
+      "prerequisites": ["maths.multiplication.row-2", "maths.multiplication.row-5"],
+      "source": "bank:enrichment",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "maths.multiplication.row-4",
+      "topic_id": "top_00000000008008000000001rg0",
+      "kind": "speed",
+      "status": "proposed",
+      "can_do": {
+        "pl": {
+          "child": "Umiem mnożyć przez 4.",
+          "parent": "Mnoży przez 4 w zakresie tabliczki mnożenia, od 4×1 do 4×10.",
+          "reviewed": false
+        }
+      },
+      "aliases": ["curriculum.math.multiplication.row-4"],
+      "prerequisites": ["maths.multiplication.row-2", "maths.multiplication.row-5"],
+      "source": "bank:enrichment",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "maths.multiplication.row-5",
+      "topic_id": "top_00000000008008000000001rg0",
+      "kind": "speed",
+      "status": "proposed",
+      "can_do": {
+        "pl": {
+          "child": "Umiem mnożyć przez 5.",
+          "parent": "Mnoży przez 5 w zakresie tabliczki mnożenia, od 5×1 do 5×10.",
+          "reviewed": false
+        }
+      },
+      "aliases": ["curriculum.math.multiplication.row-5"],
+      "prerequisites": [],
+      "source": "bank:enrichment",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "maths.multiplication.row-6",
+      "topic_id": "top_00000000008008000000001rg0",
+      "kind": "speed",
+      "status": "proposed",
+      "can_do": {
+        "pl": {
+          "child": "Umiem mnożyć przez 6.",
+          "parent": "Mnoży przez 6 w zakresie tabliczki mnożenia, od 6×1 do 6×10.",
+          "reviewed": false
+        }
+      },
+      "aliases": ["curriculum.math.multiplication.row-6", "fixture.times-6"],
+      "prerequisites": ["maths.multiplication.row-3", "maths.multiplication.row-4"],
+      "source": "bank:enrichment",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "maths.multiplication.row-7",
+      "topic_id": "top_00000000008008000000001rg0",
+      "kind": "speed",
+      "status": "proposed",
+      "can_do": {
+        "pl": {
+          "child": "Umiem mnożyć przez 7.",
+          "parent": "Mnoży przez 7 w zakresie tabliczki mnożenia, od 7×1 do 7×10.",
+          "reviewed": false
+        }
+      },
+      "aliases": ["curriculum.math.multiplication.row-7"],
+      "prerequisites": ["maths.multiplication.row-3", "maths.multiplication.row-4"],
+      "source": "bank:enrichment",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "draft.ortografia.capitals",
+      "topic_id": null,
+      "kind": "accuracy",
+      "status": "proposed",
+      "can_do": null,
+      "aliases": [],
+      "prerequisites": [],
+      "source": "fixture",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "draft.ortografia.ch-h",
+      "topic_id": null,
+      "kind": "accuracy",
+      "status": "proposed",
+      "can_do": null,
+      "aliases": [],
+      "prerequisites": [],
+      "source": "fixture",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "draft.ortografia.nie",
+      "topic_id": null,
+      "kind": "accuracy",
+      "status": "proposed",
+      "can_do": null,
+      "aliases": [],
+      "prerequisites": [],
+      "source": "fixture",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    },
+    {
+      "pod_id": "pod_6et2fhbnwvb45aw9atcfzs33za",
+      "code": "draft.ortografia.rz-after-consonant",
+      "topic_id": null,
+      "kind": "accuracy",
+      "status": "proposed",
+      "can_do": null,
+      "aliases": [],
+      "prerequisites": [],
+      "source": "fixture",
+      "created_at": "2026-10-12T08:00:00.000Z"
+    }
+  ],
+  "learners": [
+    {
+      "label": "Learner A",
+      "profile": "steady",
+      "blurb": "Practises most days and improves a little each time.",
+      "learner_id": "lrn_00000000008008000000001r80",
+      "synthetic": true,
+      "attempts": 16,
+      "tries": 119,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 14,
+          "last_answered_at": "2026-10-30T08:03:00.000Z",
+          "due_at": "2026-11-21T08:03:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 12,
+          "last_answered_at": "2026-10-30T08:01:00.000Z",
+          "due_at": "2026-11-03T08:01:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 11,
+          "last_answered_at": "2026-10-30T08:04:00.000Z",
+          "due_at": "2026-12-17T08:04:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 18,
+          "last_answered_at": "2026-10-31T08:05:00.000Z",
+          "due_at": "2027-01-11T08:05:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "proficient",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-10-29T08:03:00.000Z",
+          "due_at": "2026-10-30T08:03:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-10-31T08:02:00.000Z",
+          "due_at": "2026-11-02T08:02:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 12,
+          "last_answered_at": "2026-10-31T08:01:00.000Z",
+          "due_at": "2026-11-25T08:01:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-10-30T08:05:00.000Z",
+          "due_at": "2026-10-30T08:06:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 6,
+          "last_answered_at": "2026-10-28T08:05:00.000Z",
+          "due_at": "2026-10-28T08:11:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-10-29T08:01:00.000Z",
+          "due_at": "2026-10-29T08:11:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr0"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr0"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr0"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr0"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "review",
+            "goal_ids": ["gol_00000000008008000000001rr0"],
+            "why": "review_due"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner B",
+      "profile": "forgetful",
+      "blurb": "Learns fast in a session, then loses it over a gap.",
+      "learner_id": "lrn_00000000008008000000001r81",
+      "synthetic": true,
+      "attempts": 11,
+      "tries": 84,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 4,
+          "last_answered_at": "2026-11-01T08:01:00.000Z",
+          "due_at": "2026-10-23T08:04:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-10-30T08:01:00.000Z",
+          "due_at": "2026-10-30T08:11:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 6,
+          "last_answered_at": "2026-11-01T08:02:00.000Z",
+          "due_at": "2026-11-01T08:12:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 10,
+          "last_answered_at": "2026-10-30T08:07:00.000Z",
+          "due_at": "2026-11-18T08:07:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-11-01T08:06:00.000Z",
+          "due_at": "2026-11-01T08:07:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 4,
+          "last_answered_at": "2026-10-30T08:02:00.000Z",
+          "due_at": "2026-10-30T08:03:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-11-01T08:04:00.000Z",
+          "due_at": "2026-11-01T08:05:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 9,
+          "last_answered_at": "2026-11-01T08:03:00.000Z",
+          "due_at": "2026-11-01T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 10,
+          "last_answered_at": "2026-10-31T08:08:00.000Z",
+          "due_at": "2026-10-31T08:09:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 6,
+          "last_answered_at": "2026-11-01T08:05:00.000Z",
+          "due_at": "2026-11-01T08:06:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr1"],
+            "why": "needs_attention"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner C",
+      "profile": "guesser",
+      "blurb": "Answers at once; about 1 try in 4 is a guess.",
+      "learner_id": "lrn_00000000008008000000001r82",
+      "synthetic": true,
+      "attempts": 16,
+      "tries": 123,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "mastered",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-11-01T08:08:00.000Z",
+          "due_at": "2026-11-05T08:08:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 10,
+          "last_answered_at": "2026-11-01T08:06:00.000Z",
+          "due_at": "2026-11-01T08:07:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 8,
+          "last_answered_at": "2026-10-30T08:09:00.000Z",
+          "due_at": "2026-10-30T08:10:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 9,
+          "last_answered_at": "2026-10-31T08:03:00.000Z",
+          "due_at": "2026-10-31T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 12,
+          "last_answered_at": "2026-10-31T08:00:00.000Z",
+          "due_at": "2026-11-03T08:00:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 13,
+          "last_answered_at": "2026-11-01T08:03:00.000Z",
+          "due_at": "2026-11-01T08:13:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 14,
+          "last_answered_at": "2026-10-30T08:07:00.000Z",
+          "due_at": "2026-10-30T08:17:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 17,
+          "last_answered_at": "2026-11-01T08:04:00.000Z",
+          "due_at": "2026-11-03T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 16,
+          "last_answered_at": "2026-11-01T08:01:00.000Z",
+          "due_at": "2026-11-04T08:01:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-11-01T08:07:00.000Z",
+          "due_at": "2026-11-01T08:17:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr2"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr2"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr2"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr2"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr2"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr2"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr2"],
+            "why": "needs_attention"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner D",
+      "profile": "slow-then-click",
+      "blurb": "Struggles for 10 days, then it clicks.",
+      "learner_id": "lrn_00000000008008000000001r83",
+      "synthetic": true,
+      "attempts": 20,
+      "tries": 149,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 14,
+          "last_answered_at": "2026-11-01T08:02:00.000Z",
+          "due_at": "2026-11-05T08:02:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 16,
+          "last_answered_at": "2026-10-29T08:07:00.000Z",
+          "due_at": "2026-11-01T08:07:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 20,
+          "last_answered_at": "2026-11-01T08:05:00.000Z",
+          "due_at": "2026-11-03T08:05:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-10-31T08:02:00.000Z",
+          "due_at": "2026-10-31T08:03:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 21,
+          "last_answered_at": "2026-11-01T08:01:00.000Z",
+          "due_at": "2026-11-06T08:01:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 10,
+          "last_answered_at": "2026-11-01T08:04:00.000Z",
+          "due_at": "2026-11-26T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 16,
+          "last_answered_at": "2026-10-31T08:08:00.000Z",
+          "due_at": "2026-10-31T08:09:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 16,
+          "last_answered_at": "2026-11-01T08:03:00.000Z",
+          "due_at": "2026-11-01T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 18,
+          "last_answered_at": "2026-11-01T08:00:00.000Z",
+          "due_at": "2026-10-31T08:06:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 6,
+          "last_answered_at": "2026-10-23T08:04:00.000Z",
+          "due_at": "2026-10-23T08:10:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr3"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr3"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr3"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr3"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "review",
+            "goal_ids": ["gol_00000000008008000000001rr3"],
+            "why": "review_due"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "review",
+            "goal_ids": ["gol_00000000008008000000001rr3"],
+            "why": "review_due"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner E",
+      "profile": "help-heavy",
+      "blurb": "Often right, but usually after asking for help.",
+      "learner_id": "lrn_00000000008008000000001r84",
+      "synthetic": true,
+      "attempts": 12,
+      "tries": 104,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 8,
+          "last_answered_at": "2026-11-01T08:01:00.000Z",
+          "due_at": "2026-11-01T08:11:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 9,
+          "last_answered_at": "2026-11-01T08:04:00.000Z",
+          "due_at": "2026-11-01T08:05:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-10-27T08:07:00.000Z",
+          "due_at": "2026-10-27T08:08:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "attempted",
+          "needs_attention": false,
+          "tries": 7,
+          "last_answered_at": "2026-11-01T08:07:00.000Z",
+          "due_at": "2026-11-01T08:13:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 9,
+          "last_answered_at": "2026-11-01T08:02:00.000Z",
+          "due_at": "2026-11-01T08:03:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 13,
+          "last_answered_at": "2026-10-26T08:07:00.000Z",
+          "due_at": "2026-10-26T08:13:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 15,
+          "last_answered_at": "2026-10-28T08:04:00.000Z",
+          "due_at": "2026-10-28T08:05:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 10,
+          "last_answered_at": "2026-10-26T08:06:00.000Z",
+          "due_at": "2026-10-26T08:12:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-11-01T08:08:00.000Z",
+          "due_at": "2026-11-01T08:09:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 11,
+          "last_answered_at": "2026-11-01T08:09:00.000Z",
+          "due_at": "2026-11-08T08:09:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr4"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr4"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr4"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr4"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr4"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr4"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr4"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "review",
+            "goal_ids": ["gol_00000000008008000000001rr4"],
+            "why": "review_due"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner F",
+      "profile": "rusher",
+      "blurb": "Fast and careless: slips on skills already known.",
+      "learner_id": "lrn_00000000008008000000001r85",
+      "synthetic": true,
+      "attempts": 16,
+      "tries": 129,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "proficient",
+          "needs_attention": true,
+          "tries": 15,
+          "last_answered_at": "2026-10-31T08:04:00.000Z",
+          "due_at": "2026-10-31T08:14:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 6,
+          "last_answered_at": "2026-10-27T08:01:00.000Z",
+          "due_at": "2026-10-27T08:02:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 19,
+          "last_answered_at": "2026-10-30T08:05:00.000Z",
+          "due_at": "2026-10-30T08:06:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 13,
+          "last_answered_at": "2026-10-31T08:01:00.000Z",
+          "due_at": "2026-10-31T08:02:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 19,
+          "last_answered_at": "2026-10-31T08:02:00.000Z",
+          "due_at": "2026-11-10T08:02:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 15,
+          "last_answered_at": "2026-10-31T08:05:00.000Z",
+          "due_at": "2026-10-31T08:06:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-10-31T08:03:00.000Z",
+          "due_at": "2026-10-31T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-10-23T08:08:00.000Z",
+          "due_at": "2026-10-23T08:18:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 9,
+          "last_answered_at": "2026-10-31T08:00:00.000Z",
+          "due_at": "2026-10-31T08:01:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 10,
+          "last_answered_at": "2026-10-25T08:03:00.000Z",
+          "due_at": "2026-10-30T08:03:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "review",
+            "goal_ids": ["gol_00000000008008000000001rr5"],
+            "why": "review_due"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner G",
+      "profile": "perfectionist",
+      "blurb": "Slow, careful, rarely wrong, sometimes skips rather than risk it.",
+      "learner_id": "lrn_00000000008008000000001r86",
+      "synthetic": true,
+      "attempts": 15,
+      "tries": 98,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 12,
+          "last_answered_at": "2026-10-26T08:07:00.000Z",
+          "due_at": "2026-11-02T08:07:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 8,
+          "last_answered_at": "2026-10-31T08:02:00.000Z",
+          "due_at": "2026-11-23T08:02:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 7,
+          "last_answered_at": "2026-10-30T08:01:00.000Z",
+          "due_at": "2026-11-17T08:01:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 11,
+          "last_answered_at": "2026-10-31T08:06:00.000Z",
+          "due_at": "2026-11-06T08:06:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 4,
+          "last_answered_at": "2026-10-30T08:00:00.000Z",
+          "due_at": "2026-10-30T08:01:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 11,
+          "last_answered_at": "2026-10-31T08:03:00.000Z",
+          "due_at": "2027-01-09T08:03:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 13,
+          "last_answered_at": "2026-10-31T08:05:00.000Z",
+          "due_at": "2026-12-25T08:05:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 13,
+          "last_answered_at": "2026-10-30T08:03:00.000Z",
+          "due_at": "2026-10-30T08:13:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 9,
+          "last_answered_at": "2026-10-31T08:04:00.000Z",
+          "due_at": "2026-10-27T08:06:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 10,
+          "last_answered_at": "2026-10-27T08:07:00.000Z",
+          "due_at": "2026-12-27T08:07:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr6"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr6"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr6"],
+            "why": "needs_attention"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner H",
+      "profile": "early-plateau",
+      "blurb": "Quick start, then no growth after day 7.",
+      "learner_id": "lrn_00000000008008000000001r87",
+      "synthetic": true,
+      "attempts": 12,
+      "tries": 85,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 10,
+          "last_answered_at": "2026-11-01T08:00:00.000Z",
+          "due_at": "2026-11-01T08:01:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 12,
+          "last_answered_at": "2026-11-01T08:05:00.000Z",
+          "due_at": "2026-11-02T08:05:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 9,
+          "last_answered_at": "2026-11-01T08:04:00.000Z",
+          "due_at": "2026-10-30T08:17:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-11-01T08:01:00.000Z",
+          "due_at": "2026-11-01T08:11:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 9,
+          "last_answered_at": "2026-10-30T08:01:00.000Z",
+          "due_at": "2026-10-30T08:11:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-10-30T08:03:00.000Z",
+          "due_at": "2026-10-30T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 7,
+          "last_answered_at": "2026-11-01T08:03:00.000Z",
+          "due_at": "2026-11-01T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 7,
+          "last_answered_at": "2026-10-30T08:08:00.000Z",
+          "due_at": "2026-11-08T08:08:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 4,
+          "last_answered_at": "2026-11-01T08:02:00.000Z",
+          "due_at": "2026-11-11T08:02:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 5,
+          "last_answered_at": "2026-10-24T08:04:00.000Z",
+          "due_at": "2026-11-25T08:04:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr7"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr7"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr7"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr7"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr7"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr7"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr7"],
+            "why": "needs_attention"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner I",
+      "profile": "weekend-only",
+      "blurb": "Practises only on Saturdays and Sundays.",
+      "learner_id": "lrn_00000000008008000000001r88",
+      "synthetic": true,
+      "attempts": 6,
+      "tries": 52,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 5,
+          "last_answered_at": "2026-11-01T08:09:00.000Z",
+          "due_at": "2026-11-01T08:10:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 4,
+          "last_answered_at": "2026-10-31T08:03:00.000Z",
+          "due_at": "2026-10-31T08:09:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 3,
+          "last_answered_at": "2026-10-31T08:07:00.000Z",
+          "due_at": "2026-10-31T08:08:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 5,
+          "last_answered_at": "2026-11-01T08:07:00.000Z",
+          "due_at": "2026-11-01T08:08:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 3,
+          "last_answered_at": "2026-10-31T08:09:00.000Z",
+          "due_at": "2026-12-15T08:09:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 7,
+          "last_answered_at": "2026-11-01T08:08:00.000Z",
+          "due_at": "2026-11-01T08:09:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 5,
+          "last_answered_at": "2026-11-01T08:05:00.000Z",
+          "due_at": "2026-11-01T08:15:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 6,
+          "last_answered_at": "2026-10-31T08:08:00.000Z",
+          "due_at": "2026-10-31T08:09:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 7,
+          "last_answered_at": "2026-11-01T08:02:00.000Z",
+          "due_at": "2026-11-01T08:03:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 7,
+          "last_answered_at": "2026-10-31T08:05:00.000Z",
+          "due_at": "2026-10-31T08:06:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr8"],
+            "why": "needs_attention"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner J",
+      "profile": "uneven",
+      "blurb": "Strong at multiplication, weak at spelling throughout.",
+      "learner_id": "lrn_00000000008008000000001r89",
+      "synthetic": true,
+      "attempts": 15,
+      "tries": 116,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 7,
+          "last_answered_at": "2026-10-31T08:02:00.000Z",
+          "due_at": "2026-10-31T08:03:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-11-01T08:02:00.000Z",
+          "due_at": "2026-11-01T08:08:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 14,
+          "last_answered_at": "2026-11-01T08:05:00.000Z",
+          "due_at": "2026-11-01T08:06:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 16,
+          "last_answered_at": "2026-11-01T08:03:00.000Z",
+          "due_at": "2026-11-01T08:04:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 12,
+          "last_answered_at": "2026-10-30T08:09:00.000Z",
+          "due_at": "2027-01-08T08:09:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 9,
+          "last_answered_at": "2026-10-23T08:03:00.000Z",
+          "due_at": "2026-10-28T08:03:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 15,
+          "last_answered_at": "2026-10-31T08:01:00.000Z",
+          "due_at": "2027-01-07T08:01:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 12,
+          "last_answered_at": "2026-10-29T08:07:00.000Z",
+          "due_at": "2026-11-15T08:07:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 9,
+          "last_answered_at": "2026-10-30T08:01:00.000Z",
+          "due_at": "2026-11-06T08:01:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 10,
+          "last_answered_at": "2026-11-01T08:04:00.000Z",
+          "due_at": "2026-11-29T08:04:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr9"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr9"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr9"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rr9"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "review",
+            "goal_ids": ["gol_00000000008008000000001rr9"],
+            "why": "review_due"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner K",
+      "profile": "comeback",
+      "blurb": "A week away in the middle, then steady work again.",
+      "learner_id": "lrn_00000000008008000000001r8a",
+      "synthetic": true,
+      "attempts": 10,
+      "tries": 77,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 5,
+          "last_answered_at": "2026-10-28T08:01:00.000Z",
+          "due_at": "2026-10-28T08:02:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 8,
+          "last_answered_at": "2026-11-01T08:00:00.000Z",
+          "due_at": "2026-11-01T08:10:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 3,
+          "last_answered_at": "2026-11-01T08:04:00.000Z",
+          "due_at": "2026-11-01T08:14:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 10,
+          "last_answered_at": "2026-10-31T08:07:00.000Z",
+          "due_at": "2026-12-26T08:07:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 7,
+          "last_answered_at": "2026-11-01T08:06:00.000Z",
+          "due_at": "2026-11-01T08:07:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-11-01T08:05:00.000Z",
+          "due_at": "2026-11-01T08:15:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 6,
+          "last_answered_at": "2026-10-31T08:06:00.000Z",
+          "due_at": "2026-10-31T08:07:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "familiar",
+          "needs_attention": true,
+          "tries": 11,
+          "last_answered_at": "2026-10-28T08:00:00.000Z",
+          "due_at": "2026-10-28T08:10:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 8,
+          "last_answered_at": "2026-11-01T08:07:00.000Z",
+          "due_at": "2026-11-01T08:08:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 7,
+          "last_answered_at": "2026-11-01T08:01:00.000Z",
+          "due_at": "2026-11-01T08:11:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rra"],
+            "why": "needs_attention"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    },
+    {
+      "label": "Learner L",
+      "profile": "new-and-keen",
+      "blurb": "Starts from nothing and practises every day.",
+      "learner_id": "lrn_00000000008008000000001r8b",
+      "synthetic": true,
+      "attempts": 21,
+      "tries": 165,
+      "mastery": [
+        {
+          "skill_code": "draft.ortografia.capitals",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 14,
+          "last_answered_at": "2026-11-01T08:05:00.000Z",
+          "due_at": "2026-11-01T08:06:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.ch-h",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 18,
+          "last_answered_at": "2026-11-01T08:00:00.000Z",
+          "due_at": "2026-11-01T08:01:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.nie",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 17,
+          "last_answered_at": "2026-11-01T08:02:00.000Z",
+          "due_at": "2026-11-01T08:03:00.000Z"
+        },
+        {
+          "skill_code": "draft.ortografia.rz-after-consonant",
+          "level": "mastered",
+          "needs_attention": false,
+          "tries": 20,
+          "last_answered_at": "2026-11-01T08:03:00.000Z",
+          "due_at": "2026-11-06T08:03:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-2",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 17,
+          "last_answered_at": "2026-11-01T08:04:00.000Z",
+          "due_at": "2026-11-01T08:05:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-3",
+          "level": "proficient",
+          "needs_attention": false,
+          "tries": 20,
+          "last_answered_at": "2026-11-01T08:01:00.000Z",
+          "due_at": "2026-11-05T08:01:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-4",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 18,
+          "last_answered_at": "2026-10-30T08:09:00.000Z",
+          "due_at": "2026-10-30T08:10:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-5",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 15,
+          "last_answered_at": "2026-10-31T08:02:00.000Z",
+          "due_at": "2026-10-31T08:08:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-6",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 14,
+          "last_answered_at": "2026-11-01T08:06:00.000Z",
+          "due_at": "2026-11-01T08:07:00.000Z"
+        },
+        {
+          "skill_code": "maths.multiplication.row-7",
+          "level": "attempted",
+          "needs_attention": true,
+          "tries": 12,
+          "last_answered_at": "2026-10-31T08:07:00.000Z",
+          "due_at": "2026-10-31T08:08:00.000Z"
+        }
+      ],
+      "brief": {
+        "computed_at": "2026-11-02T08:00:00.000Z",
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rrb"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rrb"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rrb"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rrb"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rrb"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rrb"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rrb"],
+            "why": "needs_attention"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "reteach",
+            "goal_ids": ["gol_00000000008008000000001rrb"],
+            "why": "needs_attention"
+          }
+        ],
+        "school": "nothing_recorded"
+      }
+    }
+  ]
+}
