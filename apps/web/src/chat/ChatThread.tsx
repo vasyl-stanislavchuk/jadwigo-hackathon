@@ -372,7 +372,7 @@ export function ChatThread({
       entries.push(
         <li key={`${id}-day`} className="flex items-center gap-3 py-1" data-day-divider>
           <Separator className="flex-1 bg-jw-line" />
-          <span className="text-[12.5px] text-jw-ink-soft">{dayWords(at, now, language)}</span>
+          <span className="text-jw-page-small text-jw-ink-soft">{dayWords(at, now, language)}</span>
           <Separator className="flex-1 bg-jw-line" />
         </li>,
       );

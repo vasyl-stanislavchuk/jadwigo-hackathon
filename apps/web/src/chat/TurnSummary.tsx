@@ -33,7 +33,7 @@ export function TurnSummary({
       <Card className={cn(SPINE_FRAME, "bg-jw-side")} data-spine="done" data-summary>
         <CollapsibleTrigger
           className={cn(
-            "flex min-h-9 w-full items-center gap-2.5 rounded-[10px] bg-jw-side px-3.5 py-2 hover:bg-jw-hover max-sm:min-h-10",
+            "flex min-h-9 w-full items-center gap-2.5 rounded-jw-card bg-jw-side px-3.5 py-2 hover:bg-jw-hover max-sm:min-h-10",
             open && "rounded-b-none border-b-jw border-jw-line",
             SPINE_HALO,
           )}
@@ -41,10 +41,10 @@ export function TurnSummary({
         >
           <CheckIcon aria-hidden className="size-4 shrink-0 text-jw-act" data-mark="done" />
           <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 text-left">
-            <span className="text-[13.5px]/5 font-medium text-jw-ink" data-title>
+            <span className="text-jw-page-body font-medium text-jw-ink" data-title>
               {title}
             </span>
-            <span className="text-[12.5px]/[18px] text-jw-ink-soft tabular-nums" data-meta>
+            <span className="text-jw-page-small text-jw-ink-soft tabular-nums" data-meta>
               {meta}
             </span>
           </span>

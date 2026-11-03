@@ -115,7 +115,7 @@ function Tags({
         <Badge
           key={tag.id}
           variant="secondary"
-          className="rounded-jw-control text-[12.5px] font-normal"
+          className="rounded-jw-control text-jw-page-small font-normal"
           data-tag
         >
           {say(language, tag)}
@@ -125,7 +125,7 @@ function Tags({
         <Button
           variant="outline"
           size="sm"
-          className="h-6 min-h-6 px-2 text-[12.5px]"
+          className="h-6 min-h-6 px-2 text-jw-page-small"
           aria-expanded={all}
           onClick={() => setAll((a) => !a)}
           data-tags-more
@@ -159,10 +159,10 @@ function Line({
   if (line.kind === "steer")
     return (
       <li className="flex flex-col gap-0.5" data-line="steer">
-        <span className="text-[12px]/4 font-medium text-jw-placeholder">
+        <span className="text-jw-page-micro font-medium text-jw-placeholder">
           {copy(language, "chat_steer_label", {}, "adult")}
         </span>
-        <span className="text-[13px]/[19px] text-jw-ink">
+        <span className="text-jw-page-small text-jw-ink">
           {line.quote === undefined ? say(language, line) : `„${line.quote}”`}
         </span>
       </li>
@@ -171,7 +171,7 @@ function Line({
     <li className="flex flex-col" data-line={line.kind}>
       <span
         className={cn(
-          "flex items-start gap-1.5 text-[13px]/[19px]",
+          "flex items-start gap-1.5 text-jw-page-small",
           isNow ? "font-medium text-jw-ink" : "text-jw-ink-soft",
         )}
       >
@@ -182,7 +182,7 @@ function Line({
         <span className="min-w-0 flex-1">{say(language, line)}</span>
         {isNow && line.startedAt !== undefined && (
           <span
-            className="shrink-0 text-[12.5px] font-normal text-jw-ink-soft tabular-nums"
+            className="shrink-0 text-jw-page-small font-normal text-jw-ink-soft tabular-nums"
             data-elapsed
           >
             {durationWords(now - line.startedAt)}
@@ -219,7 +219,7 @@ function OpenLines({
           <Collapsible>
             <CollapsibleTrigger
               className={cn(
-                "group/earlier flex items-center gap-1.5 text-[13px]/[19px] text-jw-ink-soft hover:text-jw-ink data-[state=open]:hidden",
+                "group/earlier flex items-center gap-1.5 text-jw-page-small text-jw-ink-soft hover:text-jw-ink data-[state=open]:hidden",
                 HALO,
               )}
               data-earlier
@@ -271,14 +271,14 @@ function StageHead({
       <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 text-left">
         <span
           className={cn(
-            "text-[13.5px]/5",
+            "text-jw-page-body",
             todo ? "font-normal text-jw-ink-soft" : "font-medium text-jw-ink",
           )}
         >
           {stage.name}
         </span>
         {note !== null && (
-          <span className="text-[12.5px]/[18px] text-jw-ink-soft" data-stage-note>
+          <span className="text-jw-page-small text-jw-ink-soft" data-stage-note>
             {note}
           </span>
         )}
@@ -375,7 +375,7 @@ function Foot({
   if (foot.kind === "stopped")
     return (
       <div className={frame} data-foot="stopped">
-        <p className="text-[13px]/[19px] text-jw-ink-soft">
+        <p className="text-jw-page-small text-jw-ink-soft">
           {foot.versionStands === undefined
             ? s("live_stopped")
             : s(foot.changed === true ? "chat_stopped_some" : "chat_stopped_none", {
@@ -388,10 +388,10 @@ function Foot({
   const retry = actions.onRetry;
   return (
     <div className={frame} data-foot={foot.kind}>
-      <p className="text-[14px]/5 font-semibold text-jw-ink">
+      <p className="text-jw-page-body font-semibold text-jw-ink">
         {s(failed ? "chat_failed_title" : "chat_stalled_title")}
       </p>
-      <p className="text-[13px]/[19px] text-jw-ink-soft">
+      <p className="text-jw-page-small text-jw-ink-soft">
         {failed ? s("chat_failed_body", { n: foot.tries ?? 1 }) : s("chat_stalled_body")}
       </p>
       <div className="flex flex-wrap items-center gap-2 pt-1.5">
@@ -445,10 +445,10 @@ export function SpineHeader({
     <>
       <Mark mark={head.mark} />
       <span className="flex min-w-0 flex-1 flex-col gap-x-3 text-left sm:flex-row sm:items-baseline">
-        <span className="min-w-0 flex-1 text-[13.5px]/5 font-semibold text-jw-ink" data-title>
+        <span className="min-w-0 flex-1 text-jw-page-body font-semibold text-jw-ink" data-title>
           {head.title}
         </span>
-        <span className="shrink-0 text-[12.5px]/[18px] text-jw-ink-soft tabular-nums" data-meta>
+        <span className="shrink-0 text-jw-page-small text-jw-ink-soft tabular-nums" data-meta>
           {head.meta}
         </span>
       </span>
@@ -488,7 +488,7 @@ export function SpineBody({
       </ol>
     ) : queued ? (
       // S9: the spine appears at send with "Zacznę za chwilę." under the header.
-      <p className="py-2.5 pr-3.5 pl-10 text-[13px]/[19px] text-jw-ink-soft" data-line="queued">
+      <p className="py-2.5 pr-3.5 pl-10 text-jw-page-small text-jw-ink-soft" data-line="queued">
         {copy(language, "chat_phase_queued_line", {}, "adult")}
       </p>
     ) : spine.looseLines.length > 0 ? (
@@ -509,7 +509,7 @@ export function SpineBody({
 }
 
 const FRAME =
-  "gap-0 overflow-hidden rounded-[10px] bg-jw-card py-0 text-jw-ink shadow-none ring-1 ring-jw-line";
+  "gap-0 overflow-hidden rounded-jw-card bg-jw-card py-0 text-jw-ink shadow-none ring-1 ring-jw-line";
 const HEADER = "flex w-full items-center gap-2.5 bg-jw-side px-3 py-2.5 sm:px-3.5";
 
 /**
