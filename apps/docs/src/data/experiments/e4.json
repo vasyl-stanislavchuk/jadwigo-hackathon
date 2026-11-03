@@ -1,0 +1,537 @@
+{
+  "id": "e4",
+  "title": "How Meta models indexed the question bank",
+  "model": "muse-spark-1.3-contributor (ledger and live spark); muse-wonder-full-1.0 (live comparison)",
+  "calls": 3253,
+  "tokens": {
+    "input": 103215129,
+    "output": 13738546
+  },
+  "usd": 10.2802,
+  "cost_source": "ledger (runs/muse/*.jsonl usage.usd); wonder tokens from the muse exec usage record, USD null (unpriced)",
+  "wall_s": 492.5,
+  "commit": "f4b1194cc0fd4b83a1fb7a3957cfb49cad4aa48a",
+  "bank_commit": "803a979e123e2a06893e181e6c63dff92b4c8045",
+  "commands": [
+    "uv run python -m tools.experiments.e4 ledger --out experiments/e4/ledger.json (in jadwigo-bank, lane/e4-e5)",
+    "JADWIGO_MUSE_CAP_USD=500 uv run python -m tools.experiments.e4 live --out experiments/e4/live.json (in jadwigo-bank)"
+  ],
+  "results": {
+    "ledger_before_e4": {
+      "rows": 3250,
+      "contributor_calls": 3249,
+      "input_tokens": 103113871,
+      "output_tokens": 13725036,
+      "usd": 10.2674
+    },
+    "by_lane": {
+      "(untagged)": {
+        "calls": 1,
+        "input_tokens": 0,
+        "cached_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_tokens": 0,
+        "usd": 0.0,
+        "seconds_total": 19.2,
+        "seconds_median": 19.2
+      },
+      "alt": {
+        "calls": 141,
+        "input_tokens": 4045683,
+        "cached_tokens": 789198,
+        "output_tokens": 318767,
+        "reasoning_tokens": 211906,
+        "usd": 0.391,
+        "seconds_total": 3200.1,
+        "seconds_median": 21.9
+      },
+      "cost-sample-2026-10-28": {
+        "calls": 4,
+        "input_tokens": 97010,
+        "cached_tokens": 0,
+        "output_tokens": 1089,
+        "reasoning_tokens": 870,
+        "usd": 0.0099,
+        "seconds_total": 27.8,
+        "seconds_median": 6.8
+      },
+      "cost-sample-2026-10-28-fixed-folder": {
+        "calls": 4,
+        "input_tokens": 96940,
+        "cached_tokens": 0,
+        "output_tokens": 1225,
+        "reasoning_tokens": 979,
+        "usd": 0.0099,
+        "seconds_total": 33.1,
+        "seconds_median": 7.5
+      },
+      "direct_api": {
+        "calls": 9,
+        "input_tokens": 127170,
+        "cached_tokens": 12002,
+        "output_tokens": 3200,
+        "reasoning_tokens": 2582,
+        "usd": 0.0122,
+        "seconds_total": 55.3,
+        "seconds_median": 5.5
+      },
+      "e4": {
+        "calls": 3,
+        "input_tokens": 101258,
+        "cached_tokens": 0,
+        "output_tokens": 13510,
+        "reasoning_tokens": 5765,
+        "usd": 0.0128,
+        "seconds_total": 137.1,
+        "seconds_median": 45.0
+      },
+      "enrich": {
+        "calls": 572,
+        "input_tokens": 20605761,
+        "cached_tokens": 3803929,
+        "output_tokens": 4429233,
+        "reasoning_tokens": 3040785,
+        "usd": 2.5736,
+        "seconds_total": 37690.8,
+        "seconds_median": 48.8
+      },
+      "eval": {
+        "calls": 768,
+        "input_tokens": 23136878,
+        "cached_tokens": 9107956,
+        "output_tokens": 1776754,
+        "reasoning_tokens": 925455,
+        "usd": 1.7765,
+        "seconds_total": 19161.7,
+        "seconds_median": 23.8
+      },
+      "filters": {
+        "calls": 16,
+        "input_tokens": 446059,
+        "cached_tokens": 0,
+        "output_tokens": 116974,
+        "reasoning_tokens": 101628,
+        "usd": 0.068,
+        "seconds_total": 1017.5,
+        "seconds_median": 67.4
+      },
+      "golden": {
+        "calls": 1323,
+        "input_tokens": 43404492,
+        "cached_tokens": 12112751,
+        "output_tokens": 5233796,
+        "reasoning_tokens": 3207931,
+        "usd": 4.2002,
+        "seconds_total": 45225.5,
+        "seconds_median": 30.8
+      },
+      "items": {
+        "calls": 402,
+        "input_tokens": 11080491,
+        "cached_tokens": 2633339,
+        "output_tokens": 1841757,
+        "reasoning_tokens": 788294,
+        "usd": 1.2183,
+        "seconds_total": 15351.5,
+        "seconds_median": 37.5
+      },
+      "product": {
+        "calls": 2,
+        "input_tokens": 49171,
+        "cached_tokens": 0,
+        "output_tokens": 2203,
+        "reasoning_tokens": 1864,
+        "usd": 0.0054,
+        "seconds_total": 37.3,
+        "seconds_median": 18.6
+      },
+      "smoke-2026-10-28": {
+        "calls": 7,
+        "input_tokens": 0,
+        "cached_tokens": 0,
+        "output_tokens": 0,
+        "reasoning_tokens": 0,
+        "usd": 0.0,
+        "seconds_total": 24.3,
+        "seconds_median": 5.6
+      },
+      "smoke-usage": {
+        "calls": 1,
+        "input_tokens": 24216,
+        "cached_tokens": 0,
+        "output_tokens": 38,
+        "reasoning_tokens": 22,
+        "usd": 0.0024,
+        "seconds_total": 5.0,
+        "seconds_median": 5.0
+      }
+    },
+    "by_task": {
+      "tasks_with_10_plus_calls": {
+        "eval:golden": {
+          "calls": 768,
+          "input_tokens": 23136878,
+          "cached_tokens": 9107956,
+          "output_tokens": 1776754,
+          "reasoning_tokens": 925455,
+          "usd": 1.7765,
+          "seconds_total": 19161.7,
+          "seconds_median": 23.8
+        },
+        "filters:map": {
+          "calls": 16,
+          "input_tokens": 446059,
+          "cached_tokens": 0,
+          "output_tokens": 116974,
+          "reasoning_tokens": 101628,
+          "usd": 0.068,
+          "seconds_total": 1017.5,
+          "seconds_median": 67.4
+        }
+      },
+      "smaller_tasks": {
+        "tasks": 651,
+        "calls": 2469,
+        "usd": 8.4366,
+        "note": "per-set and per-batch tags; the full table is experiments/e4/ledger.json in jadwigo-bank"
+      }
+    },
+    "per_unit": {
+      "sets": 143,
+      "items": 2738,
+      "set_enrichment_usd_per_set": 0.018,
+      "item_enrichment_usd_per_item": 0.00044,
+      "item_enrichment_usd_per_set": 0.0085,
+      "projected_usd_per_1000_sets": 26.52,
+      "projected_calls_per_1000_sets": 6811
+    },
+    "live_step": "one draft per set per model, first lens, effort low; not the full 3-draft + critic pipeline",
+    "live": [
+      {
+        "set_id": "set_khan_x83e28da65bed275e",
+        "titles": {
+          "en": "Equal groups",
+          "pl": "Liczenie równymi grupami"
+        },
+        "prompt_chars": 26968,
+        "spark": {
+          "seconds": 45.0,
+          "grounds_total": 15,
+          "grounds_dropped": 1,
+          "hint_leaks": [],
+          "summary_en": "This set practises multiplication as counting equal groups in pictures with animals and objects; children read the number of groups and the group size and skip-",
+          "keywords_pl": [
+            "mnożenie w klasie 3",
+            "równe grupy",
+            "liczba grup",
+            "liczenie co kilka",
+            "liczenie trójkami",
+            "zadania z obrazkiem"
+          ],
+          "curriculum_tags": ["pl-2017:II.3.1", "pl-2017:II.2.1", "ccss:3.OA.A.1"]
+        },
+        "wonder": {
+          "seconds": 145.4,
+          "input_tokens": 33209,
+          "output_tokens": 3517,
+          "grounds_total": 14,
+          "grounds_dropped": 2,
+          "hint_leaks": [],
+          "summary_en": "The set practises reading pictures of animals and objects arranged in groups with the same number in each group, filling in how many groups there are and how ma",
+          "keywords_pl": [
+            "początki mnożenia",
+            "mnożenie na rysunku",
+            "liczenie trójkami",
+            "liczenie czwórkami i szóstkami",
+            "ile jest w sumie",
+            "grupy po tyle samo"
+          ],
+          "curriculum_tags": ["pl-2017:II.3.1", "pl-2017:II.2.1", "pl-2017:II.3.3", "ccss:3.OA.A.1"]
+        },
+        "comparison": {
+          "summary": {
+            "spark_chars": 450,
+            "wonder_chars": 571
+          },
+          "can_do": {
+            "spark_chars": 265,
+            "wonder_chars": 346
+          },
+          "keywords": {
+            "jaccard": 0.071
+          },
+          "contexts": {
+            "jaccard": 0.154
+          },
+          "prerequisites": {
+            "jaccard": 1.0
+          },
+          "skill_ids": {
+            "jaccard": 0.0
+          },
+          "curriculum_tags": {
+            "jaccard": 0.75
+          },
+          "mistake_classes": {
+            "jaccard": 0.167
+          },
+          "synthetic_needs": {
+            "spark": 10,
+            "wonder": 10
+          }
+        }
+      },
+      {
+        "set_id": "set_khan_461002061",
+        "titles": {
+          "en": "Fractions on the number line ",
+          "pl": "Ułamki zwykłe na osi liczbowej "
+        },
+        "prompt_chars": 26855,
+        "spark": {
+          "seconds": 40.6,
+          "grounds_total": 13,
+          "grounds_dropped": 1,
+          "hint_leaks": [],
+          "summary_en": "This set practises reading a marked fraction and placing and choosing fractions such as 3/4, 5/6 and 5/8 on a number line with equal divisions.",
+          "keywords_pl": [
+            "ułamki",
+            "oś liczbowa",
+            "odczytywanie ułamków",
+            "zaznaczanie ułamków",
+            "licznik mianownik",
+            "połowa ćwierć"
+          ],
+          "curriculum_tags": ["pl-2017:II.6.2", "ccss:3.NF.A.2"]
+        },
+        "wonder": {
+          "seconds": 130.6,
+          "input_tokens": 66647,
+          "output_tokens": 3429,
+          "grounds_total": 16,
+          "grounds_dropped": 0,
+          "hint_leaks": [],
+          "summary_en": "Children read the fraction at point A on a number line, choose which point matches a given fraction, and move a dot to fractions such as 3/4, 5/6 and 5/8 after ",
+          "keywords_pl": [
+            "ułamki zwykłe",
+            "oś liczbowa",
+            "zaznaczanie ułamków",
+            "licznik i mianownik",
+            "równe części",
+            "pięć szóstych"
+          ],
+          "curriculum_tags": ["pl-2017:II.6.2", "ccss:3.NF.A.2", "ccss:3.NF.A.2b"]
+        },
+        "comparison": {
+          "summary": {
+            "spark_chars": 288,
+            "wonder_chars": 608
+          },
+          "can_do": {
+            "spark_chars": 203,
+            "wonder_chars": 316
+          },
+          "keywords": {
+            "jaccard": 0.1
+          },
+          "contexts": {
+            "jaccard": 1.0
+          },
+          "prerequisites": {
+            "jaccard": 0.5
+          },
+          "skill_ids": {
+            "jaccard": 0.0
+          },
+          "curriculum_tags": {
+            "jaccard": 0.667
+          },
+          "mistake_classes": {
+            "jaccard": 0.167
+          },
+          "synthetic_needs": {
+            "spark": 10,
+            "wonder": 10
+          }
+        }
+      },
+      {
+        "set_id": "set_khan_x28133d70e21ac355",
+        "titles": {
+          "en": "Read line plots (data with fractions)",
+          "pl": "Odczytywanie wykresów punktowych (dane zawierają ułamki)"
+        },
+        "prompt_chars": 27892,
+        "spark": {
+          "seconds": 51.6,
+          "grounds_total": 16,
+          "grounds_dropped": 0,
+          "hint_leaks": [],
+          "summary_en": "This set practises reading dot/line plots whose scale uses fractions (halves and quarters): counting marks for one value, counting marks strictly between two va",
+          "keywords_pl": [
+            "wykres punktowy",
+            "odczytywanie danych",
+            "ułamki zwykłe",
+            "połowa i ćwierć",
+            "liczenie kropek",
+            "o ile więcej o ile mniej"
+          ],
+          "curriculum_tags": ["pl-2017:II.6.2", "pl-2017:II.4.1", "pl-2017:II.5.2", "ccss:3.MD.B.4"]
+        },
+        "wonder": {
+          "seconds": 79.3,
+          "input_tokens": 33416,
+          "output_tokens": 3680,
+          "grounds_total": 16,
+          "grounds_dropped": 8,
+          "hint_leaks": [],
+          "summary_en": "The set practises reading measurement data shown as marks above a number line, where values include halves and quarters such as 2 1/4 and 8 1/2. Children count ",
+          "keywords_pl": [
+            "wykres punktowy",
+            "oś liczbowa z ułamkami",
+            "połowa i ćwierć jednostki",
+            "liczenie punktów na wykresie",
+            "ile mieści się między",
+            "o ile więcej"
+          ],
+          "curriculum_tags": ["pl-2017:II.6.2", "pl-2017:II.5.2", "pl-2017:II.2.4", "ccss:3.MD.B.4"]
+        },
+        "comparison": {
+          "summary": {
+            "spark_chars": 586,
+            "wonder_chars": 700
+          },
+          "can_do": {
+            "spark_chars": 361,
+            "wonder_chars": 424
+          },
+          "keywords": {
+            "jaccard": 0.097
+          },
+          "contexts": {
+            "jaccard": 0.158
+          },
+          "prerequisites": {
+            "jaccard": 1.0
+          },
+          "skill_ids": {
+            "jaccard": 0.333
+          },
+          "curriculum_tags": {
+            "jaccard": 0.6
+          },
+          "mistake_classes": {
+            "jaccard": 0.0
+          },
+          "synthetic_needs": {
+            "spark": 10,
+            "wonder": 10
+          }
+        }
+      }
+    ],
+    "live_spark_usd": 0.0128,
+    "live_wonder_tokens": {
+      "input": 133272,
+      "output": 10626,
+      "usd": null
+    },
+    "by_step": {
+      "golden:intent": {
+        "calls": 441,
+        "usd": 1.4188,
+        "input_tokens": 14697366
+      },
+      "golden:skill": {
+        "calls": 441,
+        "usd": 1.3967,
+        "input_tokens": 14296901
+      },
+      "golden:mistake": {
+        "calls": 441,
+        "usd": 1.3847,
+        "input_tokens": 14410225
+      },
+      "enrich:draft": {
+        "calls": 431,
+        "usd": 1.6779,
+        "input_tokens": 15392357
+      },
+      "items:(none)": {
+        "calls": 402,
+        "usd": 1.2183,
+        "input_tokens": 11080491
+      },
+      "eval:intent": {
+        "calls": 256,
+        "usd": 0.5953,
+        "input_tokens": 7712283
+      },
+      "eval:skill": {
+        "calls": 256,
+        "usd": 0.5921,
+        "input_tokens": 7711771
+      },
+      "eval:mistake": {
+        "calls": 256,
+        "usd": 0.5891,
+        "input_tokens": 7712824
+      },
+      "enrich:critic": {
+        "calls": 141,
+        "usd": 0.8958,
+        "input_tokens": 5213404
+      },
+      "alt:(none)": {
+        "calls": 141,
+        "usd": 0.391,
+        "input_tokens": 4045683
+      },
+      "filters:b": {
+        "calls": 16,
+        "usd": 0.068,
+        "input_tokens": 446059
+      },
+      "direct_api:(none)": {
+        "calls": 9,
+        "usd": 0.0122,
+        "input_tokens": 127170
+      },
+      "smoke-2026-10-28:(none)": {
+        "calls": 7,
+        "usd": 0.0,
+        "input_tokens": 0
+      },
+      "cost-sample-2026-10-28:(none)": {
+        "calls": 4,
+        "usd": 0.0099,
+        "input_tokens": 97010
+      },
+      "cost-sample-2026-10-28-fixed-folder:(none)": {
+        "calls": 4,
+        "usd": 0.0099,
+        "input_tokens": 96940
+      },
+      "e4:draft": {
+        "calls": 3,
+        "usd": 0.0128,
+        "input_tokens": 101258
+      },
+      "product:smoke-explain": {
+        "calls": 2,
+        "usd": 0.0054,
+        "input_tokens": 49171
+      },
+      "(untagged):(none)": {
+        "calls": 1,
+        "usd": 0.0,
+        "input_tokens": 0
+      },
+      "smoke-usage:(none)": {
+        "calls": 1,
+        "usd": 0.0024,
+        "input_tokens": 24216
+      }
+    }
+  }
+}
