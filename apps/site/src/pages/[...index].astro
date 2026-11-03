@@ -73,8 +73,11 @@ const [one, two, three] = words.steps.items;
         </Gallery>
       ) : (
         <>
-          <h2 id="lessons-title" class="wrap">{words.lessons.row.heading}</h2>
-          <p class="wrap">{words.lessons.empty}</p>
+          {/* With no lessons yet, the section still opens with its line to the parent (lead, dl-w0b4.123). */}
+          <div class="opener wrap">
+            <h2 id="lessons-title">{words.lessons.row.heading}</h2>
+            <p>{words.lessons.row.text}</p>
+          </div>
         </>
       )
     }
