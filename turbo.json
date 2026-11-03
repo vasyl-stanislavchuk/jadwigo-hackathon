@@ -24,7 +24,11 @@
     },
     "@jadwigo/api#test:int": {
       "cache": false,
-      "dependsOn": ["@jadwigo/jadwigo-ai#test:int"]
+      "dependsOn": [
+        "@jadwigo/jadwigo-ai#test:int",
+        "@jadwigo/store#test:int",
+        "@jadwigo/lesson-import#test:int"
+      ]
     },
     "//#typecheck": {},
     "//#test": {},
