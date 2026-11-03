@@ -11,6 +11,7 @@ import {
   PodId,
   RunId,
 } from "./ids.ts";
+import { PrintId, PrintStart, PrintStatus } from "./print.ts";
 import { Language, LearnerReport, Pod } from "./records.ts";
 import { Conversation, RunRating, RunRatingCreate } from "./run.ts";
 import {
@@ -516,6 +517,34 @@ export const ROUTES = {
     tag: "conversations",
     description:
       "Only the latest lesson revision whose latest `lesson_check` found it publishable, with nothing written after it; else 409 `LessonNotPublishable`, as for a lesson of more than `LIMITS.questionsPerLesson` questions. A `learner_id` outside the pod is 404 `NotFound`. Giving the same revision again answers the same assignment. The child plays it at `/play/<assignment id>`, or `/play/<assignment id>?learner=<learner id>` for the learner it was given to.",
+  },
+  startPrint: {
+    method: "POST",
+    path: "/api/v1/conversations/{id}/prints",
+    params: z.object({ id: ConversationId }),
+    body: PrintStart,
+    response: PrintStatus,
+    status: 200,
+    auth: "token",
+    summary:
+      "Starts the PDF of the conversation's checked lesson, or answers the one already made.",
+    tag: "conversations",
+    description:
+      "The same checked revision `giveLesson` would publish, else 409 `LessonNotPublishable`; a lesson with a question type that has no paper form is 409 `LessonNotPrintable`. Nothing is published or assigned. The print's id is the sha256 of its sheet: a lesson already printed answers `ready` with a link that reads the PDF for 5 minutes, else the print Lambda starts and the reply is `pending`, to be followed with `getPrint`. 502 `PrintUnavailable` where no print Lambda is set up.",
+  },
+  getPrint: {
+    method: "GET",
+    path: "/api/v1/prints/{id}",
+    params: z.object({ id: PrintId }),
+    body: null,
+    response: PrintStatus,
+    status: 200,
+    auth: "token",
+    summary:
+      "Answers where a print stands: pending, ready with a 5-minute link to the PDF, or failed.",
+    tag: "conversations",
+    description:
+      "A print is read in the caller's pod only, so another pod's print id is 404 `NotFound`, as is an id no `startPrint` made. The page asks again about once a second while it is `pending`.",
   },
   createAttachment: {
     method: "POST",

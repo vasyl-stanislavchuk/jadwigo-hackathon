@@ -47,7 +47,7 @@ export interface PrintInput {
   readonly media: (src: string) => string;
 }
 
-/** A lesson that holds a question type with no paper form (today only `explain`). */
+/** A lesson with no question that has a paper form (every one an `explain`, or none at all). */
 export class LessonNotPrintable extends Error {
   constructor(readonly questionTypes: readonly QuestionType[]) {
     super(`no paper form for ${questionTypes.join(", ")}`);
@@ -97,20 +97,49 @@ const DO_KEYS = {
   number: "print_do_number",
 } as const satisfies Record<PaperAction, CopyKey>;
 
-/** A verb that only makes sense on a screen, in either language: tapping, clicking, dragging. */
-export const SCREEN_VERB =
-  /(?<!\p{L})(?:dotknij(?:cie)?|kliknij(?:cie)?|stuknij|naciśnij|przeciągnij|przesuń|upuść|przytrzymaj|tap|taps|tapping|click|drag|drop|press|swipe)(?!\p{L})/iu;
+const VERB_KEYS = {
+  circle: "print_verb_circle",
+  tick: "print_verb_tick",
+  write: "print_verb_write",
+  draw: "print_verb_draw",
+  join: "print_verb_join",
+  number: "print_verb_number",
+} as const satisfies Record<PaperAction, CopyKey>;
 
 /**
- * The instruction for paper: each sentence that names a screen action becomes the type's paper line
- * ("Dotknij większej liczby." becomes "Otocz kółkiem dobrą odpowiedź."), and the rest stays as
- * written. A sentence is replaced whole, because swapping one verb would break Polish grammar.
+ * A verb that only ever means touching a screen, in either language: tapping, clicking, dragging.
+ * Words with an everyday sense too ("przesuń przecinek", "a drop of water", "press") are left out,
+ * so a sentence that uses them about the problem prints as written.
  */
+export const SCREEN_VERB =
+  /(?<!\p{L})(?:dotknij(?:cie)?|kliknij(?:cie)?|stuknij(?:cie)?|przeciągnij(?:cie)?|tap|tapping|click|drag)(?!\p{L})/iu;
+const SCREEN_VERBS = new RegExp(SCREEN_VERB.source, "giu");
+
+/**
+ * A text for paper: in each sentence a screen verb becomes the type's paper verb and every other
+ * word stays, so the criterion the child needs is kept ("Tap the word that rhymes with cat." becomes
+ * "Circle the word that rhymes with cat.", "Dotknij 7." becomes "Otocz 7."). A sentence that is the
+ * verb alone ("Dotknij!") becomes the type's paper line. A Polish verb that takes the genitive ("Dotknij zegara") keeps its object's
+ * case, a small grammar slip chosen over losing the question.
+ */
+/** What is left of a sentence once its screen verb is gone, if the problem is in it: a letter, a
+ * number (½ included), a sign (+ ÷ =), maths or a slot. Only punctuation and spaces mean nothing. */
+const PROBLEM = /[\p{L}\p{N}\p{S}$]|\{[a-z][a-z0-9_]*\}/u;
+
 export function paperSay(text: string, action: PaperAction, language: Language): string {
   const line = copy(language, DO_KEYS[action]);
+  const verb = copy(language, VERB_KEYS[action]);
   const out: string[] = [];
   for (const sentence of text.split(/(?<=[.!?…])\s+/)) {
-    const next = SCREEN_VERB.test(sentence) ? line : sentence;
+    let next = sentence;
+    if (SCREEN_VERB.test(sentence))
+      next = PROBLEM.test(sentence.replace(SCREEN_VERBS, ""))
+        ? sentence.replace(SCREEN_VERBS, (found) =>
+            found[0] === found[0]?.toUpperCase()
+              ? verb.charAt(0).toUpperCase() + verb.slice(1)
+              : verb,
+          )
+        : line;
     if (next !== out[out.length - 1]) out.push(next);
   }
   return out.join(" ");
@@ -234,33 +263,44 @@ function slotIds(q: PageFamilyQuestion): ReadonlySet<string> | undefined {
   return undefined;
 }
 
-/** The page data a family prints: Choose's without `boost`, the stem's text in paper words. */
+/** The page data a family prints: Choose's without `boost`, every stem's text in paper words. */
 function printedData(q: PageFamilyQuestion, action: PaperAction, language: Language) {
   const stemmed = <D extends { stem?: { text?: string | undefined } | undefined }>(data: D): D =>
     data.stem?.text === undefined
       ? data
       : { ...data, stem: { ...data.stem, text: paperSay(data.stem.text, action, language) } };
-  if (q.family === "choose") {
-    const { boost: _hint, ...data } = q.data;
-    return { family: q.family, data: stemmed(data) } as const;
+  switch (q.family) {
+    case "choose": {
+      const { boost: _hint, ...data } = q.data;
+      return { family: q.family, data: stemmed(data) } as const;
+    }
+    case "enter":
+      return { family: q.family, data: stemmed(q.data) } as const;
+    case "slots":
+      return { family: q.family, data: stemmed(q.data) } as const;
+    case "sequence":
+      return { family: q.family, data: stemmed(q.data) } as const;
+    case "group":
+      return { family: q.family, data: stemmed(q.data) } as const;
+    case "place":
+      return { family: q.family, data: stemmed(q.data) } as const;
+    case "explain":
+      return null;
   }
-  if (q.family === "explain") return null;
-  if (q.family === "place") return { family: q.family, data: q.data } as const;
-  if (q.family === "sequence" || q.family === "group")
-    return { family: q.family, data: q.data } as const;
-  return { family: q.family, data: stemmed(q.data) } as const;
 }
 
 /**
- * The lesson as a print sheet. Refuses a lesson with a question type that has no paper form,
- * naming each, so the parent hears why before anything renders.
+ * The lesson as a print sheet, numbered 1 to n over the questions that print. Refuses a lesson
+ * with none, naming its types, so the parent hears why before anything renders.
  */
 export function buildPrintSheet(input: PrintInput): PrintSheet {
   const { language } = input;
-  const planned = input.questions.filter((s) => s.role === "planned").map((s) => s.question);
-  const refused = planned.filter((q) => PAPER_FORMS[q.question_type] === "no");
-  if (refused.length > 0)
-    throw new LessonNotPrintable([...new Set(refused.map((q) => q.question_type))]);
+  // A type with no paper form (explain) is left off, as the player never asks it in v0
+  // (apps/api/src/page.ts); a lesson with nothing else is refused.
+  const all = input.questions.filter((s) => s.role === "planned").map((s) => s.question);
+  const planned = all.filter((q) => PAPER_FORMS[q.question_type] !== "no");
+  if (planned.length === 0)
+    throw new LessonNotPrintable([...new Set(all.map((q) => q.question_type))]);
 
   const credits: PrintCredit[] = [];
   const creditN = new Map<string, number>();
@@ -277,7 +317,10 @@ export function buildPrintSheet(input: PrintInput): PrintSheet {
       },
     });
   };
-  render(input.title);
+  // One string is one entry, so it is drawn with every slot id the lesson's questions use: the
+  // same words in two questions, or in the title, draw their slots the same way.
+  const slots = new Set(planned.flatMap((q) => [...(slotIds(q) ?? [])]));
+  render(input.title, slots);
 
   const questions: PrintQuestion[] = planned.map((q, i) => {
     const paper = PAPER_FORMS[q.question_type];
@@ -305,7 +348,6 @@ export function buildPrintSheet(input: PrintInput): PrintSheet {
     });
     const strings = new Set<string>([question.say]);
     walk(question.data, strings, srcs);
-    const slots = slotIds(q);
     for (const text of strings) render(text, slots);
     return question;
   });

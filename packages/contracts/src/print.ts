@@ -156,3 +156,34 @@ export const PrintSheet = z.strictObject({
   media: z.record(z.string(), z.url()),
 });
 export type PrintSheet = z.infer<typeof PrintSheet>;
+
+/** A print's id: the sha256 of its sheet, so the same lesson prints once and is read back. */
+export const PrintId = z.string().regex(/^[0-9a-f]{64}$/, "a print id is 64 hex digits");
+export type PrintId = z.infer<typeof PrintId>;
+
+/** `POST /api/v1/conversations/{id}/prints`: the revision the parent saw; left out, the latest. */
+export const PrintStart = z.strictObject({ revision: z.int().min(1).optional() });
+export type PrintStart = z.infer<typeof PrintStart>;
+
+/**
+ * Why a print could not be made, as the print Lambda writes it (apps/print, `<id>.error.json`'s
+ * `code`): the sheet did not parse, or it did not render (a picture it could not fetch included).
+ */
+export const PrintFailure = z.enum(["invalid_sheet", "render_failed"]);
+export type PrintFailure = z.infer<typeof PrintFailure>;
+
+/**
+ * Where a print stands (decision dl-o05aa): `pending` while the print Lambda renders it, `ready`
+ * with a link that reads the PDF until `expires_at`, `failed` with the reason.
+ */
+export const PrintStatus = z.discriminatedUnion("status", [
+  z.strictObject({ status: z.literal("pending"), print_id: PrintId }),
+  z.strictObject({
+    status: z.literal("ready"),
+    print_id: PrintId,
+    url: z.url(),
+    expires_at: z.iso.datetime(),
+  }),
+  z.strictObject({ status: z.literal("failed"), print_id: PrintId, reason: PrintFailure }),
+]);
+export type PrintStatus = z.infer<typeof PrintStatus>;

@@ -7,6 +7,7 @@ import {
   LessonNotPrintable,
   PAPER_ACTIONS,
   type PrintSource,
+  paperSay,
   SCREEN_VERB,
 } from "./sheet.ts";
 import { paperHtml } from "./text.ts";
@@ -36,7 +37,7 @@ describe("paper declaration (dl-jo99l)", () => {
     expect(none).toEqual(["explain"]);
   });
 
-  it("refuses a lesson with a type that has no paper form, naming it", () => {
+  it("leaves explain off as the player does, and refuses a lesson with nothing else", () => {
     const explain = {
       ...MIXED_PRINT_LESSON.questions[0],
       question_type: "explain",
@@ -44,6 +45,10 @@ describe("paper declaration (dl-jo99l)", () => {
       data: { input: "text" },
       key: { criteria: [], criteria_version: 1 },
     } as unknown as MixedPrintQuestion;
+    const [first] = MIXED_PRINT_LESSON.questions;
+    if (!first) throw new Error("fixture");
+    const sheet = sheetOf([explain, first]);
+    expect(sheet.questions.map((q) => [q.n, q.question_type])).toEqual([[1, "true_false"]]);
     expect(() => sheetOf([explain])).toThrow(LessonNotPrintable);
     expect(() => sheetOf([explain])).toThrow(/explain/);
   });
@@ -120,6 +125,7 @@ describe("no keys on paper", () => {
           ...q,
           key: { changed: true },
           help: { hints: [{ text: "other" }], worked: ["other"] },
+          ...(q.family === "choose" ? { data: { ...q.data, boost: "other" } } : {}),
         }) as unknown as MixedPrintQuestion,
     );
     expect(JSON.stringify(sheetOf(changed))).toBe(JSON.stringify(mixed()));
@@ -140,11 +146,80 @@ describe("paper words", () => {
   it("turns a sentence with a screen verb into the type's paper line", () => {
     const sheet = mixed();
     const say = (n: number) => sheet.questions[n - 1]?.say;
-    expect(say(2)).toBe("Otocz kółkiem dobrą odpowiedź.");
-    expect(say(10)).toBe("Narysuj albo pokoloruj odpowiedź.");
-    expect(say(15)).toBe("Ponumeruj po kolei: 1, 2, 3…");
-    expect(say(18)).toBe("Otocz kółkiem dobrą odpowiedź.");
+    expect(say(2)).toBe("Otocz: prawda czy fałsz?");
+    expect(say(10)).toBe("Narysuj wskazówki na wpół do czwartej.");
+    expect(say(15)).toBe("Ponumeruj liczby od najmniejszej do największej.");
+    expect(say(18)).toBe("Otocz zegara, który pokazuje siódmą.");
     expect(say(1)).toBe("Czy to prawda?");
+  });
+
+  it("rewrites the stem of every family, a group's too", () => {
+    const bucket = MIXED_PRINT_LESSON.questions[16];
+    if (bucket?.family !== "group") throw new Error("fixture");
+    const stemmed = {
+      ...bucket,
+      data: { ...bucket.data, stem: { text: "Przeciągnij każdą liczbę do właściwego koszyka." } },
+    } as MixedPrintQuestion;
+    const [question] = sheetOf([stemmed]).questions;
+    expect(question?.data.stem?.text).toBe("Połącz każdą liczbę do właściwego koszyka.");
+  });
+
+  it("keeps every word of the problem, swapping only the screen verb", () => {
+    expect(paperSay("Dotknij dobrego słowa: Ala {o1} {o2} kota.", "circle", "pl")).toBe(
+      "Otocz dobrego słowa: Ala {o1} {o2} kota.",
+    );
+    expect(paperSay("Przeciągnij 5 jabłek do koszyka.", "join", "pl")).toBe(
+      "Połącz 5 jabłek do koszyka.",
+    );
+    expect(paperSay("Tap the word that rhymes with cat.", "circle", "en")).toBe(
+      "Circle the word that rhymes with cat.",
+    );
+    expect(paperSay("Dotknij zwierzęcia, które żyje w wodzie.", "circle", "pl")).toBe(
+      "Otocz zwierzęcia, które żyje w wodzie.",
+    );
+    expect(paperSay("Dotknij!", "circle", "pl")).toBe("Otocz kółkiem dobrą odpowiedź.");
+    for (const [said, printed] of [
+      ["Dotknij 7.", "Otocz 7."],
+      ["Kliknij 3 + 4 = ?", "Otocz 3 + 4 = ?"],
+      ["Tap 12 ÷ 3.", "Circle 12 ÷ 3."],
+      ["Tap ½.", "Circle ½."],
+      ["Dotknij $3 \\times 4$!", "Otocz $3 \\times 4$!"],
+      ["Dotknij {o1}.", "Otocz {o1}."],
+    ])
+      expect(paperSay(said ?? "", "circle", said?.startsWith("Tap") ? "en" : "pl")).toBe(printed);
+  });
+
+  it("leaves words that are not screen actions as written", () => {
+    const shift = "Przesuń przecinek o dwa miejsca w prawo. Jaka liczba wyjdzie z 3,45?";
+    expect(paperSay(shift, "write", "pl")).toBe(shift);
+    const drop = "A drop of water weighs 0.05 g. How much do 20 drops weigh?";
+    expect(paperSay(drop, "write", "en")).toBe(drop);
+  });
+
+  it("draws a string's slots the same wherever it is used, the title included", () => {
+    const [first] = MIXED_PRINT_LESSON.questions;
+    if (!first) throw new Error("fixture");
+    const inline = {
+      ...first,
+      question_type: "recognition",
+      data: {
+        stem: { text: "Ala {o1} {o2} kota." },
+        options: [
+          { id: "o1", content: { kind: "text", text: "ma" } },
+          { id: "o2", content: { kind: "text", text: "mają" } },
+        ],
+        select: "one",
+        layout: "inline",
+      },
+      key: { correct: ["o1"] },
+    } as unknown as MixedPrintQuestion;
+    const sheet = buildPrintSheet({
+      title: "Ala {o1} {o2} kota.",
+      language: "pl",
+      questions: [{ role: "planned", question: inline }],
+      media,
+    });
+    expect(sheet.html["Ala {o1} {o2} kota."]).toContain('data-slot="o1"');
   });
 
   it("prints no screen verb anywhere on the sheet", () => {

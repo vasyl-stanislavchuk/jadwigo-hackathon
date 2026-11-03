@@ -180,3 +180,16 @@ export async function uploadsBucket(read: ReadParameter = readSsm): Promise<stri
 export function localUploadsDir(): string | undefined {
   return process.env["LOCAL_UPLOADS_DIR"]?.trim() || undefined;
 }
+
+/**
+ * The print Lambda's ARN the print route starts with an async invoke (dl-1eieq.8.4), or undefined
+ * where none is set up: the print routes then answer 502 `PrintUnavailable`.
+ */
+export function printFunction(): string | undefined {
+  return process.env["PRINT_FUNCTION"]?.trim() || undefined;
+}
+
+/** Where lesson pictures are served from, as apps/web's `VITE_MEDIA_URL`; "" when unset. */
+export function mediaUrl(): string {
+  return process.env["MEDIA_URL"]?.trim() ?? "";
+}

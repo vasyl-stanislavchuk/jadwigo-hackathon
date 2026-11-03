@@ -268,6 +268,12 @@
   "print_do_draw": "Draw or colour the answer.",
   "print_do_join": "Join the ones that go together with lines.",
   "print_do_number": "Number them in order: 1, 2, 3…",
+  "print_verb_circle": "circle",
+  "print_verb_tick": "tick",
+  "print_verb_write": "write",
+  "print_verb_draw": "draw",
+  "print_verb_join": "join",
+  "print_verb_number": "number",
   "drag_beside": "{item} is now beside {other}.",
   "drag_hint": "Drag a card, or tap it and then tap the right place.",
   "drag_picked": "{item}: now tap the right place.",
@@ -1199,6 +1205,9 @@
   "parent_this_computer": "Open on this computer",
   "parent_print": "Print",
   "parent_print_hint": "A sheet with the questions, no answers",
+  "parent_print_preparing": "Preparing the sheet…",
+  "parent_print_failed": "The sheet could not be prepared. Please try again.",
+  "parent_print_slow": "The sheet is still being prepared. Try again in a moment.",
   "parent_this_computer_soon": "Opening the lesson on this computer is on its way.",
   "parent_give_refused_changed": "The lesson changed since its last check. Wait for Jadwigo to check it, then try again.",
   "parent_give_refused_child": "This child isn't in your family. Pick another in “For”.",
@@ -1284,6 +1293,47 @@
       "match": {
         "sets_noun=one": "Picked {n} set that fits grade {grade}",
         "sets_noun=other": "Picked {n} sets that fit grade {grade}"
+      }
+    }
+  ],
+  "chat_line_say": "{text}",
+  "chat_line_edit_changed": "Changed questions {list}",
+  "chat_line_search_any": [
+    {
+      "declarations": ["input query", "input n", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Searched “{query}”: {n} set",
+        "sets_noun=other": "Searched “{query}”: {n} sets"
+      }
+    }
+  ],
+  "chat_line_retry_plain": "That took too long, trying again",
+  "chat_line_types": "Checked the question types",
+  "chat_line_skills": "Looked at the skills",
+  "chat_line_week": "Looked at this week",
+  "chat_line_mistakes": "Looked at what was tricky",
+  "chat_line_topics": "Looked at the curriculum topics",
+  "chat_line_ideas": "Gathered lesson ideas",
+  "chat_week_title": "{name}'s week",
+  "chat_week_meta": [
+    {
+      "declarations": ["input from", "input to", "input n", "local lessons_noun = n: plural"],
+      "selectors": ["lessons_noun"],
+      "match": {
+        "lessons_noun=one": "{from} – {to} · {n} lesson",
+        "lessons_noun=other": "{from} – {to} · {n} lessons"
+      }
+    }
+  ],
+  "chat_show_all": "Show all ({n})",
+  "chat_week_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} question",
+        "q_noun=other": "{n} questions"
       }
     }
   ],
