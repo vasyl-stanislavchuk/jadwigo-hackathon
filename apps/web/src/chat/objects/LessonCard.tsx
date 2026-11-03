@@ -3,15 +3,13 @@
  * homework-to-lesson.md): under a turn that wrote the lesson, one card a parent reads in 2 seconds:
  * the title, how many questions, which version, and what the child sees first. Every fact is read
  * from the turn's own lesson revision, never from Jadwigo AI's words, so the card and the lesson
- * column never disagree. A click opens the lesson beside the chat.
- *
- * Its foot is left for the lesson's actions (Daj lekcję, Zapisz na później, Wydrukuj), which
- * dl-uukj.47.55 adds.
+ * preview never disagree. Its expand button opens the lesson in a preview over the chat
+ * (dl-1eieq.1), and its foot holds the lesson's actions: Daj lekcję, Drukuj, Zapisz na później.
  */
 
 import { copy, type Language } from "@jadwigo/copy";
 import type { ChatItem, RunView } from "@jadwigo/core";
-import { BookOpenIcon, ChevronRightIcon } from "lucide-react";
+import { BookOpenIcon, Maximize2Icon } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import { lessonFileToSpecs } from "../lesson/adapter.ts";
 import { readDraft, titleOf } from "../lesson/readDraft.ts";
@@ -69,7 +67,7 @@ export function LessonCard({
   object: ObjectRef;
   language: Language;
   onOpen: (object: ObjectRef) => void;
-  /** The lesson's actions under the card (dl-uukj.47.55); nothing yet. */
+  /** The lesson's actions under the card (dl-uukj.47.55, dl-1eieq.1). */
   actions?: ReactNode;
 }): ReactElement {
   const say = (key: Parameters<typeof copy>[1], vars: Record<string, string | number> = {}) =>
@@ -83,15 +81,9 @@ export function LessonCard({
       data-object-card="lesson"
       data-revision={facts.revision}
     >
-      <button
-        type="button"
-        onClick={() => onOpen(object)}
-        aria-label={say("chat_lesson_card_open_named", { title })}
-        className="group flex w-full items-start gap-3 rounded-jw-small p-3 text-left hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
-        data-open-object={`${object.kind}:${object.id}`}
-      >
+      <div className="flex w-full items-start gap-3 p-3">
         <BookOpenIcon aria-hidden className="mt-0.5 size-5 shrink-0 text-jw-ink-soft" />
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="text-jw-page-small text-jw-ink-soft">{say("chat_lesson_card")}</span>
           <span className="truncate font-bold text-jw-ink" data-card-title>
             {title}
@@ -106,15 +98,21 @@ export function LessonCard({
               {say("chat_lesson_card_first", { say: facts.first })}
             </span>
           )}
-        </span>
-        <span className="flex shrink-0 items-center gap-1 self-center text-jw-page-small font-bold text-jw-ink">
+        </div>
+        {/* The one way into the lesson (decision 2026-11-03-the-lesson-opens-in-a-preview-modal-
+            from-an-expand-button-on-the): the preview opens over the chat, never beside it. */}
+        <button
+          type="button"
+          onClick={() => onOpen(object)}
+          aria-label={say("chat_lesson_card_open_named", { title })}
+          className="flex shrink-0 items-center gap-1.5 rounded-jw-small px-2 py-1 text-jw-page-small font-bold text-jw-ink hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus"
+          data-open-object={`${object.kind}:${object.id}`}
+          data-expand
+        >
+          <Maximize2Icon aria-hidden className="size-4" />
           {say("chat_lesson_card_open")}
-          <ChevronRightIcon
-            aria-hidden
-            className="size-4 transition-transform duration-jw-fast group-hover:translate-x-0.5"
-          />
-        </span>
-      </button>
+        </button>
+      </div>
       {actions !== undefined && (
         <div
           className="flex flex-wrap gap-2 border-t-jw border-jw-line px-3 py-2"

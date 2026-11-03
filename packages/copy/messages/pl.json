@@ -795,8 +795,8 @@
   "chat_learner_open": "Szczegóły: {name}",
   "chat_learner_open_page": "Strona dziecka: {name}",
   "chat_lesson_card": "Lekcja gotowa",
-  "chat_lesson_card_open": "Otwórz",
-  "chat_lesson_card_open_named": "Otwórz lekcję: {title}",
+  "chat_lesson_card_open": "Podgląd",
+  "chat_lesson_card_open_named": "Podgląd lekcji: {title}",
   "chat_lesson_card_first": "Na początek: {say}",
   "chat_lesson_card_steps": [
     {
@@ -1239,7 +1239,7 @@
   "parent_step_drop": "Usuń",
   "parent_give_title": "Jak dać lekcję?",
   "parent_this_computer": "Otwórz na tym komputerze",
-  "parent_print": "Wydrukuj",
+  "parent_print": "Drukuj",
   "parent_print_hint": "Kartka z zadaniami, bez odpowiedzi",
   "parent_print_preparing": "Przygotowuję kartkę…",
   "parent_print_failed": "Nie udało się przygotować kartki. Spróbuj jeszcze raz.",

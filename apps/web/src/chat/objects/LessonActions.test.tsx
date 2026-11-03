@@ -2,7 +2,7 @@
 /**
  * The lesson card's actions (dl-uukj.47.55), the footer's before #740 (dl-z5ja.108.1.1). Daj
  * lekcję: with no child it opens a dialog with 2 choices;
- * "Wydrukuj" draws the lesson's print sheet and asks the browser to print; "Otwórz na tym
+ * "Drukuj" draws the lesson's print sheet and asks the browser to print; "Otwórz na tym
  * komputerze" is quiet with its reason until a route opens the lesson for the player. With a child
  * the primary is "Pokaż {imię}". Not ready, nothing opens.
  */
@@ -135,17 +135,17 @@ describe("Daj lekcję (dl-z5ja.108.1.1)", () => {
     const dialog = screen.getByRole("dialog", { name: "Jak dać lekcję?" });
     expect(dialog).toBeTruthy();
     expect(screen.getByRole("button", { name: "Otwórz na tym komputerze" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Wydrukuj" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Drukuj" })).toBeTruthy();
   });
 
-  it("Wydrukuj closes the dialog, draws the sheet of every step with no answer, and prints", async () => {
+  it("Drukuj closes the dialog, draws the sheet of every step with no answer, and prints", async () => {
     vi.spyOn(window, "requestAnimationFrame").mockImplementation((go) => {
       go(0);
       return 0;
     });
     const props = footer();
     await act(async () => fireEvent.click(give()));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wydrukuj" })));
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Drukuj" })));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(props.print).toHaveBeenCalledTimes(1);
     const sheet = document.querySelector("[data-print-sheet]");

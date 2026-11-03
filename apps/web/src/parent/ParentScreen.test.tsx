@@ -749,7 +749,8 @@ describe("ParentScreen", () => {
       ),
     );
     expect(window.sessionStorage.getItem(`jw.parent.first.${CONVERSATION}`)).toBeNull();
-    await screen.findByRole("region", { name: "Lekcja" });
+    // The workspace is the chat alone (dl-1eieq.1).
+    await screen.findByRole("region", { name: "Rozmowa" });
   });
 
   it("asks for consent when the route refuses, and goes on with the same words once given", async () => {

@@ -203,6 +203,8 @@ export async function lessonDraft(
     based_on: { question: q.source, changes: [] },
     say: q.say,
     question: structuredClone(q.question),
+    // A borrowed question keeps its credit, which /play draws (dl-1eieq.6.1).
+    ...(q.credit === undefined ? {} : { credit: q.credit }),
   }));
   const title = topic.charAt(0).toUpperCase() + topic.slice(1);
   const lesson_file = writable({

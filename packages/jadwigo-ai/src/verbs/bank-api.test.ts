@@ -10,6 +10,7 @@ import {
   apiBank,
   type BankReads,
   BODY_BATCH,
+  creditOf,
   httpBankReads,
   MAX_LESSON_QUESTIONS,
   maxBodyReads,
@@ -324,7 +325,63 @@ describe("apiBank with question types (dl-hin8.24)", () => {
   });
 });
 
+// dl-1eieq.6.1: a borrowed question keeps its credit from the body into the lesson file.
+describe("creditOf", () => {
+  it("reads a Khan body's credit as the lesson question's, the licence as its id", () => {
+    const khan = body("xmade001", 1, 2, {
+      source: "khan",
+      credit: {
+        source: "Khan Academy",
+        licence: "CC BY-NC-SA 4.0",
+        url: "https://example.org/e/1",
+      },
+    });
+    expect(creditOf(khan, "pl", "2026-11-03")).toEqual({
+      source: "khan",
+      ref: "xmade001",
+      url: "https://example.org/e/1",
+      licence: "cc-by-nc-sa-4.0",
+      original_lang: "en",
+      checked: "2026-11-03",
+    });
+  });
+
+  it("names the source from the credit when the body names none, and keeps a licence it cannot read", () => {
+    const old = body("xmade002", 1, 2);
+    expect(creditOf(old, "pl", "2026-11-03")).toMatchObject({ source: "khan", ref: "xmade002" });
+    const alfik = body("alfik_made_q01", 1, 2, {
+      source: "alfik",
+      credit: { source: "alfik", licence: "© made-up organiser" },
+    });
+    expect(creditOf(alfik, "pl", "2026-11-03")).toMatchObject({
+      source: "alfik",
+      licence: "© made-up organiser",
+      original_lang: "pl",
+    });
+    const unknown = body("xmade003", 1, 2, { credit: { source: "elsewhere", licence: "x" } });
+    expect(creditOf(unknown, "pl", "2026-11-03")).toBeUndefined();
+  });
+});
+
 describe("lesson_draft on the real bank's shapes", () => {
+  it("keeps each drawn question's credit on its step", async () => {
+    const { reads } = fakeReads(BODIES, PAGES);
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const effect = await verbs.lesson_draft.run(contextFor(runId(), "call_1"), {
+      request: "a short lesson",
+      grade: "1",
+      names: [],
+      topic: "dodawanie",
+      count: 2,
+    });
+    const script = effect.lesson_file?.["script"] as
+      | { parts: { steps: { credit?: unknown }[] }[] }
+      | undefined;
+    expect(script?.parts[0]?.steps.map((s) => s.credit)).toEqual(
+      IDS.slice(0, 2).map((id) => expect.objectContaining({ source: "khan", ref: id })),
+    );
+  });
+
   it("drafts a lesson whose every step is a bank question with based_on", async () => {
     const { reads } = fakeReads(BODIES, PAGES);
     const verbs = createVerbs({ bank: apiBank(reads) });

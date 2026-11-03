@@ -77,7 +77,7 @@
         "rehype-remark": "10.0.1",
         "remark-gfm": "4.0.1",
         "remark-stringify": "11.0.0",
-        "satteri": "0.11.1",
+        "satteri": "0.11.3",
         "starlight-auto-sidebar": "0.4.1",
         "starlight-heading-badges": "0.8.0",
         "starlight-image-zoom": "0.16.2",
@@ -2683,7 +2683,7 @@
 
     "safer-buffer": ["safer-buffer@2.1.2", "", {}, "sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg=="],
 
-    "satteri": ["satteri@0.11.1", "", { "dependencies": { "@types/estree-jsx": "^1.0.5", "@types/hast": "^3.0.5", "@types/mdast": "^4.0.4", "@types/unist": "^3.0.3" } }, "sha512-gSWQ0DDu8+fcw96Q4Xb/TE6xU9sBw4wNxk2uzzTae/RTdXdY7mJjXY6Uadur0AUaV9udMA7odMwEpzWZjBEpKQ=="],
+    "satteri": ["satteri@0.11.3", "", { "dependencies": { "@types/estree-jsx": "^1.0.5", "@types/hast": "^3.0.5", "@types/mdast": "^4.0.4", "@types/unist": "^3.0.3" } }, "sha512-CoEfZ+S7VnUXkpCQRqZCS6fRVbipdbydxj4vOKYHu8QHed8JNNVJnqLMJDmNNSr15og765wbzfYee59Mg0fhNA=="],
 
     "sax": ["sax@1.6.1", "", {}, "sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q=="],
 
