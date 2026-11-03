@@ -35,7 +35,7 @@ import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import type { ObjectRef } from "./objects/ref.ts";
 import type { RunPhase } from "./phase.ts";
 import type { Waiting } from "./queue.ts";
-import type { LineContext } from "./toolLine.ts";
+import type { LineContext } from "./spine/lines.ts";
 
 export interface ChatPaneProps {
   language: Language;
@@ -63,7 +63,7 @@ export interface ChatPaneProps {
   pending?: string | null;
   /** Spróbuj ponownie on a stalled turn. */
   onRetry?: (() => void) | undefined;
-  /** A learner's first name by id, for a tool line about a child (toolLine.ts). */
+  /** A learner's first name by id, for a tool line about a child (spine/lines.ts). */
   nameOf?: ((learner: string) => string | null) | undefined;
   /**
    * The queue (queue.ts): what waits to go once the turn ends, drawn as rows above the composer
