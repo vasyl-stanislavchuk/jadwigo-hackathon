@@ -1,0 +1,34 @@
+flowchart TB
+  child(["Child<br/>plays a lesson, no login"])
+  parent(["Parent<br/>signs in, adds a child, reads results"])
+  agent(["Lesson author or agent<br/>searches the question bank"])
+
+  subgraph aws ["AWS, eu-central-1"]
+    subgraph appHost ["app.jadwigo.pl: CloudFront"]
+      web["Web app<br/><i>React, static files in a private S3 bucket</i>"]
+      gateway["HTTP API<br/><i>API Gateway: the API paths, throttled, JWT check on parent routes</i>"]
+    end
+    api["API<br/><i>one Lambda, Node 24: router, authorize(), routes</i>"]
+    content[("Content bucket<br/><i>S3: questions, converted Khan items</i>")]
+    bankFn["Question bank search<br/><i>a Lambda of its own, invoked through its live alias</i>"]
+    site["jadwigo.pl<br/><i>marketing site, static, CloudFront + S3</i>"]
+    docs["docs.jadwigo.pl<br/><i>these docs, static, CloudFront + S3</i>"]
+  end
+
+  subgraph supabase ["Supabase, Frankfurt"]
+    db[("Postgres<br/><i>records, row-level security per pod</i>")]
+    auth["Supabase Auth<br/><i>6-digit email code, RS256 tokens</i>"]
+  end
+
+  jw["jw and its MCP server<br/><i>Python CLI on the author's machine</i>"]
+
+  child --> web
+  parent --> web
+  web -- "HTTPS JSON, same origin" --> gateway
+  web -- "sign-in" --> auth
+  gateway --> api
+  api -- "one transaction per request" --> db
+  api -- "read questions" --> content
+  api -- "invoke search" --> bankFn
+  agent --> jw
+  jw -- "HTTPS JSON + bank read token" --> gateway

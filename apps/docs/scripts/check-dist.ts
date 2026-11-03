@@ -8,10 +8,7 @@ import { checkDist } from "../src/lib/check-dist.ts";
 import { checkWorkspaceDiagram } from "../src/lib/workspace.ts";
 
 const dist = fileURLToPath(new URL("../dist/", import.meta.url));
-const monorepo = readFileSync(
-  new URL("../src/content/docs/architecture/monorepo.md", import.meta.url),
-  "utf8",
-);
+const monorepo = readFileSync(new URL("../src/lib/diagrams/monorepo.mmd", import.meta.url), "utf8");
 const problems = [...checkDist(dist), ...checkWorkspaceDiagram(monorepo)];
 for (const problem of problems) console.error(problem);
 if (problems.length > 0) process.exit(1);
