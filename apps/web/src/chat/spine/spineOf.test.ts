@@ -355,6 +355,19 @@ describe("a refused call the agent fixed (dl-uukj.47.71.45)", () => {
     });
   });
 
+  it("keeps the skip line when only the engine's own check followed", () => {
+    const events = complete(
+      append(
+        [],
+        call("a", "lesson_edit", "s01"),
+        refused("a", "lesson_edit"),
+        call("auto_check_2", "lesson_check"),
+        ok("auto_check_2", "lesson_check", PASSED),
+      ),
+    );
+    expect(linesOf(spineOf(events, null, 0)).filter((l) => l.kind === "skip")).toHaveLength(1);
+  });
+
   it("keeps the skip line when a later check did not pass", () => {
     const events = complete(
       append(

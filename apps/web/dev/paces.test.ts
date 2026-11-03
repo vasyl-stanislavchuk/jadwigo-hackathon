@@ -146,14 +146,17 @@ describe("the dev engine's paces (dl-uukj.47.71.7)", () => {
     expect(edits).toEqual([false, true]);
   });
 
-  it("s12-dropped: an edit refused once and never tried again, with no check after it", async () => {
+  it("s12-dropped: an edit refused once and never tried again, with only the engine's own check after it", async () => {
     const p = await play("s12-dropped");
     const events = await p.until(ended);
     const edits = resultsOf(events, "lesson_edit").map((e) =>
       e.type === "tool_result" ? e.payload.error === null : null,
     );
     expect(edits).toEqual([false]);
-    expect(resultsOf(events, "lesson_check")).toHaveLength(0);
+    const checks = resultsOf(events, "lesson_check").map((e) =>
+      e.type === "tool_result" ? e.payload.call_id : null,
+    );
+    expect(checks).toEqual([expect.stringMatching(/^auto_check_/)]);
   });
 
   it("s13: the turn ends failed", async () => {
