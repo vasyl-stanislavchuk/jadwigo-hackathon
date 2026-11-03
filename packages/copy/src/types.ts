@@ -490,6 +490,7 @@ export const COPY_KEYS = [
   "play_paused",
   "play_paused_back",
   "play_not_found",
+  "app_share_description",
   "play_link_incomplete",
   "play_intro_yes",
   "play_intro_not_me",
