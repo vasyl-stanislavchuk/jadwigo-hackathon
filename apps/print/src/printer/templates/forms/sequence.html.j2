@@ -1,0 +1,13 @@
+{#- sequence: the child numbers the items 1, 2, 3… in a box in front of each. -#}
+{% import "parts.html.j2" as parts %}
+
+{% macro order(q, text, sheet) %}
+{{ parts.stem(q.data.stem, text) }}
+<p class="ends">1 = {{ text.rich(q.data.first_label) }} … {{ q.data.slots or q.data.items|length }} = {{ text.rich(q.data.last_label) }}</p>
+{% if q.data.tiles %}
+<div class="order">{% for t in q.data.tiles %}<span class="item">{{ text.rich(t.text) }}</span>{% endfor %}</div>
+<div class="order">{% for i in range(q.data.slots or q.data.tiles|length) %}<span class="item">{{ i + 1 }} {{ parts.box("digit") }}</span>{% endfor %}</div>
+{% else %}
+<div class="order">{% for it in q.data.items %}<span class="item">{{ parts.box() }}{{ text.rich(it.text) }}</span>{% endfor %}</div>
+{% endif %}
+{%- endmacro %}
