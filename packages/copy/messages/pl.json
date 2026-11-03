@@ -875,9 +875,6 @@
   "chat_check_level_error": "Do poprawy",
   "chat_check_level_warning": "Warto spojrzeć",
   "chat_check_level_info": "Dla informacji",
-  "chat_announce_done": "Jadwigo AI: gotowe",
-  "chat_announce_needs_you": "Jadwigo AI: czeka na Twoją odpowiedź",
-  "chat_announce_stopped": "Zapisane, zatrzymane.",
   "chat_switch": "Rozmowa albo lekcja",
   "chat_check_findings": [
     {
