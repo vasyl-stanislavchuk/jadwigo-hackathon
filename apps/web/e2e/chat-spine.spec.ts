@@ -447,11 +447,9 @@ for (const size of SIZES) {
       await shoot(page, info, "s20-three-turns-restored", size.name);
     });
 
-    test("s20: every reload opens at the bottom (dl-uukj.47.71.42)", async ({ page }) => {
-      // Red until dl-uukj.47.71.42: about 1 reload in 3 stops 59-68 px short, since the web font
-      // or a late row grows the list after its first scroll. 10 reloads all at the bottom by luck
-      // is about 2%. Remove this mark in the PR that fixes it.
-      test.fail();
+    test("s20: every reload opens at the bottom", async ({ page }) => {
+      // 10 reloads: the follow once lost the bottom to a late row or the web font, 1 reload in 3
+      // (dl-uukj.47.71.42).
       test.setTimeout(180_000);
       await threeTurns(page, size);
       const list = chatOf(page).locator("[data-chat-list]");
