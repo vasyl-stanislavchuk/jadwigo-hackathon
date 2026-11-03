@@ -148,6 +148,43 @@ describe("ThreadAttachments", () => {
     expect(screen.getByRole("img", { name: "Nie udało się pokazać zdjęcia 1" })).toBeTruthy();
   });
 
+  it("shows the name chip when the link cannot be read and the tab holds no local copy", async () => {
+    const read = reads();
+    render(<ThreadAttachments language="pl" attachments={[PHOTO]} read={read} now={() => NOW} />);
+    await act(async () => {});
+    expect(thumb()?.dataset["kind"]).toBe("failed");
+    expect(screen.getByRole("img", { name: "Nie udało się pokazać zdjęcia 1" })).toBeTruthy();
+  });
+
+  it("reads a stale link again once per mount, never in a loop", async () => {
+    // Each link is already past its expiry by this clock, as with a clock ahead of the server's.
+    const read = reads(
+      { url: "https://uploads.test/s1", expires: -60_000 },
+      { url: "https://uploads.test/s2", expires: -60_000 },
+      { url: "https://uploads.test/s3", expires: -60_000 },
+    );
+    render(<ThreadAttachments language="pl" attachments={[PHOTO]} read={read} now={() => NOW} />);
+    await act(async () => {});
+    await act(async () => {
+      fireEvent.error(img() as HTMLImageElement);
+    });
+    await act(async () => {
+      fireEvent.error(img() as HTMLImageElement);
+    });
+    expect(read).toHaveBeenCalledTimes(2);
+    expect(thumb()?.dataset["kind"]).toBe("failed");
+  });
+
+  it("revokes the local copy when the stored one fails", async () => {
+    keepSent(ID, "blob:local-2");
+    const read = reads({ url: "https://uploads.test/broken", expires: 300_000 });
+    render(<ThreadAttachments language="pl" attachments={[PHOTO]} read={read} now={() => NOW} />);
+    await act(async () => {});
+    fireEvent.error(img() as HTMLImageElement);
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:local-2");
+    expect(sentPreview(ID)).toBeNull();
+  });
+
   it("opens the photo at full size on a tap", async () => {
     const read = reads({ url: "https://uploads.test/full", expires: 300_000 });
     render(<ThreadAttachments language="en" attachments={[PHOTO]} read={read} now={() => NOW} />);

@@ -32,7 +32,7 @@ const links = new Map<AttachmentId, Link>();
 /** Reads under way, so 2 strips (or React's second mount) showing one photo ask once. */
 const reading = new Map<AttachmentId, Promise<Link>>();
 
-/** Forgets every cached link: for the tests, which each start from none. */
+/** Forgets every cached link: on sign-out, and in the tests, which each start from none. */
 export function forgetLinks(): void {
   links.clear();
   reading.clear();
@@ -73,11 +73,12 @@ function useLink(
   attachment: MessageAttachment,
   read: ReadAttachment,
   now: () => number,
-): { link: Link | null; reread: () => void } {
+): { link: Link | null; unread: boolean; reread: () => boolean } {
   const id = attachment.attachment_id;
   const cached = links.get(id);
   const [link, setLink] = useState<Link | null>(fresh(cached, now()) ? cached : null);
   const [asked, setAsked] = useState(0);
+  const [unread, setUnread] = useState(false);
   useEffect(() => {
     const known = links.get(id);
     if (fresh(known, now())) {
@@ -90,7 +91,9 @@ function useLink(
         if (live) setLink(next);
       },
       () => {
-        if (live) setLink(null);
+        if (!live) return;
+        setLink(null);
+        setUnread(true);
       },
     );
     return () => {
@@ -99,9 +102,14 @@ function useLink(
   }, [id, read, now, asked]);
   return {
     link,
+    unread,
+    // Once per mount: a link that is already stale by this clock (a clock ahead of the server's)
+    // must not loop the read.
     reread: () => {
+      if (asked > 0) return false;
       links.delete(id);
       setAsked((n) => n + 1);
+      return true;
     },
   };
 }
@@ -120,7 +128,7 @@ function Thumb({
   now: () => number;
 }): ReactElement {
   const id = attachment.attachment_id;
-  const { link, reread } = useLink(attachment, read, now);
+  const { link, unread, reread } = useLink(attachment, read, now);
   const [failed, setFailed] = useState(false);
   const local = sentPreview(id);
   const stored =
@@ -139,24 +147,29 @@ function Thumb({
       </span>
     );
   }
-  if (failed || src === null) {
+  // A stored copy that never comes (its read failed, or its picture would not load) is a name chip,
+  // and the local copy goes with it.
+  const gone = failed || (unread && local === null);
+  if (gone || src === null) {
     return (
       <span
         className={chip}
         data-attachment={id}
-        data-kind={failed ? "failed" : "loading"}
+        data-kind={gone ? "failed" : "loading"}
         role="img"
-        aria-label={failed ? copy(language, "chat_photo_unloaded", { n }, "adult") : alt}
+        aria-label={gone ? copy(language, "chat_photo_unloaded", { n }, "adult") : alt}
       >
-        {failed && <ImageOffIcon aria-hidden className="size-5" />}
-        {failed && alt}
+        {gone && <ImageOffIcon aria-hidden className="size-5" />}
+        {gone && alt}
       </span>
     );
   }
   const onError = () => {
     // An expired link is read again once; a stored copy that still fails is a name chip.
-    if (src === stored && link !== null && !fresh(link, now())) reread();
-    else setFailed(true);
+    if (src === stored && link !== null && !fresh(link, now()) && reread()) return;
+    const kept = releaseSent(id);
+    if (kept !== null) URL.revokeObjectURL(kept);
+    setFailed(true);
   };
   const onLoad = () => {
     if (src !== stored) return;

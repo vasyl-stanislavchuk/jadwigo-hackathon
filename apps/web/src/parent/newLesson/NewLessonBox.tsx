@@ -112,9 +112,17 @@ export function NewLessonBox({
   // Every upload stops when the screen goes; an id already taken is in the send that left.
   const held = useRef<PhotoUpload[]>([]);
   held.current = uploads;
+  // Set once a send leaves. Only then, as the screen goes, does each sent photo's local copy pass to
+  // the thread (dl-z5ja.11.6); a send that fails to start leaves the box, and its chips, as they were.
+  const sent = useRef(false);
   useEffect(
     () => () => {
-      for (const upload of held.current) upload.dispose();
+      for (const upload of held.current) {
+        const id = upload.get().attachmentId;
+        const preview = sent.current && id !== null ? upload.handOff() : null;
+        if (id !== null && preview !== null) keepSent(id, preview);
+        upload.dispose();
+      }
     },
     [],
   );
@@ -175,13 +183,7 @@ export function NewLessonBox({
     const attachmentIds = views.flatMap((view) =>
       view.attachmentId === null ? [] : [view.attachmentId],
     );
-    // The thread shows each sent photo from its local copy until the stored one loads (dl-z5ja.11.6).
-    for (const upload of uploads) {
-      const id = upload.get().attachmentId;
-      if (id === null) continue;
-      const preview = upload.handOff();
-      if (preview !== null) keepSent(id, preview);
-    }
+    sent.current = true;
     newLessonDraft.clear();
     onSend({ text: text.trim(), attachmentIds, learner: forLearner });
   };

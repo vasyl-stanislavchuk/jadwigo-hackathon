@@ -63,7 +63,8 @@ import {
   useState,
 } from "react";
 import { browserDeps } from "../chat/attachments/browser.ts";
-import type { ReadAttachment } from "../chat/attachments/ThreadAttachments.tsx";
+import { forgetSent } from "../chat/attachments/sentPreviews.ts";
+import { forgetLinks, type ReadAttachment } from "../chat/attachments/ThreadAttachments.tsx";
 import type { UploadDeps } from "../chat/attachments/upload.ts";
 import { ConsentScreen, giveConsent } from "../chat/ConsentScreen.tsx";
 import { newEventId } from "../chat/ids.ts";
@@ -200,6 +201,9 @@ export function ParentScreen({
       newLessonDraft.clear();
       // And the chat's queued words, every conversation's (dl-uukj.47.34).
       clearChatQueues();
+      // And every sent photo's local copy and cached link (dl-z5ja.11.6).
+      forgetSent();
+      forgetLinks();
     }
   }, [signedIn]);
   // The URL the page opened at. completeRedirect takes the return off the address bar, so a second

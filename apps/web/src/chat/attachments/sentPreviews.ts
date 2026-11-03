@@ -22,3 +22,11 @@ export function releaseSent(id: AttachmentId): string | null {
   kept.delete(id);
   return url;
 }
+
+/** Forgets every local copy and revokes it: on sign-out, so a signed-out tab holds no photo. */
+export function forgetSent(
+  revoke: (url: string) => void = (url) => URL.revokeObjectURL(url),
+): void {
+  for (const url of kept.values()) revoke(url);
+  kept.clear();
+}
