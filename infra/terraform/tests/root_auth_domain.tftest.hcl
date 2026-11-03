@@ -37,6 +37,9 @@ override_module {
 
 override_module {
   target = module.runner
+  outputs = {
+    log_group_name = "/aws/lambda/made-up-runner"
+  }
 }
 
 # alarms.tf's check fails a test run without an address; any address will do here.

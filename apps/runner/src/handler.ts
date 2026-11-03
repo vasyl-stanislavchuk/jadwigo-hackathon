@@ -37,6 +37,7 @@ export function createRunnerHandler(
         runs_past_deadline: report.stuck?.runs_past_deadline.length ?? 0,
         failed: report.failed.map((f) => f.run_id),
         dead_letters: report.dead_letters,
+        max_wait_s: report.max_wait_s,
         runs: report.runs,
         refused: report.refused,
       }),
