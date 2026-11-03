@@ -517,11 +517,13 @@ describe("PlayScreen", () => {
   });
 
   /**
-   * The queen (dl-7wlo.41): she plays at the praise that ends the lesson's first run of three
-   * clean rights, wherever in the lesson it falls, and never again in it. Answers go through the
-   * page (an option, Sprawdź, Dalej), so removing her from PlayScreen fails these tests.
+   * The celebrations (dl-7wlo.41, dl-7wlo.43): one plays at the praise that ends a run of three
+   * clean rights, wherever in the lesson it falls; the count starts again after it, and two is the
+   * most a lesson has. The first is the queen or Pani Iwona at random, the second the other one.
+   * Answers go through the page (an option, Sprawdź, Dalej), so removing them from PlayScreen fails
+   * these tests.
    */
-  describe("the queen", () => {
+  describe("the celebrations", () => {
     const chosen = (seq: number): unknown => ({
       ...(question(seq) as PageAttemptQuestion),
       question: {
@@ -538,9 +540,12 @@ describe("PlayScreen", () => {
     });
 
     /** A double that marks the first try at each seq in `misses` wrong, and every other try right. */
-    function lesson(misses: readonly number[]): AttemptClient & AssignmentIntroClient {
+    function lesson(
+      misses: readonly number[],
+      lessonLanguage: "pl" | "en" = "pl",
+    ): AttemptClient & AssignmentIntroClient {
       return client({
-        startAttempt: async () => snapshot(FRESH, "in_progress", [chosen(1)]),
+        startAttempt: async () => snapshot(FRESH, "in_progress", [chosen(1)], lessonLanguage),
         answer: async (_id, body: AttemptAnswerRequest) => {
           const right = !(misses.includes(body.seq) && body.try_no === 1);
           return AttemptAnswerResult.parse({
@@ -560,8 +565,10 @@ describe("PlayScreen", () => {
     }
 
     const queen = (): Element | null => document.querySelector("[data-queen]");
+    const iwona = (): Element | null => document.querySelector("[data-iwona]");
+    const shown = (): number => document.querySelectorAll("[data-celebration]").length;
 
-    /** Pick an option and press Sprawdź, as a keyboard does (no pointerdown, which hides her). */
+    /** Pick an option and press Sprawdź, as a keyboard does (no pointerdown, which hides them). */
     async function answer(seq: number, pick = "10"): Promise<void> {
       const option = await screen.findByText(pick);
       await act(async () => fireEvent.click(option));
@@ -577,40 +584,97 @@ describe("PlayScreen", () => {
       );
     }
 
+    /** Answers `seqs` right, each followed by Dalej, with no celebration at any of them. */
+    async function quiet(seqs: readonly number[]): Promise<void> {
+      for (const seq of seqs) {
+        await answer(seq);
+        expect(shown()).toBe(0);
+        await next();
+      }
+    }
+
+    /** The coin Math.random gives the page: under 0.5 the queen goes first, else Pani Iwona. */
+    function coin(draw: number): void {
+      vi.spyOn(Math, "random").mockReturnValue(draw);
+    }
+
     beforeEach(() => {
       vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+      coin(0);
     });
-    afterEach(() => vi.unstubAllGlobals());
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
 
-    it("plays at a later run of three after a miss, goes on Dalej, and not again", async () => {
+    it("plays at a later run of three after a miss, goes on Dalej, then once more, and not again", async () => {
       render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={lesson([2])} />);
       await answer(1);
       await next();
       await answer(2); // a miss: the run starts again
       await answer(2, "12"); // a changed answer brings Sprawdź back
       await next();
-      for (const seq of [3, 4]) {
-        await answer(seq);
-        expect(queen()).toBeNull();
-        await next();
-      }
+      await quiet([3, 4]);
       await answer(5);
       expect(queen()).not.toBeNull();
+      expect(shown()).toBe(1);
       await next();
       expect(queen()).toBeNull();
-      for (const seq of [6, 7, 8]) {
-        await answer(seq);
-        expect(queen()).toBeNull();
-        await next();
-      }
+      // The count starts again after her: the second needs three more, and it is Pani Iwona.
+      await quiet([6, 7]);
+      await answer(8);
+      expect(iwona()).not.toBeNull();
+      expect(shown()).toBe(1);
+      await next();
+      expect(shown()).toBe(0);
+      await quiet([9, 10, 11, 12, 13, 14]);
+    });
+
+    it("a miss after the first starts the count for the second again", async () => {
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={lesson([5])} />);
+      await quiet([1, 2]);
+      await answer(3);
+      expect(queen()).not.toBeNull();
+      await next();
+      await quiet([4]);
+      await answer(5); // a miss after one right
+      await answer(5, "12");
+      expect(shown()).toBe(0);
+      await next();
+      await quiet([6, 7]);
+      await answer(8);
+      expect(iwona()).not.toBeNull();
+    });
+
+    it("Pani Iwona can go first, then the queen", async () => {
+      coin(0.9);
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={lesson([])} />);
+      await quiet([1, 2]);
+      await answer(3);
+      expect(iwona()).not.toBeNull();
+      expect(queen()).toBeNull();
+      await next();
+      await quiet([4, 5]);
+      await answer(6);
+      expect(queen()).not.toBeNull();
+      expect(iwona()).toBeNull();
+    });
+
+    it("Pani Iwona speaks the page's language, not the lesson's", async () => {
+      coin(0.9);
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="en" client={lesson([], "pl")} />);
+      await quiet([1, 2]);
+      await answer(3);
+      const sources = [...document.querySelectorAll("[data-iwona] source")].map(
+        (s) => s.getAttribute("src") ?? "",
+      );
+      expect(sources).toHaveLength(2);
+      expect(sources.every((src) => src.includes("iwona-en"))).toBe(true);
     });
 
     it("a tap hides her", async () => {
       render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={lesson([])} />);
-      for (const seq of [1, 2]) {
-        await answer(seq);
-        await next();
-      }
+      await quiet([1, 2]);
       await answer(3);
       expect(queen()).not.toBeNull();
       await act(async () => fireEvent.pointerDown(document.body));

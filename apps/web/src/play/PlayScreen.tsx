@@ -32,11 +32,11 @@ import { withMedia } from "../media.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { ChildReview } from "../review/ChildReview.tsx";
 import { specOf } from "../review/Still.tsx";
+import { castOf, celebrationDue, firstCast } from "./celebration.ts";
 import { creditShown } from "./credit.ts";
 import { IntroScreen, type Who } from "./IntroScreen.tsx";
 import { Column, KidPage } from "./KidPage.tsx";
-import { Queen } from "./Queen.tsx";
-import { queenDue } from "./queen.ts";
+import { Iwona, Queen } from "./Queen.tsx";
 import { Results } from "./Results.tsx";
 import { playLearner, playPath, playRoute, reviewPath } from "./route.ts";
 import { currentOf, progressOf } from "./runner.ts";
@@ -231,9 +231,14 @@ function PlayerScreen({
     (to: number) => navigate(withQuery(reviewPath(assignmentId, to))),
     [assignmentId, withQuery],
   );
-  // Once she is gone (the clip ended, a tap) she stays gone; queenDue holds for one praise only.
-  const [queenGone, setQueenGone] = useState(false);
-  const hideQueen = useCallback(() => setQueenGone(true), []);
+  // Who plays first is a coin per page, and the second celebration is the other one (dl-7wlo.43).
+  const [first] = useState(() => firstCast(Math.random()));
+  // Once a clip is gone (it ended, a tap) it stays gone; celebrationDue holds for one praise only.
+  const due = celebrationDue(player.state);
+  const dueSeq = due === null ? null : player.state.seq;
+  const [goneSeq, setGoneSeq] = useState<number | null>(null);
+  const hide = useCallback(() => setGoneSeq(dueSeq), [dueSeq]);
+  const celebrating = due !== null && dueSeq !== goneSeq ? castOf(due, first) : null;
   const reviewing = seq !== undefined;
   const live = stage.kind === "playing" || stage.kind === "paused";
   useEffect(() => {
@@ -258,7 +263,8 @@ function PlayerScreen({
           ) : (
             <Question player={player} language={language} />
           )}
-          {queenDue(player.state) && !queenGone && <Queen onDone={hideQueen} />}
+          {celebrating === "queen" && <Queen key={dueSeq} onDone={hide} />}
+          {celebrating === "iwona" && <Iwona key={dueSeq} language={language} onDone={hide} />}
         </KidPage>
       );
     case "paused":
