@@ -45,6 +45,15 @@ export function IntroScreen({
     if (typed === "") setMissing(true);
     else onStart({ learner: null, playerName: typed });
   };
+  // An older learners-only link that names no child of its pod: nobody can start it.
+  if (!intro.open && named === null)
+    return (
+      <KidPage>
+        <Column>
+          <p data-link-incomplete>{copy(language, "play_link_incomplete")}</p>
+        </Column>
+      </KidPage>
+    );
   const asksName = intro.open && (named === null || notThem);
   return (
     <KidPage>
