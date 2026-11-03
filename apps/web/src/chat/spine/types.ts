@@ -64,8 +64,6 @@ export interface SpineFoot {
   kind: "failed" | "stalled" | "stopped";
   /** Failed: how many times Jadwigo tried. */
   tries?: number;
-  /** Stopped: the lesson version that stands. */
-  versionStands?: number;
   /** Stopped: whether the stopped turn changed the lesson before it stopped. */
   changed?: boolean;
 }

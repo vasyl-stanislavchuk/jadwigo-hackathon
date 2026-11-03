@@ -345,12 +345,19 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
-  it("a stopped turn's foot names the version that stands (S15)", () => {
-    // cancel-during-a-verb wrote revision 1 before the stop, so that is the version that stands.
+  it("a stopped turn's foot says whether the lesson changed, and names no version (S15, dl-vxjv2)", () => {
+    // cancel-during-a-verb wrote a revision before the stop.
     pane({ turns: [turnOf("cancel-during-a-verb")] });
     expect(document.querySelector("[data-foot='stopped']")?.textContent).toBe(
-      "Zatrzymane. Lekcja została w wersji 1, z tym, co zdążyłam zmienić.",
+      "Zatrzymane. W lekcji jest to, co zdążyłam zmienić.",
     );
+    expect(document.querySelector("[data-spine]")?.textContent).not.toMatch(/wersj|version \d/i);
+    cleanup();
+    pane({ language: "en", turns: [turnOf("cancel-during-a-verb")] });
+    expect(document.querySelector("[data-foot='stopped']")?.textContent).toBe(
+      "Stopped. The lesson has what I managed to change.",
+    );
+    expect(document.querySelector("[data-spine]")?.textContent).not.toMatch(/wersj|version \d/i);
   });
 
   it("Escape in the thread stops a running turn once, and does nothing once it has ended (S6)", () => {
