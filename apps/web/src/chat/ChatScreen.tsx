@@ -19,7 +19,6 @@ import type { ConversationState } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
 import { useLessonWiring } from "./lessonWiring.ts";
-import type { LessonChange } from "./patches.ts";
 import { usePhase } from "./phase.ts";
 import { apiTransport } from "./realtime.ts";
 import { holdServer } from "./routesTransport.ts";
@@ -89,12 +88,12 @@ function ChatView({
   onCloseContext?: () => void;
   /** "Spróbuj ponownie" after a failed send: the exact words that failed. */
   onResend?: () => void;
-  onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
+  onEdit?: (text: string, question_ids: string[]) => unknown;
   onNew?: () => void;
   /** Rates a completed turn by its run (dl-z5ja.63). */
   onRate?: ((run: RunId, body: RunRatingCreate) => Promise<unknown>) | undefined;
 }): ReactElement {
-  const lesson = useLessonWiring(state, onEdit);
+  const lesson = useLessonWiring(state);
   const { turns } = lesson;
   const { phase, now } = usePhase(turns, state, onRefetch);
   return (
