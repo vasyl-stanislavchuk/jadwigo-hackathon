@@ -28,9 +28,10 @@ import { type ReactElement, useEffect, useRef, useState } from "react";
 import type { ReadAttachment } from "../../chat/attachments/ThreadAttachments.tsx";
 import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
-import { LessonPane } from "../../chat/LessonPane.tsx";
+import { addedSteps, LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
 import { type GiveState, LessonActions } from "../../chat/objects/LessonActions.tsx";
+import { comingVersion } from "../../chat/objects/LessonCard.tsx";
 import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
 import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/registry.tsx";
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
@@ -41,7 +42,7 @@ import { NavLink } from "../../nav/NavLink.tsx";
 import { playPath } from "../../play/route.ts";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { DlaSelect } from "../newLesson/DlaSelect.tsx";
-import { lessonsPath, parentPath } from "../route.ts";
+import { parentPath } from "../route.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { useInspector } from "./inspector.ts";
 import { Workspace } from "./Workspace.tsx";
@@ -195,7 +196,15 @@ export function LessonWorkspace({
       ready={lesson.ready}
       child={child}
       lesson={lesson.shown}
-      onSave={() => navigate(lessonsPath({ lang: pageLang() }))}
+      forWhom={
+        <DlaSelect
+          language={language}
+          learners={learners}
+          value={forLearner}
+          onChange={onForChange}
+          onAddChild={onAddChild}
+        />
+      }
       given={given}
       {...(engine.give === null
         ? {}
@@ -294,6 +303,7 @@ export function LessonWorkspace({
                       language={language}
                       lesson={lesson.shown}
                       changed={lesson.changed}
+                      added={addedSteps(lesson.turns, lesson.changed)}
                       onUndo={lesson.onUndo}
                       undoRefused={lesson.undoRefused}
                       undoPending={lesson.undoPending}
@@ -305,6 +315,7 @@ export function LessonWorkspace({
                     />
                   ),
                 actions,
+                band: comingVersion(lesson.turns),
               }
             : {
                 title: objectHeading(opened, panelPage),

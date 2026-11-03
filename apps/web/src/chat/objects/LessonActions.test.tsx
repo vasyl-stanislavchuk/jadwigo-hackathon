@@ -31,7 +31,6 @@ function footer(changes: Partial<Parameters<typeof LessonActions>[0]> = {}) {
     language: "pl" as const,
     ready: true,
     child: null,
-    onSave: vi.fn(),
     onGive: vi.fn(),
     lesson,
     print: vi.fn(),
@@ -44,15 +43,16 @@ function footer(changes: Partial<Parameters<typeof LessonActions>[0]> = {}) {
 const give = () => document.querySelector("[data-give]") as HTMLElement;
 
 describe("the lesson card's actions (dl-uukj.47.55)", () => {
-  it("say who the lesson is for; Zapisz na później saves; Wydrukuj prints with no dialog", async () => {
+  it("say who the lesson is for; Drukuj is an icon and prints with no dialog; no Zapisz", async () => {
     vi.spyOn(window, "requestAnimationFrame").mockImplementation((go) => {
       go(0);
       return 0;
     });
     const props = footer();
     expect(document.querySelector("[data-for-whom]")?.textContent).toBe("Dla kogo: Bez dziecka");
-    fireEvent.click(screen.getByRole("button", { name: "Zapisz na później" }));
-    expect(props.onSave).toHaveBeenCalledTimes(1);
+    // Every lesson is already in Lekcje (owner, 2026-11-03).
+    expect(screen.queryByRole("button", { name: "Zapisz na później" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Drukuj" }).hasAttribute("data-print")).toBe(true);
     await act(async () => fireEvent.click(document.querySelector("[data-print]") as HTMLElement));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(props.print).toHaveBeenCalledTimes(1);
@@ -62,6 +62,11 @@ describe("the lesson card's actions (dl-uukj.47.55)", () => {
     cleanup();
     footer({ child: ola });
     expect(document.querySelector("[data-for-whom]")?.textContent).toBe("Dla kogo: Ola");
+    cleanup();
+    // The page's Dla select takes the place of the words.
+    footer({ forWhom: <span data-test-dla>Dla</span> });
+    expect(document.querySelector("[data-test-dla]")).not.toBeNull();
+    expect(document.querySelector("[data-for-whom]")).toBeNull();
   });
 
   it("Daj lekcję and Wydrukuj are quiet with their reason until the lesson's check passed", async () => {
@@ -82,7 +87,7 @@ describe("the lesson card's actions (dl-uukj.47.55)", () => {
     footer();
     expect(give().getAttribute("aria-describedby")).toBeNull();
     expect(document.querySelector("[data-print]")?.getAttribute("aria-describedby")).toBeNull();
-    expect(document.querySelector("[data-give-reason]")).toBeNull();
+    expect(give().getAttribute("aria-disabled")).toBeNull();
   });
 });
 
@@ -91,7 +96,9 @@ describe("giving and printing only a checked lesson (steward on #747)", () => {
     const props = footer({ ready: false });
     const print = document.querySelector("[data-print]") as HTMLElement;
     expect(print.getAttribute("aria-disabled")).toBe("true");
-    expect(print.getAttribute("aria-describedby")).toBe(give().getAttribute("aria-describedby"));
+    const reasonOf = (el: Element) =>
+      document.getElementById(el.getAttribute("aria-describedby") ?? "")?.textContent;
+    expect(reasonOf(print)).toBe(reasonOf(give()));
     await act(async () => fireEvent.click(print));
     expect(props.print).not.toHaveBeenCalled();
     expect(document.querySelector("[data-print-sheet]")).toBeNull();
@@ -100,9 +107,9 @@ describe("giving and printing only a checked lesson (steward on #747)", () => {
   it("with a child and nothing to give with, Daj lekcję is quiet with its reason", async () => {
     footer({ child: ola, onGive: undefined });
     expect(give().getAttribute("aria-disabled")).toBe("true");
-    expect(document.querySelector("[data-give-reason]")?.textContent).toBe(
-      "Dawanie lekcji zadziała po zalogowaniu.",
-    );
+    expect(
+      document.getElementById(give().getAttribute("aria-describedby") ?? "")?.textContent,
+    ).toBe("Dawanie lekcji zadziała po zalogowaniu.");
   });
 
   it("says where the lesson waits once given, and why when it was refused", () => {
