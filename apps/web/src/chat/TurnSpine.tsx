@@ -376,11 +376,7 @@ function Foot({
     return (
       <div className={frame} data-foot="stopped">
         <p className="text-jw-page-small text-jw-ink-soft">
-          {foot.versionStands === undefined
-            ? s("live_stopped")
-            : s(foot.changed === true ? "chat_stopped_some" : "chat_stopped_none", {
-                n: foot.versionStands,
-              })}
+          {s(foot.changed === true ? "chat_stopped_some" : "chat_stopped_none")}
         </p>
       </div>
     );
