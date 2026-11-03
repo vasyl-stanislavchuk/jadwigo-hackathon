@@ -104,8 +104,12 @@ function supportingHelp(question: Record<string, unknown>, answers: number[], er
   const lastNumber = worked.join(" ").match(/\d+/g)?.at(-1);
   if (lastNumber !== undefined && !answers.includes(Number(lastNumber)))
     errors.push("worked solution ends with another question's answer");
-  if (help["twin"] !== undefined)
-    arithmetic({ ...object(help["twin"]), family: question["family"] }, errors);
+  if (help["twin"] !== undefined) {
+    const twin = object(help["twin"]);
+    if (twin["family"] !== undefined && twin["family"] !== question["family"])
+      errors.push("twin must keep the source family");
+    arithmetic({ ...twin, family: twin["family"] ?? question["family"] }, errors);
+  }
 }
 
 /** Supported arithmetic is checked directly; unsupported shapes fail explicitly. */

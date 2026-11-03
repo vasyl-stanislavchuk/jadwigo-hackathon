@@ -644,3 +644,65 @@ describe("adaptation edits preserve the family contract (dl-hin8.30)", () => {
     });
   });
 });
+
+describe("model-written twins inherit their source family (dl-hin8.30)", () => {
+  it("compiles a flat twin supplied through lesson_check without asking the model to change the main family", async () => {
+    const { reads } = fakeReads({ xmade000: body("xmade000", 3, 1) }, [
+      page("set_near", ["xmade000"]),
+    ]);
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const run = runId();
+    const draft = await verbs.lesson_draft.run(contextFor(run, "draft"), {
+      request: "addition within 10",
+      grade: "1",
+      topic: "addition within 10",
+      names: [],
+      count: 1,
+    });
+    if (draft.lesson_file === undefined) throw new Error("expected draft");
+    const twin = {
+      say: "Ile to jest 2 + 1?",
+      data: { input: "number", entry: "keypad", figure: { kind: "expression", text: "2 + 1 = ?" } },
+      key: { accept: ["3"] },
+    };
+    const checked = await verbs.lesson_check.run(
+      contextFor(run, "check", { revision: 1, lesson_file: draft.lesson_file }),
+      {
+        draft_id: run,
+        names: [],
+        help: { s01: { twin } },
+      },
+    );
+    expect(checked.output["ok"]).toBe(true);
+    expect(checked.lesson_file).toMatchObject({
+      script: {
+        parts: [
+          { steps: [{ question: { family: "enter", help: { twin: { family: "enter" } } } }] },
+        ],
+      },
+    });
+    const edited = await verbs.lesson_edit.run(
+      contextFor(run, "edit", { revision: 1, lesson_file: draft.lesson_file }),
+      {
+        draft_id: run,
+        names: [],
+        step_id: "s01",
+        why: "Add a suitable twin",
+        patch: { question: { help: { twin } } },
+      },
+    );
+    expect(edited.output["ok"]).toBe(true);
+    await expect(
+      verbs.lesson_edit.run(
+        contextFor(run, "wrong-family", { revision: 1, lesson_file: draft.lesson_file }),
+        {
+          draft_id: run,
+          names: [],
+          step_id: "s01",
+          why: "A twin must retain the parent family",
+          patch: { question: { help: { twin: { ...twin, family: "slots" } } } },
+        },
+      ),
+    ).rejects.toThrow();
+  });
+});

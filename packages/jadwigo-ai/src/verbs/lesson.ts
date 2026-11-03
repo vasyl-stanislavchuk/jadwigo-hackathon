@@ -100,6 +100,15 @@ function writable(file: Json): Json {
   return file;
 }
 
+/** A model-written twin uses its parent's family when only say/data/key were supplied. */
+function inheritTwinFamily(step: Step): Step {
+  const question = isObject(step["question"]) ? step["question"] : {};
+  const help = isObject(question["help"]) ? question["help"] : {};
+  const twin = help["twin"];
+  if (!isObject(twin) || twin["family"] !== undefined) return step;
+  return mergePatch(step, { question: { help: { twin: { family: question["family"] } } } }) as Step;
+}
+
 /** A step's findings: its own and its twin's (compile names a twin `<id>t`). */
 function findingsFor(findings: readonly Finding[], step_id: string): Finding[] {
   return findings.filter((f) => f.step_id === step_id || f.step_id === `${step_id}t`);
@@ -299,7 +308,8 @@ export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect
         `lesson_check: help.${step_id} takes ${HELP_WORDS.join(", ")}; to change ${unknown.join(", ")} use lesson_edit`,
       );
     }
-    const after = mergePatch(step, { question: { help: words } }) as Step;
+    const merged = mergePatch(step, { question: { help: words } }) as Step;
+    const after = words["twin"] === undefined ? merged : inheritTwinFamily(merged);
     const copied = copiedChanges(step, after);
     if (copied.length > 0) {
       throw new VerbError(
@@ -388,11 +398,13 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   if (refused.length > 0) {
     throw new VerbError(
       "edit",
-      `a patch sets say and question's data, key and help, not ${refused.join(", ")}; nothing changed`,
+      `a patch sets say and question's data, key and help, not ${refused.join(", ")}; twin changes belong in question.help.twin, not question.family; nothing changed`,
     );
   }
 
-  const edited = mergePatch(step, patch) as Step;
+  const merged = mergePatch(step, patch) as Step;
+  const helpPatch = isObject(question) && isObject(question["help"]) ? question["help"] : {};
+  const edited = helpPatch["twin"] === undefined ? merged : inheritTwinFamily(merged);
   edited.id = step.id;
   const copied = copiedChanges(step, edited);
   if (copied.length > 0 && (why === null || why.trim() === "")) {
@@ -425,7 +437,7 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   const introduced = findings.filter(
     (finding) =>
       finding.level === "error" &&
-      finding.rule === "contract" &&
+      (finding.rule === "contract" || finding.rule === "question-type-family") &&
       !before.has(JSON.stringify([finding.path, finding.rule, finding.text])),
   );
   if (introduced.length > 0) {
@@ -433,7 +445,11 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
       "edit",
       `${introduced
         .slice(0, 3)
-        .map((finding) => `${finding.path}: ${finding.text}. ${finding.fix}`)
+        .map((finding) =>
+          finding.rule === "question-type-family" && finding.step_id === `${step_id}t`
+            ? `question.help.twin.family: a twin must use the source family; omit its family to inherit it. Do not change question.family.`
+            : `${finding.path}: ${finding.text}. ${finding.fix}`,
+        )
         .join("\n")}; nothing changed`,
     );
   }

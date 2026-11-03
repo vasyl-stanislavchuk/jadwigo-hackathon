@@ -63,7 +63,8 @@ operation, range and count. A structurally valid lesson can still miss the topic
 draft card before choosing what to adapt; do not infer its content from `say` or its title. Changing only `say` to "dodawanie"
 does not turn a subtraction still present in `question.data` into addition. Preserve the
 family shapes when editing help: `look`/`boost` are `{text}`, `almost`/`worked` are arrays,
-and `twin` has its own `say`, `data` and `key`. Do not present a failed `lesson_check` as ready. Edits introducing new family-contract errors
+and `twin` has its own `say`, `data` and `key`. A model-written twin inherits its parent
+question's family when omitted; repair the twin at `question.help.twin`, not the main family. Do not present a failed `lesson_check` as ready. Edits introducing new family-contract errors
 leave the draft unchanged; correct the path and shape named by the error, then
 retry. After repairing the draft, run `lesson_check` on the current revision.
 
