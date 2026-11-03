@@ -44,9 +44,9 @@ type SpineLine = Stage["lines"][number];
 type Words = { copyKey: CopyKey; values: Readonly<Record<string, string | number>> };
 
 /** The open stage shows this many lines; older ones fold under "{n} wcześniej" (D3). */
-export const OPEN_LINES = 3;
+const OPEN_LINES = 3;
 /** A search line shows this many tags; the rest open under "+{n} więcej" (S14). */
-export const TAGS_SHOWN = 4;
+const TAGS_SHOWN = 4;
 
 /** The adult focus halo (DS D15) on a row that toggles, radius 6. */
 const HALO =
@@ -429,7 +429,7 @@ function Foot({
 }
 
 /** The header row (§4.1): mark · title · meta, the meta under the title on a phone (D8). */
-export function SpineHeader({
+function SpineHeader({
   spine,
   now,
   language,
@@ -538,4 +538,4 @@ export function TurnSpine({
   );
 }
 
-export { FRAME as SPINE_FRAME, HALO as SPINE_HALO, HEADER as SPINE_HEADER };
+export { FRAME as SPINE_FRAME, HALO as SPINE_HALO };

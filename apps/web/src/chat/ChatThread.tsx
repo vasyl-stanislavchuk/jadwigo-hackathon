@@ -45,7 +45,7 @@ const PARENT_BOX =
   "rounded-jw-box border-jw border-jw-line bg-jw-act-quiet px-3.5 py-2.5 whitespace-pre-wrap text-jw-ink";
 
 /** Within this many pixels of the bottom, the thread follows what arrives (§3). */
-export const FOLLOW_PX = 80;
+const FOLLOW_PX = 80;
 
 type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 type Message = Extract<ChatItem, { kind: "message" }>;
