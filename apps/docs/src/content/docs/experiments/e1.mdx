@@ -15,8 +15,8 @@ dates.
 Each learner is a small behaviour, not a script: a hidden skill level per topic that grows with a
 clean first try, fades over a gap, and is sampled on every answer. The clock is pinned (from
 2026-10-12, seed 20261012, 21 days), so a re-run gives the same cohort byte for byte, apart from
-the wall time. The 10 skills are real catalogue codes: multiplication rows 2 to 7 and 4 Polish
-spelling skills. The fold, the FSRS due dates and the brief are the product's own code in
+the wall time and the commit the run records. The 10 skills are real catalogue codes:
+multiplication rows 2 to 7 and 4 Polish spelling skills. The fold, the FSRS due dates and the brief are the product's own code in
 `packages/core` (`foldLearner`, `brief`); no model ran and nothing was written to a database, so
 the cost is $0.
 
@@ -47,6 +47,23 @@ and what the brief asks for next. The full day-by-day series is in the experimen
 | Learner J | uneven | 116 | 6 proficient, 4 attempted | 4 reteach, 1 review |
 | Learner K | comeback | 77 | 1 mastered, 3 familiar, 6 attempted | 9 reteach |
 | Learner L | new-and-keen | 165 | 1 mastered, 1 proficient, 8 attempted | 8 reteach |
+
+Mean level (0 to 4 over the 10 skills) every 3rd day, as a text chart from the same series:
+
+| Learner | Profile | Days 0 to 20 | Day 0 | Day 9 | Day 20 |
+| --- | --- | --- | ---: | ---: | ---: |
+| Learner A | steady | ▁▄▅▅▆▆▇▇ | 0 | 2.3 | 3 |
+| Learner B | forgetful | ▂▃▃▃▄▄▃▃ | 0.7 | 1.4 | 1.3 |
+| Learner C | guesser | ▂▃▄▅▅▄▅▅ | 0.5 | 2 | 2.2 |
+| Learner D | slow-then-click | ▂▃▄▄▄▅▆▆ | 0.7 | 1.7 | 2.5 |
+| Learner E | help-heavy | ▂▂▃▄▄▄▄▄ | 0.5 | 1.5 | 1.7 |
+| Learner F | rusher | ▁▃▄▄▄▄▄▄ | 0 | 1.5 | 1.7 |
+| Learner G | perfectionist | ▂▄▅▅▆▆▆▆ | 0.7 | 2.3 | 2.8 |
+| Learner H | early-plateau | ▁▃▄▅▅▄▄▄ | 0 | 2 | 1.9 |
+| Learner I | weekend-only | ▁▁▄▄▄▄▄▃ | 0 | 1.6 | 1.4 |
+| Learner J | uneven | ▂▄▄▅▅▅▅▅ | 0.9 | 2.1 | 2.2 |
+| Learner K | comeback | ▂▃▄▄▄▅▄▄ | 0.5 | 1.5 | 1.6 |
+| Learner L | new-and-keen | ▂▄▄▃▃▃▄▄ | 0.8 | 1.2 | 1.5 |
 
 3 readings a judge can check in the JSON:
 

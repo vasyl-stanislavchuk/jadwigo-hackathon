@@ -1,7 +1,7 @@
 // Experiment E1 (dl-5ssh.90.53.3): 12 invented learners, 3 weeks of attempts on a pinned
 // clock, folded day by day through @jadwigo/core's mastery fold. Re-run:
 //   bun apps/api/src/experiments/e1.ts
-// It writes apps/docs/src/data/experiments/e1.json and e1-cohort.json. No model, no database.
+// It writes apps/docs/src/data/experiments/e1.json, the cohort under `detail`. No model, no db.
 import { execSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -371,7 +371,7 @@ export function buildCohort() {
       for (const row of mastery) levels[row.level] = (levels[row.level] ?? 0) + 1;
       days.push({
         day,
-        date: until.toISOString().slice(0, 10),
+        date: new Date(startMs + day * DAY_MS).toISOString().slice(0, 10),
         attempts: new Set(soFar.map((e) => e.attempt_id)).size,
         tries: soFar.filter((e) => e.kind === "try").length,
         levels,
