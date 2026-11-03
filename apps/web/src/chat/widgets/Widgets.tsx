@@ -1,9 +1,12 @@
 /**
  * The widgets a finished tool line draws (dl-z5ja.24), PostHog's tool registry for a parent
  * (`docs/research/posthog-ai-ux-patterns.md` section 6). Each reads its verb's typed view, never
- * text, and draws only once the call is done and the view fits. Everything else gets the plain
- * card: "Step details", with what came back one tap away. A view fits when it parses as its verb's
- * schema in `@jadwigo/contracts` (`TOOL_VIEW_DATA`, dl-z5ja.71), the one the verb wrote it through.
+ * text, and draws only once the call is done and the view fits. In view stay only the learner
+ * widgets, in the frame of handoff dl-uukj.47.71 §4.3 (S1): a search, a read and an edit are lines
+ * of the turn (lanes A and B), and a check folds, its findings shown on the lesson card (S16).
+ * Everything else gets the plain card, with what came back one tap away. A view fits when it parses
+ * as its verb's schema in `@jadwigo/contracts` (`TOOL_VIEW_DATA`, dl-z5ja.71), the one the verb
+ * wrote it through.
  */
 
 import {
@@ -18,13 +21,14 @@ import {
 import type { VerbName } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language, mistakeCopyKey } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
-import { Badge, Button } from "@jadwigo/ui";
+import { Button } from "@jadwigo/ui";
 import { ChevronRightIcon } from "lucide-react";
 import type { ReactElement } from "react";
 import { GoalLists } from "../../parent/learner/GoalLists.tsx";
-import { WeekStrip } from "../../parent/learner/WeekStrip.tsx";
 import type { ObjectRef } from "../objects/ref.ts";
 import { TOOL_ICON } from "../spine/lines.ts";
+import { WeekRows } from "./WeekRows.tsx";
+import { BodyFrame } from "./WidgetFrame.tsx";
 
 export type ToolItem = Extract<ChatItem, { kind: "tool" }>;
 
@@ -48,16 +52,19 @@ interface WidgetEntry<T> {
   title: CopyKey;
   read(data: unknown): T | null;
   Widget(props: Props<T>): ReactElement;
-  /** Drawn in view under the folded tool lines, not inside the fold; a function decides per view. */
-  keepVisible?: boolean | ((data: T) => boolean);
+  /** The widget draws its own frame (a Tydzień's rows); otherwise its body goes in the 240 frame. */
+  framed?: true;
+  /** How many things the body holds, for "Pokaż wszystkie ({n})" under a clamped body. */
+  count?(data: T): number;
+  /** Drawn in view under the turn (S1), not folded with its line. */
+  keepVisible: boolean;
 }
 
 /** An entry with its type closed over, so entries of different views sit in one registry. */
 interface Registered {
   verb: VerbName;
-  title: CopyKey;
-  /** Whether this view stays in view under the fold. */
-  keepVisible(data: unknown): boolean;
+  keepVisible: boolean;
+  /** The widget in its frame (§4.3), or null when the view does not read as the verb's. */
   draw(data: unknown, language: Language, actions: WidgetActions): ReactElement | null;
 }
 
@@ -65,16 +72,23 @@ function register<T>(entry: WidgetEntry<T>): Registered {
   const { Widget } = entry;
   return {
     verb: entry.verb,
-    title: entry.title,
-    keepVisible(data) {
-      const rule = entry.keepVisible ?? false;
-      if (typeof rule === "boolean") return rule;
-      const read = entry.read(data);
-      return read !== null && rule(read);
-    },
+    keepVisible: entry.keepVisible,
     draw(data, language, actions) {
       const read = entry.read(data);
-      return read === null ? null : <Widget data={read} language={language} actions={actions} />;
+      if (read === null) return null;
+      const body = <Widget data={read} language={language} actions={actions} />;
+      if (entry.framed === true) return body;
+      return (
+        <BodyFrame
+          verb={entry.verb}
+          icon={TOOL_ICON[entry.verb]}
+          title={copy(language, entry.title, {}, "adult")}
+          language={language}
+          count={entry.count?.(read) ?? 0}
+        >
+          {body}
+        </BodyFrame>
+      );
     },
   };
 }
@@ -264,44 +278,9 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     title: "chat_tool_lesson_check",
     read: (data) => toolViewData("lesson_check", data),
     Widget: ({ data, language }) => <Findings view={data} language={language} />,
-    // A clean pass folds in with the other steps (design review 2026-11-02): the lesson is the
-    // news. Findings, or a lesson that cannot be given yet, stay in view.
-    keepVisible: (data) => !data.publishable || data.findings.length > 0,
-  }),
-  lesson_edit: register({
-    verb: "lesson_edit",
-    title: "chat_tool_lesson_edit",
-    read: (data) => toolViewData("lesson_edit", data),
-    Widget: ({ data, language }) => (
-      <ul className="flex flex-wrap gap-1">
-        {data.changed_step_ids.map((id) => (
-          <Badge asChild key={id} variant="tag">
-            <li data-edited-step={id}>
-              {copy(language, "chat_lesson_step", { step: id }, "adult")}
-            </li>
-          </Badge>
-        ))}
-      </ul>
-    ),
-    keepVisible: true,
-  }),
-  question_search: register({
-    verb: "question_search",
-    title: "chat_search_sets",
-    read: (data) => toolViewData("question_search", data),
-    Widget: ({ data, language }) =>
-      data.sets.length === 0 ? (
-        <p>{copy(language, "chat_search_none", {}, "adult")}</p>
-      ) : (
-        <ul className="flex flex-wrap gap-1">
-          {data.sets.map((s) => (
-            <Badge asChild key={s.set_id} variant="tag">
-              <li data-set={s.set_id}>{s.title}</li>
-            </Badge>
-          ))}
-        </ul>
-      ),
-    keepVisible: true,
+    // Folded, clean or not (S1): a check that needs fixing shows on the lesson card (S16, lane C).
+    count: (data) => data.findings.length,
+    keepVisible: false,
   }),
   // The learner verbs (dl-z5ja.25) draw with the parent's learner page's own parts and their own
   // widgets (dl-z5ja.129); curriculum_topics gets the plain card for now.
@@ -315,26 +294,15 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
         <OpenLearner learner={data.learner} language={language} actions={actions} />
       </>
     ),
+    count: (data) => data.goals.length,
     keepVisible: true,
   }),
   learner_week: register({
     verb: "learner_week",
     title: "chat_tool_learner_week",
     read: (data) => toolViewData("learner_week", data),
-    Widget: ({ data, language, actions }) => (
-      <>
-        <WeekStrip
-          weeks={data.weeks.map((w) => ({
-            monday: w.monday,
-            lessons: w.lessons,
-            movedUp: w.moved_up,
-            attention: w.attention,
-          }))}
-          language={language}
-        />
-        <OpenLearner learner={data.learner} language={language} actions={actions} />
-      </>
-    ),
+    Widget: ({ data, language }) => <WeekRows view={data} language={language} />,
+    framed: true,
     keepVisible: true,
   }),
   lesson_ideas: register({
@@ -344,6 +312,7 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
     Widget: ({ data, language, actions }) => (
       <Ideas view={data} language={language} actions={actions} />
     ),
+    count: (data) => data.ideas.length,
     keepVisible: true,
   }),
   learner_mistakes: register({
@@ -356,6 +325,7 @@ const REGISTRY: Partial<Record<VerbName, Registered>> = {
         <OpenLearner learner={data.learner} language={language} actions={actions} />
       </>
     ),
+    count: (data) => data.mistakes.length + data.questions.length,
     keepVisible: true,
   }),
 };
@@ -380,26 +350,7 @@ export function toolResult(
   const entry = REGISTRY[tool.verb];
   if (entry !== undefined && tool.view !== undefined && tool.view.kind === tool.verb) {
     const drawn = entry.draw(tool.view.data, language, actions);
-    if (drawn !== null) {
-      const Icon = TOOL_ICON[tool.verb];
-      return {
-        kind: "widget",
-        keepVisible: entry.keepVisible(tool.view.data),
-        element: (
-          <section
-            data-widget={tool.verb}
-            aria-label={copy(language, entry.title, {}, "adult")}
-            className="flex flex-col gap-1 rounded-jw-card border-jw border-jw-line p-3 text-jw-page-body"
-          >
-            <p className="flex items-center gap-1 text-jw-page-small text-muted-foreground">
-              <Icon aria-hidden className="size-3" />
-              {copy(language, entry.title, {}, "adult")}
-            </p>
-            {drawn}
-          </section>
-        ),
-      };
-    }
+    if (drawn !== null) return { kind: "widget", keepVisible: entry.keepVisible, element: drawn };
   }
   if (tool.view === undefined && tool.input === undefined && tool.output === undefined) return null;
   return { kind: "plain", element: <ToolDetails tool={tool} language={language} /> };

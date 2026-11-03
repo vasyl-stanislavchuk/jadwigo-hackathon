@@ -116,20 +116,17 @@ describe("an opened tool line shows what was done (dl-uukj.47.50)", () => {
   const opened = (verb: string) =>
     document.querySelector(`[data-tool-group] [data-tool='${verb}'] [data-tool-line] > div`);
 
-  it("says a kept-visible widget's line (lesson_check) in plain words; the widget stays drawn once", () => {
+  it("folds a check that needs fixing into its line (S16: the lesson card shows it); the widget is drawn once", () => {
     pane({
       turns: [
         turnAt("happy-turn", 17, (view) => {
           const check = view.chat.find((c) => c.kind === "tool" && c.verb === "lesson_check");
           if (check?.kind === "tool")
-            // Not publishable yet: a check that is news stays in view (a clean pass folds in).
             check.view = { kind: "lesson_check", data: { publishable: false, findings: [] } };
         }),
       ],
     });
-    expect(opened("lesson_check")?.querySelector("[data-what-done]")?.textContent).toBe(
-      "Sprawdzanie lekcjigotowe",
-    );
+    expect(opened("lesson_check")?.querySelector("[data-widget='lesson_check']")).not.toBeNull();
     expect(document.querySelectorAll("[data-widget='lesson_check']")).toHaveLength(1);
   });
 
