@@ -757,6 +757,58 @@ export function conversationSuite(
         expect(other.body.attempt).toMatchObject({ learner_id: null, player_name: "Ola" });
       });
 
+      it("renames the latest lesson, which stays ready, and the next give carries the title", async () => {
+        const a = await parent();
+        const d = await drafted(a);
+        await d.write();
+        await d.checked(true);
+        const path = pathOf("renameLesson", { id: d.conversation.id });
+        const rename = (title: unknown) =>
+          a.call<ErrorEnvelope & { revision: number }>("PATCH", path, { title });
+        // A turn at work on the lesson: not now.
+        const busy = await rename("Dodawanie do 20");
+        expect([busy.status, busy.body.error.type]).toEqual([409, "AnswerConflict"]);
+        const runs = await s.store.listRuns(a.pod, d.conversation.id);
+        for (const run of runs)
+          await s.store.updateRun(a.pod, run.id, run.attempt, {
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          });
+
+        const renamed = await rename("  Dodawanie do 20 ");
+        expect([renamed.status, renamed.body.revision]).toEqual([200, 2]);
+        const given = await d.give({ revision: 2 });
+        expect(given.status).toBe(201);
+        const lesson = await s.store.getLesson(a.pod, given.body.assignment.lesson_id);
+        expect(lesson?.title).toBe("Dodawanie do 20");
+
+        for (const empty of ["   ", "x".repeat(81)]) {
+          const reply = await rename(empty);
+          expect([reply.status, reply.body.error.type]).toEqual([400, "BadRequest"]);
+        }
+        const other = await parent();
+        expect((await other.call("PATCH", path, { title: "Moja" })).status).toBe(404);
+      });
+
+      it("refuses a title with a harsh word and changes nothing", async () => {
+        const a = await parent();
+        const d = await drafted(a);
+        await d.write();
+        await d.checked(true);
+        for (const run of await s.store.listRuns(a.pod, d.conversation.id))
+          await s.store.updateRun(a.pod, run.id, run.attempt, {
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          });
+        const reply = await a.call<ErrorEnvelope>(
+          "PATCH",
+          pathOf("renameLesson", { id: d.conversation.id }),
+          { title: "Zły wynik" },
+        );
+        expect([reply.status, reply.body.error.type]).toEqual([409, "LessonNotPublishable"]);
+        expect((await d.give({ revision: 1 })).status).toBe(201);
+      });
+
       it("refuses an unchecked, failed, superseded or too long revision", async () => {
         const a = await parent();
         const d = await drafted(a);

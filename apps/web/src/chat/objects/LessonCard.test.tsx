@@ -1,8 +1,9 @@
 import type { Run } from "@jadwigo/contracts/run";
 import { RunEvent, RunId } from "@jadwigo/contracts/run";
+import type { CopyKey } from "@jadwigo/copy";
 import type { RunView } from "@jadwigo/core";
 import { LESSON_FILES, RUN_LOGS } from "@jadwigo/testing";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatPane } from "../ChatPane.tsx";
 import type { Turn } from "../conversation.ts";
@@ -489,5 +490,67 @@ describe("one question number everywhere: the card, its findings and the preview
     expect(paneRow).toBe("3");
     expect(cardRow).toBe("3");
     expect(findings).toEqual([3, 3]);
+  });
+});
+
+describe("the ready card's title (dl-1eieq.16)", () => {
+  const ready = {
+    lessonId: "les_1",
+    version: 1,
+    title: "Dodawanie",
+    count: 3,
+    preview: [{ place: 1, prompt: "2 + 2" }],
+    kind: "ready",
+  } as const;
+  const object = { kind: "lesson", id: "les_1" } as never;
+  function card(onRename: (title: string) => Promise<CopyKey | null>) {
+    render(
+      <LessonCard
+        state={ready}
+        object={object}
+        language="pl"
+        onOpen={() => {}}
+        onRename={onRename}
+      />,
+    );
+    fireEvent.click(document.querySelector("[data-card-title]") as HTMLElement);
+    return document.querySelector("[data-card-title-field]") as HTMLInputElement;
+  }
+
+  it("saves on Enter and shows the new words at once", async () => {
+    const onRename = vi.fn(async () => null);
+    const field = card(onRename);
+    fireEvent.change(field, { target: { value: " Dodawanie do 20 " } });
+    await act(async () => fireEvent.keyDown(field, { key: "Enter" }));
+    expect(onRename).toHaveBeenCalledExactlyOnceWith("Dodawanie do 20");
+    expect(document.querySelector("[data-card-title]")?.textContent).toBe("Dodawanie do 20");
+  });
+
+  it("keeps the title on Esc, or when nothing changed or nothing is left", async () => {
+    const onRename = vi.fn(async () => null);
+    const field = card(onRename);
+    fireEvent.change(field, { target: { value: "Inne" } });
+    fireEvent.keyDown(field, { key: "Escape" });
+    expect(document.querySelector("[data-card-title]")?.textContent).toBe("Dodawanie");
+    fireEvent.click(document.querySelector("[data-card-title]") as HTMLElement);
+    const again = document.querySelector("[data-card-title-field]") as HTMLInputElement;
+    fireEvent.change(again, { target: { value: "   " } });
+    fireEvent.blur(again);
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
+  it("puts the old words back and says why when it is refused", async () => {
+    const field = card(async () => "parent_title_refused");
+    fireEvent.change(field, { target: { value: "Inne" } });
+    await act(async () => fireEvent.blur(field));
+    expect(document.querySelector("[data-card-title]")?.textContent).toBe("Dodawanie");
+    expect(document.querySelector("[data-card-title-problem]")?.textContent).toBe(
+      "Tego tytułu nie możemy użyć. Spróbuj innych słów.",
+    );
+  });
+
+  it("is plain words on a card that is not ready, or with nothing to save through", () => {
+    render(<LessonCard state={ready} object={object} language="pl" onOpen={() => {}} />);
+    expect(document.querySelector("[data-card-title]")?.tagName).toBe("SPAN");
   });
 });
