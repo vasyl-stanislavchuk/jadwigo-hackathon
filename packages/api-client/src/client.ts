@@ -59,6 +59,8 @@ import {
   type LearnerSnapshot,
   type LessonGive,
   type LessonGiven,
+  type LessonRename,
+  type LessonRenamed,
   type Me,
   type ParentAttemptReview,
   type PlaygroundExamples,
@@ -210,6 +212,11 @@ export interface LessonGiveClient {
    * assignment.
    */
   giveLesson(conversationId: ConversationId, body: LessonGive): Promise<LessonGiven>;
+  /**
+   * A new title for the latest lesson, which stays ready to give. A harsh word is 409
+   * `LessonNotPublishable`; a turn at work on the lesson is 409 `AnswerConflict`.
+   */
+  renameLesson(conversationId: ConversationId, body: LessonRename): Promise<LessonRenamed>;
 }
 
 /**
@@ -387,6 +394,7 @@ export function createClient({
       call(ROUTES.listRunEvents, { id: runId }, undefined, { after }),
     cancelRun: (runId, body) => call(ROUTES.cancelRun, { id: runId }, body),
     giveLesson: (conversationId, body) => call(ROUTES.giveLesson, { id: conversationId }, body),
+    renameLesson: (conversationId, body) => call(ROUTES.renameLesson, { id: conversationId }, body),
     startPrint: (conversationId, body) => call(ROUTES.startPrint, { id: conversationId }, body),
     getPrint: (printId) => call(ROUTES.getPrint, { id: printId }, undefined),
     rateRun: (runId, body) => call(ROUTES.rateRun, { id: runId }, body),

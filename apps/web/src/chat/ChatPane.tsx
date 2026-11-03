@@ -104,6 +104,8 @@ export interface ChatPaneProps {
   onOpen?: ((object: ObjectRef) => void) | undefined;
   /** The lesson's actions (dl-uukj.47.55), in the foot of the newest lesson card only. */
   lessonActions?: ReactNode;
+  /** Saves a new title from the living lesson card (dl-1eieq.16). */
+  onRenameLesson?: ((title: string) => Promise<CopyKey | null>) | undefined;
   /**
    * Reads a sent photo's link (dl-z5ja.11.6): with it, a parent's message shows what Jadwigo
    * received under the bubble.
@@ -142,6 +144,7 @@ export function ChatPane({
   lessonObject,
   onOpen,
   lessonActions,
+  onRenameLesson,
   readAttachment,
   uploadDeps,
 }: ChatPaneProps): ReactElement {
@@ -217,6 +220,7 @@ export function ChatPane({
         lessonObject={lessonObject}
         onOpen={onOpen}
         lessonActions={lessonActions}
+        onRenameLesson={onRenameLesson}
         readAttachment={readAttachment}
         stop={{ running: open, stopping, onStop }}
       />

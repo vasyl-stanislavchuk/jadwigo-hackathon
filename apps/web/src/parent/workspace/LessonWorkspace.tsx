@@ -178,6 +178,21 @@ export function LessonWorkspace({
     }
   };
 
+  // A new title from the card (dl-1eieq.16): the route checks it, so the lesson stays ready. Its
+  // revision comes back through the conversation's own read.
+  const renameLesson = async (title: string): Promise<CopyKey | null> => {
+    if (engine.give === null) return "parent_title_failed";
+    try {
+      await engine.give.renameLesson(conversation, { title });
+      refetch();
+      return null;
+    } catch (error) {
+      const type = error instanceof ApiError ? error.type : null;
+      if (type === "LessonNotPublishable") return "parent_title_refused";
+      return type === "AnswerConflict" ? "parent_title_busy" : "parent_title_failed";
+    }
+  };
+
   // A lesson URL the routes refuse (another family's, or gone): one line and the way to a new one,
   // never 3 empty columns stuck restoring (dl-uukj.47.33).
   if (state.notFound)
@@ -272,6 +287,7 @@ export function LessonWorkspace({
       onOpen={inspector.open}
       // How and when to give the lesson live in its card (dl-uukj.47.55, decision dl-hz9ks).
       lessonActions={actions}
+      onRenameLesson={engine.give === null ? undefined : renameLesson}
     />
   );
 

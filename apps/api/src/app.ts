@@ -33,7 +33,7 @@ import {
 } from "./conversations.ts";
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
-import { giveLesson } from "./give.ts";
+import { giveLesson, renameLesson } from "./give.ts";
 import { getAssignmentIntro } from "./intro.ts";
 import {
   createGoal,
@@ -324,6 +324,9 @@ export function createApp(
   onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
   onSigned("giveLesson", (params, body, claims) =>
     run((s) => giveLesson(s, claims, params.id, body)),
+  );
+  onSigned("renameLesson", (params, body, claims) =>
+    run((s) => renameLesson(s, claims, params.id, body)),
   );
   onSigned("startPrint", (params, body, claims) =>
     run((s) => startPrint(s, { ...print, now }, claims, params.id, body)),

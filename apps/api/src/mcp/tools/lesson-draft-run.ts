@@ -217,6 +217,40 @@ export async function onDraft(name: LessonVerb, raw: unknown, context: ToolConte
 }
 
 /**
+ * The parent's new title for the conversation's latest lesson: `lesson_check` with that title, on
+ * the latest turn, so its revision and the check that passed it are one call and the lesson stays
+ * ready. Refused before anything is logged when the check does not pass (a harsh word, or a lesson
+ * that was not ready); a turn at work is refused as for the parent's AI (`latestTurn`).
+ */
+export async function retitleLesson(
+  store: Store,
+  member: { readonly pod: PodId },
+  conversation: ConversationId,
+  title: string,
+): Promise<number> {
+  const newest = (await store.listRuns(member.pod, conversation)).at(-1);
+  if (newest === undefined) throw notPublishable("this conversation has no lesson yet");
+  const run = await latestTurn(store, member.pod, await draftRun(store, member.pod, newest.id));
+  const lesson = await latestLesson(store, member.pod, run);
+  if (lesson === null) throw notPublishable("this conversation has no lesson yet");
+  const call_id = randomUUID();
+  const effect = await callVerb(
+    "lesson_check",
+    fixtureBank(),
+    { pod: member.pod, created_by: run.created_by, run_id: run.id, call_id, lesson },
+    { draft_id: run.id, help: {}, names: [], title },
+  );
+  if (effect.output["ok"] !== true || effect.lesson_file === undefined)
+    throw notPublishable("the new title does not pass the lesson's check");
+  await logResult(store, member.pod, run, "lesson_check", call_id, effect);
+  return revise(store, member.pod, run, lesson.revision, call_id, effect.lesson_file);
+}
+
+function notPublishable(message: string): ApiError {
+  return new ApiError(ErrorType.enum.LessonNotPublishable, message);
+}
+
+/**
  * The draft's conversation's latest turn, locked to the unit's end as `acceptMessage` locks it, so
  * no app message opens or wakes a turn in between. A turn that has not ended is the app's at work
  * on the lesson: the parent's AI waits for it rather than write beside it.

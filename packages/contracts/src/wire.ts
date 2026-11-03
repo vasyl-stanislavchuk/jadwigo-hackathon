@@ -869,6 +869,14 @@ export const LessonGive = z.strictObject({
 });
 export type LessonGive = z.infer<typeof LessonGive>;
 
+/** `PATCH /api/v1/conversations/{id}/lessons`: the parent's new title for the latest lesson. */
+export const LessonRename = z.strictObject({ title: z.string().trim().min(1).max(80) });
+export type LessonRename = z.infer<typeof LessonRename>;
+
+/** The reply: the revision that carries the new title, which its check already passed. */
+export const LessonRenamed = z.object({ revision: Count });
+export type LessonRenamed = z.infer<typeof LessonRenamed>;
+
 /** The reply: the assignment the child plays at `/play/<assignment id>`, and the version it serves. */
 export const LessonGiven = z.object({ assignment: Assignment, lesson_version: LessonVersion });
 export type LessonGiven = z.infer<typeof LessonGiven>;
