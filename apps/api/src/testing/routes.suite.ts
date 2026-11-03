@@ -4,6 +4,7 @@
 import { randomUUID } from "node:crypto";
 import {
   AssignmentId,
+  type AssignmentIntro,
   type AttemptAnswerResult,
   type AttemptResults,
   type AttemptReview,
@@ -314,6 +315,58 @@ export function routeSuite(
           {},
         );
         expect([reply.status, reply.body.error.type]).toEqual([400, "BadRequest"]);
+      });
+    });
+
+    describe("a play link's first screen", () => {
+      const intro = (id: string, query = "") =>
+        s.call<AssignmentIntro & ErrorEnvelope>(
+          "GET",
+          `${pathOf("getAssignmentIntro", { id })}${query}`,
+        );
+
+      it("says the title and the planned questions, before any attempt exists", async () => {
+        const id = await s.assign("equalGroups");
+        const reply = await intro(id);
+        expect(reply.status).toBe(200);
+        expect(reply.body).toMatchObject({
+          title: expect.any(String),
+          language: "pl",
+          identity: "none",
+          open: true,
+          first_name: null,
+        });
+        expect(reply.body.question_count).toBeGreaterThan(0);
+      });
+
+      it("names only a learner of the assignment's pod", async () => {
+        const id = await s.assign("equalGroups", { identity: "pick" });
+        const { learner } = await s.store.addLearner(FEATURED_POD_ID, { first_name: "Fox" });
+        await s.store.putPod(OTHER_POD);
+        const theirs = await s.store.addLearner(OTHER_POD.id, { first_name: "Owl" });
+
+        const ours = await intro(id, `?learner_id=${learner.id}`);
+        expect(ours.body.first_name).toBe("Fox");
+        const other = await intro(id, `?learner_id=${theirs.learner.id}`);
+        expect(other.status).toBe(200);
+        expect(other.body.first_name).toBeNull();
+      });
+
+      it("says a learners' assignment takes nobody else, and is 404 for an unknown one", async () => {
+        const id = await s.assign("equalGroups", { audience: "learners", identity: "pick" });
+        expect((await intro(id)).body.open).toBe(false);
+        const unknown = await intro(idOf(ID_PREFIXES.assignment, randomUUID()));
+        expect([unknown.status, unknown.body.error.type]).toEqual([404, "NotFound"]);
+      });
+
+      it("refuses a player's name that is blank or too long", async () => {
+        const id = await s.assign("equalGroups");
+        for (const player_name of ["   ", "x".repeat(LIMITS.playerNameChars + 1)]) {
+          const reply = await s.call<ErrorEnvelope>("POST", pathOf("startAttempt", { id }), {
+            player_name,
+          });
+          expect([reply.status, reply.body.error.type]).toEqual([400, "BadRequest"]);
+        }
       });
     });
 

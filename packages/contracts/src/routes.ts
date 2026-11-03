@@ -17,6 +17,7 @@ import { Conversation, RunRating, RunRatingCreate } from "./run.ts";
 import {
   AccountCreate,
   AssignmentAttempts,
+  AssignmentIntro,
   AttachmentCreate,
   AttachmentRead,
   AttachmentUpload,
@@ -48,6 +49,8 @@ import {
   LearnerSnapshot,
   LessonGive,
   LessonGiven,
+  LessonRename,
+  LessonRenamed,
   Me,
   ParentAttemptReview,
   PlaygroundExamples,
@@ -163,6 +166,20 @@ export const ROUTES = {
     tag: "lessons",
     description:
       "The one response that carries a key: the playground reviews Jadwigo's own examples, and Try it looks a free answer up in the key.",
+  },
+  getAssignmentIntro: {
+    method: "GET",
+    path: "/api/v1/assignments/{id}",
+    params: z.object({ id: AssignmentId }),
+    query: z.object({ learner_id: LearnerId.optional() }),
+    body: null,
+    response: AssignmentIntro,
+    status: 200,
+    auth: "none",
+    summary: "Reads what a play link's first screen says, before any attempt exists.",
+    tag: "attempts",
+    description:
+      "No sign-in: holding the link is the access. It names a learner's first name only when the link's `learner_id` is in the assignment's pod.",
   },
   startAttempt: {
     method: "POST",
@@ -517,6 +534,19 @@ export const ROUTES = {
     tag: "conversations",
     description:
       "Only the latest lesson revision whose latest `lesson_check` found it publishable, with nothing written after it; else 409 `LessonNotPublishable`, as for a lesson of more than `LIMITS.questionsPerLesson` questions. A `learner_id` outside the pod is 404 `NotFound`. Giving the same revision again answers the same assignment. The child plays it at `/play/<assignment id>`, or `/play/<assignment id>?learner=<learner id>` for the learner it was given to.",
+  },
+  renameLesson: {
+    method: "PATCH",
+    path: "/api/v1/conversations/{id}/lessons",
+    params: z.object({ id: ConversationId }),
+    body: LessonRename,
+    response: LessonRenamed,
+    status: 200,
+    auth: "token",
+    summary: "Renames the conversation's latest lesson, which stays ready to give.",
+    tag: "conversations",
+    description:
+      "The new title goes through the lesson's check, so a harsh word is 409 `LessonNotPublishable` and nothing changes. While a turn is working on the lesson it is 409 `AnswerConflict`. A link already given keeps its title.",
   },
   startPrint: {
     method: "POST",

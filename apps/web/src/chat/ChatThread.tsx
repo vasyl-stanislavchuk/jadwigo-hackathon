@@ -399,6 +399,8 @@ export interface ChatThreadProps {
   lessonObject?: ObjectRef | undefined;
   onOpen?: ((object: ObjectRef) => void) | undefined;
   lessonActions?: ReactNode;
+  /** Saves a new title from the living lesson card (dl-1eieq.16); the title is plain words without it. */
+  onRenameLesson?: ((title: string) => Promise<CopyKey | null>) | undefined;
   readAttachment?: ReadAttachment | undefined;
   /** Esc stops a running turn with focus anywhere in the thread (S6, §3; lane D's hook). */
   stop: StopKey;
@@ -419,6 +421,7 @@ export function ChatThread({
   lessonObject,
   onOpen,
   lessonActions,
+  onRenameLesson,
   readAttachment,
   stop,
 }: ChatThreadProps): ReactElement {
@@ -560,7 +563,7 @@ export function ChatThread({
             onOpen={onOpen}
             onFix={() => resend(copy(language, "card_fix_action", {}, "adult"))}
             {...(lessonActions !== undefined && living(card, turn === newest)
-              ? { actions: lessonActions }
+              ? { actions: lessonActions, onRename: onRenameLesson }
               : {})}
           />
         </li>,
