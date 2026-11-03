@@ -49,6 +49,15 @@ WORK = Path("/tmp/e3-work")
 SKILL = ROOT / "workflows/jadwigo-report-write/SKILL.md"
 SPARK = "muse-spark-1.3-contributor"
 DB = os.environ.get("DATABASE_URL", "postgresql://localhost:5433/jadwigo")
+LOCAL_DB = re.compile(
+    r"^postgres(ql)?://([A-Za-z0-9._~%+=:-]+@)?(localhost|127\.0\.0\.1)(:[0-9]+)?/jadwigo[A-Za-z0-9_]*$"
+)
+
+
+def refuse_nonlocal() -> None:
+    """The same guard e3-load.ts uses: E3 dreams only invented learners, locally."""
+    if not LOCAL_DB.match(DB):
+        raise SystemExit("DATABASE_URL must name a local jadwigo* database")
 
 
 def dream(learner_id: str) -> dict[str, Any]:
@@ -130,9 +139,33 @@ def parse_judge(text: str) -> dict[str, Any]:
 RUN_STARTED = ""
 
 
+
+def cost_per_unit(ledger: dict[str, Any]) -> dict[str, Any]:
+    """Per-learner costs from the run's ledger, as the page's table prints them."""
+    per_tag = ledger.get("per_tag") or {}
+    narrative = float((per_tag.get("e3:report-write") or {}).get("usd_per_call") or 0)
+    judge = float((per_tag.get("e3:judge") or {}).get("usd_per_call") or 0)
+    weekly = narrative
+    return {
+        "narrative_call_usd": narrative,
+        "judge_call_usd": judge,
+        "report_product_usd": round(weekly, 4),
+        "report_with_3_judges_usd": round(weekly + 3 * judge, 4),
+        "monthly_weekly_report_usd": round(weekly * 52 / 12, 4),
+        "monthly_weekly_report_with_panel_usd": round((weekly + 3 * judge) * 52 / 12, 4),
+        "monthly_daily_report_usd": round(weekly * 30, 4),
+    }
+
+
 def ledger_spend(since: str = "") -> dict[str, Any]:
-    """Ledger rows tagged e3:*, completed, at or after `since`: this run's calls only."""
-    total = {"calls": 0, "usd": 0.0, "input_tokens": 0, "output_tokens": 0}
+    """Ledger rows tagged e3:*, completed, at or after `since`: this run's calls only.
+
+    Returns the totals and the same sums per tag, so the page's per-unit costs
+    (a narrative call, a judge call) are in the JSON a re-run writes, not in a
+    local log only this checkout can read.
+    """
+    total: dict[str, Any] = {"calls": 0, "usd": 0.0, "input_tokens": 0, "output_tokens": 0}
+    per_tag: dict[str, dict[str, Any]] = {}
     log_dir = ROOT / "apps/cli/logs/muse"
     for path in sorted(log_dir.glob("*.jsonl")):
         for line in path.read_text(encoding="utf-8").splitlines():
@@ -146,11 +179,19 @@ def ledger_spend(since: str = "") -> dict[str, Any]:
                 and str(row.get("at", "")) >= since
             ):
                 usage = row.get("usage") or {}
-                total["calls"] += 1
-                total["usd"] += float(usage.get("usd") or 0)
-                total["input_tokens"] += int(usage.get("input_tokens") or 0)
-                total["output_tokens"] += int(usage.get("output_tokens") or 0)
+                bucket = per_tag.setdefault(
+                    str(row.get("tag")), {"calls": 0, "usd": 0.0, "input_tokens": 0, "output_tokens": 0}
+                )
+                for target in (total, bucket):
+                    target["calls"] += 1
+                    target["usd"] += float(usage.get("usd") or 0)
+                    target["input_tokens"] += int(usage.get("input_tokens") or 0)
+                    target["output_tokens"] += int(usage.get("output_tokens") or 0)
     total["usd"] = round(total["usd"], 4)
+    for bucket in per_tag.values():
+        bucket["usd"] = round(bucket["usd"], 4)
+        bucket["usd_per_call"] = round(bucket["usd"] / bucket["calls"], 5) if bucket["calls"] else 0
+    total["per_tag"] = per_tag
     return total
 
 
@@ -188,6 +229,7 @@ def main() -> int:
     import datetime as dt
 
     RUN_STARTED = dt.datetime.now(dt.timezone.utc).isoformat()
+    refuse_nonlocal()
     t0 = time.time()
     WORK.mkdir(parents=True, exist_ok=True)
     learners = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
@@ -248,6 +290,7 @@ def main() -> int:
         "detail": {
             "judge_calls": len(jobs),
             "spark_ledger": spark_ledger,
+            "cost_per_unit": cost_per_unit(spark_ledger),
             "cost_note": "Every call through the Meta API on muse-spark-1.3-contributor via jw.muse.ask; tokens and USD from apps/cli/logs/muse rows tagged e3:*.",
             "totals": {"narratives_with_no_findings": clean, "panel_mean": panel_totals},
             "results": results,
