@@ -171,6 +171,42 @@ function newestCard(turns: readonly Turn[]): Turn | undefined {
   return turns.findLast((t) => !isOpen(t) && t.view.lesson !== null && wroteLesson(t.view));
 }
 
+/** How long the opened thread holds the bottom while its rows settle (S19). */
+const HOLD_MS = 2_000;
+
+/**
+ * Keeps `box` at its bottom while its rows grow (a ResizeObserver on each row, the rows added, and
+ * the web fonts once loaded), until `HOLD_MS` pass or the parent scrolls away (`atBottom` turns
+ * false). Answers the function that stops it.
+ */
+function holdBottom(box: HTMLElement, atBottom: () => boolean): () => void {
+  let on = true;
+  const pin = () => {
+    if (on && atBottom()) box.scrollTop = box.scrollHeight;
+  };
+  const resized = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(pin);
+  for (const row of box.children) resized?.observe(row);
+  const added =
+    typeof MutationObserver === "undefined"
+      ? null
+      : new MutationObserver((records) => {
+          for (const record of records)
+            for (const node of record.addedNodes)
+              if (node instanceof Element) resized?.observe(node);
+          pin();
+        });
+  added?.observe(box, { childList: true });
+  void document.fonts?.ready.then(pin);
+  const stop = () => {
+    on = false;
+    resized?.disconnect();
+    added?.disconnect();
+    clearTimeout(timer);
+  };
+  const timer = setTimeout(stop, HOLD_MS);
+  return stop;
+}
+
 /** The calendar day of an instant, by the page's clock: "2026-11-03". */
 const dayOf = (ms: number): string => {
   const d = new Date(ms);
@@ -438,8 +474,22 @@ export function ChatThread({
     const box = list.current;
     box?.scrollTo?.({ top: box.scrollHeight, behavior });
   };
+  // S19: the thread opens at the bottom. The first scroll is instant (a smooth one aims at the height
+  // it started from, and its own scroll events read as the parent leaving the bottom), and the
+  // bottom is held while the rows settle: the web font swapping in, a card's image, a late row.
+  const shown = useRef(false);
+  const hold = useRef<(() => void) | null>(null);
+  useEffect(() => () => hold.current?.(), []);
   useEffect(() => {
-    if ((rowCount > 0 || pending !== null) && atBottom.current) toBottom(scrollBehavior());
+    const box = list.current;
+    if (box === null || !(rowCount > 0 || pending !== null) || !atBottom.current) return;
+    if (shown.current) {
+      toBottom(scrollBehavior());
+      return;
+    }
+    shown.current = true;
+    toBottom("auto");
+    hold.current = holdBottom(box, () => atBottom.current);
   }, [follow]);
   const multiDay = new Set(turns.map((t) => dayOf(Date.parse(t.run.created_at)))).size > 1;
   const newest = newestCard(turns);

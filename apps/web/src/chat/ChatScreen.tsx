@@ -130,11 +130,7 @@ function ChatView({
           language={language}
           lesson={lesson.shown}
           changed={lesson.changed}
-          onUndo={lesson.onUndo}
-          undoRefused={lesson.undoRefused}
-          undoPending={lesson.undoPending}
           onEdit={onEdit}
-          outcomeOf={lesson.outcomeOf}
         />
       }
       lessonKey={lesson.key}

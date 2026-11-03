@@ -9,8 +9,14 @@
  * changed carry a tag in words, "nowe" or "zmienione", until the parent opens them (chat handoff
  * dl-uukj.47.71 S20); dashed ghost rows say how many steps are still coming. An opened step shows the
  * child's view on the left, and on the right the right answer, the help, the skill (only with a
- * child), where it came from, and Zmień ten krok · Przenieś · Usuń. A row slides in with Zeszyt's
- * `jw-step-in` only when the system allows motion.
+ * child), where it came from, and Zmień ten krok. A row slides in with Zeszyt's `jw-step-in` only
+ * when the system allows motion.
+ *
+ * A parent never edits the lesson by hand (owner, 2026-11-03, decision 2026-11-03-the-lesson-
+ * preview-keeps-one-edit-path-per-question-zmien-ten-kr): Zmień ten krok asks "Co zmienić w tym
+ * kroku i dlaczego?" and sends that to Jadwigo AI as a steer naming the step. The AI works from the
+ * bank, its question types and the learning practices; a busy parent only says what they want. No
+ * move, no removal, no word editor and no Cofnij.
  */
 
 import type { Family } from "@jadwigo/contracts";
@@ -39,23 +45,12 @@ import {
 import type { Turn } from "./conversation.ts";
 import { lessonFileToSpecs } from "./lesson/adapter.ts";
 import { readDraft } from "./lesson/readDraft.ts";
-import {
-  dropPatch,
-  type LessonChange,
-  movePatch,
-  type PatchOutcome,
-  wordsOf,
-  wordsPatch,
-} from "./patches.ts";
-import { dropSteer, editSteer, moveSteer, wordsSteer } from "./steerText.ts";
+import { editSteer } from "./steerText.ts";
 
 const clock: Clock = { now: (): Instant => ({ perf: 0, wall: "2026-11-01T00:00:00.000Z" }) };
 
-/** What a pane's edit handler answers: the patch steer's `event_id` when it sent one. */
-type EditAnswer = unknown;
-
-/** A parent's edit of one step: their words for the AI, and their own change when they made one. */
-type OnEdit = (text: string, question_ids: string[], change?: LessonChange) => EditAnswer;
+/** A parent's request about one step: their words for the AI, naming the step. */
+type OnEdit = (text: string, question_ids: string[]) => unknown;
 
 type Say = (key: CopyKey, vars?: Record<string, string | number>) => string;
 
@@ -102,11 +97,7 @@ export function LessonPane({
   lesson,
   changed = new Set(),
   added = new Set(),
-  onUndo,
-  undoRefused = false,
-  undoPending = false,
   onEdit,
-  outcomeOf,
   ghosts = 0,
   withChild = false,
   bare = false,
@@ -118,23 +109,11 @@ export function LessonPane({
   changed?: ReadonlySet<string>;
   /** Of those, the steps the revision added: their tag reads "nowe", the others' "zmienione". */
   added?: ReadonlySet<string>;
-  /** Takes back the last AI revision; "Cofnij" shows only when it is given. */
-  onUndo?: (() => void) | undefined;
-  /** The last Cofnij's patch was not applied: the pane says so beside it (dl-z5ja.111). */
-  undoRefused?: boolean;
   /**
-   * The last Cofnij's patch is on its way: Cofnij waits for its revision, so a second press never
-   * sends the same undo again on the same revision (dl-z5ja.111).
-   */
-  undoPending?: boolean;
-  /**
-   * Sends a parent's edit of one step, in the lesson's own language: their why for the AI, and
-   * their own change (words, a move, a removal) as a patch on the revision shown, which the runner
-   * applies with no model call (dl-z5ja.111). Answers the steer's `event_id` when a patch went.
+   * Sends a parent's request about one step to Jadwigo AI, in the lesson's own language: what to
+   * change and why, as a steer naming the step. Never a patch: the parent does not edit by hand.
    */
   onEdit?: OnEdit | undefined;
-  /** What became of a patch steer (`patchOutcome`); pending throughout when not given. */
-  outcomeOf?: ((event_id: string) => PatchOutcome) | undefined;
   /** How many steps are still being written (`ghostsOf`), each a dashed row (dl-z5ja.108.1). */
   ghosts?: number;
   /** The lesson is for a child, so an opened step shows its skill (handoff §5.5). */
@@ -164,11 +143,7 @@ export function LessonPane({
           say={say}
           changed={changed}
           added={added}
-          onUndo={onUndo}
-          undoRefused={undoRefused}
-          undoPending={undoPending}
           onEdit={onEdit}
-          outcomeOf={outcomeOf ?? (() => "pending")}
           ghosts={ghosts}
           withChild={withChild}
           bare={bare}
@@ -209,11 +184,7 @@ function Revision({
   say,
   changed,
   added,
-  onUndo,
-  undoRefused,
-  undoPending,
   onEdit,
-  outcomeOf,
   ghosts,
   withChild,
   bare,
@@ -222,11 +193,7 @@ function Revision({
   say: Say;
   changed: ReadonlySet<string>;
   added: ReadonlySet<string>;
-  onUndo: (() => void) | undefined;
-  undoRefused: boolean;
-  undoPending: boolean;
   onEdit: OnEdit | undefined;
-  outcomeOf: (event_id: string) => PatchOutcome;
   ghosts: number;
   withChild: boolean;
   bare: boolean;
@@ -270,11 +237,6 @@ function Revision({
       else next.add(id);
       return next;
     });
-  /** A parent's own move or removal: a patch on the revision shown, with its steer. */
-  const change = (id: string, text: string, patch: LessonChange["patch"] | null) => {
-    if (onEdit === undefined || patch === null) return;
-    onEdit(text, [id], { patch, base_revision: lesson.revision });
-  };
   return (
     <div data-revision={lesson.revision} className="flex flex-col gap-4 overflow-y-auto">
       <div className="flex flex-col gap-1">
@@ -286,18 +248,6 @@ function Revision({
           <span className="text-jw-page-small text-muted-foreground tabular-nums" data-pane-count>
             {say("card_count", { n: openable.length })}
           </span>
-          {changed.size > 0 && onUndo && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              data-undo
-              disabled={undoPending}
-              onClick={onUndo}
-            >
-              {say("chat_undo")}
-            </Button>
-          )}
           {openable.length > 0 && (
             <Button
               type="button"
@@ -312,19 +262,12 @@ function Revision({
           )}
         </div>
       </div>
-      {undoRefused && (
-        <p role="alert" data-undo-refused className="text-jw-page-body">
-          {say("chat_edit_not_applied")}
-        </p>
-      )}
       <ol className="flex flex-col gap-2" data-steps>
         {steps.map((step, i) => (
           <StepRow
             key={step.step_id}
             step={step}
             number={i + 1}
-            first={i === 0}
-            last={i === steps.length - 1}
             open={open.has(step.step_id)}
             onToggle={() => toggle(step.step_id)}
             changed={changed.has(step.step_id)}
@@ -333,42 +276,10 @@ function Revision({
             lessonLanguage={lessonLanguage}
             category={category}
             withChild={withChild}
-            edit={
+            ask={
               onEdit === undefined
                 ? null
-                : {
-                    words: wordsOf(lesson.lesson_file, step.step_id, lessonLanguage),
-                    outcomeOf,
-                    steer: (why, words) => {
-                      const id = step.step_id;
-                      const patch = wordsPatch(lesson.lesson_file, id, lessonLanguage, words);
-                      if (patch === null) {
-                        onEdit(editSteer(lessonLanguage, id, why), [id]);
-                        return null;
-                      }
-                      const text =
-                        why === ""
-                          ? wordsSteer(lessonLanguage, id)
-                          : editSteer(lessonLanguage, id, why);
-                      const sent = onEdit(text, [id], { patch, base_revision: lesson.revision });
-                      return typeof sent === "string" ? sent : "";
-                    },
-                    move: (by) =>
-                      change(
-                        step.step_id,
-                        moveSteer(lessonLanguage, step.step_id, by),
-                        movePatch(lesson.lesson_file, step.step_id, by),
-                      ),
-                    drop:
-                      steps.length > 1
-                        ? () =>
-                            change(
-                              step.step_id,
-                              dropSteer(lessonLanguage, step.step_id),
-                              dropPatch(lesson.lesson_file, step.step_id),
-                            )
-                        : null,
-                  }
+                : (why) => onEdit(editSteer(lessonLanguage, step.step_id, why), [step.step_id])
             }
           />
         ))}
@@ -378,21 +289,9 @@ function Revision({
   );
 }
 
-/** What an opened step can do when the pane has an edit handler. */
-interface StepActions {
-  words: string;
-  outcomeOf: (event_id: string) => PatchOutcome;
-  steer(why: string, words: string): string | null;
-  move(by: -1 | 1): void;
-  /** Null for the lesson's last step: a lesson keeps one. */
-  drop: (() => void) | null;
-}
-
 function StepRow({
   step,
   number,
-  first,
-  last,
   open,
   onToggle,
   changed,
@@ -401,12 +300,10 @@ function StepRow({
   lessonLanguage,
   category,
   withChild,
-  edit,
+  ask,
 }: {
   step: Built;
   number: number;
-  first: boolean;
-  last: boolean;
   open: boolean;
   onToggle: () => void;
   changed: boolean;
@@ -416,7 +313,8 @@ function StepRow({
   lessonLanguage: Language;
   category: Category;
   withChild: boolean;
-  edit: StepActions | null;
+  /** Sends "Co zmienić w tym kroku i dlaczego?" to Jadwigo AI for this step; null without a handler. */
+  ask: ((why: string) => unknown) | null;
 }): ReactElement {
   const bodyId = useId();
   const edge = changed ? "border-2 border-jw-focus" : "border-jw border-jw-line";
@@ -509,46 +407,9 @@ function StepRow({
                 </p>
               </Fact>
             )}
-            {edit !== null && (
+            {ask !== null && (
               <div className="flex flex-wrap items-start gap-2" data-step-actions>
-                <StepEdit
-                  step={step.step_id}
-                  say={say}
-                  words={edit.words}
-                  outcomeOf={edit.outcomeOf}
-                  steer={edit.steer}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="control"
-                  data-move="up"
-                  disabled={first}
-                  onClick={() => edit.move(-1)}
-                >
-                  {say("parent_step_move_up")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="control"
-                  data-move="down"
-                  disabled={last}
-                  onClick={() => edit.move(1)}
-                >
-                  {say("parent_step_move_down")}
-                </Button>
-                {edit.drop !== null && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="control"
-                    data-drop
-                    onClick={edit.drop}
-                  >
-                    {say("parent_step_drop")}
-                  </Button>
-                )}
+                <StepEdit step={step.step_id} say={say} ask={ask} />
               </div>
             )}
           </div>
@@ -618,51 +479,23 @@ function Fact({ title, children }: { title: string; children: ReactNode }): Reac
   );
 }
 
-/** A patch the step sent, and what the parent wrote, kept for a refusal. */
-interface Sent {
-  event_id: string;
-  words: string;
-  why: string;
-}
-
 /**
- * A parent's own edit of one step (dl-z5ja.30, .111): the step's words, which the parent may change
- * themselves and which go as a patch on the revision shown, and what to change and why, in their
- * words, which go to the AI as a steer naming the step. `steer` answers the patch steer's
- * `event_id` ("" when the handler named none), or null when only words went. The pane says the
- * change is in the lesson only once its revision is logged; a refused patch opens the editor
- * again with the parent's text kept, and says it was not applied.
+ * Zmień ten krok (dl-uukj.47.71.17): one question, "Co zmienić w tym kroku i dlaczego?", whose
+ * answer goes to Jadwigo AI as a steer naming the step. The parent never edits the step's words,
+ * its place or its presence by hand; once sent, the pane says it went to Jadwigo AI.
  */
 function StepEdit({
   step,
   say,
-  words: current,
-  outcomeOf,
-  steer,
+  ask,
 }: {
   step: string;
   say: Say;
-  /** What the step says to the child now, in the lesson's language. */
-  words: string;
-  outcomeOf: (event_id: string) => PatchOutcome;
-  steer(why: string, words: string): string | null;
+  ask: (why: string) => unknown;
 }): ReactElement {
   const [open, setOpen] = useState(false);
   const [why, setWhy] = useState("");
-  const [words, setWords] = useState(current);
-  const [toAi, setToAi] = useState(false);
-  const [sent, setSent] = useState<Sent | null>(null);
-  const [refused, setRefused] = useState(false);
-  const outcome: PatchOutcome | null =
-    sent === null ? null : sent.event_id === "" ? "pending" : outcomeOf(sent.event_id);
-  useEffect(() => {
-    if (outcome !== "refused" || sent === null) return;
-    setWords(sent.words);
-    setWhy(sent.why);
-    setSent(null);
-    setRefused(true);
-    setOpen(true);
-  }, [outcome, sent]);
+  const [sent, setSent] = useState(false);
   if (!open)
     return (
       <div className="flex items-center gap-2 text-jw-page-body">
@@ -673,52 +506,25 @@ function StepEdit({
           data-edit-step={step}
           onClick={() => {
             setOpen(true);
-            setWords(current);
-            setToAi(false);
-            setSent(null);
-            setRefused(false);
+            setSent(false);
           }}
         >
           {say("chat_edit_step")}
         </Button>
-        {toAi && <span data-edit-sent>{say("chat_edit_sent")}</span>}
-        {outcome === "pending" && <span data-edit-sent="saving">{say("chat_edit_saving")}</span>}
-        {outcome === "applied" && <span data-edit-sent="lesson">{say("chat_edit_saved")}</span>}
+        {sent && <span data-edit-sent>{say("chat_edit_sent")}</span>}
       </div>
     );
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const reason = why.trim();
-    const own = words.trim();
-    const changed = own !== "" && own !== current.trim();
-    if (reason === "" && !changed) return;
-    const event_id = steer(reason, changed ? own : current);
+    if (reason === "") return;
+    ask(reason);
     setOpen(false);
-    setRefused(false);
-    if (event_id === null) {
-      setWhy("");
-      setToAi(true);
-      return;
-    }
-    setSent({ event_id, words: own, why });
     setWhy("");
+    setSent(true);
   };
   return (
     <form onSubmit={submit} className="mt-2 flex flex-col gap-2 text-jw-page-body">
-      {refused && (
-        <p role="alert" data-edit-refused>
-          {say("chat_edit_not_applied")}
-        </p>
-      )}
-      <label className="flex flex-col gap-1">
-        {say("chat_edit_words")}
-        <textarea
-          value={words}
-          rows={2}
-          className="rounded-jw-control border-jw border-input bg-background px-2.5 py-2 text-jw-page-body text-foreground outline-none focus-visible:border-jw-focus focus-visible:ring-2 focus-visible:ring-selected"
-          onChange={(e) => setWords(e.target.value)}
-        />
-      </label>
       <label className="flex flex-col gap-1">
         {say("chat_edit_prompt")}
         <textarea

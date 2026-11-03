@@ -8,18 +8,8 @@ import {
 } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
-import {
-  act,
-  cleanup,
-  fireEvent,
-  render,
-  renderHook,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
-import { ChatScreen } from "./ChatScreen.tsx";
-import { LessonPane } from "./LessonPane.tsx";
 import {
   applyPatch,
   dropPatch,
@@ -30,7 +20,7 @@ import {
   wordsPatch,
 } from "./patches.ts";
 import { type RunLive, routesTransport } from "./routesTransport.ts";
-import { type EngineTransport, useConversation } from "./useConversation.ts";
+import type { EngineTransport } from "./useConversation.ts";
 import type { SendBody } from "./wire.ts";
 
 afterEach(cleanup);
@@ -39,7 +29,7 @@ const eventsOf = (name: string): RunEvent[] =>
   (RUN_LOGS.find((l) => l.name === name)?.events ?? []).map((e) => RunEvent.parse(e));
 
 /** Opens a step's row: its editor and actions sit in the opened step (dl-z5ja.108.1). */
-const openStep = (step: string) =>
+const _openStep = (step: string) =>
   fireEvent.click(document.querySelector(`[data-step='${step}'] [aria-expanded]`) as HTMLElement);
 
 /** The happy turn's last lesson file: an ended turn, revision 2. */
@@ -50,7 +40,7 @@ const lessonFile = () => {
 };
 
 /** A transport over one golden log, which records what the page sends. */
-function transportOf(events: readonly RunEvent[]) {
+function _transportOf(events: readonly RunEvent[]) {
   const sent: SendBody[] = [];
   const listeners = new Map<string, (e: readonly RunEvent[]) => void>();
   const run = { id: RunId.parse(events[0]?.run_id), status: "completed" } as unknown as Run;
@@ -179,237 +169,6 @@ describe("patches (dl-z5ja.111)", () => {
   });
 });
 
-describe("Cofnij waits for its patch (dl-z5ja.111)", () => {
-  it("is disabled while the last undo is pending, so a second press sends nothing", () => {
-    const lesson = foldRun(eventsOf("happy-turn")).lesson;
-    let presses = 0;
-    const pane = (undoPending: boolean) => (
-      <LessonPane
-        language="pl"
-        lesson={lesson}
-        changed={new Set(["s02"])}
-        onUndo={() => {
-          presses += 1;
-        }}
-        undoPending={undoPending}
-      />
-    );
-    const { rerender } = render(pane(true));
-    const undo = document.querySelector("[data-undo]") as HTMLButtonElement;
-    expect(undo.disabled).toBe(true);
-    fireEvent.click(undo);
-    expect(presses).toBe(0);
-    rerender(pane(false));
-    fireEvent.click(document.querySelector("[data-undo]") as HTMLElement);
-    expect(presses).toBe(1);
-  });
-});
-
-describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", () => {
-  it("an edit of a step's words sends one steer with its patch and question_ids", () => {
-    const lesson = foldRun(eventsOf("happy-turn")).lesson;
-    const sent: unknown[][] = [];
-    render(<LessonPane language="pl" lesson={lesson} onEdit={(...args) => sent.push(args)} />);
-    openStep("s02");
-    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
-    const words = screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" });
-    expect((words as HTMLTextAreaElement).value).toBe(wordsOf(lesson?.lesson_file, "s02", "pl"));
-    fireEvent.change(words, { target: { value: "Ile to jest dwa razy sześć?" } });
-    fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" }));
-    expect(sent).toHaveLength(1);
-    const [text, ids, change] = sent[0] ?? [];
-    expect(text).toBe("Rodzic sam zmienił słowa w kroku s02.");
-    expect(ids).toEqual(["s02"]);
-    const { patch, base_revision } = change as { patch: unknown; base_revision: number };
-    expect(base_revision).toBe(lesson?.revision);
-    expect(wordsOf(applyPatch(lesson?.lesson_file, patch), "s02", "pl")).toBe(
-      "Ile to jest dwa razy sześć?",
-    );
-    // Not in the lesson until the runner's revision is logged.
-    expect(screen.getByText("Zapisywanie Twojej zmiany w lekcji…")).toBeTruthy();
-    expect(screen.queryByText("Twoja zmiana jest już w lekcji.")).toBeNull();
-  });
-
-  it("the parent's why travels with the patch", () => {
-    const lesson = foldRun(eventsOf("happy-turn")).lesson;
-    const sent: unknown[][] = [];
-    render(<LessonPane language="pl" lesson={lesson} onEdit={(...args) => sent.push(args)} />);
-    openStep("s02");
-    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
-    fireEvent.change(screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" }), {
-      target: { value: "Ile to jest dwa razy sześć?" },
-    });
-    fireEvent.change(screen.getByRole("textbox", { name: "Co zmienić w tym kroku i dlaczego?" }), {
-      target: { value: "sześć, bo piątki już zna" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" }));
-    expect(sent[0]?.[0]).toBe("Rodzic prosi o zmianę w kroku s02: sześć, bo piątki już zna");
-    expect(sent[0]?.[2]).toBeDefined();
-  });
-
-  it("on an ended turn, a patch still goes as a steer, which the runner lands on that turn", async () => {
-    const { transport } = transportOf(eventsOf("happy-turn"));
-    const bodies: SendBody[] = [];
-    const recording: EngineTransport = {
-      ...transport,
-      send: async (body) => {
-        bodies.push(body);
-        return transport.send(body);
-      },
-    };
-    const conversation = ConversationId.parse("cnv_00000000000000000000000001");
-    const { result } = renderHook(() => useConversation(recording, conversation));
-    await act(async () => {});
-    const patch = { title: { pl: "Moje grupy" } };
-    let sent: string | null = null;
-    await act(async () => {
-      sent = result.current.edit("Rodzic sam zmienił tytuł.", ["s02"], { patch, base_revision: 2 });
-    });
-    expect(bodies).toEqual([
-      expect.objectContaining({
-        kind: "steer",
-        source: "lesson_edit",
-        question_ids: ["s02"],
-        patch,
-        base_revision: 2,
-      }),
-    ]);
-    expect(sent).toBe(bodies[0]?.event_id);
-  });
-
-  it("the pane draws the revision the runner writes, with no model call in between", async () => {
-    const events = eventsOf("happy-turn");
-    const t = transportOf(events);
-    render(<ChatScreen transport={t.transport} />);
-    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
-    openStep("s02");
-    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
-    fireEvent.change(screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" }), {
-      target: { value: "Ile to jest dwa razy sześć?" },
-    });
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" })));
-    const [body] = t.sent;
-    expect(body).toMatchObject({
-      kind: "steer",
-      source: "lesson_edit",
-      question_ids: ["s02"],
-      base_revision: 2,
-    });
-    const patch = body?.kind === "steer" ? body.patch : undefined;
-    expect(patch).toBeDefined();
-    const steer = steerFor(events, body);
-    await act(async () => t.push([steer]));
-    expect(screen.getByText("Zapisywanie Twojej zmiany w lekcji…")).toBeTruthy();
-    await act(async () => t.push([revisionFor([...events, steer], patch, 3, body?.event_id)]));
-    expect(document.querySelector('div[data-revision="3"]')).not.toBeNull();
-    expect(document.querySelector("[data-step='s02'] [data-step-title]")?.textContent).toBe(
-      "Ile to jest dwa razy sześć?",
-    );
-    expect(screen.getByText("Twoja zmiana jest już w lekcji.")).toBeTruthy();
-  });
-
-  it("a patch the runner refuses keeps the parent's text and says it was not applied", async () => {
-    const events = eventsOf("happy-turn");
-    const t = transportOf(events);
-    render(<ChatScreen transport={t.transport} />);
-    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
-    openStep("s02");
-    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
-    fireEvent.change(screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" }), {
-      target: { value: "Ile to jest dwa razy sześć?" },
-    });
-    fireEvent.change(screen.getByRole("textbox", { name: "Co zmienić w tym kroku i dlaczego?" }), {
-      target: { value: "piątki już zna" },
-    });
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" })));
-    // The AI's revision 3 lands before the steer is logged: the patch, made on 2, is refused.
-    const ai = revisionFor(events, wordsPatch(lessonFile(), "s05", "pl", "Inne"), 3);
-    const steer = steerFor([...events, ai], t.sent[0]);
-    await act(async () => t.push([ai, steer]));
-    expect(screen.getByRole("alert").textContent).toContain("Tej zmiany nie udało się wprowadzić");
-    const words = screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" });
-    expect((words as HTMLTextAreaElement).value).toBe("Ile to jest dwa razy sześć?");
-    const why = screen.getByRole("textbox", { name: "Co zmienić w tym kroku i dlaczego?" });
-    expect((why as HTMLTextAreaElement).value).toBe("piątki już zna");
-    expect(screen.queryByText("Twoja zmiana jest już w lekcji.")).toBeNull();
-  });
-
-  it("Cofnij sends the patch that restores the revision before", async () => {
-    const events = eventsOf("happy-turn");
-    const t = transportOf(events);
-    render(<ChatScreen transport={t.transport} />);
-    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
-    const before = lessonFile();
-    const third = revisionFor(events, wordsPatch(before, "s02", "pl", "Ile jest grup?"), 3);
-    await act(async () => t.push([third]));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
-    const [body] = t.sent;
-    expect(body).toMatchObject({
-      kind: "steer",
-      source: "lesson_edit",
-      question_ids: ["s02"],
-      text: "Rodzic prosi o cofnięcie zmiany w krokach s02: wróć do wersji 2.",
-      base_revision: 3,
-    });
-    const patch = body?.kind === "steer" ? body.patch : undefined;
-    const now = third.type === "lesson_revision" ? third.payload.lesson_file : null;
-    expect(applyPatch(now, patch)).toEqual(before);
-  });
-
-  it("a Cofnij the runner refuses says it was not applied", async () => {
-    const events = eventsOf("happy-turn");
-    const t = transportOf(events);
-    render(<ChatScreen transport={t.transport} />);
-    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
-    const third = revisionFor(events, wordsPatch(lessonFile(), "s02", "pl", "Ile jest grup?"), 3);
-    await act(async () => t.push([third]));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
-    const fourth = revisionFor([...events, third], {}, 4);
-    const steer = steerFor([...events, third, fourth], t.sent[0]);
-    await act(async () => t.push([fourth, steer]));
-    expect(document.querySelector("[data-undo-refused]")?.textContent).toContain(
-      "Tej zmiany nie udało się wprowadzić",
-    );
-  });
-});
-
-describe("Cofnij falls back to words (dl-z5ja.111)", () => {
-  it("when no merge patch can restore the revision before, Cofnij asks the AI in words", async () => {
-    const events = eventsOf("happy-turn");
-    const t = transportOf(events);
-    render(<ChatScreen transport={t.transport} />);
-    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
-    const second = lessonFile();
-    // Revision 3 holds a key whose value is null; revision 4 sets it, so going back needs a null.
-    const third = {
-      ...(applyPatch(second, wordsPatch(second, "s02", "pl", "Raz")) as object),
-      extra: null,
-    };
-    const fourth = {
-      ...(applyPatch(third, wordsPatch(third, "s02", "pl", "Dwa")) as object),
-      extra: 1,
-    };
-    const at = (file: unknown, revision: number, seq: number) =>
-      RunEvent.parse({
-        ...events.findLast((e) => e.type === "lesson_revision"),
-        seq,
-        event_id: `00000000-0000-4000-8000-00000000060${revision}`,
-        payload: { revision, call_id: "call_x", lesson_file: file },
-      });
-    const top = Math.max(...events.map((e) => e.seq));
-    await act(async () => t.push([at(third, 3, top + 1), at(fourth, 4, top + 2)]));
-    expect(document.querySelector('div[data-revision="4"]')).not.toBeNull();
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
-    expect(t.sent).toEqual([
-      expect.objectContaining({
-        kind: "message",
-        text: "Rodzic prosi o cofnięcie zmiany w krokach s02: wróć do wersji 3.",
-      }),
-    ]);
-    expect(t.sent[0]).not.toHaveProperty("patch");
-  });
-});
-
 describe("the routes carry the patch (dl-z5ja.111)", () => {
   it("a steer's patch reaches postMessage", async () => {
     const SERVER = ConversationId.parse("cnv_00000000000000000000000002");
@@ -494,38 +253,5 @@ describe("a step moved or removed by the parent (dl-z5ja.108.1)", () => {
     expect(dropPatch(file, "s99")).toBeNull();
     const one = { script: { parts: [{ part: "a", steps: [{ id: "s01" }] }] } };
     expect(dropPatch(one, "s01")).toBeNull();
-  });
-
-  it("the opened step's Przenieś and Usuń send a patch on the revision shown, with a steer", () => {
-    const lesson = foldRun(eventsOf("happy-turn")).lesson;
-    const sent: unknown[][] = [];
-    render(<LessonPane language="pl" lesson={lesson} onEdit={(...args) => sent.push(args)} />);
-    openStep("s05");
-    fireEvent.click(document.querySelector("[data-step='s05'] [data-move='up']") as HTMLElement);
-    fireEvent.click(document.querySelector("[data-step='s05'] [data-drop]") as HTMLElement);
-    expect(sent.map(([text, ids]) => [text, ids])).toEqual([
-      ["Rodzic sam przeniósł krok s05 o jedno miejsce wyżej.", ["s05"]],
-      ["Rodzic sam usunął krok s05 z lekcji.", ["s05"]],
-    ]);
-    const [move, drop] = sent.map(
-      ([, , change]) => change as { patch: unknown; base_revision: number },
-    );
-    expect(move?.base_revision).toBe(lesson?.revision);
-    expect(order(applyPatch(lesson?.lesson_file, move?.patch))).toEqual(
-      order(applyPatch(lesson?.lesson_file, movePatch(lesson?.lesson_file, "s05", -1))),
-    );
-    expect(order(applyPatch(lesson?.lesson_file, drop?.patch))).not.toContain("s05");
-  });
-
-  it("the first question cannot move up, nor the last down", () => {
-    const lesson = foldRun(eventsOf("happy-turn")).lesson;
-    render(<LessonPane language="pl" lesson={lesson} onEdit={() => undefined} />);
-    openStep("s02");
-    openStep("s07");
-    const button = (step: string, way: string) =>
-      document.querySelector(`[data-step='${step}'] [data-move='${way}']`) as HTMLButtonElement;
-    expect(button("s02", "up").disabled).toBe(true);
-    expect(button("s02", "down").disabled).toBe(false);
-    expect(button("s07", "down").disabled).toBe(true);
   });
 });
