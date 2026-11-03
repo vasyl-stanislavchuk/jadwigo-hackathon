@@ -1,14 +1,14 @@
 /**
- * The lines around the composer (split from ChatPane.tsx, dl-uukj.47.71.1, no change in
- * behaviour): the empty pane's starters, the queued follow-ups, a failed turn's retry, the status
- * and live region of the playground, offline, a refused or failed send, the context chip, and the
- * "Następne" queue under the composer. Lane D of wave dl-uukj.47.71 owns them.
+ * The lines above the composer (lane D of wave dl-uukj.47.71): the empty pane's starters, the
+ * queue rows (D6), a failed turn's retry (until the spine's foot carries it, lane B), the
+ * playground's status and live region, and one line for offline, a refused or a failed send
+ * (§4.6). The "Jadwigo AI widzi" chip is gone (S21): Dla in the composer already says it.
  */
 
-import type { MessageContext, RunStatus } from "@jadwigo/contracts/run";
+import type { RunStatus } from "@jadwigo/contracts/run";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
-import { Button } from "@jadwigo/ui";
-import { EyeIcon, XIcon } from "lucide-react";
+import { Button, DisabledReason } from "@jadwigo/ui";
+import { CornerDownRightIcon, InfoIcon, RotateCcwIcon, XIcon } from "lucide-react";
 import { type ReactElement, useEffect, useState } from "react";
 import { parentTextOf } from "./ChatThread.tsx";
 import "./chat.css";
@@ -41,29 +41,6 @@ function announcementOf(last: Turn | undefined, restoring: boolean): CopyKey | n
   return "chat_announce_done";
 }
 
-/**
- * What Jadwigo AI sees, from the last message the parent sent (dl-uukj.47.32): its page context
- * as it went out, never a choice not sent yet. Null before any message, or for a child the family
- * does not hold, whose name the page cannot say.
- */
-function contextLine(
-  turns: readonly Turn[],
-  nameOf: ((learner: string) => string | null) | undefined,
-  language: Language,
-): string | null {
-  let last: MessageContext | undefined | null = null;
-  for (const turn of turns)
-    for (const item of turn.view.chat)
-      if (item.kind === "message" && item.from === "parent") last = item.context;
-  if (last === null) return null;
-  const say = (key: CopyKey, vars: Record<string, string> = {}) =>
-    copy(language, key, vars, "adult");
-  if (last === undefined) return say("chat_context_none");
-  if ("lesson_id" in last) return say("chat_context_lesson");
-  const child = nameOf?.(last.learner_id) ?? null;
-  return child === null ? null : say("chat_context_child", { child });
-}
-
 /** The browser's word on the network, kept current. */
 function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);
@@ -86,6 +63,128 @@ const LIMIT_LINE: Readonly<Record<SendLimit, CopyKey>> = {
   day: "chat_limit_daily",
 };
 
+/**
+ * Offline, a refused send or a failed one (handoff dl-uukj.47.71 §4.6, last row): one muted line
+ * above the composer with an info icon and at most one action, never inside the thread. A failed
+ * send offers Spróbuj ponownie; a limit says when to come back and offers nothing; offline says the
+ * words wait, and offers Spróbuj ponownie too when a send already failed.
+ */
+function SendLine({
+  language,
+  online,
+  sendFailed,
+  sendLimit,
+  onRetry,
+}: {
+  language: Language;
+  online: boolean;
+  sendFailed: boolean;
+  sendLimit: SendLimit | null;
+  onRetry?: (() => void) | undefined;
+}): ReactElement | null {
+  const say = (key: CopyKey) => copy(language, key, {}, "adult");
+  const line: { row: string; key: CopyKey; retry: boolean } | null = !online
+    ? { row: "offline", key: "chat_offline", retry: sendFailed && sendLimit === null }
+    : sendFailed && sendLimit !== null
+      ? { row: "send-limited", key: LIMIT_LINE[sendLimit], retry: false }
+      : sendFailed
+        ? { row: "send-failed", key: "chat_send_again", retry: true }
+        : null;
+  if (line === null) return null;
+  return (
+    <div
+      role={sendFailed ? "alert" : "status"}
+      data-row={line.row}
+      {...(line.row === "send-limited" && sendLimit !== null ? { "data-limit": sendLimit } : {})}
+      className="flex items-center gap-2 text-jw-page-small text-muted-foreground"
+    >
+      <InfoIcon aria-hidden className="size-3.5 shrink-0" />
+      <p className="min-w-0 flex-1">{say(line.key)}</p>
+      {line.retry && onRetry !== undefined && (
+        <Button variant="ghost" size="sm" onClick={onRetry} className="shrink-0">
+          <RotateCcwIcon aria-hidden />
+          {say("chat_retry_turn")}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** A waiting row as drawn: its words, and how many photos go with it. */
+interface QueueRowData {
+  text: string;
+  photos: number;
+}
+
+/**
+ * One waiting row above the composer (D6, §4.5, s17): the corner arrow, the words (or, for photos
+ * alone, how many: dl-uukj.47.70), "Wyślę, gdy skończę", Wyślij teraz and ×. Photos can't go into a
+ * running turn, so their Wyślij teraz says why instead. On a phone the buttons go under the words.
+ */
+function QueueRow({
+  language,
+  row,
+  onSendNow,
+  onRemove,
+}: {
+  language: Language;
+  row: QueueRowData;
+  onSendNow?: (() => void) | undefined;
+  onRemove?: (() => void) | undefined;
+}): ReactElement {
+  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
+    copy(language, key, vars, "adult");
+  const words = row.text.trim() !== "" ? row.text : say("chat_steer_photos", { n: row.photos });
+  const sendNow =
+    onSendNow === undefined ? null : (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onSendNow}
+        className="max-sm:min-h-9 font-semibold"
+        data-send-now
+      >
+        {say("chat_queue_now")}
+      </Button>
+    );
+  return (
+    <li
+      className="flex items-center gap-2 rounded-jw-small border-jw border-jw-line bg-jw-card py-1 pr-1 pl-3 text-jw-page-body max-sm:flex-wrap"
+      data-row="queued"
+      data-next-row
+      data-photos={row.photos}
+    >
+      <CornerDownRightIcon aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
+      <span className="min-w-0 flex-1 truncate text-jw-ink" data-queue-words>
+        {words}
+      </span>
+      <span className="flex shrink-0 items-center gap-1 max-sm:w-full max-sm:pl-5.5">
+        <span className="text-jw-page-small text-muted-foreground max-sm:flex-1">
+          {say("chat_queue_label")}
+        </span>
+        {sendNow !== null &&
+          (row.photos > 0 ? (
+            <DisabledReason reason={say("chat_queue_photos_wait")}>{sendNow}</DisabledReason>
+          ) : (
+            sendNow
+          ))}
+        {onRemove !== undefined && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={say("chat_queue_remove")}
+            onClick={onRemove}
+            className="max-sm:size-9"
+            data-next-remove
+          >
+            <XIcon aria-hidden />
+          </Button>
+        )}
+      </span>
+    </li>
+  );
+}
+
 export interface ComposerLinesProps {
   language: Language;
   turns: readonly Turn[];
@@ -99,11 +198,12 @@ export interface ComposerLinesProps {
   lastSent: string | null;
   send(text: string): void;
   resend(text: string): void;
-  context: string | null;
-  onCloseContext?: (() => void) | undefined;
+  /** The waiting rows (queue.ts): words, or photos alone, read as their count. */
+  next: readonly QueueRowData[];
+  onSendNow?: ((index: number) => void) | undefined;
+  /** Takes one waiting row out (×). */
+  onTakeNext?: ((index: number) => string | null) | undefined;
 }
-
-export { contextLine };
 
 /** Everything between the thread and the composer. */
 export function ComposerLines({
@@ -119,8 +219,9 @@ export function ComposerLines({
   lastSent,
   send,
   resend,
-  context,
-  onCloseContext,
+  next,
+  onSendNow,
+  onTakeNext,
 }: ComposerLinesProps): ReactElement {
   const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
     copy(language, key, vars, "adult");
@@ -146,13 +247,21 @@ export function ComposerLines({
           </ul>
         </div>
       )}
-      {queued.length > 0 && (
-        <ul aria-label={say("chat_queued")} className="text-jw-page-body text-muted-foreground">
+      {(queued.length > 0 || next.length > 0) && (
+        <ul aria-label={say("chat_queued")} className="flex flex-col gap-1.5" data-queue>
+          {/* Sent and on their way: no action is left on them. A follow-up may repeat; its
+              place in the queue does not. */}
           {queued.map((text, i) => (
-            // A follow-up may repeat; its place in the queue does not.
-            <li key={`${i}-${text}`} data-row="queued">
-              {say("chat_queued")}: {text}
-            </li>
+            <QueueRow key={`sent-${i}-${text}`} language={language} row={{ text, photos: 0 }} />
+          ))}
+          {next.map((row, i) => (
+            <QueueRow
+              key={`next-${i}-${row.text}`}
+              language={language}
+              row={row}
+              onSendNow={onSendNow === undefined ? undefined : () => onSendNow(i)}
+              onRemove={onTakeNext === undefined ? undefined : () => onTakeNext(i)}
+            />
           ))}
         </ul>
       )}
@@ -184,122 +293,15 @@ export function ComposerLines({
           </p>
         </>
       )}
-      {!online && (
-        <p data-row="offline" className="text-jw-page-body">
-          {say("chat_offline")}
-        </p>
-      )}
-      {sendFailed && sendLimit !== null && (
-        <p
-          role="alert"
-          data-row="send-limited"
-          data-limit={sendLimit}
-          className="text-jw-page-body"
-        >
-          {say(LIMIT_LINE[sendLimit])}
-        </p>
-      )}
-      {sendFailed && sendLimit === null && (
-        <div
-          role="alert"
-          data-row="send-failed"
-          className="flex items-center gap-2 text-jw-page-body"
-        >
-          <p>{say("chat_send_again")}</p>
-          {(onResend !== undefined || lastSent !== null) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                onResend !== undefined ? onResend() : lastSent !== null && resend(lastSent)
-              }
-            >
-              {say("chat_retry_turn")}
-            </Button>
-          )}
-        </div>
-      )}
-      {context !== null && (
-        <p
-          className="flex w-fit max-w-full items-center gap-1.5 self-start rounded-full border-jw border-jw-line bg-jw-card px-2.5 py-0.5 text-jw-page-small text-jw-ink-soft"
-          data-context-chip
-        >
-          <EyeIcon aria-hidden className="size-3.5 shrink-0" />
-          <span className="min-w-0 truncate">{context}</span>
-          {onCloseContext !== undefined && (
-            <button
-              type="button"
-              aria-label={say("chat_context_close")}
-              onClick={onCloseContext}
-              className="-mr-1 grid size-5 shrink-0 place-items-center rounded-full hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
-              data-context-close
-            >
-              <XIcon aria-hidden className="size-3" />
-            </button>
-          )}
-        </p>
-      )}
+      <SendLine
+        language={language}
+        online={online}
+        sendFailed={sendFailed}
+        sendLimit={sendLimit}
+        onRetry={
+          onResend !== undefined ? onResend : lastSent !== null ? () => resend(lastSent) : undefined
+        }
+      />
     </>
-  );
-}
-
-export interface NextQueueProps {
-  language: Language;
-  next: readonly string[];
-  onSendNow?: ((index: number) => void) | undefined;
-  onTakeNext?: ((index: number) => string | null) | undefined;
-  setDraft(text: string): void;
-}
-
-/** The "Następne" queue under the composer (queue.ts). */
-export function NextQueue({
-  language,
-  next,
-  onSendNow,
-  onTakeNext,
-  setDraft,
-}: NextQueueProps): ReactElement | null {
-  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
-    copy(language, key, vars, "adult");
-  if (next.length === 0) return null;
-  return (
-    <section aria-label={say("chat_queue_next")} className="flex flex-col gap-1" data-next>
-      <h3 className="text-jw-page-small font-bold text-jw-ink-soft">{say("chat_queue_next")}</h3>
-      <ol className="flex flex-col gap-1">
-        {next.map((text, i) => (
-          // A waiting row may repeat; its place in the queue does not.
-          <li
-            key={`${i}-${text}`}
-            className="flex items-center gap-2 rounded-jw-small border-jw border-jw-line bg-jw-card px-2 py-1 text-jw-page-body"
-            data-next-row
-          >
-            <span className="min-w-0 flex-1 truncate text-jw-ink">{text}</span>
-            {onSendNow !== undefined && (
-              <Button variant="outline" size="sm" onClick={() => onSendNow(i)} data-send-now>
-                {say("chat_queue_send_now")}
-              </Button>
-            )}
-            {onTakeNext !== undefined && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const words = onTakeNext(i);
-                    if (words !== null) setDraft(words);
-                  }}
-                  data-next-edit
-                >
-                  {say("chat_queue_edit")}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => onTakeNext(i)} data-next-remove>
-                  {say("chat_queue_remove")}
-                </Button>
-              </>
-            )}
-          </li>
-        ))}
-      </ol>
-    </section>
   );
 }
