@@ -1752,6 +1752,12 @@ export async function drain(
     onError?: (error: unknown, step: FailedStep) => void;
     /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
     onRead?: (run_id: RunId) => void;
+    /**
+     * Waits this long, by the step's read count, after a step throws, then reads it again in this
+     * drain (dl-hin8.51). Without it the step waits out its visibility for the next drain. The host
+     * passes it; a test that moves its own clock does not need to.
+     */
+    retry?: { after_s: readonly number[]; sleep: (ms: number) => Promise<void> };
     /** Calls `beat` while a step runs, and answers how to stop. A test drives it by hand. */
     keepAlive?: (beat: () => void) => () => void;
   } = {},
@@ -1787,8 +1793,19 @@ export async function drain(
       if (
         queued.read_ct >= MAX_READS &&
         (await failRun(deps, queued.message.run_id).catch(() => false))
-      )
+      ) {
         await deps.queue.archive(queued.msg_id);
+      } else if (queued.read_ct < MAX_READS && options.retry !== undefined) {
+        // This host is free and the step has reads left: no one else need wake for it. A fault in
+        // moving it only leaves the step on its visibility, as before.
+        const after_s = options.retry.after_s[queued.read_ct - 1] ?? 0;
+        try {
+          await deps.queue.extend?.(queued.msg_id, after_s);
+          await options.retry.sleep(after_s * 1000);
+        } catch {
+          // Next drain, as before.
+        }
+      }
     } finally {
       stop();
     }

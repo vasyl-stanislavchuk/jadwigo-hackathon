@@ -854,6 +854,56 @@ describe("runStep and drain", () => {
     });
   });
 
+  describe("a step that throws (dl-hin8.51)", () => {
+    /** A model that throws `fails` times, then answers. */
+    async function throwing(fails: number) {
+      const t = await setup([{ text: "Done." }]);
+      const inner = t.deps.muse;
+      let calls = 0;
+      const deps: EngineDeps = {
+        ...t.deps,
+        muse: {
+          respond: (request) => {
+            calls += 1;
+            return calls <= fails ? Promise.reject(new Error("made up")) : inner.respond(request);
+          },
+        },
+      };
+      const slept: number[] = [];
+      const retry = {
+        after_s: [5, 20],
+        sleep: (ms: number) => {
+          slept.push(ms);
+          t.tick(ms);
+          return Promise.resolve();
+        },
+      };
+      const run = await t.say("Go.");
+      return { t, deps, retry, run, slept };
+    }
+
+    it("comes back in seconds, in the same drain", async () => {
+      const { t, deps, retry, run, slept } = await throwing(1);
+      await drain(deps, { retry });
+      expect(slept).toEqual([5_000]);
+      expect((await t.run(run)).status).toBe("completed");
+    });
+
+    it("waits longer the second time, and stops at its last read", async () => {
+      const { t, deps, retry, run, slept } = await throwing(3);
+      await drain(deps, { retry });
+      expect(slept).toEqual([5_000, 20_000]);
+      expect((await t.run(run)).status).toBe("failed");
+    });
+
+    it("waits out its visibility when the host passes no retry", async () => {
+      const { t, deps, run, slept } = await throwing(1);
+      await drain(deps);
+      expect(slept).toEqual([]);
+      expect((await t.run(run)).status).not.toBe("completed");
+    });
+  });
+
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
     // lesson_check names the run's draft, known once the parent has spoken.
     const check: Record<string, unknown> = { help: {}, names: [] };

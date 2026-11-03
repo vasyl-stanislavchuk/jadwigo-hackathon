@@ -43,6 +43,8 @@ export interface HostDeps {
   engine: EngineDeps;
   /** How long one invocation starts new steps, in ms; the queue keeps the rest for the next. */
   max_drain_ms: number;
+  /** How a thrown step comes back in this invoke: see `drain`. Absent, by its visibility. */
+  retry?: { after_s: readonly number[]; sleep: (ms: number) => Promise<void> };
   /** The queue's stuck-run read, when the queue has one. */
   stuck?: () => Promise<Stuck>;
   /** How many steps sit in the dead-letter queue, when the queue can say. */
@@ -123,6 +125,7 @@ export function createHost(
         host.warn(failure(error, step));
       },
       onRead: (run_id) => runs.add(run_id),
+      ...(host.retry === undefined ? {} : { retry: host.retry }),
     });
     const stuck = host.stuck ? await host.stuck() : null;
     if (stuck) reportStuck(stuck, host.warn);
