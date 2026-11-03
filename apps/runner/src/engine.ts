@@ -22,10 +22,11 @@ const POOL = { max: 1, connectionTimeoutMillis: 5000 } as const;
 
 /**
  * How long an invocation starts new steps: the module's 300 s timeout, less `STEP_VISIBILITY_S`, the
- * longest a healthy step takes. A run's steps then go on without waiting for the next minute's
- * schedule (dl-hin8.33). This does not bound a run: its budget and deadlines do.
+ * longest a healthy step takes, less 10 s for the cold start's open and the reads after the drain.
+ * A run under it never waits for the next minute's schedule (dl-hin8.33); one past it does, until
+ * `dl-hin8.41`. This does not bound a run: its budget and deadlines do.
  */
-const MAX_DRAIN_MS = 240_000;
+const MAX_DRAIN_MS = 230_000;
 
 /**
  * The engine on Postgres as `jadwigo_runner`: the store sets `app.pod_id` per unit after

@@ -134,15 +134,31 @@ describe("the step host", () => {
   });
 
   it("stops starting steps at its time limit and leaves the rest queued for the next invoke", async () => {
-    const t = await setup();
+    const meter = fakeMeter();
+    // Each model call takes a minute on the clock, past the 30 s limit.
+    class SlowMuse extends ProbeMuse {
+      override respond(request: Parameters<ProbeMuse["respond"]>[0]) {
+        meter.spend(60_000, 0);
+        return super.respond(request);
+      }
+    }
+    const t = await setup(new SlowMuse());
     await t.say("one");
-    // Each look at the clock is a minute on, so the 2nd look is past the 90 s limit.
-    let wall = 0;
-    const minutes: Meter = { wall: () => (wall += 60_000), cpu: () => 0 };
-    const host = createHost(() => Promise.resolve(t.deps({ max_drain_ms: 90_000 })), minutes);
+    const host = createHost(() => Promise.resolve(t.deps({ max_drain_ms: 30_000 })), meter);
 
     expect((await host()).outcomes).toEqual(["continue"]);
     expect((await host()).outcomes).toEqual(["turn_complete"]);
+  });
+
+  it("under its time limit, runs on past 20 steps in one invoke", async () => {
+    const read = { tool_calls: [{ verb: "lesson_show" as const, input: {} }], cost_usd: 0 };
+    const reads = Array.from({ length: 25 }, () => read);
+    const t = await setup(new ScriptedMuse([...reads, { text: "Gotowe.", cost_usd: 0 }]));
+    await t.say("one");
+    const report = await createHost(() => Promise.resolve(t.deps()), fakeMeter())();
+
+    expect(report.steps).toBe(26);
+    expect(report.outcomes.at(-1)).toBe("turn_complete");
   });
 
   it("logs a step that threw by its ids, keeps it queued, and reports the dead letters", async () => {

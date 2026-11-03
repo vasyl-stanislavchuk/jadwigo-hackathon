@@ -96,6 +96,8 @@ export function createHost(
     }
     const failed: FailedStep[] = [];
     const outputs = await drain(host.engine, {
+      // The clock is the limit, so drain's default count must not stop it first.
+      max_steps: Number.POSITIVE_INFINITY,
       keep_going: () => meter.wall() - wall0 < host.max_drain_ms,
       onError: (error, step) => {
         failed.push(step);
