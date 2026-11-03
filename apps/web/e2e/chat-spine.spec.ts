@@ -153,7 +153,7 @@ async function threeTurns(page: Page, size: Size): Promise<void> {
 async function openEveryStage(page: Page): Promise<void> {
   const turn = chatOf(page).locator("[data-turn='current']");
   await turn.locator("[data-summary-row]").click();
-  for (const row of await turn.locator("[data-stage='done'] [data-stage-row]").all())
+  for (const row of await turn.locator("[data-spine-stage='done'] [data-stage-row]").all())
     await row.click();
 }
 
