@@ -28,7 +28,7 @@ import type { ObjectRef } from "./objects/ref.ts";
 import { PLAN_MIN, PlanCard } from "./PlanCard.tsx";
 import { elapsedSeconds, type RunPhase } from "./phase.ts";
 import { Rating } from "./Rating.tsx";
-import { type LineContext, sentenceOf, TOOL_ICON } from "./toolLine.ts";
+import { type LineContext, sentenceOf, TOOL_ICON } from "./spine/lines.ts";
 import { ToolDetails, toolResult } from "./widgets/Widgets.tsx";
 
 /** The parent's words: a quiet box in the soft paper fill on the right, Jadwigo AI's answer plain prose beside it. */

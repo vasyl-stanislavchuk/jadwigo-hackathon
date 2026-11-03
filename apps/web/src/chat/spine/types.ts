@@ -7,23 +7,23 @@
 import type { CopyKey } from "@jadwigo/copy";
 
 /** A plan stage's mark: todo hollow, active the loader, done the check (§4.1). */
-type StageStatus = "todo" | "active" | "done" | "failed" | "stopped" | "waiting";
+export type StageStatus = "todo" | "active" | "done" | "failed" | "stopped" | "waiting";
 
 /** A line inside a stage (or under the header, when the plan has fewer than 3 stages). */
 type LineKind = "done" | "now" | "retry" | "skip" | "slow" | "wait" | "steer" | "earlier";
 
 /** Words to say: a copy key and the values it takes. */
-interface Words {
+export interface Words {
   copyKey: CopyKey;
   values: Readonly<Record<string, string | number>>;
 }
 
 /** A search result on its line (S14): one tag per set, sorted by fit. */
-interface SpineTag extends Words {
+export interface SpineTag extends Words {
   id: string;
 }
 
-interface SpineLine extends Words {
+export interface SpineLine extends Words {
   kind: LineKind;
   /** A `now` line counts its seconds from here (epoch ms). */
   startedAt?: number;
@@ -35,7 +35,7 @@ interface SpineLine extends Words {
   quote?: string;
 }
 
-interface Stage {
+export interface Stage {
   /** Stable within a turn: the plan entry's index. */
   id: string;
   /** The stage's name: the plan entry's words (the model's Polish), shown as they are. */
@@ -60,7 +60,7 @@ export type SpinePhase =
   | "cancelled";
 
 /** The card's foot when the turn ended badly or stalled (D7, S11, S15). */
-interface SpineFoot {
+export interface SpineFoot {
   kind: "failed" | "stalled" | "stopped";
   /** Failed: how many times Jadwigo tried. */
   tries?: number;
