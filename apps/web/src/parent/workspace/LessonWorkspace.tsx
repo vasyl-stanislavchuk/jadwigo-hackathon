@@ -301,6 +301,7 @@ export function LessonWorkspace({
                       ghosts={lesson.ghosts}
                       withChild={child !== null}
                       outcomeOf={lesson.outcomeOf}
+                      bare
                     />
                   ),
                 actions,

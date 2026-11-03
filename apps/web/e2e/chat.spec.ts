@@ -25,7 +25,7 @@ test("1440: one scripted turn, the message and the lesson card in the chat alone
     timeout: 20_000,
   });
   await expect(page.locator("[data-chat-band] [data-live]")).toHaveText("Jadwigo AI: gotowe");
-  await expect(chat.getByText("Lekcja jest gotowa po prawej.")).toBeVisible();
+  await expect(chat.getByText("Lekcja jest gotowa.", { exact: true })).toBeVisible();
   await expect(cardOf(page)).toBeVisible();
   // The chat is the only view (dl-1eieq.1): no column, no Pokaż lekcję, no tabs.
   await expect(page.locator("[data-lesson-column]")).toHaveCount(0);
@@ -34,7 +34,7 @@ test("1440: one scripted turn, the message and the lesson card in the chat alone
 
   // A reload draws the same conversation again from the log, and sends nothing twice.
   await page.reload();
-  await expect(chat.getByText("Lekcja jest gotowa po prawej.")).toHaveCount(1);
+  await expect(chat.getByText("Lekcja jest gotowa.", { exact: true })).toHaveCount(1);
   // The parent's words, sent once: counted in the parent's own rows, since the lesson card under
   // the turn carries a title that may read the same (dl-uukj.47.58).
   await expect(
@@ -55,7 +55,7 @@ test("?pace=stall: the parent's words, then nothing", async ({ page }) => {
   await page.goto("/playground/workspace?pace=stall");
   await expect(chatOf(page).getByText(FIRST_WORDS)).toBeVisible();
   await page.waitForTimeout(3_000);
-  await expect(chatOf(page).getByText("Lekcja jest gotowa po prawej.")).toHaveCount(0);
+  await expect(chatOf(page).getByText("Lekcja jest gotowa.", { exact: true })).toHaveCount(0);
   await expect(cardOf(page)).toHaveCount(0);
 });
 
