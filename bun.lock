@@ -102,6 +102,9 @@
         "vitest": "catalog:",
       },
     },
+    "apps/print": {
+      "name": "@jadwigo/print",
+    },
     "apps/runner": {
       "name": "@jadwigo/runner",
       "dependencies": {
@@ -855,6 +858,8 @@
     "@jadwigo/lesson-import": ["@jadwigo/lesson-import@workspace:packages/lesson-import"],
 
     "@jadwigo/lesson-kit": ["@jadwigo/lesson-kit@workspace:packages/lesson-kit"],
+
+    "@jadwigo/print": ["@jadwigo/print@workspace:apps/print"],
 
     "@jadwigo/runner": ["@jadwigo/runner@workspace:apps/runner"],
 

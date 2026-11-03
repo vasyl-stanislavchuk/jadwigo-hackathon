@@ -1,0 +1,8 @@
+{
+  "name": "@jadwigo/print",
+  "description": "The print Lambda, a Python uv project in a container Lambda. This manifest only lets turbo run its tests with the rest",
+  "private": true,
+  "scripts": {
+    "test": "uv run --frozen pytest -q"
+  }
+}

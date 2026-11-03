@@ -1,0 +1,36 @@
+{#- enter: the child writes one answer in the box where it goes. -#}
+{% import "parts.html.j2" as parts %}
+{% import "figures.html.j2" as figures %}
+
+{#- A prompt that is only a short line takes its box on the same line: "6 + 7 = [  ]". -#}
+{% macro _with_box(q, text) %}
+{% set s = q.data.stem %}
+{% if s and s.text and not s.text_replaces_say and only_text(s) and not q.data.figure and q.data.input != "text" %}
+<div class="answer-line"><span class="stem-text">{{ text.rich(s.text) }}</span>{{ parts.entry(q.data.input, q.data.whole) }}</div>
+{% else %}
+{{ parts.stem(s, text) }}
+{% if q.data.figure %}{{ figures.figure(q.data.figure, text) }}{% endif %}
+<div class="answer">{{ parts.entry(q.data.input, q.data.whole) }}</div>
+{% endif %}
+{%- endmacro %}
+
+{#- The prompt with an answer box: its size says "a number", "a fraction" or "a word". -#}
+{% macro production(q, text, sheet) %}{{ _with_box(q, text) }}{% endmacro %}
+
+{#- A writing line with a dotted midline: the ruling a Polish 1st grader writes on. -#}
+{% macro short_text(q, text, sheet) %}
+{{ parts.stem(q.data.stem, text) }}
+{% if q.data.figure %}{{ figures.figure(q.data.figure, text) }}{% endif %}
+<div class="answer">{{ parts.write_line() }}</div>
+{%- endmacro %}
+
+{#- The equation with a box for its answer. -#}
+{% macro expression(q, text, sheet) %}{{ _with_box(q, text) }}{% endmacro %}
+
+{#- The object over a ruler drawn to its own scale, then "[ ] cm". -#}
+{% macro measure(q, text, sheet) %}
+{{ parts.stem(q.data.stem, text) }}
+{% set f = q.data.figure or (q.data.stem.figure if q.data.stem else none) %}
+{% if q.data.figure %}{{ figures.figure(q.data.figure, text) }}{% endif %}
+<div class="answer answer-line">{{ parts.entry(q.data.input, q.data.whole) }} {% if f and f.kind == "ruler" %}{{ f.unit }}{% endif %}</div>
+{%- endmacro %}
