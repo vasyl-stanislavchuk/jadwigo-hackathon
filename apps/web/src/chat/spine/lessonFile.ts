@@ -28,9 +28,22 @@ function steps(file: unknown): { id: string; step: Fields }[] {
 /** The step ids of the file, in lesson order. */
 export const stepIds = (file: unknown): string[] => steps(file).map((s) => s.id);
 
-/** A step's place in the lesson from 1, as the parent counts it ("zadanie 4"), or null. */
+/** The file's question steps in lesson order, as the preview modal lists them; none unread. */
+function questionsOf(file: unknown) {
+  const read = readDraft(file);
+  if ("error" in read) return [];
+  return lessonFileToSpecs(read.file, undefined, read.skipped)
+    .flatMap((p) => p.steps)
+    .flatMap((s) => (s.kind === "question" ? [s] : []));
+}
+
+/**
+ * A question's number from 1, the one the parent and the child see: its place among the lesson's
+ * questions, as the preview modal (LessonPane) numbers its rows, so a narration step before it never
+ * moves it (dl-uukj.47.71.32). Null for a step that is no question, or not in the file.
+ */
 export function positionOf(file: unknown, id: string): number | null {
-  const at = stepIds(file).indexOf(id);
+  const at = questionsOf(file).findIndex((q) => q.step_id === id);
   return at === -1 ? null : at + 1;
 }
 
@@ -100,22 +113,19 @@ export interface LessonFacts {
   title: string;
   /** Question steps the preview can show: 0 while the draft does not read. */
   count: number;
-  /** The first 3 questions' prompts as plain text, those with words, in lesson order. */
-  preview: string[];
+  /** The first 3 questions with words, each with its number (`positionOf`) and plain prompt. */
+  preview: { place: number; prompt: string }[];
 }
 
 /** The card's facts from a revision's file, counted as the preview counts them. */
 export function lessonFacts(file: unknown): LessonFacts {
   const id = isFields(file) && typeof file["id"] === "string" ? file["id"] : "";
   const title = titleOf(file);
-  const read = readDraft(file);
-  if ("error" in read) return { id, title, count: 0, preview: [] };
-  const questions = lessonFileToSpecs(read.file, undefined, read.skipped)
-    .flatMap((p) => p.steps)
-    .flatMap((s) => (s.kind === "question" ? [s] : []));
+  const questions = questionsOf(file);
+  // Each row keeps its question's own number, so a prompt with no words never renumbers the rest.
   const preview = questions
-    .map((q) => plainPrompt(q.spec.say))
-    .filter((say) => say !== "")
+    .map((q, i) => ({ place: i + 1, prompt: plainPrompt(q.spec.say) }))
+    .filter((row) => row.prompt !== "")
     .slice(0, PREVIEW);
   return { id, title, count: questions.length, preview };
 }
