@@ -179,6 +179,8 @@ for (const [width, height] of [
         if (el.scrollTop !== 0) ancestors.push(`${el.tagName.toLowerCase()}:${el.scrollTop}`);
       return {
         list: list?.scrollTop ?? 0,
+        // Nothing in the page reaches below the window, so there is nothing to scroll the page by.
+        overflow: document.documentElement.scrollHeight - window.innerHeight,
         scrollY: window.scrollY,
         ancestors,
         moved: (window as unknown as { __moved: string[] }).__moved,
@@ -188,6 +190,7 @@ for (const [width, height] of [
     expect(state.list).toBeGreaterThan(0);
     // ...and nothing else moved.
     expect(state.scrollY).toBe(0);
+    expect(state.overflow).toBe(0);
     expect(state.ancestors).toEqual([]);
     expect(state.moved).toEqual([]);
     await expect(card).toBeInViewport();

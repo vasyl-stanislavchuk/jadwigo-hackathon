@@ -15,6 +15,7 @@ import {
   FamilyView,
   LessonFrame,
   press,
+  QuestionCredit,
   StepFrame,
   ViewMode,
 } from "@jadwigo/lesson-kit";
@@ -24,6 +25,7 @@ import { withMedia } from "../media.ts";
 import { navigate, useLocation } from "../nav/location.ts";
 import { ChildReview } from "../review/ChildReview.tsx";
 import { specOf } from "../review/Still.tsx";
+import { creditShown } from "./credit.ts";
 import { Column, KidPage } from "./KidPage.tsx";
 import { Queen } from "./Queen.tsx";
 import { queenDue } from "./queen.ts";
@@ -49,45 +51,50 @@ function Question({
   const spec = specOf(question);
   const live = state.phase === "live";
   const clock = browserClock;
+  // A borrowed question's credit, in the language its text is shown in (dl-1eieq.3).
+  const shownIn = player.lessonLanguage ?? language;
   return (
     <LessonFrame.Provider value={frame}>
       {/* The question's own text speaks the lesson's language, which may differ from the
           screens' (dl-9t2o.3); the controls keep the page's (dl-uukj.38). */}
-      <StepFrame key={question.seq} stepId={spec.id} lessonLanguage={player.lessonLanguage}>
-        <FamilyView
-          // A new question is a new view: nothing typed or placed carries over.
-          key={question.seq}
-          mode={ViewMode.Play}
-          spec={spec as never}
-          language={language}
-          category={CATEGORY}
-          clock={clock}
-          live={live}
-          attemptNo={state.attemptNo}
-          feedback={state.feedback}
-          workedSolution={state.workedSolution}
-          onCommit={(c) => player.commit(c.value, c.t1)}
-          around={{
-            checking: state.phase === "sending",
-            moveOn: {
-              enabled: live,
-              press: press(clock, (at) => {
-                if (live) player.skip(at);
-              }),
-            },
-            ladder: {
-              help: withMedia(state.help),
-              ask:
-                state.help === null || state.help.more
-                  ? { enabled: live, press: press(clock, () => player.askHelp()) }
-                  : null,
-              refused: state.helpRefused,
-            },
-            next: state.phase === "feedback" ? { press: press(clock, () => player.next()) } : null,
-            progress: progressOf(state),
-          }}
-        />
-      </StepFrame>
+      <QuestionCredit credit={creditShown(question.credit, shownIn)} language={shownIn}>
+        <StepFrame key={question.seq} stepId={spec.id} lessonLanguage={player.lessonLanguage}>
+          <FamilyView
+            // A new question is a new view: nothing typed or placed carries over.
+            key={question.seq}
+            mode={ViewMode.Play}
+            spec={spec as never}
+            language={language}
+            category={CATEGORY}
+            clock={clock}
+            live={live}
+            attemptNo={state.attemptNo}
+            feedback={state.feedback}
+            workedSolution={state.workedSolution}
+            onCommit={(c) => player.commit(c.value, c.t1)}
+            around={{
+              checking: state.phase === "sending",
+              moveOn: {
+                enabled: live,
+                press: press(clock, (at) => {
+                  if (live) player.skip(at);
+                }),
+              },
+              ladder: {
+                help: withMedia(state.help),
+                ask:
+                  state.help === null || state.help.more
+                    ? { enabled: live, press: press(clock, () => player.askHelp()) }
+                    : null,
+                refused: state.helpRefused,
+              },
+              next:
+                state.phase === "feedback" ? { press: press(clock, () => player.next()) } : null,
+              progress: progressOf(state),
+            }}
+          />
+        </StepFrame>
+      </QuestionCredit>
     </LessonFrame.Provider>
   );
 }

@@ -807,7 +807,12 @@ export function ChatPane({
         ref={list}
         aria-label={say("chat_messages")}
         data-chat-list
-        className={cn("flex flex-1 flex-col gap-3 overflow-y-auto", parent && "-mx-3 px-3")}
+        // relative: the list is its sr-only lines' containing block, so on a long turn they stay
+        // inside its clip rather than stretching the page below the window (steward on #778).
+        className={cn(
+          "relative flex flex-1 flex-col gap-3 overflow-y-auto",
+          parent && "-mx-3 px-3",
+        )}
         onScroll={(e) => {
           const list = e.currentTarget;
           atBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 48;

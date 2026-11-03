@@ -48,7 +48,7 @@ export { GRAPH_KINDS } from "./parts/graph.ts";
 export { HelpLadder } from "./parts/HelpLadder.tsx";
 export { LessonTheme } from "./parts/LessonTheme.tsx";
 export { PictureView } from "./parts/PictureSheet.tsx";
-export { QuestionCredit } from "./parts/QuestionCredit.tsx";
+export { type CreditShown, QuestionCredit } from "./parts/QuestionCredit.tsx";
 export { RichText } from "./parts/RichText.tsx";
 export type { LessonProgress } from "./parts/StepShell.tsx";
 export { LessonFrame, StepShell } from "./parts/StepShell.tsx";

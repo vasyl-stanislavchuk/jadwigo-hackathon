@@ -37,6 +37,7 @@ export type {
   Converter,
   ConvertRefusal,
 } from "./run/attachments.ts";
+export { lessonValidationIssue } from "./run/lesson-validation.ts";
 export {
   type AcceptMessage,
   acceptMessage,

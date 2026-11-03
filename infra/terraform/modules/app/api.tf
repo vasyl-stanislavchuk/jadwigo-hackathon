@@ -60,7 +60,9 @@ data "aws_iam_policy_document" "api" {
   source_policy_documents = [
     data.aws_iam_policy_document.bank.json,
     data.aws_iam_policy_document.runner.json,
+    data.aws_iam_policy_document.print.json,
     data.aws_iam_policy_document.uploads.json,
+    data.aws_iam_policy_document.prints.json,
     data.aws_iam_policy_document.mail.json,
   ]
 
@@ -84,6 +86,19 @@ data "aws_iam_policy_document" "runner" {
     for_each = var.runner_alias_arn == "" ? [] : [var.runner_alias_arn]
     content {
       sid       = "InvokesTheStepHostLiveAlias"
+      actions   = ["lambda:InvokeFunction"]
+      resources = [statement.value]
+    }
+  }
+}
+
+# Invoke the print Lambda, and only it, when one is named (dl-1eieq.8.3): the print route starts a
+# render with InvocationType Event and answers at once (decision dl-o05aa). With none, no statement.
+data "aws_iam_policy_document" "print" {
+  dynamic "statement" {
+    for_each = var.print_function_arn == "" ? [] : [var.print_function_arn]
+    content {
+      sid       = "InvokesThePrintLambda"
       actions   = ["lambda:InvokeFunction"]
       resources = [statement.value]
     }
@@ -129,6 +144,8 @@ resource "aws_lambda_function" "api" {
       },
       # The step host the routes poke (dl-z5ja.88); absent, they poke nothing.
       var.runner_alias_arn == "" ? {} : { RUNNER_LIVE_ALIAS_ARN = var.runner_alias_arn },
+      # The print Lambda the print route invokes (dl-1eieq.8.3); absent, the route has none.
+      var.print_function_arn == "" ? {} : { PRINT_FUNCTION = var.print_function_arn },
       # The bucket a message's photos go to (dl-z5ja.11.2); absent, the photo routes have none.
       var.uploads_bucket_name == "" ? {} : { UPLOADS_BUCKET = var.uploads_bucket_name },
       # The Send Email Hook's secrets (dl-liwi.33); absent, the hook's path answers NotFound.

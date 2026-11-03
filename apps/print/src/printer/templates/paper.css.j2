@@ -1,0 +1,186 @@
+{#- The paper stylesheet. Every size comes from geometry.py through `geom`; no number is written
+    here, so the page, the figures and the golden test move together. No CSS var(), as in DOP: the
+    values are rendered in. -#}
+{% set g = geom %}
+@font-face { font-family: "{{ g.FONT_FAMILY }}"; font-weight: 400; src: url("fonts/andika-latin-400-normal.woff2"); }
+@font-face { font-family: "{{ g.FONT_FAMILY }}"; font-weight: 700; src: url("fonts/andika-latin-700-normal.woff2"); }
+{#- Andika's Polish letters (ą ć ę ł ń ś ź ż) are in the latin-ext file. WeasyPrint does not
+    combine two faces of one family by unicode-range, so the second is its own family, next in
+    every font list. -#}
+@font-face { font-family: "{{ g.FONT_FAMILY }} Ext"; font-weight: 400; src: url("fonts/andika-latin-ext-400-normal.woff2"); }
+@font-face { font-family: "{{ g.FONT_FAMILY }} Ext"; font-weight: 700; src: url("fonts/andika-latin-ext-700-normal.woff2"); }
+{% set FONTS = '"' ~ g.FONT_FAMILY ~ '", "' ~ g.FONT_FAMILY ~ ' Ext", "DejaVu Sans", sans-serif' %}
+
+@page {
+  size: {{ g.PAGE_W_MM|mm }} {{ g.PAGE_H_MM|mm }};
+  margin: {{ g.MARGIN_MM|mm }} {{ g.MARGIN_MM|mm }} {{ (g.MARGIN_MM + g.FOOTER_H_MM)|mm }} {{ g.MARGIN_MM|mm }};
+  @bottom-left {
+    content: "{{ sheet.labels.brand|css_str }} · " string(title);
+    font-size: {{ g.FOOTER_PT }}pt; font-family: {{ FONTS }}; color: {{ g.GREY }};
+    vertical-align: top; padding-top: {{ (g.FOOTER_H_MM / 3)|mm }};
+  }
+  @bottom-right {
+    content: "{{ sheet.labels.page|css_str }} " counter(page) " {{ sheet.labels.page_of|css_str }} " counter(pages) "      {{ sheet.labels.next|css_str }} " url("next.svg");
+    font-size: {{ g.FOOTER_PT }}pt; font-family: {{ FONTS }}; color: {{ g.GREY }};
+    vertical-align: top; padding-top: {{ (g.FOOTER_H_MM / 3)|mm }};
+  }
+}
+{% if last_page %}
+@page :nth({{ last_page }}) {
+  @bottom-right { content: "{{ sheet.labels.page|css_str }} " counter(page) " {{ sheet.labels.page_of|css_str }} " counter(pages); }
+}
+{% endif %}
+
+html { font-family: {{ FONTS }}; font-size: {{ g.BODY_PT }}pt;
+  line-height: {{ g.LINE_HEIGHT }}; color: {{ g.INK }}; }
+body { margin: 0; }
+h1 { string-set: title content(); }
+svg text { font-family: {{ FONTS }}; }
+
+/* --- Page 1's header --- */
+.head h1 { font-size: {{ g.TITLE_PT }}pt; font-weight: 700; margin: 0; line-height: 1.1; }
+.head p { margin: 0; line-height: 1.3; }
+.head .who { margin-top: {{ g.SPACE_XS_MM|mm }}; }
+.head .who span { display: inline-block; width: {{ g.NAME_LINE_W_MM|mm }}; border-bottom: {{ g.STROKE_MM|mm }} solid {{ g.INK }}; margin-right: {{ g.SPACE_XXL_MM|mm }}; }
+.head .legend { font-size: {{ g.SMALL_PT }}pt; color: {{ g.INK }}; margin: {{ g.SPACE_XS_MM|mm }} 0 {{ g.SPACE_M_MM|mm }}; }
+.head .legend .mark { margin-right: {{ g.SPACE_L_MM|mm }}; white-space: nowrap; }
+.head .legend svg { width: {{ (g.ICON_MM * 0.7)|mm }}; height: {{ (g.ICON_MM * 0.7)|mm }}; vertical-align: middle; margin-right: {{ g.SPACE_XS_MM|mm }}; }
+
+/* --- Rows and cards: one question = one card, never split --- */
+.row { break-inside: avoid; padding-bottom: {{ g.CARD_GAP_MM|mm }}; }
+.row.break { break-before: page; }
+.cards.pair { display: flex; gap: {{ g.CARD_GAP_MM|mm }}; align-items: stretch; }
+.cards.pair > .card { width: {{ g.HALF_W_MM|mm }}; }
+.card { break-inside: avoid; border: {{ g.CARD_BORDER_MM|mm }} solid {{ g.CARD_BORDER }};
+  border-radius: {{ g.CARD_RADIUS_MM|mm }}; padding: {{ g.CARD_PAD_MM|mm }}; box-sizing: border-box; position: relative; }
+.mark-end { height: 0; }
+.card .top { display: flex; align-items: flex-start; gap: {{ g.SPACE_S_MM|mm }}; }
+.badge { flex: none; width: {{ g.BADGE_MM|mm }}; height: {{ g.BADGE_MM|mm }}; border-radius: 50%; background: {{ g.INK }};
+  color: #fff; font-size: {{ g.NUMBER_PT }}pt; font-weight: 700; text-align: center; line-height: {{ g.BADGE_MM|mm }}; }
+.icon { flex: none; width: {{ g.ICON_MM|mm }}; height: {{ g.ICON_MM|mm }}; margin-top: {{ ((g.BADGE_MM - g.ICON_MM) / 2)|mm }}; }
+.say { flex: 1; padding-top: {{ ((g.BADGE_MM - g.BODY_PT * g.LINE_HEIGHT / g.PT_PER_MM) / 2)|mm }}; }
+.say .many { color: {{ g.GREY }}; }
+.body { margin-top: {{ g.SPACE_S_MM|mm }}; }
+.body > * + * { margin-top: {{ g.SPACE_S_MM|mm }}; }
+.card .top { min-height: {{ g.BADGE_MM|mm }}; }
+.credit { font-size: {{ g.CREDIT_PT }}pt; color: {{ g.GREY }}; text-align: right; line-height: 1.2;
+  margin-top: {{ (g.CARD_PAD_MM / 2)|mm }}; }
+.card p { margin: 0; }
+.stem-pictures { display: flex; flex-wrap: wrap; gap: {{ g.SPACE_M_MM|mm }}; }
+.stem-pictures img, img.picture { max-width: {{ g.PICTURE_MAX_W_MM|mm }}; max-height: {{ g.PICTURE_MAX_H_MM|mm }}; }
+.reference { border: {{ g.STROKE_MM|mm }} dashed {{ g.GREY }}; border-radius: {{ (g.CARD_RADIUS_MM / 2)|mm }}; padding: {{ g.SPACE_S_MM|mm }} {{ g.SPACE_M_MM|mm }};
+  font-size: {{ g.SMALL_PT }}pt; }
+.reference b { display: block; }
+.terminal { font-family: "DejaVu Sans Mono", monospace; font-size: {{ g.SMALL_PT }}pt; border: {{ g.STROKE_MM|mm }} solid {{ g.INK }};
+  padding: {{ g.SPACE_S_MM|mm }} {{ g.SPACE_M_MM|mm }}; white-space: pre-wrap; line-height: 1.3; }
+.figure { text-align: center; font-size: {{ g.FIGURE_PT }}pt; }
+.figure svg { overflow: visible; }
+
+/* --- Answer places --- */
+.box { display: inline-block; vertical-align: middle; width: {{ g.NUMBER_BOX_W_MM|mm }}; height: {{ g.NUMBER_BOX_H_MM|mm }};
+  border: {{ (g.STROKE_MM * 1.5)|mm }} solid {{ g.INK }}; border-radius: {{ g.SPACE_XS_MM|mm }}; box-sizing: border-box; background: #fff; }
+.box.digit { width: {{ g.DIGIT_BOX_W_MM|mm }}; }
+.frac-box { display: inline-block; vertical-align: middle; text-align: center; }
+.frac-box .box { display: block; width: {{ g.DIGIT_BOX_W_MM|mm }}; height: {{ g.ANSWER_MIN_H_MM|mm }}; margin: 0 auto; }
+.frac-box .bar { display: block; width: {{ (g.DIGIT_BOX_W_MM + 4)|mm }}; border-top: {{ (g.STROKE_MM * 1.5)|mm }} solid {{ g.INK }}; margin: {{ g.SPACE_XS_MM|mm }} 0; }
+.write-line { display: inline-block; vertical-align: bottom; width: {{ g.WRITE_LINE_W_MM|mm }}; height: {{ g.WRITE_LINE_H_MM|mm }};
+  border-top: {{ g.STROKE_MM|mm }} solid {{ g.GREY }}; border-bottom: {{ (g.STROKE_MM * 1.5)|mm }} solid {{ g.INK }};
+  background-image: linear-gradient({{ g.GREY }}, {{ g.GREY }}); background-size: 100% {{ (g.STROKE_MM / 2)|mm }};
+  background-position: 0 50%; background-repeat: no-repeat; box-sizing: border-box; }
+.beside { display: flex; align-items: center; gap: {{ g.CARD_PAD_MM|mm }}; }
+.beside p { margin: 0; }
+.answer { font-size: {{ g.FIGURE_PT }}pt; }
+.answer-line { display: flex; align-items: center; gap: {{ g.SPACE_S_MM|mm }}; flex-wrap: wrap; font-size: {{ g.FIGURE_PT }}pt; }
+
+/* choose */
+.pills { display: flex; gap: {{ g.PILL_GAP_MM|mm }}; justify-content: center; }
+.pill { width: {{ g.PILL_W_MM|mm }}; height: {{ g.PILL_H_MM|mm }}; line-height: {{ g.PILL_H_MM|mm }}; text-align: center;
+  border: {{ (g.STROKE_MM * 1.5)|mm }} solid {{ g.INK }}; border-radius: {{ (g.PILL_H_MM / 2)|mm }}; font-size: {{ g.FIGURE_PT }}pt; font-weight: 700; }
+.options { display: flex; flex-wrap: wrap; gap: {{ g.SPACE_L_MM|mm }} {{ g.SPACE_XL_MM|mm }}; align-items: flex-end; }
+.options.column { flex-direction: column; align-items: flex-start; gap: {{ g.SPACE_S_MM|mm }}; }
+.option { white-space: nowrap; display: flex; align-items: center; gap: {{ g.SPACE_S_MM|mm }}; font-size: {{ g.FIGURE_PT }}pt; }
+.option.framed { flex-direction: column; gap: {{ g.SPACE_XS_MM|mm }}; }
+.frame { min-width: {{ g.OPTION_FRAME_MM|mm }}; min-height: {{ g.OPTION_FRAME_MM|mm }}; padding: {{ g.SPACE_S_MM|mm }}; box-sizing: border-box;
+  border: {{ g.STROKE_MM|mm }} solid {{ g.CARD_BORDER }}; border-radius: {{ (g.CARD_RADIUS_MM / 2)|mm }};
+  display: flex; align-items: center; justify-content: center; text-align: center; }
+.frame img { max-width: {{ g.OPTION_PICTURE_W_MM|mm }}; max-height: {{ g.OPTION_PICTURE_H_MM|mm }}; }
+.letter { flex: none; display: inline-block; width: {{ g.LETTER_MM|mm }}; height: {{ g.LETTER_MM|mm }}; line-height: {{ g.LETTER_MM|mm }};
+  border: {{ g.STROKE_MM|mm }} solid {{ g.INK }}; border-radius: 50%; text-align: center; font-size: {{ g.SMALL_PT }}pt; font-weight: 700; }
+.option.framed .letter { border: none; height: auto; line-height: 1.2; }
+.square { flex: none; display: inline-block; width: {{ g.LETTER_MM|mm }}; height: {{ g.LETTER_MM|mm }};
+  border: {{ (g.STROKE_MM * 1.5)|mm }} solid {{ g.INK }}; border-radius: {{ (g.SPACE_XS_MM * 0.6)|mm }}; box-sizing: border-box; }
+.tokens { display: flex; flex-wrap: wrap; gap: {{ g.SPACE_M_MM|mm }} {{ g.TOKEN_GAP_MM|mm }}; font-size: {{ g.FIGURE_PT }}pt; }
+.inline-option { text-decoration: underline; text-decoration-thickness: {{ g.STROKE_MM|mm }}; }
+.signs { display: flex; gap: {{ g.SPACE_L_MM|mm }}; align-items: center; justify-content: center; font-size: {{ g.FIGURE_PT }}pt; }
+.signs .sign { display: inline-block; width: {{ g.ANSWER_MIN_H_MM|mm }}; height: {{ g.ANSWER_MIN_H_MM|mm }}; line-height: {{ g.ANSWER_MIN_H_MM|mm }};
+  border: {{ g.STROKE_MM|mm }} solid {{ g.INK }}; border-radius: 50%; text-align: center; font-weight: 700; }
+
+/* slots */
+.template { font-size: {{ g.FIGURE_PT }}pt; line-height: 1.9; }
+.beside .template { white-space: nowrap; }
+.template .box { margin: 0 {{ g.SPACE_XS_MM|mm }}; }
+.gap-words { display: inline-block; text-align: center; vertical-align: top; line-height: 1.1; }
+.gap-words small { display: block; font-size: {{ g.SMALL_PT }}pt; color: {{ g.INK }}; }
+table.grid { border-collapse: collapse; font-size: {{ g.FIGURE_PT }}pt; }
+table.grid td, table.grid th { height: {{ g.TABLE_ROW_MM|mm }}; min-width: {{ g.TABLE_CELL_MIN_W_MM|mm }}; padding: 0 {{ g.SPACE_S_MM|mm }}; text-align: center;
+  border: {{ g.STROKE_MM|mm }} solid {{ g.GREY }}; background: {{ g.SHADE }}; }
+table.grid td.open { background: #fff; border: {{ (g.STROKE_MM * 2.5)|mm }} solid {{ g.INK }}; }
+table.grid th { font-weight: 700; }
+.labels-under { display: flex; flex-wrap: wrap; gap: {{ g.SPACE_M_MM|mm }} {{ g.SPACE_XXL_MM|mm }}; font-size: {{ g.FIGURE_PT }}pt; }
+.word-bank { font-size: {{ g.SMALL_PT }}pt; border: {{ g.STROKE_MM|mm }} dashed {{ g.GREY }}; padding: {{ g.SPACE_XS_MM|mm }} {{ g.SPACE_M_MM|mm }}; display: inline-block; }
+.picture-wrap { position: relative; display: inline-block; }
+.pin { position: absolute; width: {{ g.PIN_MM|mm }}; height: {{ g.PIN_MM|mm }}; margin: {{ (-g.PIN_MM / 2)|mm }} 0 0 {{ (-g.PIN_MM / 2)|mm }}; border-radius: 50%; background: {{ g.INK }}; color: #fff;
+  font-size: {{ g.SMALL_PT }}pt; font-weight: 700; text-align: center; line-height: {{ g.PIN_MM|mm }}; }
+
+/* sequence */
+.order { display: flex; flex-wrap: wrap; gap: {{ g.SPACE_M_MM|mm }} {{ g.SPACE_XL_MM|mm }}; font-size: {{ g.FIGURE_PT }}pt; }
+.order .item { display: flex; align-items: center; gap: {{ g.SPACE_S_MM|mm }}; border: {{ g.STROKE_MM|mm }} solid {{ g.CARD_BORDER }};
+  border-radius: {{ (g.CARD_RADIUS_MM / 2)|mm }}; padding: {{ (g.SPACE_XS_MM * 1.5)|mm }} {{ g.SPACE_M_MM|mm }} {{ (g.SPACE_XS_MM * 1.5)|mm }} {{ (g.SPACE_XS_MM * 1.5)|mm }}; }
+.order .box { width: {{ g.ORDER_BOX_MM|mm }}; height: {{ g.ORDER_BOX_MM|mm }}; }
+.ends { font-size: {{ g.SMALL_PT }}pt; color: {{ g.INK }}; }
+
+/* group: two columns joined by lines */
+table.join { border-collapse: collapse; font-size: {{ g.FIGURE_PT }}pt; }
+table.join td { height: {{ g.JOIN_ROW_MM|mm }}; padding: 0; vertical-align: middle; }
+table.join td.gapcol { width: {{ g.JOIN_GAP_MM|mm }}; }
+table.join .dot { display: inline-block; width: {{ g.JOIN_DOT_MM|mm }}; height: {{ g.JOIN_DOT_MM|mm }}; border-radius: 50%; background: {{ g.INK }};
+  vertical-align: middle; margin: 0 {{ g.SPACE_S_MM|mm }}; }
+table.join td.left { text-align: right; }
+table.join .zone { display: inline-block; border: {{ (g.STROKE_MM * 1.5)|mm }} solid {{ g.INK }}; border-radius: {{ (g.CARD_RADIUS_MM / 2)|mm }};
+  padding: {{ g.SPACE_XS_MM|mm }} {{ g.SPACE_M_MM|mm }}; font-weight: 700; }
+table.join img { max-height: {{ (g.JOIN_ROW_MM - 2)|mm }}; vertical-align: middle; }
+
+/* --- The end: "Koniec!" and the answer card --- */
+.end { break-inside: avoid; }
+.koniec { text-align: center; font-size: {{ g.TITLE_PT }}pt; font-weight: 700; margin: 0 0 {{ g.SPACE_S_MM|mm }}; line-height: 1.2; }
+.koniec svg { width: {{ g.SPACE_XXXL_MM|mm }}; height: {{ g.SPACE_XXXL_MM|mm }}; vertical-align: middle; margin-right: {{ g.SPACE_S_MM|mm }}; }
+.answer-card { border: {{ (g.CARD_BORDER_MM * 2)|mm }} solid {{ g.INK }}; border-radius: {{ g.CARD_RADIUS_MM|mm }}; padding: {{ g.CARD_PAD_MM|mm }}; }
+.answer-card h2 { font-size: {{ g.BODY_PT }}pt; margin: 0 0 {{ g.SPACE_S_MM|mm }}; }
+.answer-card h2 small { font-weight: 400; font-size: {{ g.SMALL_PT }}pt; }
+.ticks { border-collapse: collapse; }
+.ticks tr.shade td { background: {{ g.SHADE }}; }
+.ticks td { padding: {{ g.SPACE_XS_MM|mm }} {{ g.SPACE_XS_MM|mm }}; text-align: right; font-size: {{ g.SMALL_PT }}pt; font-weight: 700; white-space: nowrap; }
+.ticks .tick { display: inline-block; vertical-align: middle; width: {{ g.TICK_MM|mm }}; height: {{ g.TICK_MM|mm }}; margin-left: {{ g.SPACE_XS_MM|mm }};
+  border: {{ (g.STROKE_MM * 1.5)|mm }} solid {{ g.INK }}; background: #fff; box-sizing: border-box; }
+.credits { font-size: {{ g.CREDIT_PT }}pt; color: {{ g.GREY }}; margin-top: {{ g.CARD_PAD_MM|mm }}; line-height: 1.3; }
+.credits h3 { font-size: {{ g.CREDIT_PT }}pt; margin: 0; }
+.credits ol { margin: 0; padding-left: {{ g.SPACE_L_MM|mm }}; }
+
+/* the Alfik card, for a lesson made only of lettered_choice */
+.alfik { break-before: page; }
+.alfik .note { font-size: {{ g.SMALL_PT }}pt; }
+.alfik .examples { display: flex; gap: {{ g.SPACE_XXL_MM|mm }}; font-size: {{ g.SMALL_PT }}pt; margin: {{ g.SPACE_S_MM|mm }} 0 {{ g.SPACE_L_MM|mm }}; align-items: center; }
+.alfik .cols { display: flex; gap: {{ g.SPACE_XXXL_MM|mm }}; }
+.alfik table td { padding: {{ g.SPACE_XS_MM|mm }} {{ (g.SPACE_XS_MM * 0.8)|mm }}; font-size: {{ g.SMALL_PT }}pt; text-align: center; }
+.alfik .bubble { display: inline-block; width: {{ g.ALFIK_CIRCLE_MM|mm }}; height: {{ g.ALFIK_CIRCLE_MM|mm }}; line-height: {{ g.ALFIK_CIRCLE_MM|mm }};
+  border: {{ g.STROKE_MM|mm }} solid {{ g.INK }}; border-radius: 50%; font-size: {{ (g.SMALL_PT * 0.8) }}pt; }
+.alfik .bubble.filled { background: {{ g.INK }}; color: #fff; }
+.alfik tr.shade td { background: {{ g.SHADE }}; }
+
+/* KaTeX: the builder draws maths as KaTeX HTML; its stylesheet is linked beside this one */
+.katex { font-size: 1.05em; }
+.answer .katex { font-size: 1.6em; }
+.answer-line .katex, .template .katex, .figure .katex { font-size: 1.3em; }
+{% for role, colour in tex_colours.items() %}
+.tex-{{ role }} { color: {{ colour }}; }
+{% endfor %}
