@@ -433,6 +433,7 @@ export const COPY_KEYS = [
   "credit_title_alfik",
   "credit_label_alfik",
   "credit_not_affiliated_alfik",
+  "credit_notice_khan",
   "leave_title",
   "leave_where",
   "leave_stay",
