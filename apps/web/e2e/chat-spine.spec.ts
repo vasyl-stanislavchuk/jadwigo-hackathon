@@ -388,19 +388,9 @@ for (const size of SIZES) {
       await expect(card.locator("[data-fix]")).toBeVisible();
       await expect(chatOf(page)).not.toContainText("Lekcja gotowa");
       await expect(chatOf(page)).not.toContainText(/\b0 zadań/);
-      // The card alone: the reply under it carries the engine's line (dl-uukj.47.71.39, below).
-      await cardDeltaHolds(page, card, false);
+      await cardDeltaHolds(page, card);
       await wordsHold(page);
       await shoot(page, info, "s16-done-needs-fixing", size.name);
-    });
-
-    test("s16: no version word anywhere in the chat (dl-uukj.47.71.39)", async ({ page }) => {
-      // Red until dl-uukj.47.71.39: the engine's "…jej obecna wersja nie przeszła sprawdzenia…"
-      // is drawn as the reply. Remove this mark in the PR that fixes it.
-      test.fail();
-      await open(page, "s16", size);
-      await phase(page, "done");
-      await expect(chatOf(page)).not.toHaveText(VERSION);
     });
 
     test("s17, s18: a follow-up waits above the composer, then goes as a steer line", async ({
@@ -482,7 +472,7 @@ for (const size of SIZES) {
 }
 
 /** The card delta (dl-uukj.47.71.22): the tag alone says the state; 3 prompts at most; one shadow. */
-async function cardDeltaHolds(page: Page, card: Locator, wholeChat = true): Promise<void> {
+async function cardDeltaHolds(page: Page, card: Locator): Promise<void> {
   const prompts = card.locator("[data-card-prompt]");
   const shown = await prompts.count();
   expect(shown).toBeLessThanOrEqual(3);
@@ -501,7 +491,7 @@ async function cardDeltaHolds(page: Page, card: Locator, wholeChat = true): Prom
     return copy.textContent ?? "";
   });
   expect(words).not.toMatch(/Gotowa|Do poprawy|Zmieniam|Lekcja gotowa|Lekcja do poprawy/);
-  await expect(wholeChat ? chatOf(page) : card).not.toHaveText(VERSION);
+  await expect(chatOf(page)).not.toHaveText(VERSION);
   // Exactly one element in the chat carries the card's shadow (C1): the living card.
   await page.mouse.move(0, 0);
   const shadow = await card.evaluate((el) => getComputedStyle(el).boxShadow);
