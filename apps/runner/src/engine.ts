@@ -20,8 +20,12 @@ import type { HostDeps } from "./host.ts";
  */
 const POOL = { max: 1, connectionTimeoutMillis: 5000 } as const;
 
-/** Each invocation runs at most this many steps; the queue keeps the rest for the next. */
-const MAX_STEPS = 20;
+/**
+ * How long an invocation starts new steps: the module's 300 s timeout, less `STEP_VISIBILITY_S`, the
+ * longest a healthy step takes. A run's steps then go on without waiting for the next minute's
+ * schedule (dl-hin8.33). This does not bound a run: its budget and deadlines do.
+ */
+const MAX_DRAIN_MS = 240_000;
 
 /**
  * The engine on Postgres as `jadwigo_runner`: the store sets `app.pod_id` per unit after
@@ -70,7 +74,7 @@ export function postgresEngineHost(
   };
   return {
     engine,
-    max_steps: MAX_STEPS,
+    max_drain_ms: MAX_DRAIN_MS,
     stuck: () => queue.stuck(),
     dead_letters: async () => (await queue.deadLetters()).length,
     warn,

@@ -57,7 +57,7 @@ async function setup(muse: EngineDeps["muse"] = new ProbeMuse()) {
   const warnings: string[] = [];
   const deps = (more: Partial<HostDeps> = {}): HostDeps => ({
     engine,
-    max_steps: 20,
+    max_drain_ms: 240_000,
     warn: (line) => warnings.push(line),
     ...more,
   });
@@ -133,10 +133,13 @@ describe("the step host", () => {
     expect(tries).toBe(2);
   });
 
-  it("stops at max_steps and leaves the rest queued for the next invoke", async () => {
+  it("stops starting steps at its time limit and leaves the rest queued for the next invoke", async () => {
     const t = await setup();
     await t.say("one");
-    const host = createHost(() => Promise.resolve(t.deps({ max_steps: 1 })), fakeMeter());
+    // Each look at the clock is a minute on, so the 2nd look is past the 90 s limit.
+    let wall = 0;
+    const minutes: Meter = { wall: () => (wall += 60_000), cpu: () => 0 };
+    const host = createHost(() => Promise.resolve(t.deps({ max_drain_ms: 90_000 })), minutes);
 
     expect((await host()).outcomes).toEqual(["continue"]);
     expect((await host()).outcomes).toEqual(["turn_complete"]);
