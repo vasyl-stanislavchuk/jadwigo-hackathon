@@ -78,7 +78,7 @@ describe("the lesson-ready card (dl-uukj.47.58)", () => {
     expect(shown?.querySelector("[data-card-title]")?.textContent).toBe("Równe grupy");
     expect(shown?.querySelector("[data-card-facts]")?.textContent).toMatch(/zada.* · Wersja 2/);
     expect(shown?.querySelector("[data-card-first]")?.textContent).toMatch(/^Na początek: /);
-    fireEvent.click(screen.getByRole("button", { name: "Otwórz lekcję: Równe grupy" }));
+    fireEvent.click(screen.getByRole("button", { name: "Podgląd lekcji: Równe grupy" }));
     expect(onOpen).toHaveBeenCalledWith(LESSON);
   });
 

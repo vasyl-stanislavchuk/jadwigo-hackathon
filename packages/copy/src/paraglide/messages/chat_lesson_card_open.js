@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Open" |
+* | "Preview" |
 *
 * @param {Chat_Lesson_Card_OpenInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const chat_lesson_card_open = /** @type {((inputs?: Chat_Lesson_Card_OpenInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Chat_Lesson_Card_OpenInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Open")
-	return /** @type {LocalizedString} */ ("Otwórz")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Preview")
+	return /** @type {LocalizedString} */ ("Podgląd")
 });

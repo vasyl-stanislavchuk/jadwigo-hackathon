@@ -88,16 +88,17 @@ test("the sidebar is 232 px, folds to a 60 px rail, and stays folded after a rel
   await expect.poll(async () => Math.round((await box(page, "#parent-sidebar")).width)).toBe(232);
 });
 
-// The lesson workspace (dl-uukj.47.5; design review 2026-11-02): the chat alone at first, no
-// details and no footer; "Pokaż lekcję" in the top bar opens the lesson beside a 360 px chat.
-test("the workspace: the chat alone, then the lesson beside a 360 px chat", async ({ page }) => {
+// The lesson workspace (dl-uukj.47.5; dl-1eieq.1): the chat alone on every screen, no details, no
+// footer, no lesson column and no "Pokaż lekcję"; the lesson opens in a preview from the chat.
+test("the workspace: the chat alone, with no lesson column and no Pokaż lekcję", async ({
+  page,
+}) => {
   await signIn(page);
   await page.goto(`/parent/lessons/${await ownConversation(page)}`);
   await expect(page.locator("[data-workspace]")).toBeVisible();
-  await expect(page.locator("#parent-lesson")).toBeHidden();
+  await expect(page.locator("[data-chat-body]")).toBeVisible();
+  await expect(page.locator("[data-lesson-column]")).toHaveCount(0);
   await expect(page.locator("#parent-details")).toHaveCount(0);
   await expect(page.locator("[data-lesson-footer]")).toHaveCount(0);
-  await page.getByRole("button", { name: "Pokaż lekcję" }).click();
-  await expect(page.locator("#parent-lesson")).toBeVisible();
-  await expect.poll(async () => Math.round((await box(page, "#parent-chat")).width)).toBe(360);
+  await expect(page.getByRole("button", { name: "Pokaż lekcję" })).toHaveCount(0);
 });
