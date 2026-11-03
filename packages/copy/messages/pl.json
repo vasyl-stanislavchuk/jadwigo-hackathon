@@ -801,7 +801,6 @@
   "chat_restoring": "Przywracanie rozmowy…",
   "chat_new": "Nowa rozmowa",
   "chat_lesson_empty": "Tu pojawi się lekcja.",
-  "chat_lesson_revision": "Wersja {n}",
   "chat_lesson_unreadable": "Tej wersji lekcji nie da się jeszcze pokazać.",
   "chat_lesson_step_hidden": "Kroku {step} nie da się jeszcze pokazać.",
   "chat_object_lesson": "Lekcja",
@@ -813,21 +812,8 @@
   "chat_object_not_here": "Tego nie da się jeszcze tu pokazać.",
   "chat_learner_open": "Szczegóły: {name}",
   "chat_learner_open_page": "Strona dziecka: {name}",
-  "chat_lesson_card": "Lekcja gotowa",
   "chat_lesson_card_open": "Podgląd",
   "chat_lesson_card_open_named": "Podgląd lekcji: {title}",
-  "chat_lesson_card_steps": [
-    {
-      "declarations": ["input n", "local q_noun = n: plural"],
-      "selectors": ["q_noun"],
-      "match": {
-        "q_noun=one": "{n} zadanie",
-        "q_noun=few": "{n} zadania",
-        "q_noun=many": "{n} zadań",
-        "q_noun=other": "{n} zadania"
-      }
-    }
-  ],
   "chat_citations_why": "Dlaczego?",
   "chat_citation_nth": "{title} {n}",
   "chat_tool_count": [
@@ -867,8 +853,6 @@
   "chat_steered_edit": "Twoja zmiana w lekcji",
   "chat_lesson_step": "Krok {step}",
   "chat_lesson_changed": "Lekcja się zmieniła",
-  "chat_revision_by_ai": "Zmiana od Jadwigo AI",
-  "chat_undo": "Cofnij",
   "chat_undone": "Cofnięte do wersji {n}",
   "chat_edit_sent": "Twoja zmiana trafiła do Jadwigo AI.",
   "chat_newer_wins": "Twoja wersja jest nowsza, więc zostaje. Jadwigo AI o tym wie.",
@@ -995,10 +979,6 @@
   "parent_grade": "Klasa",
   "parent_cancel": "Anuluj",
   "parent_lesson_soon": "Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała.",
-  "chat_edit_words": "Co ten krok mówi dziecku",
-  "chat_edit_saved": "Twoja zmiana jest już w lekcji.",
-  "chat_edit_saving": "Zapisywanie Twojej zmiany w lekcji…",
-  "chat_edit_not_applied": "Tej zmiany nie udało się wprowadzić: lekcja zmieniła się w międzyczasie albo zmiana jej nie pasuje. Twój tekst jest poniżej.",
   "chat_phase_connecting": "Łączenie…",
   "chat_phase_queued": "W kolejce",
   "chat_phase_thinking": "Myślenie…",
@@ -1264,9 +1244,6 @@
   "parent_step_source": "Skąd to zadanie",
   "parent_source_bank": "Bank zadań Jadwigo",
   "parent_source_authored": "Napisane przez Jadwigo AI",
-  "parent_step_move_up": "Przenieś wyżej",
-  "parent_step_move_down": "Przenieś niżej",
-  "parent_step_drop": "Usuń",
   "parent_print": "Drukuj",
   "parent_print_preparing": "Przygotowuję kartkę…",
   "parent_print_failed": "Nie udało się przygotować kartki. Spróbuj jeszcze raz.",

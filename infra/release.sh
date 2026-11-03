@@ -6,10 +6,12 @@
 #      whether the runner would deploy (runner-deploy's path filter), and Supabase Auth's drift
 #      from infra/supabase-auth/prod.json (auth.sh diff prod: shown only, never applied here)
 #   3. one question: type prod
-#   4. the release, without stopping: migrations, jadwigo_api's login, the seed, the saved plan,
-#      the api, a health check, the runner (runner-deploy, then runner-status: every release
+#   4. the release, without stopping: migrations, jadwigo_api's login, the saved plan, the api,
+#      a health check, the runner (runner-deploy, then runner-status: every release
 #      deploys it too, decision bead dl-hmvzn), the web, the site and the docs, prod-status again,
 #      and last one engine-smoke turn on prod through the live runner (one paid Muse call)
+# It never seeds (dl-5ssh.34.80): a featured lesson reaches prod only by the owner's
+# make lesson-import ENV=prod FEATURED=1, and make db-seed ENV=prod is for a fresh prod only.
 # It stops before the question when the plan destroys or replaces anything: apply that by hand
 # (make -C infra plan apply). Every step is safe to rerun, so after a failure run it again.
 set -eu
@@ -111,7 +113,7 @@ case $auth_rc in
 esac
 
 say "3/4 one question"
-printf 'Release %s to prod: %s migration(s), terraform %s, the seed, then api, runner (%s), web, site and docs, and one engine-smoke turn. Type prod to go on: ' \
+printf 'Release %s to prod: %s migration(s), terraform %s, then api, runner (%s), web, site and docs, and one engine-smoke turn. Type prod to go on: ' \
   "$(git rev-parse --short HEAD)" "$migrations" "$tf" "$runner"
 read -r answer
 [ "$answer" = prod ] || die "nothing done on prod"
@@ -120,7 +122,6 @@ export JW_RELEASE_CONFIRMED=prod
 say "4/4 release"
 if [ "$migrations" -gt 0 ]; then make -s db-push ENV=prod; else echo "migrations: none to push"; fi
 make -s db-role ENV=prod
-make -s db-seed ENV=prod
 if [ "$tf" = changes ]; then AWS_PROFILE=$PROFILE $TF apply -input=false "$plan"; fi
 make -s -C infra api-deploy
 code=000
