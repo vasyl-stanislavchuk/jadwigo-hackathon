@@ -1352,6 +1352,32 @@
   "chat_line_mistakes": "Sprawdziłam, co sprawiło trudność",
   "chat_line_topics": "Przejrzałam tematy z podstawy programowej",
   "chat_line_ideas": "Zebrałam pomysły na lekcje",
+  "chat_week_title": "Tydzień {name}",
+  "chat_week_meta": [
+    {
+      "declarations": ["input from", "input to", "input n", "local lessons_noun = n: plural"],
+      "selectors": ["lessons_noun"],
+      "match": {
+        "lessons_noun=one": "{from} – {to} · {n} lekcja",
+        "lessons_noun=few": "{from} – {to} · {n} lekcje",
+        "lessons_noun=many": "{from} – {to} · {n} lekcji",
+        "lessons_noun=other": "{from} – {to} · {n} lekcji"
+      }
+    }
+  ],
+  "chat_show_all": "Pokaż wszystkie ({n})",
+  "chat_week_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
   "chat_line_draft": [
     {
       "declarations": ["input n", "input topic", "local q_noun = n: plural"],

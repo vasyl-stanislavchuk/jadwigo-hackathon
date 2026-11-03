@@ -1306,6 +1306,28 @@
   "chat_line_mistakes": "Looked at what was tricky",
   "chat_line_topics": "Looked at the curriculum topics",
   "chat_line_ideas": "Gathered lesson ideas",
+  "chat_week_title": "{name}'s week",
+  "chat_week_meta": [
+    {
+      "declarations": ["input from", "input to", "input n", "local lessons_noun = n: plural"],
+      "selectors": ["lessons_noun"],
+      "match": {
+        "lessons_noun=one": "{from} – {to} · {n} lesson",
+        "lessons_noun=other": "{from} – {to} · {n} lessons"
+      }
+    }
+  ],
+  "chat_show_all": "Show all ({n})",
+  "chat_week_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} question",
+        "q_noun=other": "{n} questions"
+      }
+    }
+  ],
   "chat_line_draft": [
     {
       "declarations": ["input n", "input topic", "local q_noun = n: plural"],
