@@ -740,6 +740,23 @@ describe("runStep and drain", () => {
     expect(t.muse.calls).toHaveLength(3);
   });
 
+  it("takes the tools away at 40 tool calls, and ignores a call the model still names (dl-hin8.38)", async () => {
+    const show = { calls: [{ verb: "lesson_show" as const }] };
+    const t = await setup(
+      [...Array.from({ length: 40 }, () => show), show, { text: "Here is what I have so far." }],
+      fakeVerbs(),
+    );
+    const run = await t.say("Go.");
+    for (let i = 0; i < 5; i++) await drain(t.deps);
+
+    const log = await t.log(run);
+    expect(log.filter((e) => e.type === "tool_result")).toHaveLength(40);
+    expect(t.muse.calls[39]?.tools.length).toBeGreaterThan(0);
+    expect(t.muse.calls[39]?.instructions).not.toContain("all the tool calls");
+    expect(t.muse.calls[40]?.tools).toEqual([]);
+    expect(t.muse.calls[40]?.instructions).toContain("all the tool calls");
+  });
+
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
     // lesson_check names the run's draft, known once the parent has spoken.
     const check: Record<string, unknown> = { help: {}, names: [] };

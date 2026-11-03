@@ -135,6 +135,14 @@ const PROMPT_CACHE_KEY = `${WORKFLOW}:5`;
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
  */
 const DEFAULT_TIER: ModelTier = "contributor";
+/**
+ * The tool calls a turn may make before its tools go away and the model must close (owner's number,
+ * dl-hin8.38). At today's prices the budget stops a looping turn only after thousands of calls, so
+ * without this only the 30 minute deadline would, with a parent waiting.
+ */
+const MAX_TOOL_CALLS = 40;
+const OUT_OF_CALLS =
+  "You have used all the tool calls this turn may make. Answer the parent now, with no tools: say what the lesson holds and what is not finished. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -590,6 +598,8 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
+    const outOfCalls = w.log.filter((e) => e.type === "tool_result").length >= MAX_TOOL_CALLS;
+    if (outOfCalls) instructions.push(OUT_OF_CALLS);
     instructions.push(...prior.edits);
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer, w.log));
     const page = pageOf(w.log);
@@ -639,9 +649,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         tier: asked,
         instructions: instructions.join("\n\n"),
         input: [...prior.input, ...museInput(w.log, files.parts)],
-        tools: Object.values(deps.verbs).map((verb) => verb.tool),
+        tools: outOfCalls ? [] : Object.values(deps.verbs).map((verb) => verb.tool),
         names: await namesOf(deps.store, scope),
       });
+      // With no tools offered, a call it still names cannot run.
+      if (outOfCalls) response = { ...response, tool_calls: [] };
     } catch (error) {
       // A failed call writes no model_response, so the tier it went to is told here (dl-z5ja.103).
       if (error instanceof MuseFailed && error.tier !== null) downgraded(error.tier);
