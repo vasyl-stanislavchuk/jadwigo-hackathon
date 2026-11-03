@@ -1725,11 +1725,15 @@ export interface FailedStep extends RunStepInput {
  *
  * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
  * log it by run id (dl-z5ja.82); it stays in the queue either way.
+ *
+ * `keep_going` is asked before each read, so a host with a time limit stops between steps and never
+ * inside one (dl-hin8.33). What it leaves stays queued for the next drain.
  */
 export async function drain(
   deps: EngineDeps,
   options: {
     max_steps?: number;
+    keep_going?: () => boolean;
     onError?: (error: unknown, step: FailedStep) => void;
     /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
     onRead?: (run_id: RunId) => void;
@@ -1738,6 +1742,7 @@ export async function drain(
   const max = options.max_steps ?? 100;
   const outputs: RunStepOutput[] = [];
   for (let reads = 0; reads < max; reads++) {
+    if (options.keep_going?.() === false) break;
     const [queued] = await deps.queue.read(STEP_VISIBILITY_S, 1);
     if (!queued) break;
     options.onRead?.(queued.message.run_id);
