@@ -517,6 +517,11 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
       : e,
   );
   const ASSIGNMENT = "asg_00000000000000000000000001";
+  // The newest revision the happy turn wrote: what the card shows, and so what Daj lekcję gives.
+  const SHOWN_REVISION = checked.reduce(
+    (latest, e) => (e.type === "lesson_revision" ? e.payload.revision : latest),
+    0,
+  );
 
   let workspace: (forLearner: LearnerId | null) => ReactElement;
 
@@ -553,7 +558,7 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
     const giveLesson = vi.fn(async () => ({ assignment: { id: ASSIGNMENT } }));
     await giving(giveLesson);
     expect(giveLesson).toHaveBeenCalledWith(CONVERSATION, {
-      revision: expect.any(Number),
+      revision: SHOWN_REVISION,
       learner_id: ola.id,
     });
     expect(document.querySelector("[data-given]")?.textContent).toContain("Lekcja czeka na: Ola.");
@@ -565,7 +570,7 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
   it("with no child gives a link anyone may play, and stays in the chat", async () => {
     const giveLesson = vi.fn(async () => ({ assignment: { id: ASSIGNMENT } }));
     await giving(giveLesson, null);
-    expect(giveLesson).toHaveBeenCalledWith(CONVERSATION, { revision: expect.any(Number) });
+    expect(giveLesson).toHaveBeenCalledWith(CONVERSATION, { revision: SHOWN_REVISION });
     expect(screen.getByRole("link", { name: "Otwórz lekcję" }).getAttribute("href")).toBe(
       `/play/${ASSIGNMENT}`,
     );
@@ -577,6 +582,20 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
     const { rerender } = await giving(giveLesson);
     expect(document.querySelector("[data-given]")).not.toBeNull();
     await act(async () => rerender(workspace(null)));
+    expect(document.querySelector("[data-given]")).toBeNull();
+  });
+
+  it("ignores a reply still on its way once the Dla child changed", async () => {
+    let answer: (value: unknown) => void = () => {};
+    const giveLesson = vi.fn(
+      () =>
+        new Promise((resolve) => {
+          answer = resolve;
+        }),
+    );
+    const { rerender } = await giving(giveLesson);
+    await act(async () => rerender(workspace(null)));
+    await act(async () => answer({ assignment: { id: ASSIGNMENT } }));
     expect(document.querySelector("[data-given]")).toBeNull();
   });
 

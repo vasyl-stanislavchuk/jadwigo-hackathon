@@ -57,17 +57,49 @@ test("'To nie ja' and a typed name start that player's own attempt, not the chil
   await expect(page.getByText("Ola").first()).toBeVisible();
 });
 
-test("a link with no child asks for a name, and 'Zagraj bez imienia' starts with neither", async ({
+test("a lesson given to no child plays under a typed name to the results and offers the save", async ({
   page,
 }) => {
-  const path = await giveLesson(page, LESSON);
+  const path = await giveLesson(page, LESSON, { toChild: false });
   const assignment = path.match(/\/play\/([^?]+)/)?.[1] ?? "";
   const guest = await guestOf(page);
-  await guest.goto(`/play/${assignment}`);
+  await guest.goto(path);
+  await expect(guest.locator("[data-intro-yes]")).toHaveCount(0);
+  await expect(guest.locator("[data-intro-not-me]")).toHaveCount(0);
+  const started = guest.waitForResponse((r) =>
+    r.url().endsWith(`/assignments/${assignment}/attempts`),
+  );
+  await guest.locator("[data-intro-name]").fill("Ola");
+  await guest.locator("[data-intro-start]").click();
+  expect((await started).request().postDataJSON()).toEqual({ player_name: "Ola" });
+  for (const [sum, value] of [
+    ["7 + 5", "12"],
+    ["8 + 6", "14"],
+    ["9 + 4", "13"],
+    ["6 + 6", "12"],
+  ] as const) {
+    await expect(guest.locator("[data-step-shell]").getByText(sum).first()).toBeVisible();
+    await guest.locator("[data-field]").first().click();
+    await guest.keyboard.type(value);
+    await guest.locator("[data-check]").click();
+    await guest.locator("[data-next]").click();
+  }
+  await expect(guest.locator("[data-results]")).toBeVisible();
+  await expect(guest.locator("[data-save-link]")).toHaveAttribute("href", /claim=/);
+  await guest.context().close();
+});
+
+test("a lesson given to no child starts with neither on 'Zagraj bez imienia'", async ({ page }) => {
+  const path = await giveLesson(page, LESSON, { toChild: false });
+  const assignment = path.match(/\/play\/([^?]+)/)?.[1] ?? "";
+  const guest = await guestOf(page);
+  await guest.goto(path);
   const started = guest.waitForResponse((r) =>
     r.url().endsWith(`/assignments/${assignment}/attempts`),
   );
   await guest.locator("[data-intro-anonymous]").click();
-  expect((await started).request().postDataJSON()).toEqual({});
+  const start = await started;
+  expect(start.status()).toBe(201);
+  expect(start.request().postDataJSON()).toEqual({});
   await guest.context().close();
 });

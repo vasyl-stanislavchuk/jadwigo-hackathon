@@ -10,7 +10,7 @@
  *              (LessonPrint), once the lesson's latest check passed: an unchecked sheet could reach
  *              a child on paper (steward, #747)
  *   Daj lekcję / Daj lekcję · {imię}   the one primary. Until it can give, it is quiet with its
- *              reason as a tooltip (DS S5, `DisabledReason`), never `disabled`. With a child it gives
+ *              reason as a tooltip (DS S5, `DisabledReason`), never `disabled`. It gives
  *              the lesson (POST /api/v1/conversations/{id}/lessons), to that child or to nobody in
  *              particular, and shows its one link to copy or open (decision
  *              2026-11-03-a-play-link-opens-on-a-first-screen-title-and-question-count-the).
