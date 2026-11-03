@@ -2,7 +2,7 @@
 /**
  * The choose form (dl-uukj.47.35) over plan-and-cite's approval, which carries a choose form: it
  * takes the composer's place while the turn waits on it, the recommended option first and marked,
- * a number key picks, "Pomiń pytanie" skips, the parent may answer in their own words, the answer
+ * a number key picks, "Pomiń pytanie" or Esc skips, it looks as the chat handoff draws it (§4.5), the parent may answer in their own words, the answer
  * goes to onAnswer (a stand-in until dl-uukj.47.48), the recap stays in the thread, and the composer
  * comes back with the focus.
  */
@@ -11,7 +11,7 @@ import { type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatPane } from "./ChatPane.tsx";
 import type { ChooseAnswers } from "./ChooseForm.tsx";
 import type { Turn } from "./conversation.ts";
@@ -95,7 +95,41 @@ describe("the choose form", () => {
     await act(async () => fireEvent.keyDown(own, { key: "1" }));
     expect(given).toEqual([]);
     await act(async () => fireEvent.change(own, { target: { value: "3, ale krótkie" } }));
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Odpowiedz" })));
+    await act(async () => fireEvent.submit(own.form as HTMLFormElement));
     expect(given).toEqual([["3, ale krótkie"]]);
+  });
+
+  it("looks as the handoff draws it (§4.5): Jadwigo pyta, option cards with their key, polecane muted", () => {
+    pane();
+    expect(form()?.textContent).toContain("Jadwigo pyta");
+    const first = form()?.querySelector("[data-option='1']") as HTMLElement;
+    expect(first.tagName).toBe("BUTTON");
+    expect(first.className).not.toMatch(/bg-selected/);
+    expect(first.querySelector("[aria-hidden]")?.textContent).toBe("1");
+    expect(screen.getByRole("textbox", { name: "Albo napisz własnymi słowami…" })).toBeTruthy();
+  });
+
+  it("skips with Esc, and the Esc is not the turn's Stop", async () => {
+    const given: ChooseAnswers[] = [];
+    const onStop = vi.fn();
+    render(
+      <ChatPane
+        language="pl"
+        variant="parent"
+        turns={[waiting()]}
+        queued={[]}
+        restoring={false}
+        stopping={false}
+        sendFailed={false}
+        onSend={() => {}}
+        onStop={onStop}
+        onChoose={(_call, answers) => given.push(answers)}
+      />,
+    );
+    await act(async () =>
+      fireEvent.keyDown(document.activeElement as HTMLElement, { key: "Escape" }),
+    );
+    expect(given).toEqual([[null]]);
+    expect(onStop).not.toHaveBeenCalled();
   });
 });

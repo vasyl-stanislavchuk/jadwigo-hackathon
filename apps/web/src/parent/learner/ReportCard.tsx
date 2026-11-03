@@ -5,6 +5,9 @@
  * proposals with Accept and Dismiss, and the asks. A proposal changes nothing until the parent
  * accepts it; once decided its buttons give way to the decision. The narrative restates only the
  * digest's numbers and names no level; a report not yet written up says so.
+ *
+ * Adult (dl-uukj.47.67): Przyjmij is secondary, since the page's one primary is its new lesson, and
+ * no button goes dead while a decision saves (S5): a press then is ignored by `decide`.
  */
 
 import type {
@@ -75,16 +78,16 @@ export function ReportCard({
   return (
     <section className="flex w-full flex-col gap-3" data-report={report.id}>
       {title}
-      <Card size="compact">
+      <Card size="compact" className="shadow-none">
         <CardContent className="items-start gap-3">
-          <span className="text-jw-small text-jw-ink-soft" data-period>
+          <span className="text-jw-page-small text-jw-ink-soft" data-period>
             {period}
           </span>
           {narrative === null ? (
             <p data-not-written>{line("parent_report_not_written")}</p>
           ) : (
             <>
-              <p className="font-bold break-words" data-headline>
+              <p className="font-semibold break-words" data-headline>
                 {narrative.headline}
               </p>
               <p className="break-words" data-direction>
@@ -115,14 +118,14 @@ export function ReportCard({
                           data-proposal={proposal.proposal_id}
                           data-decision={decision ?? "open"}
                         >
-                          <span className="font-bold break-words">{proposal.claim}</span>
+                          <span className="font-semibold break-words">{proposal.claim}</span>
                           <span className="break-words">{proposal.rationale}</span>
                           {decision === undefined ? (
                             <div className="flex flex-wrap gap-3">
                               <Button
                                 type="button"
+                                variant="secondary"
                                 size="control"
-                                disabled={busy !== null}
                                 onClick={() => decide(proposal.proposal_id, "accepted")}
                                 data-accept
                               >
@@ -132,7 +135,6 @@ export function ReportCard({
                                 type="button"
                                 variant="outline"
                                 size="control"
-                                disabled={busy !== null}
                                 onClick={() => decide(proposal.proposal_id, "dismissed")}
                                 data-dismiss
                               >
@@ -160,7 +162,7 @@ export function ReportCard({
                   <ul className="flex flex-col gap-2">
                     {narrative.asks.map((ask) => (
                       <li key={ask.ask} className="flex flex-col gap-1" data-ask>
-                        <span className="font-bold break-words">{ask.ask}</span>
+                        <span className="font-semibold break-words">{ask.ask}</span>
                         <span className="break-words text-jw-ink-soft">{ask.why}</span>
                       </li>
                     ))}
@@ -179,7 +181,7 @@ export function ReportCard({
 function Part({ title, children }: { title: string; children: ReactNode }): ReactElement {
   return (
     <div className="flex w-full min-w-0 flex-col gap-2">
-      <span className="font-bold">{title}</span>
+      <span className="font-semibold">{title}</span>
       {children}
     </div>
   );

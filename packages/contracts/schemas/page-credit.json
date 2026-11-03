@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "source": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "licence": {
+      "type": "string",
+      "minLength": 1
+    },
+    "original_lang": {
+      "$ref": "#/$defs/Language"
+    },
+    "adapted": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "source",
+    "ref",
+    "licence",
+    "original_lang",
+    "adapted"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Language": {
+      "type": "string",
+      "enum": [
+        "pl",
+        "en"
+      ]
+    }
+  }
+}

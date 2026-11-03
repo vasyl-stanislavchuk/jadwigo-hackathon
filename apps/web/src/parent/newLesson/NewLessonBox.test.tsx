@@ -1,15 +1,17 @@
 // @vitest-environment happy-dom
 /**
  * The first screen (dl-uukj.47.2, decision dl-xo0q): the question and one box with the caret in it;
- * "Zrób lekcję" quiet with its reason until there are words; Enter sends, Shift+Enter does not;
- * Dla defaults to "Bez dziecka" and lists each child, then "Dodaj dziecko…". Photos (dl-z5ja.11.16)
+ * "Zrób lekcję" aria-disabled with its reason on focus until there are words; Enter sends,
+ * Shift+Enter does not; Dla (the kit's Combobox, dl-uukj.47.67 §6.5) defaults to "Bez dziecka", lists
+ * each child with the class, moves by ↑ ↓ and a typed letter, picks with Enter, closes on Esc, and ends
+ * with "Dodaj dziecko…", which gives the focus back to Dla. Photos (dl-z5ja.11.16)
  * upload as they are picked, pasted or dropped and show as chips; the send waits for every upload,
  * a failed one holds it until retried, and the send carries the attachment ids. The uploads run on
  * upload.ts's fakes (fakes.test-helpers.ts): no network, no real photo.
  */
 
 import { AttachmentId, ID_PREFIXES, idOf, type Learner, LearnerId } from "@jadwigo/contracts";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   fileOf,
@@ -17,10 +19,23 @@ import {
   harness,
   settle,
 } from "../../chat/attachments/fakes.test-helpers.ts";
+import { forgetSent, releaseSent, sentPreview } from "../../chat/attachments/sentPreviews.ts";
 import { NewLessonBox } from "./NewLessonBox.tsx";
 
 const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
-const ola = { id: OLA, first_name: "Ola", school_grade: null } as unknown as Learner;
+const ola = {
+  id: OLA,
+  first_name: "Ola",
+  school_grade: 2,
+  created_at: "2026-10-01T08:00:00.000Z",
+} as unknown as Learner;
+const TYMEK = LearnerId.parse("lrn_7qre3atahx8cpak6xbjtz73var");
+const tymek = {
+  id: TYMEK,
+  first_name: "Tymek",
+  school_grade: null,
+  created_at: "2026-10-02T08:00:00.000Z",
+} as unknown as Learner;
 
 beforeEach(() => window.sessionStorage.clear());
 afterEach(cleanup);
@@ -41,6 +56,12 @@ function box(changes: Partial<Parameters<typeof NewLessonBox>[0]> = {}) {
 
 const field = () => screen.getByRole("textbox", { name: "Opisz zadanie domowe" });
 const send = () => screen.getByRole("button", { name: /Zrób lekcję/ });
+const dla = () => screen.getByRole("combobox", { name: "Dla" });
+/** The words the send button is described by: its reason while it can't send. */
+const sendReason = () => {
+  const id = send().getAttribute("aria-describedby");
+  return id === null ? null : (document.getElementById(id)?.textContent ?? null);
+};
 
 describe("the first screen's draft (dl-uukj.47.24)", () => {
   it("keeps the words and Dla across an unmount and a remount", () => {
@@ -56,11 +77,7 @@ describe("the first screen's draft (dl-uukj.47.24)", () => {
   it("keeps the child a page names (?for) over the tab's Dla", () => {
     box({ forLearner: OLA });
     cleanup();
-    const tymek = LearnerId.parse("lrn_7qre3atahx8cpak6xbjtz73var");
-    const props = box({
-      learners: [ola, { ...ola, id: tymek, first_name: "Tymek" } as Learner],
-      forLearner: tymek,
-    });
+    const props = box({ learners: [ola, tymek], forLearner: TYMEK });
     expect(props.onForChange).not.toHaveBeenCalled();
   });
 
@@ -97,17 +114,20 @@ describe("the first screen", () => {
     expect(screen.queryByText("Dodaj zdjęcie")).toBeNull();
   });
 
-  it("keeps Zrób lekcję quiet with its reason until there are words, and never sends empty", () => {
+  it("keeps Zrób lekcję disabled with its reason, on focus too, until there are words", async () => {
     const props = box();
     expect(send().getAttribute("aria-disabled")).toBe("true");
-    const reason = screen.getByText("Najpierw opisz zadanie albo dodaj zdjęcie");
-    expect(send().getAttribute("aria-describedby")).toBe(reason.id);
+    expect(sendReason()).toBe("Napisz, czego ma się uczyć.");
+    // Still focusable, and the reason opens on focus (S5).
+    act(() => send().focus());
+    expect(document.activeElement).toBe(send());
+    expect((await screen.findByRole("tooltip")).textContent).toBe("Napisz, czego ma się uczyć.");
     fireEvent.click(send());
     expect(props.onSend).not.toHaveBeenCalled();
 
     fireEvent.change(field(), { target: { value: "Odejmowanie przez 10" } });
     expect(send().getAttribute("aria-disabled")).toBe("false");
-    expect(screen.queryByText("Najpierw opisz zadanie albo dodaj zdjęcie")).toBeNull();
+    expect(sendReason()).toBeNull();
     expect(document.querySelector("[data-new-lesson]")?.hasAttribute("data-ready")).toBe(true);
   });
 
@@ -120,32 +140,60 @@ describe("the first screen", () => {
     expect(props.onSend).toHaveBeenCalledWith({ text: "15 − 7", attachmentIds: [], learner: OLA });
   });
 
-  it("says Dla: Bez dziecka, lists each child, and ends the menu with Dodaj dziecko…", async () => {
-    const props = box();
-    const dla = document.querySelector("[data-dla]") as HTMLElement;
-    expect(dla.textContent).toContain("Dla:");
-    expect(dla.textContent).toContain("Bez dziecka");
-    await act(async () => fireEvent.click(dla));
-    const menu = screen.getByRole("menu", { name: "Dla:" });
-    const options = within(menu).getAllByRole("menuitemradio");
-    expect(options.map((o) => [o.textContent, o.getAttribute("aria-checked")])).toEqual([
+  it("Dla: Bez dziecka first, each child with the class; ↑ ↓, a typed letter and Enter pick; Esc closes", async () => {
+    const props = box({ learners: [ola, tymek] });
+    expect(dla().textContent).toContain("Dla");
+    expect(dla().textContent).toContain("Bez dziecka");
+    act(() => dla().focus());
+    fireEvent.keyDown(dla(), { key: "ArrowDown" });
+    const list = await screen.findByRole("listbox", { name: "Dla" });
+    const options = within(list).getAllByRole("option");
+    expect(options.map((o) => [o.textContent, o.getAttribute("aria-selected")])).toEqual([
       ["Bez dziecka", "true"],
-      ["Ola", "false"],
+      // The disc's initial (hidden from a screen reader), the name, then the class.
+      ["OOlaklasa 2", "false"],
+      ["TTymek", "false"],
     ]);
-    await act(async () => fireEvent.click(options[1] as HTMLElement));
+    await waitFor(() => expect(document.activeElement).toBe(options[0]));
+    fireEvent.keyDown(document.activeElement as Element, { key: "ArrowDown" });
+    expect(document.activeElement).toBe(options[1]);
+    fireEvent.keyDown(document.activeElement as Element, { key: "t" });
+    expect(document.activeElement).toBe(options[2]);
+    fireEvent.keyDown(document.activeElement as Element, { key: "ArrowUp" });
+    fireEvent.keyDown(document.activeElement as Element, { key: "Enter" });
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
     expect(props.onForChange).toHaveBeenCalledWith(OLA);
+    expect(document.activeElement).toBe(dla());
 
-    await act(async () => fireEvent.click(dla));
-    const add = within(screen.getByRole("menu")).getByRole("menuitem");
-    expect(add.textContent).toContain("Dodaj dziecko…");
-    expect(add.textContent).toContain("Imię i klasa.");
-    await act(async () => fireEvent.click(add));
-    expect(props.onAddChild).toHaveBeenCalledOnce();
+    await act(async () => fireEvent.click(dla()));
+    await screen.findByRole("listbox");
+    fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+    expect(document.activeElement).toBe(dla());
+    expect(props.onForChange).toHaveBeenCalledOnce();
+  });
+
+  it("ends Dla with Dodaj dziecko…, which gives the focus back to Dla before the dialog opens", async () => {
+    let focusedAtAdd: Element | null = null;
+    const props = box({
+      onAddChild: vi.fn(() => {
+        focusedAtAdd = document.activeElement;
+      }),
+    });
+    await act(async () => fireEvent.click(dla()));
+    await screen.findByRole("listbox");
+    fireEvent.keyDown(document.activeElement as Element, { key: "End" });
+    const add = screen.getByRole("button", { name: /Dodaj dziecko…/ });
+    expect(document.activeElement).toBe(add);
+    expect(add.textContent).toContain("Imię i klasa, nic więcej.");
+    fireEvent.click(add);
+    await waitFor(() => expect(props.onAddChild).toHaveBeenCalledOnce());
+    expect(focusedAtAdd).toBe(dla());
   });
 
   it("shows the chosen child in Dla", () => {
     box({ forLearner: OLA });
-    expect(document.querySelector("[data-dla]")?.textContent).toContain("Ola");
+    expect(dla().textContent).toContain("Ola");
   });
 });
 
@@ -159,12 +207,13 @@ describe("the first screen's photos (dl-z5ja.11.16)", () => {
   let fake: Harness;
   beforeEach(() => {
     fake = harness();
+    // A test that sent and unmounted handed its photo to the thread's registry: start from none.
+    forgetSent(() => {});
   });
   const withPhotos = (changes: Partial<Parameters<typeof NewLessonBox>[0]> = {}) =>
     box({ photos: true, uploadDeps: fake.deps, ...changes });
   const photo = () => fileOf("zadanie.png", "image/png");
   const chips = () => [...document.querySelectorAll("[data-attachments] [data-chip]")];
-  const sendReason = () => document.querySelector("[data-send-reason]")?.textContent ?? null;
   const pick = async (file: File) => {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     await act(async () => {
@@ -201,6 +250,35 @@ describe("the first screen's photos (dl-z5ja.11.16)", () => {
       attachmentIds: [photoId(1)],
       learner: null,
     });
+  });
+
+  it("keeps the photo on its chip when a send does not start, and hands it to the thread once the screen goes (dl-z5ja.11.6)", async () => {
+    const view = withPhotos();
+    await pick(photo());
+    await answer(0, 204);
+    const preview = () => document.querySelector("[data-chip] img")?.getAttribute("src");
+    const shown = preview();
+    expect(shown).toBeTruthy();
+    fireEvent.click(send());
+    expect(view.onSend).toHaveBeenCalledTimes(1);
+    // The send failed to start (no conversation made): the box stays, and so does the photo.
+    expect(preview()).toBe(shown);
+    expect(sentPreview(photoId(1))).toBeNull();
+    // The screen goes once the lesson has started: the thread now holds the local copy, unrevoked.
+    cleanup();
+    expect(sentPreview(photoId(1))).toBe(shown);
+    expect(fake.revoked).not.toContain(shown);
+    releaseSent(photoId(1));
+  });
+
+  it("revokes the photos of a box that goes without a send", async () => {
+    withPhotos();
+    await pick(photo());
+    await answer(0, 204);
+    const shown = document.querySelector("[data-chip] img")?.getAttribute("src");
+    cleanup();
+    expect(sentPreview(photoId(1))).toBeNull();
+    expect(fake.revoked).toContain(shown);
   });
 
   it("uploads a pasted photo and a dropped one, each as its own chip", async () => {

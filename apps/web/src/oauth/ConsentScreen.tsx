@@ -20,6 +20,7 @@
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { Button, Heading, Notice, Page, Spinner } from "@jadwigo/ui";
 import type { AuthOAuthServerApi } from "@supabase/supabase-js";
+import { CircleAlert } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import { CATEGORY } from "../parent/adult.ts";
 import { type Auth, browserAuth, browserOAuth, type RedirectOutcome } from "../parent/auth.ts";
@@ -50,7 +51,8 @@ const RETURN_LINE: Record<RedirectOutcome, CopyKey | null> = {
 
 function ConsentPage({ children }: { children: ReactNode }): ReactElement {
   return (
-    <Page width="prose" data-parent data-oauth-consent>
+    // Signed out and asked once: the sign-in scale, the prose column at 640 (handoff §3, §12.1).
+    <Page width="prose" className="max-w-160" data-parent data-size="signin" data-oauth-consent>
       {children}
     </Page>
   );
@@ -178,7 +180,7 @@ export function ConsentScreen({
   if (view.kind === "failed")
     return (
       <ConsentPage>
-        <Notice role="alert" data-consent-failed>
+        <Notice role="alert" icon={<CircleAlert aria-hidden="true" />} data-consent-failed>
           {copy(language, "oauth_failed", {}, CATEGORY)}
         </Notice>
       </ConsentPage>
@@ -223,20 +225,21 @@ export function ConsentScreen({
       <Notice data-consent-data>{copy(language, "oauth_data", { app }, CATEGORY)}</Notice>
       <p data-consent-as>
         {copy(language, "oauth_as", { email }, CATEGORY)}{" "}
-        <button
+        <Button
           type="button"
-          className="font-bold text-jw-ink underline underline-offset-4 focus-visible:outline-3 focus-visible:outline-jw-focus"
+          variant="link"
+          className="min-h-0 min-w-0 p-0"
           disabled={busy}
           onClick={signOut}
           data-consent-not-you
         >
           {copy(language, "oauth_not_you", {}, CATEGORY)}
-        </button>
+        </Button>
       </p>
-      <div className="flex w-full flex-col gap-3">
+      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          size="control"
+          size="lg"
           disabled={busy}
           onClick={() => decide(true)}
           data-consent-approve
@@ -245,7 +248,7 @@ export function ConsentScreen({
         </Button>
         <Button
           type="button"
-          size="control"
+          size="lg"
           variant="outline"
           disabled={busy}
           onClick={() => decide(false)}

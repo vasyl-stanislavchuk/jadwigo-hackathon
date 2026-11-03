@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Name and class. Jadwigo will start following what they can do." |
+* | "First name and class, nothing more." |
 *
 * @param {Parent_Add_Child_HintInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

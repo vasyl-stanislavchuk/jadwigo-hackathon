@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "For:" |
+* | "For" |
 *
 * @param {Parent_ForInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const parent_for = /** @type {((inputs?: Parent_ForInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_ForInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("For:")
-	return /** @type {LocalizedString} */ ("Dla:")
+	if (locale === "en") return /** @type {LocalizedString} */ ("For")
+	return /** @type {LocalizedString} */ ("Dla")
 });

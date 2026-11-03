@@ -4,10 +4,13 @@
 // trigger. The close cross is a kid-sized ghost Button whose name the caller passes from copy;
 // without a closeLabel it draws none. Colours are the theme's popover names. The overlay forwards
 // its ref: Radix's portal hands it one, and on React 18 a plain function component cannot take it
-// (dl-uukj.47.26).
+// (dl-uukj.47.26). On an app page it is the adult's (handoff dl-uukj.47.67 §6.10): the dialog shadow,
+// a bottom sheet's corners 8, a title 16/600, and a close the control's size; a lesson's keeps its
+// look.
 import { XIcon } from "lucide-react";
 import { Dialog as SheetPrimitive } from "radix-ui";
 import * as React from "react";
+import { usePortalAudience } from "../lib/audience.ts";
 import { useDensity } from "../lib/register.tsx";
 import { cn } from "../lib/utils.ts";
 import { Button } from "./button.tsx";
@@ -50,15 +53,21 @@ function SheetContent({
 }): JSX.Element {
   // A portal leaves the density's subtree, so the content carries it again (lib/register.tsx).
   const density = useDensity();
+  const audience = usePortalAudience();
+  const adult = audience === "adult";
   return (
     <SheetPrimitive.Portal>
       <SheetOverlay />
       <SheetPrimitive.Content
         data-slot="sheet-content"
         data-density={density}
+        data-audience={audience}
         data-side={side}
         className={cn(
-          "fixed z-50 flex flex-col gap-4 overflow-y-auto border-border bg-popover text-base text-popover-foreground shadow-lg outline-none data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:max-h-[85dvh] data-[side=bottom]:rounded-t-2xl data-[side=bottom]:border-t-jw data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:w-3/4 data-[side=left]:border-r-jw data-[side=left]:sm:max-w-sm data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:w-3/4 data-[side=right]:border-l-jw data-[side=right]:sm:max-w-sm data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:max-h-[85dvh] data-[side=top]:rounded-b-2xl data-[side=top]:border-b-jw",
+          "fixed z-50 flex flex-col gap-4 overflow-y-auto border-border bg-popover text-base text-popover-foreground outline-none data-[side=bottom]:inset-x-0 data-[side=bottom]:bottom-0 data-[side=bottom]:max-h-[85dvh] data-[side=bottom]:rounded-t-2xl data-[side=bottom]:border-t-jw data-[side=left]:inset-y-0 data-[side=left]:left-0 data-[side=left]:w-3/4 data-[side=left]:border-r-jw data-[side=left]:sm:max-w-sm data-[side=right]:inset-y-0 data-[side=right]:right-0 data-[side=right]:w-3/4 data-[side=right]:border-l-jw data-[side=right]:sm:max-w-sm data-[side=top]:inset-x-0 data-[side=top]:top-0 data-[side=top]:max-h-[85dvh] data-[side=top]:rounded-b-2xl data-[side=top]:border-b-jw",
+          adult
+            ? "shadow-dialog data-[side=bottom]:rounded-t-md data-[side=top]:rounded-b-md"
+            : "shadow-lg",
           className,
         )}
         {...props}
@@ -66,7 +75,11 @@ function SheetContent({
         {children}
         {closeLabel !== undefined && (
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
-            <Button variant="ghost" size="icon" className="absolute top-2 right-2">
+            <Button
+              variant="ghost"
+              size={adult ? "control" : "icon"}
+              className={cn("absolute top-2 right-2", adult && "px-0")}
+            >
               <XIcon aria-hidden="true" />
               <span className="sr-only">{closeLabel}</span>
             </Button>
@@ -101,10 +114,15 @@ function SheetTitle({
   className,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Title>): JSX.Element {
+  const adult = usePortalAudience() === "adult";
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn("text-xl font-semibold text-foreground", className)}
+      className={cn(
+        adult ? "text-jw-page-h2" : "text-xl",
+        "font-semibold text-foreground",
+        className,
+      )}
       {...props}
     />
   );
@@ -114,10 +132,11 @@ function SheetDescription({
   className,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Description>): JSX.Element {
+  const adult = usePortalAudience() === "adult";
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
-      className={cn("text-base text-muted-foreground", className)}
+      className={cn(adult ? "text-jw-page-small" : "text-base", "text-muted-foreground", className)}
       {...props}
     />
   );

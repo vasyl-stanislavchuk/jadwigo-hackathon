@@ -10,10 +10,12 @@
  *   └──────────────┴───────────────────────────────────┘
  *     232, folds to 60
  *
- * The top bar holds the breadcrumb and, in its right corner, the account (the language and
- * signing out). The sidebar's foot holds the fold button only. On a phone the sidebar is a drawer, opened by the one control the bar has there, on
- * its left. The sidebar's fold is remembered per device (fold.ts). Everything inside draws in the
- * parent's density.
+ * On the adult kit (dl-uukj.47.67 §8, §9): the sidebar on the stone fill, the top bar holding the
+ * breadcrumb and, in its right corner, the account menu (the page's language and signing out,
+ * S10). The sidebar's foot holds the fold button only. On a phone the sidebar is a drawer from the
+ * left, opened by the bar's burger, with the account at its foot. N, pressed outside a field, opens
+ * a new lesson (D8). The sidebar's fold is remembered per device (fold.ts). Everything inside
+ * draws in the parent's density, the toasts included (bottom right, @jadwigo/ui's Toaster).
  */
 
 import type { Learner } from "@jadwigo/contracts";
@@ -27,13 +29,29 @@ import {
   Sheet,
   SheetContent,
   SheetTitle,
+  Toaster,
 } from "@jadwigo/ui";
 import { MenuIcon } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 import { navigate, useLocation } from "../../nav/location.ts";
-import { CATEGORY } from "../adult.ts";
+import { CATEGORY, pageLang } from "../adult.ts";
+import { parentPath } from "../route.ts";
 import { usePanel } from "./fold.ts";
-import { Account, FoldButton, LogoRow, type Place, SidebarBody, SidebarRail } from "./Sidebar.tsx";
+import {
+  Account,
+  FoldButton,
+  LogoRow,
+  NEW_LESSON_KEY,
+  type Place,
+  SidebarBody,
+  SidebarRail,
+} from "./Sidebar.tsx";
+
+/** Whether a key press belongs to what holds the focus: a field, a menu or a dialog. */
+const ownsKeys = (target: EventTarget | null): boolean =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable ||
+    target.closest("input, textarea, select, [role=dialog], [role=menu], [role=listbox]") !== null);
 
 const SIDEBAR_ID = "parent-sidebar";
 
@@ -75,6 +93,19 @@ export function ParentShell({
     if (path !== "") setDrawer(false);
   }, [path]);
 
+  // N opens a new lesson from anywhere a key press is not someone else's (D8).
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent): void => {
+      if (event.key.toUpperCase() !== NEW_LESSON_KEY || event.repeat || event.defaultPrevented)
+        return;
+      if (event.metaKey || event.ctrlKey || event.altKey || ownsKeys(event.target)) return;
+      event.preventDefault();
+      navigate(parentPath({ lang: pageLang() }));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
     <DensityScope
       value="parent"
@@ -84,7 +115,7 @@ export function ParentShell({
         id={SIDEBAR_ID}
         data-sidebar={open ? "open" : "folded"}
         className={cn(
-          "hidden shrink-0 flex-col border-r-jw border-jw-line bg-jw-ground transition-[width] duration-jw-band ease-jw-out lg:flex",
+          "hidden shrink-0 flex-col border-r-jw border-jw-line bg-jw-side transition-[width] duration-jw-band ease-jw-out lg:flex",
           open ? "w-jw-shell-side" : "w-jw-shell-rail",
         )}
       >
@@ -126,7 +157,7 @@ export function ParentShell({
               aria-label={t("parent_menu_open")}
               aria-expanded={drawer}
               onClick={() => setDrawer(true)}
-              className="grid min-h-jw-control min-w-jw-control place-items-center rounded-jw-small text-jw-ink-soft hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus lg:hidden"
+              className="grid size-10 place-items-center rounded-jw-small text-jw-ink-soft hover:bg-jw-act-quiet focus-visible:outline-3 focus-visible:outline-jw-focus lg:hidden"
               data-menu-open
             >
               <MenuIcon aria-hidden className="size-4.5" />
@@ -134,13 +165,16 @@ export function ParentShell({
             <SheetContent
               side="left"
               closeLabel={t("parent_menu_close")}
-              className="w-jw-shell-side gap-0 bg-jw-ground p-0"
+              className="w-jw-shell-side gap-0 bg-jw-side p-0"
               aria-describedby={undefined}
               data-drawer
             >
               <SheetTitle className="sr-only">{t("parent_nav_label")}</SheetTitle>
               <LogoRow language={language} folded={false} />
-              <SidebarBody {...sidebar} />
+              <SidebarBody
+                {...sidebar}
+                foot={<Account language={language} onSignOut={onSignOut} />}
+              />
             </SheetContent>
           </Sheet>
           {barLead}
@@ -151,13 +185,17 @@ export function ParentShell({
           />
           <div className="ml-auto flex shrink-0 items-center gap-2">
             {barEnd}
-            <Account language={language} onSignOut={onSignOut} />
+            <div className="hidden lg:flex">
+              <Account language={language} onSignOut={onSignOut} />
+            </div>
           </div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto" data-shell-page>
           {children}
         </div>
       </div>
+      {/* The toasts' one place on every signed-in page (showToast; handoff dl-uukj.47.71 §4.6). */}
+      <Toaster label={t("parent_toasts_label")} />
     </DensityScope>
   );
 }

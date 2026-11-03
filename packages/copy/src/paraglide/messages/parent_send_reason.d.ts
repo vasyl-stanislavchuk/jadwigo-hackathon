@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Describe the homework or add a photo first" |
+* | "Write what they should learn." |
 *
 * @param {Parent_Send_ReasonInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

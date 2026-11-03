@@ -90,7 +90,13 @@ describe("the neutral playground", () => {
       .replace(/\/\*[\s\S]*?\*\//g, "")
       .split(",")
       .map((x) => x.trim());
-    expect(selectors).toEqual([":root", ":host", "[theme]", "[data-lesson-theme]"]);
+    expect(selectors).toEqual([
+      ":root",
+      ":host",
+      "[theme]",
+      "[data-lesson-theme]",
+      '[data-audience="kid"]',
+    ]);
   });
 
   // Zeszyt's aliases at :root set the lesson's font, its 16 px corners, no shadows and its slower

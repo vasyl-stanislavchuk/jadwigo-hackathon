@@ -1,0 +1,752 @@
+{
+  "name": "failed-turn",
+  "about": "The brief's screen 50 (dl-uukj.47.71): a failed question_types call the agent gets past, a search, then lesson_draft times out twice (StepTimedOut, attempts 1 and 2, retryable) and fails for good (StepFailed, attempt 3). The plan's stage fails and the turn ends failed.",
+  "events": [
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 1,
+      "event_id": "00000000-0000-4000-8022-000000000001",
+      "type": "message",
+      "payload": {
+        "from": "parent",
+        "text": "Dodawanie do 10, 3 pytania, pierwsza klasa"
+      },
+      "created_at": "2026-09-01T10:00:02.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 2,
+      "event_id": "00000000-0000-4000-8022-000000000002",
+      "type": "status",
+      "payload": {
+        "status": "in_progress"
+      },
+      "created_at": "2026-09-01T10:00:04.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 3,
+      "event_id": "00000000-0000-4000-8022-000000000003",
+      "type": "plan",
+      "payload": {
+        "entries": [
+          {
+            "text": "Szukanie zadań w banku",
+            "status": "in_progress"
+          },
+          {
+            "text": "Układanie lekcji",
+            "status": "pending"
+          },
+          {
+            "text": "Sprawdzanie lekcji",
+            "status": "pending"
+          }
+        ]
+      },
+      "created_at": "2026-09-01T10:00:06.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 4,
+      "event_id": "00000000-0000-4000-8022-000000000004",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_1",
+        "call_no": 1,
+        "text": null,
+        "tool_calls": [
+          {
+            "call_id": "call_1",
+            "verb": "question_types",
+            "input": {
+              "grade": "1",
+              "language": "pl"
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 1200,
+          "output_tokens": 60,
+          "cached_tokens": 0
+        },
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
+      },
+      "created_at": "2026-09-01T10:00:08.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 5,
+      "event_id": "00000000-0000-4000-8022-000000000005",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.02,
+        "cap_usd": 1
+      },
+      "created_at": "2026-09-01T10:00:10.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 6,
+      "event_id": "00000000-0000-4000-8022-000000000006",
+      "type": "tool_call",
+      "payload": {
+        "call_id": "call_1",
+        "verb": "question_types",
+        "input": {
+          "grade": "1",
+          "language": "pl"
+        }
+      },
+      "created_at": "2026-09-01T10:00:12.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 7,
+      "event_id": "00000000-0000-4000-8022-000000000007",
+      "type": "tool_result",
+      "payload": {
+        "call_id": "call_1",
+        "verb": "question_types",
+        "output": null,
+        "error": {
+          "type": "bank-busy",
+          "message": "the bank did not answer in time"
+        }
+      },
+      "created_at": "2026-09-01T10:00:14.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 8,
+      "event_id": "00000000-0000-4000-8022-000000000008",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_2",
+        "call_no": 2,
+        "text": "Spróbuję jeszcze raz.",
+        "tool_calls": [
+          {
+            "call_id": "call_2",
+            "verb": "question_types",
+            "input": {
+              "grade": "1",
+              "language": "pl"
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 1400,
+          "output_tokens": 60,
+          "cached_tokens": 800
+        },
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
+      },
+      "created_at": "2026-09-01T10:00:16.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 9,
+      "event_id": "00000000-0000-4000-8022-000000000009",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.04,
+        "cap_usd": 1
+      },
+      "created_at": "2026-09-01T10:00:18.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 10,
+      "event_id": "00000000-0000-4000-8022-00000000000a",
+      "type": "message",
+      "payload": {
+        "from": "agent",
+        "text": "Spróbuję jeszcze raz."
+      },
+      "created_at": "2026-09-01T10:00:20.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 11,
+      "event_id": "00000000-0000-4000-8022-00000000000b",
+      "type": "tool_call",
+      "payload": {
+        "call_id": "call_2",
+        "verb": "question_types",
+        "input": {
+          "grade": "1",
+          "language": "pl"
+        }
+      },
+      "created_at": "2026-09-01T10:00:22.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 12,
+      "event_id": "00000000-0000-4000-8022-00000000000c",
+      "type": "tool_result",
+      "payload": {
+        "call_id": "call_2",
+        "verb": "question_types",
+        "output": {
+          "grade": "1",
+          "language": "pl",
+          "types": [
+            {
+              "question_type": "production",
+              "family": "enter",
+              "sets": 12,
+              "ready": 40
+            },
+            {
+              "question_type": "choice",
+              "family": "pick",
+              "sets": 8,
+              "ready": 25
+            }
+          ]
+        },
+        "error": null,
+        "view": {
+          "kind": "question_types",
+          "data": {
+            "grade": "1",
+            "language": "pl",
+            "types": [
+              {
+                "question_type": "production",
+                "family": "enter",
+                "sets": 12,
+                "ready": 40
+              },
+              {
+                "question_type": "choice",
+                "family": "pick",
+                "sets": 8,
+                "ready": 25
+              }
+            ]
+          }
+        }
+      },
+      "created_at": "2026-09-01T10:00:24.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 13,
+      "event_id": "00000000-0000-4000-8022-00000000000d",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_3",
+        "call_no": 3,
+        "text": null,
+        "tool_calls": [
+          {
+            "call_id": "call_3",
+            "verb": "question_search",
+            "input": {
+              "query": "dodawanie do 10",
+              "grade": "1"
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 1600,
+          "output_tokens": 60,
+          "cached_tokens": 800
+        },
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
+      },
+      "created_at": "2026-09-01T10:00:26.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 14,
+      "event_id": "00000000-0000-4000-8022-00000000000e",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.06,
+        "cap_usd": 1
+      },
+      "created_at": "2026-09-01T10:00:28.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 15,
+      "event_id": "00000000-0000-4000-8022-00000000000f",
+      "type": "tool_call",
+      "payload": {
+        "call_id": "call_3",
+        "verb": "question_search",
+        "input": {
+          "query": "dodawanie do 10",
+          "grade": "1"
+        }
+      },
+      "created_at": "2026-09-01T10:00:30.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 16,
+      "event_id": "00000000-0000-4000-8022-000000000010",
+      "type": "tool_result",
+      "payload": {
+        "call_id": "call_3",
+        "verb": "question_search",
+        "output": {
+          "sets": [
+            {
+              "set_id": "set_demo_add10_01",
+              "title": "Dodawanie do 10",
+              "grades": ["1"],
+              "skills": ["maths.add.within-10"],
+              "questions": 6,
+              "question_types": ["production"],
+              "why_found": "dodawanie do 10"
+            },
+            {
+              "set_id": "set_demo_add10_02",
+              "title": "Ile razem?",
+              "grades": ["1"],
+              "skills": ["maths.add.within-10"],
+              "questions": 5,
+              "question_types": ["choice"],
+              "why_found": "dodawanie do 10"
+            }
+          ]
+        },
+        "error": null,
+        "view": {
+          "kind": "question_search",
+          "data": {
+            "sets": [
+              {
+                "set_id": "set_demo_add10_01",
+                "title": "Dodawanie do 10",
+                "grades": ["1"],
+                "skills": ["maths.add.within-10"],
+                "questions": 6,
+                "question_types": ["production"],
+                "why_found": "dodawanie do 10"
+              },
+              {
+                "set_id": "set_demo_add10_02",
+                "title": "Ile razem?",
+                "grades": ["1"],
+                "skills": ["maths.add.within-10"],
+                "questions": 5,
+                "question_types": ["choice"],
+                "why_found": "dodawanie do 10"
+              }
+            ]
+          }
+        }
+      },
+      "created_at": "2026-09-01T10:00:32.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 17,
+      "event_id": "00000000-0000-4000-8022-000000000011",
+      "type": "plan",
+      "payload": {
+        "entries": [
+          {
+            "text": "Szukanie zadań w banku",
+            "status": "done"
+          },
+          {
+            "text": "Układanie lekcji",
+            "status": "in_progress"
+          },
+          {
+            "text": "Sprawdzanie lekcji",
+            "status": "pending"
+          }
+        ]
+      },
+      "created_at": "2026-09-01T10:00:34.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 18,
+      "event_id": "00000000-0000-4000-8022-000000000012",
+      "type": "model_response",
+      "payload": {
+        "response_id": "resp_4",
+        "call_no": 4,
+        "text": "Układam lekcję z trzema pytaniami.",
+        "tool_calls": [
+          {
+            "call_id": "call_4",
+            "verb": "lesson_draft",
+            "input": {
+              "request": "dodawanie do 10, 3 pytania",
+              "grade": "1",
+              "names": [],
+              "topic": "dodawanie do 10"
+            }
+          }
+        ],
+        "usage": {
+          "input_tokens": 1800,
+          "output_tokens": 60,
+          "cached_tokens": 800
+        },
+        "cost_usd": 0.02,
+        "model": "scripted",
+        "tier": "private"
+      },
+      "created_at": "2026-09-01T10:00:36.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 19,
+      "event_id": "00000000-0000-4000-8022-000000000013",
+      "type": "usage",
+      "payload": {
+        "spent_usd": 0.08,
+        "cap_usd": 1
+      },
+      "created_at": "2026-09-01T10:00:38.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 20,
+      "event_id": "00000000-0000-4000-8022-000000000014",
+      "type": "message",
+      "payload": {
+        "from": "agent",
+        "text": "Układam lekcję z trzema pytaniami."
+      },
+      "created_at": "2026-09-01T10:00:40.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 21,
+      "event_id": "00000000-0000-4000-8022-000000000015",
+      "type": "tool_call",
+      "payload": {
+        "call_id": "call_4",
+        "verb": "lesson_draft",
+        "input": {
+          "request": "dodawanie do 10, 3 pytania",
+          "grade": "1",
+          "names": [],
+          "topic": "dodawanie do 10"
+        }
+      },
+      "created_at": "2026-09-01T10:00:42.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 22,
+      "event_id": "00000000-0000-4000-8022-000000000016",
+      "type": "error",
+      "payload": {
+        "error": {
+          "type": "StepTimedOut",
+          "message": "the step ran past its visibility timeout and was retried"
+        },
+        "attempt": 1,
+        "retryable": true
+      },
+      "created_at": "2026-09-01T10:00:44.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 23,
+      "event_id": "00000000-0000-4000-8022-000000000017",
+      "type": "error",
+      "payload": {
+        "error": {
+          "type": "StepTimedOut",
+          "message": "the step ran past its visibility timeout and was retried"
+        },
+        "attempt": 2,
+        "retryable": true
+      },
+      "created_at": "2026-09-01T10:00:46.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 24,
+      "event_id": "00000000-0000-4000-8022-000000000018",
+      "type": "error",
+      "payload": {
+        "error": {
+          "type": "StepFailed",
+          "message": "the step failed on every delivery the queue allows"
+        },
+        "attempt": 3,
+        "retryable": false
+      },
+      "created_at": "2026-09-01T10:00:48.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 25,
+      "event_id": "00000000-0000-4000-8022-000000000019",
+      "type": "plan",
+      "payload": {
+        "entries": [
+          {
+            "text": "Szukanie zadań w banku",
+            "status": "done"
+          },
+          {
+            "text": "Układanie lekcji",
+            "status": "failed"
+          },
+          {
+            "text": "Sprawdzanie lekcji",
+            "status": "pending"
+          }
+        ]
+      },
+      "created_at": "2026-09-01T10:00:50.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 26,
+      "event_id": "00000000-0000-4000-8022-00000000001a",
+      "type": "status",
+      "payload": {
+        "status": "failed"
+      },
+      "created_at": "2026-09-01T10:00:52.000Z"
+    },
+    {
+      "run_id": "run_00000000000000000000000001",
+      "seq": 27,
+      "event_id": "00000000-0000-4000-8022-00000000001b",
+      "type": "turn_complete",
+      "payload": {},
+      "created_at": "2026-09-01T10:00:54.000Z"
+    }
+  ],
+  "expected": {
+    "chat": [
+      {
+        "kind": "message",
+        "seq": 1,
+        "from": "parent",
+        "text": "Dodawanie do 10, 3 pytania, pierwsza klasa",
+        "attachments": []
+      },
+      {
+        "kind": "tool",
+        "seq": 6,
+        "call_id": "call_1",
+        "verb": "question_types",
+        "state": "failed",
+        "error": {
+          "type": "bank-busy",
+          "message": "the bank did not answer in time"
+        },
+        "input": {
+          "grade": "1",
+          "language": "pl"
+        },
+        "output": null
+      },
+      {
+        "kind": "message",
+        "seq": 10,
+        "from": "agent",
+        "text": "Spróbuję jeszcze raz.",
+        "attachments": []
+      },
+      {
+        "kind": "tool",
+        "seq": 11,
+        "call_id": "call_2",
+        "verb": "question_types",
+        "state": "done",
+        "error": null,
+        "input": {
+          "grade": "1",
+          "language": "pl"
+        },
+        "view": {
+          "kind": "question_types",
+          "data": {
+            "grade": "1",
+            "language": "pl",
+            "types": [
+              {
+                "question_type": "production",
+                "family": "enter",
+                "sets": 12,
+                "ready": 40
+              },
+              {
+                "question_type": "choice",
+                "family": "pick",
+                "sets": 8,
+                "ready": 25
+              }
+            ]
+          }
+        },
+        "output": {
+          "grade": "1",
+          "language": "pl",
+          "types": [
+            {
+              "question_type": "production",
+              "family": "enter",
+              "sets": 12,
+              "ready": 40
+            },
+            {
+              "question_type": "choice",
+              "family": "pick",
+              "sets": 8,
+              "ready": 25
+            }
+          ]
+        }
+      },
+      {
+        "kind": "tool",
+        "seq": 15,
+        "call_id": "call_3",
+        "verb": "question_search",
+        "state": "done",
+        "error": null,
+        "input": {
+          "query": "dodawanie do 10",
+          "grade": "1"
+        },
+        "view": {
+          "kind": "question_search",
+          "data": {
+            "sets": [
+              {
+                "set_id": "set_demo_add10_01",
+                "title": "Dodawanie do 10",
+                "grades": ["1"],
+                "skills": ["maths.add.within-10"],
+                "questions": 6,
+                "question_types": ["production"],
+                "why_found": "dodawanie do 10"
+              },
+              {
+                "set_id": "set_demo_add10_02",
+                "title": "Ile razem?",
+                "grades": ["1"],
+                "skills": ["maths.add.within-10"],
+                "questions": 5,
+                "question_types": ["choice"],
+                "why_found": "dodawanie do 10"
+              }
+            ]
+          }
+        },
+        "output": {
+          "sets": [
+            {
+              "set_id": "set_demo_add10_01",
+              "title": "Dodawanie do 10",
+              "grades": ["1"],
+              "skills": ["maths.add.within-10"],
+              "questions": 6,
+              "question_types": ["production"],
+              "why_found": "dodawanie do 10"
+            },
+            {
+              "set_id": "set_demo_add10_02",
+              "title": "Ile razem?",
+              "grades": ["1"],
+              "skills": ["maths.add.within-10"],
+              "questions": 5,
+              "question_types": ["choice"],
+              "why_found": "dodawanie do 10"
+            }
+          ]
+        }
+      },
+      {
+        "kind": "message",
+        "seq": 20,
+        "from": "agent",
+        "text": "Układam lekcję z trzema pytaniami.",
+        "attachments": []
+      },
+      {
+        "kind": "tool",
+        "seq": 21,
+        "call_id": "call_4",
+        "verb": "lesson_draft",
+        "state": "running",
+        "error": null,
+        "input": {
+          "request": "dodawanie do 10, 3 pytania",
+          "grade": "1",
+          "names": [],
+          "topic": "dodawanie do 10"
+        }
+      },
+      {
+        "kind": "error",
+        "seq": 22,
+        "error": {
+          "type": "StepTimedOut",
+          "message": "the step ran past its visibility timeout and was retried"
+        },
+        "attempt": 1,
+        "retryable": true
+      },
+      {
+        "kind": "error",
+        "seq": 23,
+        "error": {
+          "type": "StepTimedOut",
+          "message": "the step ran past its visibility timeout and was retried"
+        },
+        "attempt": 2,
+        "retryable": true
+      },
+      {
+        "kind": "error",
+        "seq": 24,
+        "error": {
+          "type": "StepFailed",
+          "message": "the step failed on every delivery the queue allows"
+        },
+        "attempt": 3,
+        "retryable": false
+      }
+    ],
+    "lesson": null,
+    "previous_lesson": null,
+    "status": "failed",
+    "turn_open": false,
+    "spent_usd": 0.08,
+    "cap_usd": 1,
+    "budget": "none",
+    "cursor": 27,
+    "plan": [
+      {
+        "text": "Szukanie zadań w banku",
+        "status": "done"
+      },
+      {
+        "text": "Układanie lekcji",
+        "status": "failed"
+      },
+      {
+        "text": "Sprawdzanie lekcji",
+        "status": "pending"
+      }
+    ]
+  }
+}

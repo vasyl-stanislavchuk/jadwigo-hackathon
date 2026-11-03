@@ -1,0 +1,118 @@
+{#- What every card shares: the card itself, the stem, the answer places, the answer card. -#}
+{% import "icons.html.j2" as icons %}
+{% import "figures.html.j2" as figures %}
+
+{#- One question = one card: badge and paper mark, the instruction, the stem and the answer place,
+    then the credit line for a borrowed question. -#}
+{% macro card(q, form, text, sheet) %}
+{% set stem = q.data.stem if q.data.stem is defined else none %}
+{% set replaced = stem is not none and stem.text_replaces_say and stem.text %}
+<section class="card" id="q{{ q.n }}">
+  <div class="top">
+    <span class="badge">{{ q.n }}</span>{{ icons.action(q.action) }}
+    <div class="say">{{ text.rich(stem.text if replaced else q.say) }}
+    {%- if q.question_type == "multi_select" %} <span class="many">{{ sheet.labels.many }}</span>{% endif %}</div>
+  </div>
+  <div class="body">{{ form(q, text, sheet) }}</div>
+  {% if q.credit_n %}
+  {% for c in sheet.credits if c.n == q.credit_n %}<p class="credit">{{ c.short }}</p>{% endfor %}
+  {% endif %}
+  <div class="mark-end" id="q{{ q.n }}-end"></div>
+</section>
+{%- endmacro %}
+
+{#- The stem as paper draws it: words, pictures, a figure, a terminal card, the reference open.
+    Audio is not printed. -#}
+{% macro stem(s, text, say_replaced=false) %}
+{% if s is not none %}
+  {% if s.text and not s.text_replaces_say %}<div class="stem-text">{{ text.rich(s.text) }}</div>{% endif %}
+  {% if s.image and text.src(s.image) %}<div><img class="picture" src="{{ text.src(s.image) }}" alt="{{ s.image_alt or '' }}"></div>{% endif %}
+  {% if s.pictures %}
+  <div class="stem-pictures">
+    {% for p in s.pictures if text.src(p.src) %}{{ picture(p, text) }}{% endfor %}
+  </div>
+  {% endif %}
+  {% if s.figure %}{{ figures.figure(s.figure, text) }}{% endif %}
+  {% if s.terminal %}
+  <div class="terminal">{% for line in s.terminal.lines %}$ {{ line.cmd }}
+{% if line.out %}{% for o in line.out %}{{ o }}
+{% endfor %}{% endif %}{% endfor %}</div>
+  {% endif %}
+  {% if s.reference %}
+  <div class="reference"><b>{{ text.rich(s.reference.prompt) }}</b>{{ text.rich(s.reference.text) }}</div>
+  {% endif %}
+{% endif %}
+{%- endmacro %}
+
+{% macro picture(p, text, max_w=geom.PICTURE_MAX_W_MM) %}
+{% set w = [p.width * 25.4 / 96, max_w]|min %}
+<img class="picture" src="{{ text.src(p.src) }}" alt="{{ p.alt }}" style="width: {{ w|mm }}">
+{%- endmacro %}
+
+{#- Answer places: a number box, a small digit box, a fraction's two stacked boxes, a writing line. -#}
+{% macro box(kind="") %}<span class="box{% if kind %} {{ kind }}{% endif %}"></span>{% endmacro %}
+
+{% macro frac_box(whole=false) %}
+{% if whole %}{{ box("digit") }}{% endif %}<span class="frac-box"><span class="box"></span><span class="bar"></span><span class="box"></span></span>
+{%- endmacro %}
+
+{% macro write_line() %}<span class="write-line"></span>{% endmacro %}
+
+{% macro entry(input, whole=false) %}
+{% if input == "fraction" %}{{ frac_box(whole) }}
+{% elif input == "text" %}{{ write_line() }}
+{% else %}{{ box() }}{% endif %}
+{%- endmacro %}
+
+{#- "Karta odpowiedzi": one numbered square per question to tick when it is done (decision
+    dl-7eyqd), rows of ten, every other row shaded so a child keeps the row; the credits after. -#}
+{% macro tick_card(sheet) %}
+<div class="answer-card">
+  <h2>{{ sheet.labels.card_title }} <small>{{ sheet.labels.card_note }}</small></h2>
+  <table class="ticks">
+  {% for chunk in sheet.questions|batch(geom.TICKS_PER_ROW) %}
+    <tr{% if loop.index is even %} class="shade"{% endif %}>
+    {% for q in chunk %}<td>{{ q.n }}<span class="tick"></span></td>{% endfor %}
+    </tr>
+  {% endfor %}
+  </table>
+</div>
+{{ credits(sheet) }}
+{%- endmacro %}
+
+{% macro credits(sheet) %}
+{% if sheet.credits %}
+<div class="credits">
+  <h3>{{ sheet.labels.credits_title }}</h3>
+  <ol>
+  {% for c in sheet.credits %}<li value="{{ c.n }}">{{ c.line }}{% if c.url %} · {{ c.url }}{% endif %}</li>{% endfor %}
+  </ol>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{#- The Alfik card (decision 2026-10-06): for a lesson made only of lettered_choice. Columns of
+    ten, A to E circles, and how to mark and change a mark. -#}
+{% macro alfik_card(sheet) %}
+<section class="alfik answer-card">
+  <h2>{{ sheet.labels.alfik_title }}</h2>
+  <p class="note">{{ sheet.labels.alfik_note }}</p>
+  <div class="examples">
+    <span>{{ sheet.labels.alfik_mark }}: <span class="bubble filled">A</span></span>
+    <span>{{ sheet.labels.alfik_no_mark }}: <span class="bubble">✓</span> <span class="bubble">/</span></span>
+  </div>
+  <p class="note">{{ sheet.labels.alfik_change }}</p>
+  <div class="cols">
+  {% for column in sheet.questions|batch(geom.ALFIK_PER_COLUMN) %}
+    <table>
+    {% for q in column %}
+      <tr{% if loop.index is even %} class="shade"{% endif %}><td><b>{{ q.n }}</b></td>
+      {% for o in q.data.options %}<td><span class="bubble">{{ o.letter or "ABCDE"[loop.index0] }}</span></td>{% endfor %}
+      </tr>
+    {% endfor %}
+    </table>
+  {% endfor %}
+  </div>
+</section>
+{{ credits(sheet) }}
+{%- endmacro %}

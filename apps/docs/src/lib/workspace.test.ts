@@ -4,10 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { checkWorkspaceDiagram, diagramEdges, workspaceEdges } from "./workspace.ts";
 
-const MONOREPO = readFileSync(
-  new URL("../content/docs/architecture/monorepo.md", import.meta.url),
-  "utf8",
-);
+const MONOREPO = readFileSync(new URL("./diagrams/monorepo.mmd", import.meta.url), "utf8");
 
 describe("the Monorepo page's import diagram", () => {
   it("draws exactly the workspace's runtime dependencies", () => {
@@ -31,10 +28,14 @@ describe("workspaceEdges", () => {
 });
 
 describe("diagramEdges", () => {
-  it("reads only mermaid blocks, and turns an underscore id back into its dashed name", () => {
+  it("reads a fenced mermaid block, and turns an underscore id back into its dashed name", () => {
     const page =
       "a --> b\n\n```mermaid\nflowchart LR\n  lesson_kit --> ui\n  x -- label --> y\n```\n";
     expect(diagramEdges(page)).toEqual(["lesson-kit --> ui"]);
+  });
+
+  it("reads a bare .mmd source, which is what monorepo.mmd is", () => {
+    expect(diagramEdges("flowchart LR\n  lesson_kit --> ui\n")).toEqual(["lesson-kit --> ui"]);
   });
 });
 

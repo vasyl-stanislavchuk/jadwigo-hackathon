@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 540" role="img" aria-labelledby="living-docs-dark-title living-docs-dark-desc">
+<title id="living-docs-dark-title">The living-docs loop</title>
+<desc id="living-docs-dark-desc">How a code change reaches docs.jadwigo.pl in the same pull request.</desc>
+<defs><marker id="a-m-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9b4a7"/></marker><marker id="a-a-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#93b6ff"/></marker><marker id="a-l-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7aa6f0"/></marker></defs>
+<rect x="0" y="0" width="640" height="540" fill="#1d1e22"/>
+<rect x="180" y="32" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="320.0" y="59.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">A change in the code</text>
+<text x="320.0" y="73.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">a route, an error, a token</text>
+<rect x="180" y="128" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="320.0" y="148.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Its snapshot or source</text>
+<text x="320.0" y="162.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">openapi.json, mcp-tools.json,</text>
+<text x="320.0" y="176.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">foundation.css</text>
+<polyline points="320,92 320,128" fill="none" stroke="#93b6ff" stroke-width="1.2" marker-end="url(#a-a-dark)"/>
+<rect x="351.0" y="102" width="98" height="16" fill="#1d1e22"/>
+<text x="400" y="113" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">SAME PULL REQUEST</text>
+<rect x="180" y="224" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="320.0" y="251.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">The docs build</text>
+<text x="320.0" y="265.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">reads them as files, modules</text>
+<polyline points="320,188 320,224" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<rect x="180" y="320" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="320.0" y="340.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">check-dist</text>
+<text x="320.0" y="354.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">every page and table there,</text>
+<text x="320.0" y="368.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">no link into the repo</text>
+<polyline points="320,284 320,320" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<rect x="180" y="416" width="280" height="60" rx="6" fill="#1d3157" stroke="#93b6ff" stroke-width="1"/>
+<text x="320.0" y="443.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">docs.jadwigo.pl</text>
+<text x="320.0" y="457.0" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">published by hand</text>
+<polyline points="320,380 320,416" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+</svg>

@@ -86,7 +86,7 @@ function turnScript(): ScriptedReply[] {
       tool_calls: [{ verb: "lesson_check", input: (r) => ({ draft_id: r.run_id, help: {} }) }],
       cost_usd: 0.02,
     },
-    { text: "Lekcja jest gotowa po prawej.", cost_usd: 0.01 },
+    { text: "Lekcja jest gotowa.", cost_usd: 0.01 },
     ...Array.from({ length: FOLLOW_UPS }, (): ScriptedReply[] => [
       {
         tool_calls: [
@@ -97,7 +97,7 @@ function turnScript(): ScriptedReply[] {
         ],
         cost_usd: 0.02,
       },
-      { text: "Zmienione, lekcja po prawej.", cost_usd: 0.01 },
+      { text: "Zmienione.", cost_usd: 0.01 },
     ]).flat(),
   ];
 }

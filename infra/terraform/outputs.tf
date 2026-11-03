@@ -81,3 +81,11 @@ output "converter_repository_url" {
 output "converter_function_name" {
   value = module.converter.function_name
 }
+
+output "print_repository_url" {
+  value = module.print.repository_url
+}
+
+output "print_function_name" {
+  value = module.print.function_name
+}

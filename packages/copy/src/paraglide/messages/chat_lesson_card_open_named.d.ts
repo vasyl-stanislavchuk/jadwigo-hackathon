@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Open the lesson: {title}" |
+* | "Preview the lesson: {title}" |
 *
 * @param {Chat_Lesson_Card_Open_NamedInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

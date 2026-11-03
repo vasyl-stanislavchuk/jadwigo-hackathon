@@ -1,12 +1,16 @@
 """Experiment E2 (dl-5ssh.90.53.4): the next lesson for each E1 learner.
 
-Reads apps/docs/src/data/experiments/e1-cohort.json, turns each learner's brief
-into needs, finds real bank sets by skill code in a jadwigo-bank checkout and
-draws with jw.draw. With --judge, a panel of 3 muse-wonder judges (muse exec)
-rates each learner's draw for fit. Writes apps/docs/src/data/experiments/e2.json.
+Reads the cohort in apps/docs/src/data/experiments/e1.json (detail.learners),
+turns each learner's brief into needs, finds real bank sets by skill code in a
+jadwigo-bank checkout and draws with jw.draw. With --judge, a panel of 3
+muse-spark-1.3-contributor judges rates each draw for fit. Every model call
+goes through the Meta API via jw.muse.ask and its ledger (owner decision,
+2026-11-03). The first run's muse-wonder panel, made before that rule, is kept
+under detail.wonder_comparison when its recorded extract is passed after
+--wonder-panel. Writes apps/docs/src/data/experiments/e2.json.
 
 Run:
-  JADWIGO_BANK_DIR=~/projects/jadwigo-bank uv run python experiments/e2.py [--judge]
+  JADWIGO_BANK_DIR=~/projects/jadwigo-bank JADWIGO_MUSE_CAP_USD=500 uv run python experiments/e2.py --judge [--wonder-panel <file>]
 
 Only item ids, set ids, skills and reasons are written out: no bank question
 text enters this repo. Bank search here is a local page scan by skill code, so
@@ -30,12 +34,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from jw.draw import draw  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[3]
-COHORT = ROOT / "apps/docs/src/data/experiments/e1-cohort.json"
+COHORT = ROOT / "apps/docs/src/data/experiments/e1.json"
 OUT = ROOT / "apps/docs/src/data/experiments/e2.json"
 TODAY = dt.date(2026, 11, 2)  # E1 start 2026-10-12 plus 21 days
 KIND_FOR = {"reteach": "practice", "new": "practice", "review": "review", "recheck": "check"}
 MAX_ENTRIES = 3  # one next lesson: the first 3 brief entries that draw questions
-JUDGE_MODEL = "muse-wonder-full-1.0"
+JUDGE_MODEL = "muse-spark-1.3-contributor"
 
 
 def bank_dir() -> Path:
@@ -149,15 +153,16 @@ def judge_prompt(result: dict[str, Any]) -> str:
 
 
 def run_judge(prompt: str) -> dict[str, Any]:
-    proc = subprocess.run(
-        ["muse", "exec", "--model", JUDGE_MODEL, prompt],
-        capture_output=True,
-        text=True,
-        timeout=600,
-    )
-    match = re.search(r"\{.*\}", proc.stdout, re.S)
-    if proc.returncode != 0 or match is None:
-        return {"fit": None, "reason": f"judge failed: {proc.stderr[-300:]}"}
+    from jw import muse
+    from jw.pii import guard
+
+    try:
+        text = str(muse.ask(guard(prompt), tag="e2:judge", effort="low"))
+    except Exception as error:  # a failed judge is recorded, not fatal
+        return {"fit": None, "reason": f"judge failed: {error}"[:300]}
+    match = re.search(r"\{.*\}", text, re.S)
+    if match is None:
+        return {"fit": None, "reason": "judge reply had no JSON"}
     try:
         got = json.loads(match.group(0))
         return {"fit": got.get("fit"), "reason": str(got.get("reason", ""))}
@@ -165,10 +170,28 @@ def run_judge(prompt: str) -> dict[str, Any]:
         return {"fit": None, "reason": "judge reply was not JSON"}
 
 
+def ledger_spend() -> dict[str, Any]:
+    total = {"calls": 0, "usd": 0.0, "input_tokens": 0, "output_tokens": 0}
+    for path in sorted((ROOT / "apps/cli/logs/muse").glob("*.jsonl")):
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if str(row.get("tag", "")).startswith("e2:") and row.get("terminal") == "completed":
+                usage = row.get("usage") or {}
+                total["calls"] += 1
+                total["usd"] += float(usage.get("usd") or 0)
+                total["input_tokens"] += int(usage.get("input_tokens") or 0)
+                total["output_tokens"] += int(usage.get("output_tokens") or 0)
+    total["usd"] = round(total["usd"], 4)
+    return total
+
+
 def main() -> int:
     judge = "--judge" in sys.argv
     t0 = time.time()
-    cohort = json.loads(COHORT.read_text(encoding="utf-8"))
+    cohort = json.loads(COHORT.read_text(encoding="utf-8"))["detail"]
     pages = load_pages(bank_dir())
     results = [draw_for_learner(learner, pages) for learner in cohort["learners"]]
     judge_calls = 0
@@ -184,30 +207,52 @@ def main() -> int:
             fits = [p["fit"] for p in panel if isinstance(p.get("fit"), (int, float))]
             result["panel"] = panel
             result["panel_mean_fit"] = round(sum(fits) / len(fits), 2) if fits else None
+    ledger = ledger_spend()
+    drawn = sum(r["questions_drawn"] for r in results)
+    empty = sum(1 for r in results if r["questions_drawn"] == 0)
+    fits = [r["panel_mean_fit"] for r in results if r.get("panel_mean_fit") is not None]
     out = {
         "id": "e2",
         "title": "The next lesson drawn for each invented learner",
-        "model": JUDGE_MODEL if judge else None,
-        "calls": judge_calls,
-        "tokens": {"input": None, "output": None},
-        "usd": 0,
-        "cost_source": (
-            "bank draw $0 (local page scan of a jadwigo-bank checkout, no hosted "
-            "search); judge calls on the Muse subscription via muse exec, token "
-            "counts not exported per call - see commands"
-        ),
+        "status": "done",
+        "model": JUDGE_MODEL if judge else "none",
+        "calls": ledger["calls"],
+        "tokens": {"input": ledger["input_tokens"], "output": ledger["output_tokens"]},
+        "usd": ledger["usd"],
+        "cost_source": "ledger",
         "wall_s": round(time.time() - t0, 2),
         "commit": subprocess.run(
             ["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT
         ).stdout.strip(),
         "commands": [
-            "JADWIGO_BANK_DIR=~/projects/jadwigo-bank uv run python experiments/e2.py --judge"
+            "cd apps/cli && JADWIGO_BANK_DIR=~/projects/jadwigo-bank JADWIGO_MUSE_CAP_USD=500 uv run python experiments/e2.py --judge"
         ],
-        "bank_pages_scanned": len(pages),
-        "today": TODAY.isoformat(),
-        "max_brief_entries_per_lesson": MAX_ENTRIES,
-        "results": results,
+        "results": [
+            {"label": "Learners", "value": len(results)},
+            {"label": "Questions drawn", "value": drawn},
+            {"label": "Learners with an empty lesson", "value": empty},
+            {"label": "Bank pages scanned", "value": len(pages)},
+            {
+                "label": "Panel mean fit (of 5)",
+                "value": round(sum(fits) / len(fits), 2) if fits else 0,
+            },
+        ],
+        "detail": {
+            "cost_note": (
+                "Draw $0: a local page scan of a jadwigo-bank checkout, no hosted search. "
+                "Judges through the Meta API on muse-spark-1.3-contributor via jw.muse.ask; "
+                "tokens and USD from apps/cli/logs/muse rows tagged e2:*."
+            ),
+            "today": TODAY.isoformat(),
+            "max_brief_entries_per_lesson": MAX_ENTRIES,
+            "ledger": ledger,
+            "results": results,
+        },
     }
+    if "--wonder-panel" in sys.argv:
+        wonder = Path(sys.argv[sys.argv.index("--wonder-panel") + 1])
+        if wonder.exists():
+            out["detail"]["wonder_comparison"] = json.loads(wonder.read_text(encoding="utf-8"))
     OUT.write_text(json.dumps(out, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {OUT}: {len(results)} learners, {judge_calls} judge calls")
     return 0

@@ -8,6 +8,11 @@ export {
 } from "./factories/attempt.ts";
 export { GOLDEN_CASES } from "./golden/index.ts";
 export { LESSON_FILES } from "./lessons/index.ts";
+export {
+  MIXED_PRINT_LESSON,
+  type MixedPrintQuestion,
+  PRINT_SECRET,
+} from "./print/mixedLesson.ts";
 export { RUN_LOGS, type RunLog } from "./runs/index.ts";
 export {
   type AllowEntry,

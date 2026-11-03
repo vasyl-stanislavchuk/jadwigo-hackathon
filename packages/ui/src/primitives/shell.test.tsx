@@ -67,7 +67,9 @@ describe("Disc", () => {
 });
 
 describe("the quiet action in the parent's density", () => {
-  it("draws a disabled action with a dashed outline there, and not on other app pages", () => {
+  // The handoff's disabled rule (dl-uukj.47.67 S5): a quiet fill and soft ink, no dashed edge; the
+  // screen says why beside it or in a tooltip.
+  it("draws a disabled action as a quiet fill, never a dashed outline", () => {
     render(
       <DensityScope value="parent">
         <Button size="control" aria-disabled>
@@ -76,9 +78,7 @@ describe("the quiet action in the parent's density", () => {
       </DensityScope>,
     );
     const button = screen.getByRole("button", { name: "Zrób lekcję" });
-    expect(button.className).toContain("in-data-[density=parent]:aria-disabled:border-dashed");
-    cleanup();
-    render(<Button aria-disabled>Dalej</Button>);
-    expect(screen.getByRole("button").className).not.toContain("border-dashed");
+    expect(button.className).toContain("aria-disabled:bg-jw-act-quiet");
+    expect(button.className).not.toContain("border-dashed");
   });
 });

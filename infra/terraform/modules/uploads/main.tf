@@ -3,6 +3,7 @@
 # bucket, so learner data never mixes with the bank. Two prefixes:
 #   pending/<pod>/<atch_id>               the browser's presigned POST, before the message is sent
 #   pods/<pod>/attachments/<atch_id>.jpg  the checked copy, once a message carries it
+#   pods/<pod>/prints/<id>.{json,pdf,error.json}  a printed sheet (dl-1eieq.8.3), tagged kind=print
 # The grants are the api's and the runner's (modules/app/uploads.tf, modules/runner). Terraform owns
 # no object in it.
 resource "aws_s3_bucket" "uploads" {
@@ -52,6 +53,25 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
 
     expiration {
       days = var.pending_days
+    }
+  }
+
+  # A print is a cache, made again from the lesson: whatever carries kind=print (the api's sheet,
+  # the print Lambda's PDF and error file) is gone after print_days. A prefix cannot name it, as
+  # the pod comes first in the key (decision dl-o05aa), so the tag does.
+  rule {
+    id     = "expire-prints"
+    status = "Enabled"
+
+    filter {
+      tag {
+        key   = "kind"
+        value = "print"
+      }
+    }
+
+    expiration {
+      days = var.print_days
     }
   }
 

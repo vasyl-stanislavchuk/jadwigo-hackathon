@@ -30,10 +30,10 @@ export function WeekStrip({
         {weeks.map((week) => (
           <li
             key={week.monday}
-            className="flex min-w-0 flex-col gap-1 rounded-jw-card border-2 border-jw-line bg-jw-card p-3 text-jw-small"
+            className="flex min-w-0 flex-col gap-1 rounded-jw-card border border-jw-line bg-jw-card p-3 text-jw-page-small"
             data-week={week.monday}
           >
-            <span className="font-bold">
+            <span className="font-semibold">
               {copy(
                 language,
                 "parent_week_of",

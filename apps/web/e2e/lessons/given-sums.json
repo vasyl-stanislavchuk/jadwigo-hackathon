@@ -1,0 +1,220 @@
+{
+  "id": "given-sums",
+  "title": "Dodawanie do 20",
+  "language": "pl",
+  "category": "child",
+  "subject": "math",
+  "reasoning": "Made-up sums for the e2e: a lesson given to one child, its second question borrowed from Khan Academy.",
+  "script": {
+    "parts": [
+      {
+        "part": "Ćwiczenie",
+        "steps": [
+          {
+            "id": "s01",
+            "question_type": "production",
+            "skill_ids": ["math.add.within-20"],
+            "based_on": {
+              "question": "authored:given-sums-1",
+              "changes": []
+            },
+            "say": "Ile to jest 7 + 5?",
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "figure": {
+                  "kind": "expression",
+                  "text": "7 + 5 = ?"
+                }
+              },
+              "key": {
+                "accept": ["12"]
+              },
+              "help": {
+                "look": {
+                  "text": "Spójrz jeszcze raz na obie liczby i na znak między nimi."
+                },
+                "boost": {
+                  "text": "Zacznij od 7 i dolicz 5."
+                },
+                "almost": ["7 i jeszcze 5.", "7 + 5 = □"],
+                "worked": ["7 i jeszcze 5.", "7 + 5 = 12"],
+                "twin": {
+                  "say": "Ile to jest 5 + 7?",
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "figure": {
+                      "kind": "expression",
+                      "text": "5 + 7 = ?"
+                    }
+                  },
+                  "key": {
+                    "accept": ["12"]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "s02",
+            "question_type": "production",
+            "skill_ids": ["math.add.within-20"],
+            "based_on": {
+              "question": "khan:xmadeup0002",
+              "changes": []
+            },
+            "say": "Ile to jest 8 + 6?",
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "figure": {
+                  "kind": "expression",
+                  "text": "8 + 6 = ?"
+                }
+              },
+              "key": {
+                "accept": ["14"]
+              },
+              "help": {
+                "look": {
+                  "text": "Spójrz jeszcze raz na obie liczby i na znak między nimi."
+                },
+                "boost": {
+                  "text": "Zacznij od 8 i dolicz 6."
+                },
+                "almost": ["8 i jeszcze 6.", "8 + 6 = □"],
+                "worked": ["8 i jeszcze 6.", "8 + 6 = 14"],
+                "twin": {
+                  "say": "Ile to jest 6 + 8?",
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "figure": {
+                      "kind": "expression",
+                      "text": "6 + 8 = ?"
+                    }
+                  },
+                  "key": {
+                    "accept": ["14"]
+                  }
+                }
+              }
+            },
+            "credit": {
+              "source": "khan",
+              "ref": "xmadeup0002",
+              "licence": "cc-by-nc-sa-4.0",
+              "original_lang": "en",
+              "checked": "2026-11-03"
+            }
+          },
+          {
+            "id": "s03",
+            "question_type": "production",
+            "skill_ids": ["math.add.within-20"],
+            "based_on": {
+              "question": "authored:given-sums-3",
+              "changes": []
+            },
+            "say": "Ile to jest 9 + 4?",
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "figure": {
+                  "kind": "expression",
+                  "text": "9 + 4 = ?"
+                }
+              },
+              "key": {
+                "accept": ["13"]
+              },
+              "help": {
+                "look": {
+                  "text": "Spójrz jeszcze raz na obie liczby i na znak między nimi."
+                },
+                "boost": {
+                  "text": "Zacznij od 9 i dolicz 4."
+                },
+                "almost": ["9 i jeszcze 4.", "9 + 4 = □"],
+                "worked": ["9 i jeszcze 4.", "9 + 4 = 13"],
+                "twin": {
+                  "say": "Ile to jest 4 + 9?",
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "figure": {
+                      "kind": "expression",
+                      "text": "4 + 9 = ?"
+                    }
+                  },
+                  "key": {
+                    "accept": ["13"]
+                  }
+                }
+              }
+            }
+          },
+          {
+            "id": "s04",
+            "question_type": "production",
+            "skill_ids": ["math.add.within-20"],
+            "based_on": {
+              "question": "authored:given-sums-4",
+              "changes": []
+            },
+            "say": "Ile to jest 6 + 6?",
+            "question": {
+              "family": "enter",
+              "data": {
+                "input": "number",
+                "entry": "keypad",
+                "figure": {
+                  "kind": "expression",
+                  "text": "6 + 6 = ?"
+                }
+              },
+              "key": {
+                "accept": ["12"]
+              },
+              "help": {
+                "look": {
+                  "text": "Spójrz jeszcze raz na obie liczby i na znak między nimi."
+                },
+                "boost": {
+                  "text": "Zacznij od 6 i dolicz 6."
+                },
+                "almost": ["6 i jeszcze 6.", "6 + 6 = □"],
+                "worked": ["6 i jeszcze 6.", "6 + 6 = 12"],
+                "twin": {
+                  "say": "Ile to jest 6 + 6?",
+                  "family": "enter",
+                  "data": {
+                    "input": "number",
+                    "entry": "keypad",
+                    "figure": {
+                      "kind": "expression",
+                      "text": "6 + 6 = ?"
+                    }
+                  },
+                  "key": {
+                    "accept": ["12"]
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

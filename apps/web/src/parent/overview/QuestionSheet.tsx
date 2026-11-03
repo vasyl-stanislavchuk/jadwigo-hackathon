@@ -45,16 +45,18 @@ export function QuestionSheet({
         <SheetContent
           side="bottom"
           closeLabel={copy(language, "close", {}, CATEGORY)}
-          className="p-4 text-jw-body text-jw-ink"
+          className="p-4 text-jw-page-body text-jw-ink"
           data-question-sheet={column.number}
         >
           <SheetHeader className="p-0 pr-12">
             <SheetTitle asChild>
-              <Heading level={2} className="text-jw-instruction font-bold text-jw-ink">
+              <Heading level={2} className="text-jw-page-h2 font-semibold text-jw-ink">
                 {copy(language, "parent_overview_question", { n: column.number }, CATEGORY)}
               </Heading>
             </SheetTitle>
-            <SheetDescription className="text-jw-body text-jw-ink">{column.say}</SheetDescription>
+            <SheetDescription className="text-jw-page-body text-jw-ink">
+              {column.say}
+            </SheetDescription>
           </SheetHeader>
           <ol className="flex flex-col">
             {rows.map((row) => (
@@ -81,21 +83,21 @@ function SheetLine({
   const href = reviewOf(row);
   // A row as the owner drew it (decision
   // 2026-10-30-the-parent-s-outcomes-a-soft-green-for-got-there-a-dashed-tile-f): the name in a 72 px
-  // column, then the tile with its word and the line; rows are split by a 2 px line on top.
+  // column, then the tile with its word and the line; rows are split by a 1 px line on top.
   return (
     <li
-      className="flex items-start gap-3 border-t-2 border-jw-line py-3"
+      className="flex items-start gap-3 border-t border-jw-line py-3"
       data-sheet-line={row.attempt.id}
     >
-      <span className="w-18 shrink-0 font-bold break-words">{rowName(language, row)}</span>
+      <span className="w-18 shrink-0 font-semibold break-words">{rowName(language, row)}</span>
       <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
         <OutcomeWord outcome={cell.outcome} language={language} data-sheet-outcome={cell.outcome} />
         {cell.planned !== null && <Numbers result={cell.planned} language={language} />}
         {cell.twins.length > 0 && (
-          <ol className="mt-2 flex flex-col gap-2 border-l-2 border-jw-line pl-3" data-sheet-twins>
+          <ol className="mt-2 flex flex-col gap-2 border-l border-jw-line pl-3" data-sheet-twins>
             {cell.twins.map((t) => (
               <li key={t.seq} className="flex flex-col items-start gap-1" data-sheet-twin={t.seq}>
-                <span className="flex items-center gap-2 text-jw-small text-jw-ink-soft">
+                <span className="flex items-center gap-2 text-jw-page-small text-jw-ink-soft">
                   <TwinMark />
                   {copy(language, "parent_overview_twin", {}, CATEGORY)}
                 </span>
@@ -131,7 +133,7 @@ function Numbers({
   language: Language;
 }): ReactElement {
   return (
-    <p className="text-jw-small text-jw-ink-soft tabular-nums" data-sheet-numbers>
+    <p className="text-jw-page-small text-jw-ink-soft tabular-nums" data-sheet-numbers>
       {copy(
         language,
         "parent_overview_sheet_line",

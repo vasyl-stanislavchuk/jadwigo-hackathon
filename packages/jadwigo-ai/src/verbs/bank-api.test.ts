@@ -10,11 +10,13 @@ import {
   apiBank,
   type BankReads,
   BODY_BATCH,
+  creditOf,
   httpBankReads,
   MAX_LESSON_QUESTIONS,
   maxBodyReads,
 } from "./bank-api.ts";
 import { createVerbs } from "./index.ts";
+import { VerbError } from "./types.ts";
 
 // Made-up sets and questions only: no bank content, no Khan item (fence 8).
 
@@ -323,7 +325,63 @@ describe("apiBank with question types (dl-hin8.24)", () => {
   });
 });
 
+// dl-1eieq.6.1: a borrowed question keeps its credit from the body into the lesson file.
+describe("creditOf", () => {
+  it("reads a Khan body's credit as the lesson question's, the licence as its id", () => {
+    const khan = body("xmade001", 1, 2, {
+      source: "khan",
+      credit: {
+        source: "Khan Academy",
+        licence: "CC BY-NC-SA 4.0",
+        url: "https://example.org/e/1",
+      },
+    });
+    expect(creditOf(khan, "pl", "2026-11-03")).toEqual({
+      source: "khan",
+      ref: "xmade001",
+      url: "https://example.org/e/1",
+      licence: "cc-by-nc-sa-4.0",
+      original_lang: "en",
+      checked: "2026-11-03",
+    });
+  });
+
+  it("names the source from the credit when the body names none, and keeps a licence it cannot read", () => {
+    const old = body("xmade002", 1, 2);
+    expect(creditOf(old, "pl", "2026-11-03")).toMatchObject({ source: "khan", ref: "xmade002" });
+    const alfik = body("alfik_made_q01", 1, 2, {
+      source: "alfik",
+      credit: { source: "alfik", licence: "© made-up organiser" },
+    });
+    expect(creditOf(alfik, "pl", "2026-11-03")).toMatchObject({
+      source: "alfik",
+      licence: "© made-up organiser",
+      original_lang: "pl",
+    });
+    const unknown = body("xmade003", 1, 2, { credit: { source: "elsewhere", licence: "x" } });
+    expect(creditOf(unknown, "pl", "2026-11-03")).toBeUndefined();
+  });
+});
+
 describe("lesson_draft on the real bank's shapes", () => {
+  it("keeps each drawn question's credit on its step", async () => {
+    const { reads } = fakeReads(BODIES, PAGES);
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const effect = await verbs.lesson_draft.run(contextFor(runId(), "call_1"), {
+      request: "a short lesson",
+      grade: "1",
+      names: [],
+      topic: "dodawanie",
+      count: 2,
+    });
+    const script = effect.lesson_file?.["script"] as
+      | { parts: { steps: { credit?: unknown }[] }[] }
+      | undefined;
+    expect(script?.parts[0]?.steps.map((s) => s.credit)).toEqual(
+      IDS.slice(0, 2).map((id) => expect.objectContaining({ source: "khan", ref: id })),
+    );
+  });
+
   it("drafts a lesson whose every step is a bank question with based_on", async () => {
     const { reads } = fakeReads(BODIES, PAGES);
     const verbs = createVerbs({ bank: apiBank(reads) });
@@ -425,6 +483,15 @@ describe("httpBankReads", () => {
     ]);
   });
 
+  it("tells the model the bank cannot list its types when the route is not deployed (dl-hin8.27)", async () => {
+    const { send } = fakeFetch({ [ROUTES.questionTypes.path]: { status: 404, body: {} } });
+    const reads = httpBankReads({ base: "https://api.example.test", token: "t0ken", fetch: send });
+    const refused = reads.types({ grade: "1", language: "pl" });
+    await expect(refused).rejects.toBeInstanceOf(VerbError);
+    await expect(refused).rejects.toMatchObject({ type: "unavailable" });
+    await expect(refused).rejects.toThrow(/draw without question_types/);
+  });
+
   it("answers undefined for a 404 and rejects any other failure without the token", async () => {
     const { send } = fakeFetch({ [bodyPath]: { status: 502, body: { error: {} } } });
     const reads = httpBankReads({ base: "https://api.example.test", token: "t0ken", fetch: send });
@@ -432,5 +499,267 @@ describe("httpBankReads", () => {
     const failure = reads.body("xmade000");
     await expect(failure).rejects.toThrow("answered 502");
     await expect(failure).rejects.not.toThrow("t0ken");
+  });
+});
+
+describe("addition-within-10 gap over the HTTP bank seam (dl-n9fr.76)", () => {
+  it.each(["abstained", "empty"])("%s reads no set or body and drafts no lesson", async (state) => {
+    const paths: string[] = [];
+    const send = (async (url: URL) => {
+      paths.push(url.pathname);
+      return new Response(
+        JSON.stringify({ version: 1, arm: "C", rows: [], state: [{ arm: "C", state }] }),
+        { status: 200 },
+      );
+    }) as unknown as typeof fetch;
+    const bank = apiBank(
+      httpBankReads({ base: "https://bank.example.test", token: "test", fetch: send }),
+    );
+    const verbs = createVerbs({ bank });
+    await expect(
+      verbs.lesson_draft.run(contextFor(runId(), "gap"), {
+        request: "Lekcja: dodawanie do 10, 5 pytań, dla pierwszej klasy",
+        grade: "1",
+        names: [],
+        topic: "dodawanie do 10",
+        count: 5,
+      }),
+    ).rejects.toMatchObject({ type: "no-questions" });
+    expect(paths).toEqual([ROUTES.questionSearches.path]);
+  });
+
+  it("copies a verified arithmetic fixture through HTTP without changing data or keys", async () => {
+    const ids = IDS.slice(0, 5);
+    const bodies = Object.fromEntries(ids.map((id, i) => [id, body(id, i, 1)]));
+    const send = (async (url: URL) => {
+      const value =
+        url.pathname === ROUTES.questionSearches.path
+          ? { version: 1, rows: [row("set_add", 1)], state: [{ arm: "C", state: "ok" }] }
+          : url.pathname === ROUTES.questionSet.path.replace("{id}", "set_add")
+            ? page("set_add", ids)
+            : bodies[url.pathname.split("/").at(-1) ?? ""];
+      return new Response(JSON.stringify(value), { status: value === undefined ? 404 : 200 });
+    }) as unknown as typeof fetch;
+    const bank = apiBank(
+      httpBankReads({ base: "https://bank.example.test", token: "test", fetch: send }),
+    );
+    const effect = await createVerbs({ bank }).lesson_draft.run(contextFor(runId(), "arithmetic"), {
+      request: "Lekcja: dodawanie do 10, 5 pytań, dla pierwszej klasy",
+      grade: "1",
+      names: [],
+      topic: "dodawanie do 10",
+      count: 5,
+    });
+    const script = effect.lesson_file?.["script"] as
+      | { parts: { steps: { based_on: unknown; question: { data: unknown; key: unknown } }[] }[] }
+      | undefined;
+    const drawn = script?.parts[0]?.steps ?? [];
+    expect(drawn).toHaveLength(5);
+    for (const [i, question] of drawn.entries()) {
+      expect(question.based_on).toEqual({ question: `bank:${ids[i]}`, changes: [] });
+      expect(question.question.data).toEqual(bodies[ids[i] ?? ""]?.pl?.data);
+      expect(question.question.key).toEqual(bodies[ids[i] ?? ""]?.pl?.key);
+    }
+  });
+});
+
+describe("nearby source choice and adaptation (dl-n9fr.76)", () => {
+  it("shows source descriptions in the model's search output and view", async () => {
+    const { reads } = fakeReads(BODIES, PAGES);
+    reads.search = async () => ({
+      version: 1,
+      rows: [
+        {
+          ...row("set_near", 1),
+          enrichment: {
+            summary: {
+              pl: "Dodawanie 1 do liczb dwucyfrowych, np. 36 + 1.",
+              en: "Two-digit addition.",
+            },
+            can_do: { en: "Add one to a two-digit number." },
+          },
+        },
+      ],
+      state: [],
+    });
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const effect = await verbs.question_search.run(contextFor(runId(), "near"), QUERY);
+    for (const data of [effect.output, effect.view?.data]) {
+      expect(data).toMatchObject({ sets: [{ why_found: expect.stringContaining("36 + 1") }] });
+      expect(data).toMatchObject({
+        sets: [{ why_found: expect.stringContaining("Add one to a two-digit number") }],
+      });
+      expect(data).toMatchObject({
+        sets: [{ why_found: expect.stringContaining("not verified") }],
+      });
+    }
+  });
+
+  it("lets the model adapt a nearby question while retaining its source and reason", async () => {
+    const source = body("xmade000", 36, 1);
+    const { reads } = fakeReads({ xmade000: source }, [page("set_near", ["xmade000"])]);
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const run = runId();
+    const draft = await verbs.lesson_draft.run(contextFor(run, "draft"), {
+      request: "dodawanie do 10",
+      topic: "dodawanie do 10",
+      grade: "1",
+      names: [],
+      count: 1,
+    });
+    if (draft.lesson_file === undefined) throw new Error("expected a draft");
+    const effect = await verbs.lesson_edit.run(
+      contextFor(run, "adapt", { revision: 1, lesson_file: draft.lesson_file }),
+      {
+        draft_id: run,
+        step_id: "s01",
+        names: [],
+        change: "numbers",
+        why: "The parent asked for sums at most 10; adapt the nearby source.",
+        patch: {
+          say: "Ile to jest 3 + 1?",
+          question: {
+            data: { figure: { text: "3 + 1 = ?" } },
+            key: { accept: ["4"] },
+            help: { worked: ["3 + 1 = 4"] },
+          },
+        },
+      },
+    );
+    expect(effect.lesson_file).toMatchObject({
+      script: {
+        parts: [
+          {
+            steps: [
+              {
+                based_on: {
+                  question: "bank:xmade000",
+                  changes: [{ change: "numbers", why: expect.stringContaining("at most 10") }],
+                },
+                question: { data: { figure: { text: "3 + 1 = ?" } }, key: { accept: ["4"] } },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(source.pl?.key).toEqual({ accept: ["37"] });
+  });
+});
+
+describe("adaptation edits preserve the family contract (dl-hin8.30)", () => {
+  it("refuses malformed help without writing a revision and accepts the repaired shape", async () => {
+    const { reads } = fakeReads({ xmade000: body("xmade000", 36, 1) }, [
+      page("set_near", ["xmade000"]),
+    ]);
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const run = runId();
+    const draft = await verbs.lesson_draft.run(contextFor(run, "draft"), {
+      request: "addition within 10",
+      grade: "1",
+      topic: "addition within 10",
+      names: [],
+      count: 1,
+    });
+    if (draft.lesson_file === undefined) throw new Error("expected draft");
+    const lesson = { revision: 1, lesson_file: draft.lesson_file };
+    const patch = {
+      say: "Ile to jest 3 + 1?",
+      question: {
+        data: { figure: { text: "3 + 1 = ?" } },
+        key: { accept: ["4"] },
+        help: { look: "Policz obie liczby.", worked: ["3 + 1 = 4"] },
+      },
+    };
+    await expect(
+      verbs.lesson_edit.run(contextFor(run, "bad", lesson), {
+        draft_id: run,
+        step_id: "s01",
+        names: [],
+        why: "The request needs a sum within ten",
+        change: "numbers",
+        patch,
+      }),
+    ).rejects.toThrow("expected object");
+    const repaired = await verbs.lesson_edit.run(contextFor(run, "repaired", lesson), {
+      draft_id: run,
+      step_id: "s01",
+      names: [],
+      why: "The request needs a sum within ten",
+      change: "numbers",
+      patch: {
+        ...patch,
+        question: {
+          ...patch.question,
+          help: { look: { text: "Policz obie liczby." }, worked: ["3 + 1 = 4"] },
+        },
+      },
+    });
+    expect(repaired.output["ok"]).toBe(true);
+    expect(draft.lesson_file).toMatchObject({
+      script: { parts: [{ steps: [{ question: { key: { accept: ["37"] } } }] }] },
+    });
+  });
+});
+
+describe("model-written twins inherit their source family (dl-hin8.30)", () => {
+  it("compiles a flat twin supplied through lesson_check without asking the model to change the main family", async () => {
+    const { reads } = fakeReads({ xmade000: body("xmade000", 3, 1) }, [
+      page("set_near", ["xmade000"]),
+    ]);
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const run = runId();
+    const draft = await verbs.lesson_draft.run(contextFor(run, "draft"), {
+      request: "addition within 10",
+      grade: "1",
+      topic: "addition within 10",
+      names: [],
+      count: 1,
+    });
+    if (draft.lesson_file === undefined) throw new Error("expected draft");
+    const twin = {
+      say: "Ile to jest 2 + 1?",
+      data: { input: "number", entry: "keypad", figure: { kind: "expression", text: "2 + 1 = ?" } },
+      key: { accept: ["3"] },
+    };
+    const checked = await verbs.lesson_check.run(
+      contextFor(run, "check", { revision: 1, lesson_file: draft.lesson_file }),
+      {
+        draft_id: run,
+        names: [],
+        help: { s01: { twin } },
+      },
+    );
+    expect(checked.output["ok"]).toBe(true);
+    expect(checked.lesson_file).toMatchObject({
+      script: {
+        parts: [
+          { steps: [{ question: { family: "enter", help: { twin: { family: "enter" } } } }] },
+        ],
+      },
+    });
+    const edited = await verbs.lesson_edit.run(
+      contextFor(run, "edit", { revision: 1, lesson_file: draft.lesson_file }),
+      {
+        draft_id: run,
+        names: [],
+        step_id: "s01",
+        why: "Add a suitable twin",
+        patch: { question: { help: { twin } } },
+      },
+    );
+    expect(edited.output["ok"]).toBe(true);
+    await expect(
+      verbs.lesson_edit.run(
+        contextFor(run, "wrong-family", { revision: 1, lesson_file: draft.lesson_file }),
+        {
+          draft_id: run,
+          names: [],
+          step_id: "s01",
+          why: "A twin must retain the parent family",
+          patch: { question: { help: { twin: { ...twin, family: "slots" } } } },
+        },
+      ),
+    ).rejects.toThrow();
   });
 });

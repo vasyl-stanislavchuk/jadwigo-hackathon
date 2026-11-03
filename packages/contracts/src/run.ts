@@ -254,6 +254,12 @@ export const RUN_ERROR_TYPE = {
   /** The turn ran past `max_deadline_at` (not `retryable`). */
   runTimedOut: "RunTimedOut",
   /**
+   * A step failed on every delivery the queue allows (MAX_READS), or was dead-lettered, so the turn
+   * ended failed rather than wait for `max_deadline_at` (dl-hin8.28). Not `retryable` as is: the
+   * parent tries again or asks another way.
+   */
+  stepFailed: "StepFailed",
+  /**
    * An agent answer failed the answer check twice, after its one correction (dl-z5ja.26): it named
    * a number, status or level no tool result gave. Not `retryable`; the turn ends completed.
    */

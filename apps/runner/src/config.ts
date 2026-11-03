@@ -183,3 +183,12 @@ export function uploadsBucket(): string | undefined {
 export function converterFunction(): string | undefined {
   return setting("CONVERTER_FUNCTION");
 }
+
+/**
+ * The folder `make dev-all`'s uploads stand-in keeps photos in (dl-z5ja.11.19), `.logs/dev/uploads`,
+ * the same one the local api writes: set, the dev step host reads a turn's photos from it.
+ * Undefined when unset or blank; the Lambda never reads it.
+ */
+export function localUploadsDir(): string | undefined {
+  return setting("LOCAL_UPLOADS_DIR");
+}

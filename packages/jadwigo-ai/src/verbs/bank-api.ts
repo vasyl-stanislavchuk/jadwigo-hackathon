@@ -9,6 +9,8 @@
  * (jadwigo-hackathon/decisions/2026-11-02-a-lesson-holds-at-most-20-questions-however-it-was-made).
  */
 import {
+  type Credit,
+  type Language,
   type Need,
   QUESTION_TYPE_FAMILY,
   QuestionBody,
@@ -177,6 +179,17 @@ function needOf(query: BankQuery, limit: number): Need | undefined {
   };
 }
 
+/** Keep the source's description visible to the model; rank alone does not prove suitability. */
+function description(
+  words: Record<string, string> | undefined,
+  language: string,
+  label: string,
+): string {
+  if (words === undefined) return "";
+  const text = words[language] ?? words["en"] ?? Object.values(words)[0];
+  return text === undefined ? "" : `${label}: ${text.slice(0, 1200)}`;
+}
+
 function setOf(row: SearchEnvelope["rows"][number], query: BankQuery): BankSet {
   return {
     set_id: row.id,
@@ -185,7 +198,14 @@ function setOf(row: SearchEnvelope["rows"][number], query: BankQuery): BankSet {
     skills: row.skill_ids ?? [],
     questions: row.items ?? 0,
     question_types: row.question_types ?? [],
-    why_found: `the bank's search ranked it ${row.rank} (arm ${row.arm})`,
+    why_found: [
+      `Candidate ranked ${row.rank} (arm ${row.arm}); suitability for the full request is not verified.`,
+      description(row.enrichment?.summary, query.language, "Summary"),
+      description(row.enrichment?.can_do, query.language, "Practises"),
+      "May be nearby material. Inspect the drawn questions; use unchanged if suitable, or adapt with lesson_edit and record why.",
+    ]
+      .filter(Boolean)
+      .join("\n"),
   };
 }
 
@@ -221,6 +241,39 @@ async function draw(
   return out;
 }
 
+/** The language each source writes its items in: Khan Academy in English, Alfik in Polish. */
+const WRITTEN_IN: Readonly<Record<string, Language>> = { khan: "en", alfik: "pl" };
+
+/** "CC BY-NC-SA 4.0" as the SPDX-style id a lesson question's credit names, "cc-by-nc-sa-4.0". */
+function licenceId(licence: string): string {
+  const cc = /^\s*CC\s+(BY(?:-(?:NC|SA|ND))*)\s+(\d\.\d)/i.exec(licence);
+  return cc ? `cc-${cc[1]?.toLowerCase()}-${cc[2]}` : licence.trim();
+}
+
+/**
+ * A bank body's credit as the lesson file's step keeps it (dl-1eieq.6.1, decision
+ * `2026-10-27-a-lesson-question-s-credit-is-source-ref-url-licence-original-la`): the import stores
+ * it on the lesson question, and /play draws "z Khan Academy" from it. Undefined for a body with no
+ * source, which is our own. `checked` is the day of the draw: the bank serves only items whose
+ * licence it holds.
+ */
+export function creditOf(
+  body: QuestionBody,
+  language: Language,
+  today: string,
+): Credit | undefined {
+  const source = body.source ?? (/khan/i.test(body.credit.source) ? ("khan" as const) : undefined);
+  if (source === undefined) return undefined;
+  return {
+    source,
+    ref: body.id,
+    ...(body.credit.url === undefined ? {} : { url: body.credit.url }),
+    licence: licenceId(body.credit.licence),
+    original_lang: WRITTEN_IN[source] ?? language,
+    checked: today,
+  };
+}
+
 function questionOf(
   body: QuestionBody,
   page: QuestionSetPage,
@@ -233,8 +286,10 @@ function questionOf(
   if (type === undefined) return "no question_type";
   if (QUESTION_TYPE_FAMILY[type] !== variant.family) return "family mismatch";
   if (!typeKept(type, types)) return "not of the asked types";
+  const credit = creditOf(body, language, new Date().toISOString().slice(0, 10));
   return {
     source: `bank:${body.id}`,
+    ...(credit === undefined ? {} : { credit }),
     set_id: page.id,
     // shortcut: every set the bank holds today is maths; read the set page's subject when a
     // Polish or English set is published.
@@ -309,7 +364,13 @@ export function httpBankReads({
       if (asked.language !== undefined) query.set("language", asked.language);
       const path = `${ROUTES.questionTypes.path}${query.size > 0 ? `?${query}` : ""}`;
       const counts = await call(ROUTES.questionTypes.method, path);
-      if (counts === undefined) throw new Error(`the bank route ${path} answered 404`);
+      // A bank behind the engine (prod's api before #741) has no such route: the model is told, and
+      // draws without question_types, rather than the step retrying to the dead-letter queue (dl-hin8.27).
+      if (counts === undefined)
+        throw new VerbError(
+          "unavailable",
+          "question_types: the bank cannot list its question types yet; draw without question_types",
+        );
       return QuestionTypeCounts.parse(counts);
     },
   };

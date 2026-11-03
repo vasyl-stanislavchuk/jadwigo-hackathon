@@ -9,13 +9,20 @@
 // messages in the page's language (dl-w0b4.82). The header's switch links the page's twin in the
 // other language, when the build serves it (dl-w0b4.81). The header, burger and footer follow design
 // handoff "landing 3" (dl-5ssh.4.12).
+// Two audiences (dl-uukj.47.67, dl-w0b4.122): <html data-audience="adult"> sets the frame and every line
+// for the parent in Geist, flat, on 1 px lines; what shows the child's lesson (the question sheet, the
+// lesson cards, the step 2 card, the backdrop) is marked data-audience="kid" and stays Zeszyt in Andika.
 import "@fontsource/andika/400.css";
 import "@fontsource/andika/700.css";
-// The Andika files every page draws with first, preloaded so the text rarely waits for them (dl-5ssh.4.43).
-import andikaLatin400 from "@fontsource/andika/files/andika-latin-400-normal.woff2?url";
-import andikaLatin700 from "@fontsource/andika/files/andika-latin-700-normal.woff2?url";
-import andikaLatinExt400 from "@fontsource/andika/files/andika-latin-ext-400-normal.woff2?url";
-import andikaLatinExt700 from "@fontsource/andika/files/andika-latin-ext-700-normal.woff2?url";
+import "@fontsource/geist/400.css";
+import "@fontsource/geist/500.css";
+import "@fontsource/geist/600.css";
+// The Geist files every page draws with first, preloaded so the text rarely waits for them (dl-5ssh.4.43).
+// Andika is drawn only in a child's section and loads when one needs it.
+import geistLatin400 from "@fontsource/geist/files/geist-latin-400-normal.woff2?url";
+import geistLatin600 from "@fontsource/geist/files/geist-latin-600-normal.woff2?url";
+import geistLatinExt400 from "@fontsource/geist/files/geist-latin-ext-400-normal.woff2?url";
+import geistLatinExt600 from "@fontsource/geist/files/geist-latin-ext-600-normal.woff2?url";
 import "@jadwigo/ui/foundation.css";
 import { getCollection, getEntry } from "astro:content";
 import { m } from "@jadwigo/copy/messages";
@@ -85,7 +92,7 @@ const footerLinks = [
 ---
 
 <!doctype html>
-<html lang={lang}>
+<html lang={lang} data-audience="adult">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -103,7 +110,7 @@ const footerLinks = [
     }
     <link rel="sitemap" href="/sitemap-index.xml" />
     {
-      [andikaLatin400, andikaLatin700, andikaLatinExt400, andikaLatinExt700].map((href) => (
+      [geistLatin400, geistLatin600, geistLatinExt400, geistLatinExt600].map((href) => (
         <link rel="preload" href={href} as="font" type="font/woff2" crossorigin="anonymous" />
       ))
     }
@@ -122,6 +129,16 @@ const footerLinks = [
         font-family: "Andika fallback"; font-weight: 700; src: local("Arial Bold"), local("Arial-BoldMT");
         size-adjust: 102.7%; ascent-override: 118.8%; descent-override: 38%; line-gap-override: 0%;
       }
+      /* The same for Geist, from its files and Arial's (fontTools): 1.005 em above the baseline and 0.295
+         below; 1.9% (600 against Arial Bold: 1.3%) wider than Arial. */
+      @font-face {
+        font-family: "Geist fallback"; font-weight: 400 500; src: local("Arial"), local("ArialMT");
+        size-adjust: 101.9%; ascent-override: 98.6%; descent-override: 28.9%; line-gap-override: 0%;
+      }
+      @font-face {
+        font-family: "Geist fallback"; font-weight: 600 700; src: local("Arial Bold"), local("Arial-BoldMT");
+        size-adjust: 101.3%; ascent-override: 99.2%; descent-override: 29.1%; line-gap-override: 0%;
+      }
       /* A picture's slot holds its place while the picture loads: a soft paper-tone block at the slot's
          size, and the picture fades in over it (dl-5ssh.4.43). Without JS the pictures show as they are. */
       .js .fade-in:not(.ready) { background: color-mix(in srgb, var(--jw-act-quiet) 80%, transparent); border-radius: var(--jw-radius-card); animation: waiting 1.6s ease-in-out infinite alternate; }
@@ -130,32 +147,48 @@ const footerLinks = [
       .js .fade-in.ready .blink-eyes { opacity: 0; }
       @keyframes waiting { from { opacity: 0.55; } to { opacity: 1; } }
       @media (prefers-reduced-motion: reduce) { .js .fade-in:not(.ready) { animation: none; } .js .fade-in img { transition: none; } }
-      :root { --jw-font: "Andika", "Andika fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      :root {
+        --jw-font: "Andika", "Andika fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --jw-font-adult: "Geist", "Geist fallback", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        /* The adult focus: a soft 3 px halo hugging the control (handoff §5), in place of Zeszyt's outline. */
+        --halo: 0 0 0 3px color-mix(in srgb, var(--ring) 28%, transparent);
+      }
       html { scroll-behavior: smooth; }
       [id] { scroll-margin-top: 7rem; } /* an anchor lands below the sticky header */
       @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
       body {
         margin: 0; background: var(--jw-ground); color: var(--jw-ink);
         position: relative; /* the backdrop spans the whole page (Backdrop.astro) */
-        font-family: var(--jw-font); font-size: 1.0625rem; line-height: 1.55;
+        font-family: var(--font-sans); font-size: var(--jw-page-body); line-height: 1.55;
       }
       a { color: var(--jw-brand-go); }
-      a:focus-visible, button:focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; border-radius: 6px; }
+      a:focus-visible, button:focus-visible { outline: none; box-shadow: var(--halo); border-radius: var(--jw-radius-control); }
+      /* A child's section keeps Zeszyt's 3 px outline. */
+      [data-audience="kid"] :is(a, button):focus-visible { outline: 3px solid var(--jw-focus); outline-offset: 3px; box-shadow: none; }
       .wrap { max-width: 72rem; margin: 0 auto; padding: 0 1rem; }
+      /* Geist is loaded at 400, 500 and 600, so a 700 here draws its 600; Andika draws its 700. */
       h1, h2, h3 { font-weight: 700; line-height: 1.2; margin: 0; }
       h2 { font-size: clamp(1.5rem, 3.5vw, 2rem); }
       h3 { font-size: 1.2rem; }
       p { margin: 0; }
 
-      /* The one action a visitor can press, in the app's action look: ink-blue fill and a pressed edge. */
+      /* The one action a visitor can press, the adult primary (handoff §6.1): ink fill, white text, flat;
+         hover darkens it and a press does not move it (D4). Inside a child's section (the question
+         sheet's invitation) it is Zeszyt's action again: light blue on a pressed edge. */
       .btn {
-        display: inline-flex; align-items: center; justify-content: center; min-height: 48px;
-        padding: 0.7rem 1.4rem; border-radius: var(--jw-radius-control); font-weight: 700;
-        text-decoration: none; color: var(--jw-on-act); background: var(--jw-act);
-        box-shadow: 0 4px 0 var(--jw-act-edge); transition: transform 80ms, box-shadow 80ms;
+        display: inline-flex; align-items: center; justify-content: center; min-height: var(--jw-control-height-lg);
+        padding: 0.5rem 1.25rem; border-radius: var(--jw-radius-control); font-weight: 500;
+        text-decoration: none; color: var(--primary-foreground); background: var(--primary);
+        transition: background-color 120ms;
       }
-      .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--jw-act-edge); }
-      .btn.quiet { background: var(--jw-act-quiet); color: var(--jw-ink); box-shadow: 0 4px 0 var(--jw-line); }
+      .btn:hover { background: var(--primary-hover); }
+      .btn.quiet { background: var(--secondary); color: var(--jw-ink); }
+      .btn.quiet:hover { background: var(--jw-hover-strong); }
+      [data-audience="kid"] .btn {
+        min-height: 48px; padding: 0.7rem 1.4rem; font-weight: 700; color: var(--jw-on-act); background: var(--jw-act);
+        box-shadow: 0 var(--jw-press) 0 var(--jw-act-edge); transition: transform 80ms, box-shadow 80ms;
+      }
+      [data-audience="kid"] .btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--jw-act-edge); }
 
       /* The header stays in reach on a long page: sticky, on the page's own white, its line below
          (design handoff "landing 3", SiteHeader). On a laptop: the wordmark, the page pills, then the
@@ -165,7 +198,7 @@ const footerLinks = [
          banner a visitor sees (dl-w0b4.118). */
       .site-header {
         position: sticky; top: 0; z-index: 10; --logo-h: 3rem;
-        background: var(--jw-ground); border-bottom: 2px solid var(--jw-line);
+        background: var(--jw-ground); border-bottom: 1px solid var(--jw-line);
       }
       .site-header .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.5rem; min-height: 68px; padding-top: 0.5rem; }
       /* Hover 5a: only the crown tips, about the bottom-left corner of its box (packages/ui src/brand/
@@ -177,31 +210,32 @@ const footerLinks = [
       @media (prefers-reduced-motion: reduce) {
         .logo .crown, .logo:hover .crown, .logo:focus-visible .crown, .logo.tip .crown { transition: none; transform: none; }
       }
-      /* The sign-in: an outlined 44 px pill, the pages' size, so it reads as a door, not the page's action. */
+      /* The sign-in: an outline button (handoff §6.1), the pages' height, so it reads as a door, not the page's action. */
       .signin {
-        order: 1; display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem;
-        border: 2px solid var(--jw-ink); border-radius: 22px; color: var(--jw-ink); text-decoration: none;
-        font-weight: 700; white-space: nowrap;
+        order: 1; display: inline-flex; align-items: center; min-height: var(--jw-control-height-lg); padding: 0 1rem;
+        border: 1px solid var(--input); border-radius: var(--jw-radius-control); color: var(--jw-ink); text-decoration: none;
+        background: var(--jw-card); font-weight: 500; white-space: nowrap; transition: background-color 120ms;
       }
-      .signin:hover { background: var(--jw-act-quiet); }
+      .signin:hover { background: var(--accent); }
       .burger {
         order: 2; width: 48px; height: 48px; display: inline-flex; flex-direction: column; align-items: center;
         justify-content: center; gap: 5px; padding: 0; cursor: pointer;
-        border: 2px solid var(--jw-line); border-radius: var(--jw-radius-control); background: var(--jw-card);
+        border: 1px solid var(--input); border-radius: var(--jw-radius-control); background: var(--jw-card);
       }
-      .burger span { width: 20px; height: 2px; border-radius: 1px; background: var(--jw-ink); }
-      .burger[aria-expanded="true"] { border-color: var(--jw-ink); background: var(--jw-pick); }
+      .burger:hover { background: var(--accent); }
+      .burger span { width: 18px; height: 1.5px; border-radius: 1px; background: var(--jw-ink); }
+      .burger[aria-expanded="true"] { background: var(--selected); border-color: var(--selected-edge); }
       /* Without the script the menu simply stays open under the row, so every page is still one tap away. */
-      .menu { order: 3; width: 100%; display: flex; flex-direction: column; padding: 0.75rem 0 1.25rem; border-top: 2px solid var(--jw-line); margin-top: 0.5rem; }
+      .menu { order: 3; width: 100%; display: flex; flex-direction: column; padding: 0.75rem 0 1.25rem; border-top: 1px solid var(--jw-line); margin-top: 0.5rem; }
       .js .menu:not(.open) { display: none; }
       html:not(.js) .burger { display: none; }
       .site-nav { display: flex; flex-direction: column; gap: 0.25rem; }
       .site-nav a {
-        display: flex; align-items: center; min-height: 52px; padding: 0 1rem; font-size: 1.2rem; font-weight: 700;
-        border: 2px solid transparent; border-radius: var(--jw-radius-control); color: var(--jw-ink); text-decoration: none;
+        display: flex; align-items: center; min-height: 48px; padding: 0 1rem; font-size: 1.125rem; font-weight: 500;
+        border-radius: var(--jw-radius-control); color: var(--jw-ink); text-decoration: none; transition: background-color 120ms;
       }
-      .site-nav a:hover { background: var(--jw-act-quiet); }
-      .site-nav a[aria-current] { background: var(--jw-pick); border-color: var(--jw-ink); color: var(--jw-pick-ink); }
+      .site-nav a:hover { background: var(--accent); }
+      .site-nav a[aria-current] { background: var(--selected); color: var(--selected-foreground); }
       @media (min-width: 60rem) {
         .site-header { --logo-h: 3.25rem; }
         .site-header .bar { flex-wrap: nowrap; gap: 1.5rem; min-height: 76px; padding-top: 0.25rem; }
@@ -209,7 +243,7 @@ const footerLinks = [
         .burger { display: none; }
         .menu, .js .menu:not(.open) { order: 0; width: auto; flex: 1; display: flex; flex-direction: row; align-items: center; gap: 1.5rem; padding: 0; margin: 0; border: 0; }
         .site-nav { flex-direction: row; gap: 0.25rem; flex: 1; }
-        .site-nav a { min-height: 44px; padding: 0 1rem; font-size: 1.05rem; border-radius: 22px; white-space: nowrap; }
+        .site-nav a { min-height: var(--jw-control-height-lg); padding: 0 0.875rem; font-size: 1rem; white-space: nowrap; }
       }
       /* The pages and the sign-in stand on the wordmark's text line, not its box's middle:
          the box holds the crown's room above the letters. The letters' middle (y 64 of -65..115) sits
@@ -223,10 +257,10 @@ const footerLinks = [
       /* The footer: the wordmark and its line, the pages, and whose the data is with the privacy pages
          (design handoff "landing 3", SiteFooter). The sources column and the data sentence are gone: the
          privacy pages say it (owner, 2026-11-02, dl-5ssh.4.28). */
-      .site-footer { border-top: 2px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 2.5rem; font-size: 1rem; line-height: 1.5; }
+      .site-footer { border-top: 1px solid var(--jw-line); margin-top: 4rem; padding: 2rem 0 2.5rem; font-size: 1rem; line-height: 1.5; }
       .site-footer .wrap { display: grid; grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr)); gap: 1.5rem 2rem; }
       .site-footer .col { display: flex; flex-direction: column; gap: 0.25rem; color: var(--jw-ink-soft); }
-      .site-footer .col > strong { color: var(--jw-ink); }
+      .site-footer .col > strong { color: var(--jw-ink); font-weight: 600; }
       .site-footer a { color: var(--jw-ink); text-decoration: none; }
       .site-footer a:hover { text-decoration: underline; }
       .site-footer .mark { line-height: 0; margin-bottom: 0.25rem; }
@@ -239,7 +273,7 @@ const footerLinks = [
          still stands out (owner, 2026-11-02, dl-5ssh.4.30): mixed from 2 tokens, no new colour. */
       .paper {
         --cell: 1.5rem;
-        border: 2px solid var(--jw-line); border-radius: var(--jw-radius-card);
+        border: var(--jw-border) solid var(--jw-line); border-radius: var(--jw-radius-card);
         background: color-mix(in srgb, var(--jw-card), var(--jw-help) 50%);
       }
       /* A notebook's binding, kept quiet: a row of slim rings over the top edge, reaching into the page.
@@ -251,13 +285,14 @@ const footerLinks = [
         mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='28'%3E%3Crect x='10' y='1' width='4' height='26' rx='2' fill='none' stroke='black' stroke-width='1.4'/%3E%3C/svg%3E") 0 0 / 1.5rem 1.75rem space no-repeat;
       }
       .prose main { max-width: 40rem; margin: 0 auto; padding: 2.5rem 1rem 0; }
-      .prose h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); }
-      .prose h2 { font-size: 1.3rem; margin: 2rem 0 0.5rem; }
+      /* A prose page reads the page scale, 28 / 22 / 17 (--jw-page-*). */
+      .prose h1 { font-size: var(--jw-page-h1); }
+      .prose h2 { font-size: var(--jw-page-h2); margin: 2rem 0 0.5rem; }
       .prose p { margin: 0.75rem 0 0; }
       .prose ol { padding-left: 1.25rem; }
       .prose li { margin-top: 0.4rem; }
       .prose .draft {
-        margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border-radius: 0.5rem;
+        margin: 1rem 0 1.5rem; padding: 0.75rem 1rem; border-radius: var(--jw-radius-control);
         background: var(--jw-help); color: var(--jw-help-ink); font-size: 0.95rem;
       }
     </style>

@@ -1,0 +1,17 @@
+{
+  "id": "e4",
+  "title": "How Meta models indexed the question bank",
+  "status": "running",
+  "model": "none",
+  "calls": 0,
+  "tokens": {
+    "input": 0,
+    "output": 0
+  },
+  "usd": 0,
+  "cost_source": "ledger",
+  "wall_s": 0,
+  "commit": "f4b1194c",
+  "commands": [],
+  "results": []
+}

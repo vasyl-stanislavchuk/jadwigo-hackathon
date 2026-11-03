@@ -1,0 +1,62 @@
+---
+// A page's status badge (dl-5ssh.90.53.1): live on prod, on main, or vision, with the date the
+// label was checked and the pull requests that put it there. PageTitle draws it from the page's
+// frontmatter (src/lib/status.ts); a page may also place it by hand. Pull request numbers are
+// text, never links: no page here links into the repo.
+import { type DocStatus, STATUS_LABEL } from "../lib/status.ts";
+
+interface Props {
+  status: DocStatus;
+  /** The day the label was checked, written 2026-11-03. */
+  asOf?: string | undefined;
+  /** The pull requests that put the feature where the badge says it is. */
+  prs?: readonly number[] | undefined;
+}
+
+const { status, asOf, prs = [] } = Astro.props;
+---
+
+<p class="jw-status not-content">
+  <span class:list={["jw-status-badge", `is-${status}`]}>{STATUS_LABEL[status]}</span>
+  {asOf && <span>as of {asOf}</span>}
+  {prs.length > 0 && <span>{prs.map((pr) => `#${pr}`).join(", ")}</span>}
+</p>
+
+<style>
+  .jw-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--jw-space-2);
+    margin-block-start: var(--jw-space-2);
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-2);
+  }
+
+  .jw-status-badge {
+    border: var(--jw-border) solid var(--jw-line-strong);
+    border-radius: var(--jw-radius-chip);
+    padding: 0 var(--jw-space-2);
+    background-color: var(--jw-act-quiet);
+    color: var(--jw-on-act-quiet);
+    font-weight: var(--jw-weight-strong);
+  }
+
+  .jw-status-badge.is-live {
+    border-color: var(--jw-right-edge);
+    background-color: var(--jw-right);
+    color: var(--jw-right-ink);
+  }
+
+  .jw-status-badge.is-main {
+    border-color: var(--jw-pick-edge);
+    background-color: var(--jw-pick);
+    color: var(--jw-pick-ink);
+  }
+
+  .jw-status-badge.is-vision {
+    border-color: var(--jw-help-edge);
+    background-color: var(--jw-help);
+    color: var(--jw-help-ink);
+  }
+</style>

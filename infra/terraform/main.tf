@@ -58,6 +58,17 @@ module "converter" {
   image_tag           = var.converter_image_tag
 }
 
+# The print Lambda (dl-1eieq.8.3, decision dl-o05aa): apps/print's image, which the api invokes with
+# S3 keys to draw a lesson's sheet as a PDF. print_image_tag blank makes the ECR repo only; the owner
+# pushes an image, sets the tag in prod.tfvars and applies again (dl-1eieq.8.5).
+module "print" {
+  source = "./modules/print"
+
+  environment         = var.environment
+  uploads_bucket_name = module.uploads.bucket_name
+  image_tag           = var.print_image_tag
+}
+
 # The service at app.<apex>: apps/web, and /api/* to the one Lambda (dl-5ssh.3.3).
 module "app" {
   source = "./modules/app"
@@ -125,6 +136,9 @@ module "app" {
     "POST /api/v1/runs/{id}/ratings",
     # A conversation's checked lesson given to play (dl-5ssh.136); a token route.
     "POST /api/v1/conversations/{id}/lessons",
+    # The checked lesson's PDF, started and then asked about (dl-1eieq.8.4); token routes.
+    "POST /api/v1/conversations/{id}/prints",
+    "GET /api/v1/prints/{id}",
     # A message's photos (dl-z5ja.11): an upload form, then a link to the stored copy; token routes.
     "POST /api/v1/attachments",
     "GET /api/v1/attachments/{id}",
@@ -158,6 +172,8 @@ module "app" {
     "POST /api/v1/runs/{id}/cancellations",
     "POST /api/v1/runs/{id}/ratings",
     "POST /api/v1/conversations/{id}/lessons",
+    "POST /api/v1/conversations/{id}/prints",
+    "GET /api/v1/prints/{id}",
     "POST /api/v1/attachments",
     "GET /api/v1/attachments/{id}",
   ]
@@ -180,6 +196,11 @@ module "app" {
   # The message and Stop routes poke the step host's live alias after a commit (dl-z5ja.88): the api
   # role gains lambda:InvokeFunction on that alias only.
   runner_alias_arn = module.runner.live_alias_arn
+
+  # The print route invokes the print Lambda (decision dl-o05aa), once it has an image.
+  print_function_arn = module.print.function_arn
+  # And resolves the sheet's pictures against the media URL apps/web reads them from.
+  media_url = module.content.media_url
 
   # The api role presigns, checks, copies and deletes a message's photos (modules/app/uploads.tf).
   uploads_bucket_name      = module.uploads.bucket_name

@@ -7,32 +7,39 @@
  *            the tools folded, the composer that stays live; Esc stops a run, no Stop button
  *   band     the run's state in words, and the polite live region that speaks when a turn ends or
  *            needs the parent
- *   lesson   the latest revision (LessonPane), its changed steps marked, Cofnij and step edits;
- *            or, when `?open` names another thing, that thing's panel (the inspector, dl-uukj.47.58)
+ *   preview  over the chat, from the lesson card's expand button (dl-1eieq.1): the latest
+ *            revision (LessonPane), its changed steps marked, Cofnij and step edits, with the
+ *            card's actions in its foot; or, when `?open` names another thing, that thing's panel
+ *            (the inspector, dl-uukj.47.58)
  *   (no footer: giving the lesson, and when, happen in the chat; design review 2026-11-02)
  *
- * The run's state everywhere (the band, the folded strip, the lesson's placeholder, the footer and
- * the live region) is one `runPhase` (src/chat/phase.ts, dl-uukj.47.29), so they never disagree.
+ * The run's state everywhere (the band, the lesson's placeholder and the live region) is one
+ * `runPhase` (src/chat/phase.ts, dl-uukj.47.29), so they never disagree.
  *
  * The first screen made the conversation and left its words in the tab (engine.ts firstMessage):
  * once the page has read the conversation back and found no turn, it sends them, once. A route that
  * answers AiConsentMissing puts the consent screen in the chat until the parent agrees.
  */
 
-import type { ParentClient } from "@jadwigo/api-client";
+import { ApiError, type ParentClient } from "@jadwigo/api-client";
 import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef, useState } from "react";
+import type { ReadAttachment } from "../../chat/attachments/ThreadAttachments.tsx";
 import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
-import { LessonPane } from "../../chat/LessonPane.tsx";
+import { addedSteps, LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
+import { type GiveState, LessonActions } from "../../chat/objects/LessonActions.tsx";
+import { lessonChanging } from "../../chat/objects/LessonCard.tsx";
 import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
 import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/registry.tsx";
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
 import { holdServer } from "../../chat/routesTransport.ts";
 import { useConversation } from "../../chat/useConversation.ts";
+import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
+import { playPath } from "../../play/route.ts";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { DlaSelect } from "../newLesson/DlaSelect.tsx";
 import { parentPath } from "../route.ts";
@@ -49,6 +56,7 @@ export function LessonWorkspace({
   onForChange,
   onAddChild,
   api = null,
+  readAttachment = null,
 }: {
   language: Language;
   /** The server's conversation: the route's id. */
@@ -63,6 +71,8 @@ export function LessonWorkspace({
   onAddChild: () => void;
   /** The parent's client, for a child opened beside the chat (dl-uukj.47.59); none in a playground. */
   api?: ParentClient | null;
+  /** Reads a sent photo's link for the thread (dl-z5ja.11.6); none shows no photos. */
+  readAttachment?: ReadAttachment | null;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string | number> = {}): string =>
     copy(language, key, vars, CATEGORY);
@@ -104,13 +114,11 @@ export function LessonWorkspace({
   const restoring = state.connection === "restoring";
   const { ratings } = engine;
   const { phase, now } = usePhase(turns, state, refetch);
-  // The right column: this conversation's lesson, unless the URL opened another thing beside it.
+  // The preview over the chat (dl-1eieq.1): this conversation's lesson, or another thing the URL
+  // opened; shut while `?open` names nothing.
   const inspector = useInspector();
   const ownLesson: ObjectRef = { kind: "lesson", id: conversation };
-  const other =
-    inspector.current !== null && !sameObject(inspector.current, ownLesson)
-      ? inspector.current
-      : null;
+  const opened = inspector.current;
   const panelPage: PanelPage = { language, lang: pageLang(), learners, api };
 
   // The first screen's words and photos: sent once the page has read the conversation back with no turn in it,
@@ -138,6 +146,34 @@ export function LessonWorkspace({
   const summary = lessonSummary(lesson.shown);
   const child = learners.find((l) => l.id === forLearner) ?? null;
 
+  // Daj lekcję (dl-uukj.47.55): the latest checked revision, given to the Dla child, who plays it
+  // from its ?learner= link; with no child, given to nobody in particular and opened here. The route
+  // refuses a revision no check passed (harsh words included) and a child outside the family.
+  const [given, setGiven] = useState<GiveState>({ kind: "idle" });
+  const giveTo = async (to: Learner | null): Promise<void> => {
+    if (engine.give === null || !lesson.ready) return;
+    setGiven({ kind: "giving" });
+    try {
+      const { assignment } = await engine.give.giveLesson(
+        conversation,
+        to === null ? {} : { learner_id: to.id },
+      );
+      if (to === null) {
+        navigate(playPath(assignment.id));
+        return;
+      }
+      const href = `${playPath(assignment.id)}?${new URLSearchParams({ learner: to.id })}`;
+      setGiven({ kind: "given", name: to.first_name, href });
+    } catch (error) {
+      const type = error instanceof ApiError ? error.type : null;
+      setGiven({
+        kind: "refused",
+        reason:
+          type === "LessonNotPublishable" ? "changed" : type === "NotFound" ? "child" : "failed",
+      });
+    }
+  };
+
   // A lesson URL the routes refuse (another family's, or gone): one line and the way to a new one,
   // never 3 empty columns stuck restoring (dl-uukj.47.33).
   if (state.notFound)
@@ -153,6 +189,32 @@ export function LessonWorkspace({
       </div>
     );
 
+  // The lesson's actions, in its card and again in its preview's foot (dl-1eieq.1): one give state.
+  const actions = (
+    <LessonActions
+      language={language}
+      ready={lesson.ready}
+      child={child}
+      lesson={lesson.shown}
+      forWhom={
+        <DlaSelect
+          language={language}
+          learners={learners}
+          value={forLearner}
+          onChange={onForChange}
+          onAddChild={onAddChild}
+        />
+      }
+      given={given}
+      {...(engine.give === null
+        ? {}
+        : {
+            onGive: () => void giveTo(child),
+            onOpenHere: () => void giveTo(null),
+          })}
+    />
+  );
+
   const chat = consentMissing ? (
     <div className="min-h-0 flex-1 overflow-y-auto p-4">
       <ConsentScreen
@@ -167,6 +229,7 @@ export function LessonWorkspace({
   ) : (
     <ChatPane
       variant="parent"
+      readAttachment={readAttachment ?? undefined}
       language={language}
       turns={turns}
       queued={state.queued.map((q) => q.text)}
@@ -200,6 +263,8 @@ export function LessonWorkspace({
       onResend={resend}
       lessonObject={ownLesson}
       onOpen={inspector.open}
+      // How and when to give the lesson live in its card (dl-uukj.47.55, decision dl-hz9ks).
+      lessonActions={actions}
     />
   );
 
@@ -222,37 +287,42 @@ export function LessonWorkspace({
           </p>
         </>
       }
-      {...(phase === null ? {} : { chatFact: words })}
-      lessonTitle={
-        other !== null
-          ? objectHeading(other, panelPage)
-          : summary.title === ""
-            ? t("parent_new_lesson")
-            : summary.title
+      preview={
+        opened === null
+          ? null
+          : sameObject(opened, ownLesson)
+            ? {
+                title: summary.title === "" ? t("parent_new_lesson") : summary.title,
+                body:
+                  lesson.shown === null && lesson.ghosts === 0 ? (
+                    <p className="text-jw-ink-soft" data-lesson-waiting>
+                      {said ? words : t("parent_lesson_empty")}
+                    </p>
+                  ) : (
+                    <LessonPane
+                      language={language}
+                      lesson={lesson.shown}
+                      changed={lesson.changed}
+                      added={addedSteps(lesson.turns, lesson.changed)}
+                      onUndo={lesson.onUndo}
+                      undoRefused={lesson.undoRefused}
+                      undoPending={lesson.undoPending}
+                      onEdit={edit}
+                      ghosts={lesson.ghosts}
+                      withChild={child !== null}
+                      outcomeOf={lesson.outcomeOf}
+                      bare
+                    />
+                  ),
+                actions,
+                band: lessonChanging(lesson.turns),
+              }
+            : {
+                title: objectHeading(opened, panelPage),
+                body: <ObjectPanel object={opened} page={panelPage} />,
+              }
       }
-      lesson={
-        other !== null ? (
-          <ObjectPanel object={other} page={panelPage} />
-        ) : lesson.shown === null && lesson.ghosts === 0 ? (
-          <p className="text-jw-ink-soft" data-lesson-waiting>
-            {said ? words : t("parent_lesson_empty")}
-          </p>
-        ) : (
-          <LessonPane
-            language={language}
-            lesson={lesson.shown}
-            changed={lesson.changed}
-            onUndo={lesson.onUndo}
-            undoRefused={lesson.undoRefused}
-            undoPending={lesson.undoPending}
-            onEdit={edit}
-            ghosts={lesson.ghosts}
-            withChild={child !== null}
-            outcomeOf={lesson.outcomeOf}
-          />
-        )
-      }
-      {...(lesson.key === null ? {} : { lessonKey: lesson.key })}
+      onClosePreview={inspector.close}
     />
   );
 }
