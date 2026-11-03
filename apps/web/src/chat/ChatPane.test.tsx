@@ -191,7 +191,9 @@ describe("the lesson pane", () => {
     const { view } = golden("happy-turn");
     render(<LessonPane language="pl" lesson={view.lesson} />);
     expect(document.querySelector("[data-revision]")?.getAttribute("data-revision")).toBe("2");
-    expect(screen.getByText("Wersja 2")).toBeTruthy();
+    // The header counts the questions; no version is drawn (lesson card delta C5).
+    expect(screen.getByText("4 zadania")).toBeTruthy();
+    expect(document.body.textContent).not.toMatch(/wersj/i);
     expect(document.querySelectorAll("[data-step]").length).toBeGreaterThan(0);
   });
 

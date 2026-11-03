@@ -28,8 +28,8 @@ export interface Preview {
   body: ReactNode;
   /** The lesson's actions, the same the card has; none for another thing. */
   actions?: ReactNode;
-  /** The version a running turn is writing: the band under the title (S20). */
-  band?: number | undefined;
+  /** A running turn is changing the lesson: the band under the title (S20). */
+  band?: boolean | undefined;
 }
 
 export function Workspace({

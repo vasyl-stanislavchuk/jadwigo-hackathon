@@ -798,7 +798,6 @@
   "chat_lesson_card": "Lekcja gotowa",
   "chat_lesson_card_open": "Podgląd",
   "chat_lesson_card_open_named": "Podgląd lekcji: {title}",
-  "chat_lesson_card_first": "Na początek: {say}",
   "chat_lesson_card_steps": [
     {
       "declarations": ["input n", "local q_noun = n: plural"],
@@ -1497,10 +1496,23 @@
   "chat_queue_now": "Wyślij teraz",
   "chat_queue_photos_wait": "Zdjęcia wyślę dopiero po tej odpowiedzi.",
   "chat_newest": "Najnowsze",
-  "card_ready": "Lekcja gotowa",
-  "card_fix": "Lekcja do poprawy",
-  "card_working": "Wersja {n} · Jadwigo robi wersję {next}",
-  "card_superseded": "wersja {n} · jest nowsza",
+  "card_superseded": "jest nowsza wersja",
+  "card_tag_ready": "Gotowa",
+  "card_tag_fix": "Do poprawy",
+  "card_tag_working": "Zmieniam…",
+  "card_count": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
+  "card_more_questions": "+{n} więcej",
   "card_open_version": "Otwórz tę wersję",
   "card_expand": "Rozwiń lekcję",
   "card_collapse": "Zwiń lekcję",
@@ -1518,7 +1530,7 @@
     }
   ],
   "card_fix_action": "Popraw za mnie",
-  "lesson_pane_band": "Jadwigo zmienia tę lekcję. Wersja {n} pojawi się tutaj.",
+  "lesson_pane_band": "Jadwigo zmienia tę lekcję. Zmiany pojawią się tutaj.",
   "lesson_tag_new": "nowe",
   "lesson_tag_changed": "zmienione",
   "rating_label": "Ta lekcja jest",

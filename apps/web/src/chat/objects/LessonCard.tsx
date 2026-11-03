@@ -1,57 +1,53 @@
 /**
  * The lesson card under a turn that wrote the lesson (dl-uukj.47.58; chat handoff dl-uukj.47.71
- * §4.4, S7, S16). One card a parent reads in 2 seconds, in one of 4 states:
+ * §4.4, S7, S16, and the owner's card delta of 2026-11-03, dl-vxjv2, which wins where they differ).
+ * The answer to the parent's request, so it is the one raised thing in the thread (C1): a stronger
+ * edge and a soft shadow. Title first (C2), then "{n} zadań", the first 3 prompts and "+{n} więcej"
+ * (C3). Its state is a tag beside the expand button and nowhere else (C4), and no version number is
+ * drawn anywhere (C5):
  *
- *   ready       "Lekcja gotowa": title, questions, version, the first question, the actions
- *   fix         "Lekcja do poprawy": the check's findings, Daj lekcję quiet with its reason, and
- *               Popraw za mnie, which sends a fix request as a new turn. A lesson with no step to
- *               show is this, never "Lekcja gotowa" over "0 zadań" (dl-uukj.47.69)
- *   working     "Wersja {n} · Jadwigo robi wersję {n+1}": the actions still give version n
- *   superseded  one row, "{title} · wersja {n} · jest nowsza", with no actions (S7)
+ *   ready       Gotowa: the actions in the foot
+ *   fix         Do poprawy: the check's findings, Daj lekcję quiet with its reason, and Popraw za
+ *               mnie, which sends a fix request as a new turn. A lesson with no step to show is
+ *               this, never "0 zadań" (dl-uukj.47.69)
+ *   working     Zmieniam…: the card keeps the current lesson, and its actions still give it
+ *   superseded  one flat row, "{title} · jest nowsza wersja", with no actions (S7)
  *
  * Only the living card (the newest version) has actions. Every fact is read from the lesson's own
  * revision, never from Jadwigo AI's words, so the card and the preview never disagree. Its expand
- * button opens the lesson in the preview over the chat (decision 2026-11-03-the-lesson-opens-in-a-
- * preview-modal-from-an-expand-button-on-the).
+ * button opens the lesson in the preview over the chat, on a phone too (decision 2026-11-03-the-
+ * lesson-opens-in-a-preview-modal-from-an-expand-button-on-the: no Lekcja tab).
  *
- * The state comes from the run (`state`, lane A's fold). A caller that has only the revision gets
+ * The state comes from the run (`state`, `cardStatesOf`). A caller that has only the revision gets
  * ready or fix from it; only the run says which card is superseded.
  */
 
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem, RunView } from "@jadwigo/core";
-import { Button, DisabledReason, Tooltip, TooltipContent, TooltipTrigger } from "@jadwigo/ui";
-import { AlertCircleIcon, BookOpenIcon, LoaderIcon, Maximize2Icon, PencilIcon } from "lucide-react";
+import {
+  Badge,
+  Button,
+  DisabledReason,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@jadwigo/ui";
+import {
+  AlertCircleIcon,
+  BookOpenIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  LoaderIcon,
+  Maximize2Icon,
+  PencilIcon,
+} from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import type { Turn } from "../conversation.ts";
-import { lessonFileToSpecs } from "../lesson/adapter.ts";
-import { readDraft, titleOf } from "../lesson/readDraft.ts";
+import { lessonFacts } from "../spine/lessonFile.ts";
 import type { LessonCardState } from "../spine/types.ts";
 import type { ObjectRef } from "./ref.ts";
 
 type LessonAt = NonNullable<RunView["lesson"]>;
-
-/** What the card says about one revision of the lesson. */
-export interface LessonFacts {
-  title: string;
-  revision: number;
-  /** How many question steps the lesson holds. */
-  steps: number;
-  /** The first question's words, or null when the lesson has none that read. */
-  first: string | null;
-}
-
-/** The card's facts from a revision's lesson file: empty counts while the draft does not read. */
-export function lessonFacts(lesson: LessonAt): LessonFacts {
-  const title = titleOf(lesson.lesson_file);
-  const read = readDraft(lesson.lesson_file);
-  if ("error" in read) return { title, revision: lesson.revision, steps: 0, first: null };
-  const questions = lessonFileToSpecs(read.file, undefined, read.skipped)
-    .flatMap((p) => p.steps)
-    .flatMap((s) => (s.kind === "question" ? [s] : []));
-  const say = questions.find((q) => q.spec.say.trim() !== "")?.spec.say.trim() ?? null;
-  return { title, revision: lesson.revision, steps: questions.length, first: say };
-}
 
 /** The verbs whose finished call means the turn wrote the lesson for the parent to look at. */
 const WROTE: ReadonlySet<string> = new Set(["lesson_draft", "lesson_edit"]);
@@ -70,21 +66,18 @@ export function wroteLesson(view: RunView): boolean {
 }
 
 /**
- * The version a running turn is writing, for the preview's band (S20): while the open turn's
- * lesson_draft or lesson_edit call runs, the revision after the one shown; else undefined.
+ * Whether a running turn is writing the lesson, for the preview's band (S20): the open turn's
+ * lesson_draft or lesson_edit call has not finished.
  */
-export function comingVersion(turns: readonly Turn[]): number | undefined {
+export function lessonChanging(turns: readonly Turn[]): boolean {
   const turn = turns.at(-1);
-  if (turn === undefined || !turn.view.turn_open) return undefined;
-  const writing = turn.view.chat.some(
+  if (turn === undefined || !turn.view.turn_open) return false;
+  return turn.view.chat.some(
     (item) =>
       item.kind === "tool" &&
       WROTE.has(item.verb) &&
       (item.state === "pending" || item.state === "running"),
   );
-  if (!writing) return undefined;
-  const shown = turns.findLast((t) => t.view.lesson !== null)?.view.lesson ?? null;
-  return (shown?.revision ?? 0) + 1;
 }
 
 /**
@@ -92,19 +85,32 @@ export function comingVersion(turns: readonly Turn[]): number | undefined {
  * (never "0 zadań"). Which card is superseded is the run's to say, so this never says it.
  */
 function stateFrom(lesson: LessonAt, lessonId: string): LessonCardState {
-  const facts = lessonFacts(lesson);
-  const base = { lessonId, version: facts.revision, title: facts.title };
-  if (facts.steps === 0 || facts.first === null)
-    return { ...base, kind: "fix", count: facts.steps, findings: [] };
-  return { ...base, kind: "ready", count: facts.steps, first: facts.first };
+  const facts = lessonFacts(lesson.lesson_file);
+  const base = { lessonId, version: lesson.revision, title: facts.title };
+  const content = { count: facts.count, preview: facts.preview };
+  if (facts.count === 0 || facts.preview.length === 0)
+    return { ...base, ...content, kind: "fix", findings: [] };
+  return { ...base, ...content, kind: "ready" };
 }
 
-/** The label above the title, and the icon in the tile beside it, by state. */
-const LABEL: Readonly<Record<Exclude<LessonCardState["kind"], "superseded">, CopyKey>> = {
-  ready: "card_ready",
-  fix: "card_fix",
-  working: "card_working",
+/** The state's tag (C4): its words, its 12 px icon and the icon's colour. */
+const TAG: Readonly<
+  Record<
+    Exclude<LessonCardState["kind"], "superseded">,
+    { key: CopyKey; Icon: typeof CheckIcon; tone: string }
+  >
+> = {
+  ready: { key: "card_tag_ready", Icon: CheckIcon, tone: "text-primary" },
+  fix: { key: "card_tag_fix", Icon: AlertCircleIcon, tone: "text-jw-ink" },
+  working: {
+    key: "card_tag_working",
+    Icon: LoaderIcon,
+    tone: "text-primary motion-safe:animate-spin",
+  },
 };
+
+/** How many prompts the card lists (C3); the rest is "+{n} więcej". */
+const SHOWN = 3;
 
 /** Where the card's state comes from: the run's fold, or the revision alone. */
 type Source = { state: LessonCardState } | { lesson: LessonAt };
@@ -137,7 +143,7 @@ export function LessonCard({
   if (state.kind === "superseded")
     return (
       <section
-        aria-label={say("chat_lesson_card")}
+        aria-label={title}
         className="flex min-h-9 items-center gap-2 rounded-jw-box border-jw border-jw-line bg-jw-card px-3.5 py-1 text-jw-page-small"
         data-object-card="lesson"
         data-card-state="superseded"
@@ -147,8 +153,8 @@ export function LessonCard({
         <span className="truncate font-medium text-jw-ink" data-card-title>
           {title}
         </span>
-        <span className="shrink-0 text-jw-ink-soft tabular-nums" data-card-facts>
-          {say("card_superseded", { n: state.version })}
+        <span className="shrink-0 text-jw-ink-soft" data-card-facts>
+          {say("card_superseded")}
         </span>
         {onOpenVersion !== undefined && (
           <Button
@@ -165,70 +171,90 @@ export function LessonCard({
       </section>
     );
 
-  const label =
-    state.kind === "working"
-      ? say(LABEL.working, { n: state.version, next: state.nextVersion })
-      : say(LABEL[state.kind]);
-  const Icon =
-    state.kind === "fix" ? AlertCircleIcon : state.kind === "working" ? LoaderIcon : BookOpenIcon;
+  const tag = TAG[state.kind];
+  const more = state.count - SHOWN;
   const openName = say("chat_lesson_card_open_named", { title });
   return (
     <section
-      aria-label={label}
-      className="flex flex-col overflow-hidden rounded-jw-card border-jw border-jw-line bg-jw-card"
+      aria-label={title}
+      // The one raised element in the thread (C1): the spine, widgets and old rows stay flat.
+      className="flex flex-col overflow-hidden rounded-jw-card border-jw border-jw-line-raised bg-jw-card shadow-card"
       data-object-card="lesson"
       data-card-state={state.kind}
       data-revision={state.version}
     >
-      <div className="flex w-full items-start gap-3 px-4 py-3">
+      <div className="flex w-full items-start gap-3 px-4 py-3.5 max-sm:pr-3 max-sm:pl-3">
         <span
           aria-hidden
-          className="grid size-8 shrink-0 place-items-center rounded-jw-small bg-jw-hover"
+          className="grid size-8 shrink-0 place-items-center rounded-jw-control bg-jw-hover"
         >
-          <Icon
-            className={
-              state.kind === "working"
-                ? "size-4 text-primary motion-safe:animate-spin"
-                : "size-4 text-jw-ink"
-            }
-          />
+          <BookOpenIcon className="size-4 text-jw-ink" />
         </span>
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-jw-page-small font-medium text-jw-ink-soft" data-card-label>
-            {label}
-          </span>
-          <span className="truncate text-base font-semibold text-jw-ink" data-card-title>
-            {title}
-          </span>
-          <span className="text-jw-page-small text-jw-ink-soft tabular-nums" data-card-facts>
-            {/* Never "0 zadań": a lesson with nothing to show says only its version. */}
-            {state.count > 0 && `${say("chat_lesson_card_steps", { n: state.count })} · `}
-            {say("chat_lesson_revision", { n: state.version })}
-          </span>
-          {state.kind !== "fix" && state.first !== "" && (
-            <span className="truncate text-jw-page-small text-jw-ink-soft" data-card-first>
-              {say("chat_lesson_card_first", { say: state.first })}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <div className="flex items-start gap-2">
+            <span
+              className="min-w-0 flex-1 text-base leading-snug font-semibold text-jw-ink max-sm:line-clamp-2 sm:truncate"
+              data-card-title
+            >
+              {title}
+            </span>
+            {/* The one place the state is written (C4). */}
+            <Badge
+              variant="secondary"
+              className="h-6 gap-1 rounded-jw-control border-0 bg-jw-hover px-2 py-0 text-xs font-medium text-jw-ink sm:-mt-0.5 [&>svg]:size-3"
+              data-card-tag={state.kind}
+            >
+              <tag.Icon aria-hidden className={tag.tone} />
+              {say(tag.key)}
+            </Badge>
+            {/* The one way into the lesson: the preview opens over the chat, never beside it. */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => onOpen(object)}
+                  aria-label={openName}
+                  className="size-8 min-h-8 min-w-8 max-sm:size-9 max-sm:min-h-9 max-sm:min-w-9 sm:-mt-1"
+                  data-open-object={`${object.kind}:${object.id}`}
+                  data-expand
+                >
+                  <Maximize2Icon aria-hidden className="size-4 max-sm:hidden" />
+                  <ChevronRightIcon aria-hidden className="size-4 sm:hidden" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{say("chat_lesson_card_open")}</TooltipContent>
+            </Tooltip>
+          </div>
+          {state.count > 0 && (
+            <span
+              className="mt-0.5 text-jw-page-small text-jw-ink-soft tabular-nums"
+              data-card-facts
+            >
+              {say("card_count", { n: state.count })}
+            </span>
+          )}
+          {state.preview.length > 0 && (
+            <ol className="mt-2 flex flex-col gap-1" data-card-preview>
+              {state.preview.slice(0, SHOWN).map((prompt, i) => (
+                <li key={`${i}-${prompt}`} className="flex min-w-0 items-baseline gap-2">
+                  <span className="w-3.5 shrink-0 text-xs text-jw-placeholder tabular-nums">
+                    {i + 1}
+                  </span>
+                  <span className="truncate text-jw-page-small text-jw-ink" data-card-prompt>
+                    {prompt}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+          {more > 0 && (
+            <span className="mt-1 pl-5.5 text-jw-page-small text-jw-ink-soft" data-card-more>
+              {say("card_more_questions", { n: more })}
             </span>
           )}
         </div>
-        {/* The one way into the lesson: the preview opens over the chat, never beside it. */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => onOpen(object)}
-              aria-label={openName}
-              className="size-8 min-h-8 min-w-8"
-              data-open-object={`${object.kind}:${object.id}`}
-              data-expand
-            >
-              <Maximize2Icon aria-hidden className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{say("chat_lesson_card_open")}</TooltipContent>
-        </Tooltip>
       </div>
       {state.kind === "fix" && state.findings.length > 0 && (
         <ul
