@@ -71,7 +71,7 @@ function field(input: Record<string, unknown> | undefined, name: string): string
 }
 
 /** The sentence for one call: built from its input where the input says enough. */
-export function sentenceOf(
+function sentenceOf(
   verb: VerbName,
   input: Record<string, unknown> | undefined,
   context: LineContext = {},
