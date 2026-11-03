@@ -370,11 +370,13 @@ api-dev:
 
 ## release: origin/main to prod, asking once (infra/release.sh, dl-5ssh.34.67). It previews the
 ## migrations, a saved Terraform plan and prod-status, asks you to type prod, then pushes the
-## migrations, checks jadwigo_api's login, seeds, applies the saved plan and deploys the api, the web,
-## the site and the docs. It stops before asking when the plan destroys or replaces anything. Your own
-## terminal only; the guard denies it from a session, and `make -n release` shows the one command.
+## migrations, checks jadwigo_api's login, applies the saved plan and deploys the api, the runner, the
+## web and the site. It never seeds (dl-5ssh.34.80). DOCS=1 deploys the docs too; without it the
+## release skips them (dl-5ssh.34.81). It stops before asking when the plan destroys or replaces
+## anything. Your own terminal only; the guard denies it from a session, and `make -n release` shows
+## the one command.
 release:
-	@sh infra/release.sh
+	@DOCS="$(DOCS)" sh infra/release.sh
 
 ## db-push ENV=dev|prod: show the migrations ENV's project lacks (a dry run), then push them only when
 ## you type the ENV's name. For dev only, CONFIRM=dev on the command line answers where there is no
