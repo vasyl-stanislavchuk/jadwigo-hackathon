@@ -123,8 +123,3 @@ export async function giveLesson(
 export async function confirmChild(page: Page): Promise<void> {
   await page.locator("[data-intro-yes]").click();
 }
-
-/** Past a given lesson's first screen, as the child the link names. */
-export async function confirmChild(page: Page): Promise<void> {
-  await page.locator("[data-intro-yes]").click();
-}
