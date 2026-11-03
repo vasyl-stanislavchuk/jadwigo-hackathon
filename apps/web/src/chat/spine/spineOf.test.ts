@@ -25,6 +25,14 @@ const ORDERS: readonly (readonly [string, ((events: readonly RunEvent[]) => RunE
     ["the engine's order", engineOrder],
   ];
 
+/**
+ * An edit's done line: its words with the questions it changed, or the verb's own sentence when a
+ * step it changed is no question, which has no number (dl-uukj.47.71.32).
+ */
+const isEdit = (line: SpineLine): boolean =>
+  line.kind === "done" &&
+  (line.copyKey.startsWith("chat_line_edit") || line.copyKey === "chat_tool_lesson_edit");
+
 /** Every line of the spine, stage lines first. */
 const linesOf = (spine: TurnSpine): SpineLine[] => [
   ...spine.stages.flatMap((s) => s.lines),
@@ -153,7 +161,7 @@ describe.each(ORDERS)("in %s", (_order, order) => {
         ["Sprawdzanie lekcji", "active", 2],
       ]);
       const open = spine.stages[2]?.lines ?? [];
-      expect(open.map((l) => l.copyKey)).toContain("chat_line_edit_changed");
+      expect(open.some(isEdit)).toBe(true);
       expect(open.at(-1)).toMatchObject({
         kind: "now",
         copyKey: SAY_KEY,
@@ -178,8 +186,7 @@ describe.each(ORDERS)("in %s", (_order, order) => {
       });
       expect(search[0]?.tags?.map((t) => t.copyKey)).toEqual(Array(7).fill(SAY_KEY));
       // One edit line per visit (S2): 2 drafting visits, then the edits of the re-check as one.
-      const edits = (i: number) =>
-        spine.stages[i]?.lines.filter((l) => l.copyKey.startsWith("chat_line_edit")) ?? [];
+      const edits = (i: number) => spine.stages[i]?.lines.filter(isEdit) ?? [];
       expect([edits(1).length, edits(2).length]).toEqual([2, 1]);
     });
 
