@@ -54,6 +54,45 @@ export function onlyHelpChanged(previous: unknown, next: unknown, id: string): b
   return withoutHelp(before) === withoutHelp(after);
 }
 
+/** How many prompts the card shows before "+{n} więcej" (lesson card delta C3). */
+const PREVIEW = 3;
+
+/** TeX macros that name a sign, read as the sign (as the lesson's own plain TeX reads). */
+const SIGNS: Readonly<Record<string, string>> = {
+  "\\times": "×",
+  "\\cdot": "·",
+  "\\div": "÷",
+  "\\mathbin{:}": ":",
+  "\\,": " ",
+  "\\;": " ",
+  "\\square": "…",
+  "{,}": ",",
+};
+
+/**
+ * A prompt as plain text, as the child reads it (delta C3): no bold, italics or code marks, a
+ * term or link as its word, a picture as nothing, TeX with its sign macros as signs and its other
+ * markup dropped, a gap ({id} or \square) as "…", and one line.
+ */
+export function plainPrompt(text: string): string {
+  return text
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/\$\$?([^$]*)\$?\$/g, (_m, tex: string) =>
+      tex
+        .replace(
+          /\\(?:times|cdot|div|square|mathbin\{:\}|,|;)|\{,\}/g,
+          (sign) => SIGNS[sign] ?? sign,
+        )
+        .replace(/\\[A-Za-z]+/g, "")
+        .replace(/[{}]/g, ""),
+    )
+    .replace(/\*\*|__|(?<![\w*])[*_](?=\S)|(?<=\S)[*_](?![\w*])|`/g, "")
+    .replace(/\{[A-Za-z0-9_-]+\}/g, "…")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** What the lesson card says about one revision: the questions the preview can show. */
 export interface LessonFacts {
   /** The lesson file's own id, "" when it has none. */
@@ -61,8 +100,8 @@ export interface LessonFacts {
   title: string;
   /** Question steps the preview can show: 0 while the draft does not read. */
   count: number;
-  /** The first question's words, "" when none reads. */
-  first: string;
+  /** The first 3 questions' prompts as plain text, those with words, in lesson order. */
+  preview: string[];
 }
 
 /** The card's facts from a revision's file, counted as the preview counts them. */
@@ -70,10 +109,13 @@ export function lessonFacts(file: unknown): LessonFacts {
   const id = isFields(file) && typeof file["id"] === "string" ? file["id"] : "";
   const title = titleOf(file);
   const read = readDraft(file);
-  if ("error" in read) return { id, title, count: 0, first: "" };
+  if ("error" in read) return { id, title, count: 0, preview: [] };
   const questions = lessonFileToSpecs(read.file, undefined, read.skipped)
     .flatMap((p) => p.steps)
     .flatMap((s) => (s.kind === "question" ? [s] : []));
-  const first = questions.find((q) => q.spec.say.trim() !== "")?.spec.say.trim() ?? "";
-  return { id, title, count: questions.length, first };
+  const preview = questions
+    .map((q) => plainPrompt(q.spec.say))
+    .filter((say) => say !== "")
+    .slice(0, PREVIEW);
+  return { id, title, count: questions.length, preview };
 }

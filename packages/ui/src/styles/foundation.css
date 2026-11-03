@@ -45,6 +45,8 @@
   /* The adult layer's field edge, a facet's dashed edge, and a checkbox's or radio's edge. */
   --jw-p-paper-250: #d9d3c6;
   --jw-p-paper-350: #b9b3a6;
+  /* The raised lesson card's outer edge (chat lesson card delta, 2026-11-03, dl-vxjv2). */
+  --jw-p-paper-400: #aaa395;
   --jw-p-paper-450: #8e897f;
   --jw-p-paper-500: #726f68;
   --jw-p-paper-600: #50535c;
@@ -164,6 +166,8 @@
   --jw-line: var(--jw-p-paper-200);
   /* A neutral outline under a mouse: it darkens to the soft ink. */
   --jw-line-strong: var(--jw-p-paper-600);
+  /* The one raised card's edge: the living lesson card in the chat, nothing else (dl-vxjv2). */
+  --jw-line-raised: var(--jw-p-paper-400);
   /* The one thing to press now, the edge it stands on, and the same action at rest. */
   --jw-act: var(--jw-p-ink-300);
   --jw-on-act: var(--jw-p-ink-900);
@@ -257,6 +261,7 @@
   --jw-placeholder: var(--jw-p-night-450);
   --jw-line: var(--jw-p-night-200);
   --jw-line-strong: var(--jw-p-night-600);
+  --jw-line-raised: var(--jw-p-night-600);
   --jw-act: var(--jw-p-ink-600);
   --jw-on-act: var(--jw-p-ink-50);
   --jw-act-edge: var(--jw-p-ink-750);
@@ -539,6 +544,11 @@
     0 8px 24px -8px color-mix(in srgb, var(--jw-ink) 16%, transparent),
     0 2px 4px color-mix(in srgb, var(--jw-ink) 4%, transparent);
   --shadow-dialog: 0 16px 40px -12px color-mix(in srgb, var(--jw-ink) 22%, transparent);
+  /* The one exception to flat page content: the living lesson card stands above the chat's work
+     * (owner, 2026-11-03, dl-vxjv2). Nothing else in the thread carries it. */
+  --shadow-card:
+    0 1px 2px color-mix(in srgb, var(--jw-ink) 5%, transparent),
+    0 6px 20px -6px color-mix(in srgb, var(--jw-ink) 14%, transparent);
 
   --kid-correct: var(--jw-right-edge);
   --kid-correct-foreground: var(--jw-on-right-act);

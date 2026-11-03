@@ -3,7 +3,15 @@ import { ErrorType } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
-import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { conversationReducer, EMPTY, lessonOf, turnsOf } from "./conversation.ts";
@@ -155,7 +163,7 @@ describe("ChatScreen on a transport", () => {
     render(<ChatScreen transport={t.transport} />);
     expect(await screen.findByText("Your lesson is ready on the right.")).toBeTruthy();
     expect(t.calls).toEqual(["runs", `subscribe ${t.run.id}`, `events ${t.run.id} after 0`]);
-    expect(screen.getByText("Wersja 2")).toBeTruthy();
+    expect(document.querySelector('div[data-revision="2"]')).not.toBeNull();
     // Each question step is named in the parent's language (dl-z5ja.45).
     const steps = document.querySelectorAll("[data-step][aria-label]");
     expect(steps.length).toBeGreaterThan(0);
@@ -171,7 +179,7 @@ describe("ChatScreen's phone switch (dl-z5ja.28)", () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     const lessonTab = screen.getByRole("tab", { name: /Lekcja/ });
     expect(screen.getByRole("tab", { name: "Rozmowa" }).getAttribute("aria-selected")).toBe("true");
     expect(lessonTab.querySelector("[data-badge]")?.textContent).toBe("Lekcja się zmieniła");
@@ -247,7 +255,7 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
       },
     };
     render(<ChatScreen transport={transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     await act(async () => t.push([thirdRevision(events)]));
     const undo = () => document.querySelector("[data-undo]") as HTMLButtonElement;
     await act(async () => fireEvent.click(undo()));
@@ -271,7 +279,7 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
       },
     };
     render(<ChatScreen transport={transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     fireEvent.click(document.querySelector("[data-step='s02'] [aria-expanded]") as HTMLElement);
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     const words = () => screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" });
@@ -317,11 +325,11 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
       },
     };
     render(<ChatScreen transport={transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     await act(async () => t.push([third]));
     await act(async () => fireEvent.click(document.querySelector("[data-undo]") as HTMLElement));
     // The log holds the undo and its revision: it landed, so the pane never says it did not.
-    expect(screen.getByText("Wersja 4")).toBeTruthy();
+    expect(document.querySelector('div[data-revision="4"]')).not.toBeNull();
     expect(document.querySelector("[data-undo-refused]")).toBeNull();
   });
 
@@ -329,12 +337,12 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     // Revisions 1 and 2 hold the same steps, so nothing is marked yet.
     expect(document.querySelector("[data-changed]")).toBeNull();
     const third = thirdRevision(events);
     await act(async () => t.push([third]));
-    expect(screen.getByText("Wersja 3")).toBeTruthy();
+    expect(document.querySelector('div[data-revision="3"]')).not.toBeNull();
     const marked = () => [...document.querySelectorAll("[data-changed]")];
     expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
     expect(marked()[0]?.textContent).toContain("zmienione");
@@ -355,7 +363,7 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     // A reload reads revision 2 from the log as previous_lesson (dl-z5ja.68): the same mark.
     cleanup();
     render(<ChatScreen transport={fakeTransport([...events, third]).transport} />);
-    expect(await screen.findByText("Wersja 3")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="3"]')).not.toBeNull());
     expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
   });
 

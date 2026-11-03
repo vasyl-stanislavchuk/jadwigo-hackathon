@@ -31,7 +31,7 @@ import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { addedSteps, LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
 import { type GiveState, LessonActions } from "../../chat/objects/LessonActions.tsx";
-import { comingVersion } from "../../chat/objects/LessonCard.tsx";
+import { lessonChanging } from "../../chat/objects/LessonCard.tsx";
 import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
 import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/registry.tsx";
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
@@ -315,7 +315,7 @@ export function LessonWorkspace({
                     />
                   ),
                 actions,
-                band: comingVersion(lesson.turns),
+                band: lessonChanging(lesson.turns),
               }
             : {
                 title: objectHeading(opened, panelPage),

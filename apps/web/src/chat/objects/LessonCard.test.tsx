@@ -8,7 +8,7 @@ import { ChatPane } from "../ChatPane.tsx";
 import type { Turn } from "../conversation.ts";
 import { addedSteps } from "../LessonPane.tsx";
 import type { LessonCardState } from "../spine/types.ts";
-import { comingVersion, LessonCard, lessonFacts, wroteLesson } from "./LessonCard.tsx";
+import { LessonCard, lessonChanging, wroteLesson } from "./LessonCard.tsx";
 import type { ObjectRef } from "./ref.ts";
 
 afterEach(cleanup);
@@ -63,14 +63,9 @@ function pane(turns: Turn[], onOpen = vi.fn()) {
 const card = () => document.querySelector("[data-object-card='lesson']");
 
 describe("the lesson-ready card (dl-uukj.47.58)", () => {
-  it("reads its facts from the turn's own revision: title, questions, version, the first one", () => {
-    const lesson = happyTurn().view.lesson;
-    if (lesson === null) throw new Error("the happy turn has a lesson");
-    const facts = lessonFacts(lesson);
-    expect(facts.title).toBe("Równe grupy");
-    expect(facts.revision).toBe(2);
-    expect(facts.steps).toBeGreaterThan(0);
-    expect(facts.first).not.toBeNull();
+  it("is never written with a version, in the card or the superseded row (delta C5)", () => {
+    pane([happyTurn()]);
+    expect(card()?.textContent).not.toMatch(/wersj|version \d/i);
   });
 
   it("ends a finished turn that wrote the lesson, and a click opens the lesson", () => {
@@ -78,8 +73,8 @@ describe("the lesson-ready card (dl-uukj.47.58)", () => {
     const shown = card();
     expect(shown).not.toBeNull();
     expect(shown?.querySelector("[data-card-title]")?.textContent).toBe("Równe grupy");
-    expect(shown?.querySelector("[data-card-facts]")?.textContent).toMatch(/zada.* · Wersja 2/);
-    expect(shown?.querySelector("[data-card-first]")?.textContent).toMatch(/^Na początek: /);
+    expect(shown?.querySelector("[data-card-facts]")?.textContent).toBe("4 zadania");
+    expect(shown?.querySelectorAll("[data-card-prompt]").length).toBe(3);
     fireEvent.click(screen.getByRole("button", { name: "Podgląd lekcji: Równe grupy" }));
     expect(onOpen).toHaveBeenCalledWith(LESSON);
   });
@@ -156,31 +151,65 @@ function drawn(state: LessonCardState, more: Partial<Parameters<typeof LessonCar
 
 const BASE = { lessonId: LESSON.id, version: 2, title: "Mnożenie przez 2 i 5" };
 
-describe("the lesson card's 4 states (dl-uukj.47.71 S16, S7)", () => {
-  it("ready: Lekcja gotowa, its facts, the first question and the actions", () => {
-    drawn({ ...BASE, kind: "ready", count: 4, first: "Ile to 2 × 3?" });
+describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)", () => {
+  const PREVIEW = ["Ile to 2 × 3?", "Ile to 5 × 4?", "Uzupełnij: 2, 4, 6, …"];
+
+  it("ready: the title first, {n} zadań, 3 prompts, +{n} więcej, the Gotowa tag, the actions", () => {
+    drawn({ ...BASE, kind: "ready", count: 4, preview: PREVIEW });
     expect(card()?.getAttribute("data-card-state")).toBe("ready");
-    expect(card()?.querySelector("[data-card-label]")?.textContent).toBe("Lekcja gotowa");
-    expect(card()?.querySelector("[data-card-facts]")?.textContent).toBe("4 zadania · Wersja 2");
-    expect(card()?.querySelector("[data-card-first]")?.textContent).toBe(
-      "Na początek: Ile to 2 × 3?",
-    );
+    expect(card()?.querySelector("[data-card-title]")?.textContent).toBe("Mnożenie przez 2 i 5");
+    expect(card()?.querySelector("[data-card-facts]")?.textContent).toBe("4 zadania");
+    expect(
+      [...(card()?.querySelectorAll("[data-card-prompt]") ?? [])].map((p) => p.textContent),
+    ).toEqual(PREVIEW);
+    expect(card()?.querySelector("[data-card-more]")?.textContent).toBe("+1 więcej");
+    expect(card()?.querySelector("[data-card-tag]")?.textContent).toBe("Gotowa");
     expect(card()?.querySelector("[data-card-actions] [data-test-actions]")).not.toBeNull();
+    // No label row, no version, no "Na początek" (C2, C3, C5).
+    expect(card()?.textContent).not.toMatch(/Lekcja gotowa|Na początek|wersj/i);
   });
 
-  it("fix: Lekcja do poprawy with its findings, Daj lekcję quiet with a reason, Popraw za mnie", () => {
+  it("lists at most 3 prompts, and +{n} więcej only when there are more than 3", () => {
+    drawn({ ...BASE, kind: "ready", count: 3, preview: PREVIEW });
+    expect(card()?.querySelector("[data-card-more]")).toBeNull();
+    cleanup();
+    drawn({ ...BASE, kind: "ready", count: 12, preview: [...PREVIEW, "Czwarte"] });
+    expect(card()?.querySelectorAll("[data-card-prompt]").length).toBe(3);
+    expect(card()?.querySelector("[data-card-more]")?.textContent).toBe("+9 więcej");
+  });
+
+  it("writes its state only in the tag; the tile is always the book; it alone is raised", () => {
+    const kinds = [
+      { ...BASE, kind: "ready", count: 4, preview: PREVIEW },
+      { ...BASE, kind: "working", count: 4, preview: PREVIEW },
+      { ...BASE, kind: "fix", count: 4, preview: PREVIEW, findings: [] },
+    ] as const;
+    const tags = { ready: "Gotowa", working: "Zmieniam…", fix: "Do poprawy" };
+    for (const state of kinds) {
+      drawn(state);
+      const tile = card()?.querySelector("span[aria-hidden] svg");
+      expect(tile?.getAttribute("class")).toContain("lucide-book-open");
+      expect(card()?.querySelector("[data-card-tag]")?.textContent).toBe(tags[state.kind]);
+      for (const other of Object.values(tags).filter((t) => t !== tags[state.kind]))
+        expect(card()?.textContent).not.toContain(other);
+      expect(document.querySelectorAll(".shadow-card")).toHaveLength(1);
+      cleanup();
+    }
+  });
+
+  it("fix: Do poprawy with its findings, Daj lekcję quiet with a reason, Popraw za mnie", () => {
     const props = drawn({
       ...BASE,
       kind: "fix",
       count: 4,
+      preview: PREVIEW,
       findings: [
         { step: 2, words: { copyKey: "chat_line_failed_generic", values: {} } },
         { step: 4, words: { copyKey: "chat_line_check_ok", values: {} } },
       ],
     });
-    const text = card()?.textContent ?? "";
-    expect(text).toContain("Lekcja do poprawy");
-    expect(text).not.toContain("Lekcja gotowa");
+    expect(card()?.querySelector("[data-card-tag]")?.textContent).toBe("Do poprawy");
+    expect(card()?.textContent).not.toContain("Gotowa");
     const findings = [...(card()?.querySelectorAll("[data-finding]") ?? [])];
     expect(findings.map((f) => f.textContent)).toEqual([
       "Zadanie 2. Ten krok się nie udał, poszłam dalej bez niego",
@@ -194,34 +223,30 @@ describe("the lesson card's 4 states (dl-uukj.47.71 S16, S7)", () => {
     expect(document.getElementById(give.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
       "Najpierw trzeba poprawić 2 zadania.",
     );
-    expect(card()?.querySelector("[data-fix-reason]")?.textContent).toBe(
-      "Daj lekcję będzie można, gdy zadania będą poprawione.",
-    );
     fireEvent.click(screen.getByRole("button", { name: "Popraw za mnie" }));
     expect(props.onFix).toHaveBeenCalledTimes(1);
   });
 
   it("fix with no step to show never says 0 zadań; without onFix there is no Popraw za mnie", () => {
-    drawn({ ...BASE, kind: "fix", count: 0, findings: [] }, { onFix: undefined });
-    const text = card()?.textContent ?? "";
-    expect(text).not.toMatch(/0 zadań/);
-    expect(text).not.toContain("Lekcja gotowa");
-    expect(card()?.querySelector("[data-card-facts]")?.textContent).toBe("Wersja 2");
+    drawn({ ...BASE, kind: "fix", count: 0, preview: [], findings: [] }, { onFix: undefined });
+    expect(card()?.textContent).not.toMatch(/0 zadań|Gotowa/);
+    expect(card()?.querySelector("[data-card-facts]")).toBeNull();
     expect(screen.queryByRole("button", { name: "Popraw za mnie" })).toBeNull();
   });
 
-  it("working: names the version that stands and the one coming; its actions still give", () => {
-    drawn({ ...BASE, kind: "working", nextVersion: 3, count: 4, first: "Ile to 2 × 3?" });
-    expect(card()?.querySelector("[data-card-label]")?.textContent).toBe(
-      "Wersja 2 · Jadwigo robi wersję 3",
-    );
+  it("working: Zmieniam…, the current lesson and its actions, no version", () => {
+    drawn({ ...BASE, kind: "working", count: 4, preview: PREVIEW });
+    expect(card()?.querySelector("[data-card-tag]")?.textContent).toBe("Zmieniam…");
+    expect(card()?.querySelectorAll("[data-card-prompt]").length).toBe(3);
     expect(card()?.querySelector("[data-test-actions]")).not.toBeNull();
+    expect(card()?.textContent).not.toMatch(/wersj/i);
   });
 
-  it("superseded: one row with no actions and no expand; Otwórz tę wersję only when given", () => {
+  it("superseded: one flat row, jest nowsza wersja, no actions or expand; Otwórz tę wersję when given", () => {
     drawn({ ...BASE, kind: "superseded" });
     expect(card()?.getAttribute("data-card-state")).toBe("superseded");
-    expect(card()?.textContent).toBe("Mnożenie przez 2 i 5wersja 2 · jest nowsza");
+    expect(card()?.textContent).toBe("Mnożenie przez 2 i 5jest nowsza wersja");
+    expect(card()?.classList.contains("shadow-card")).toBe(false);
     expect(card()?.querySelector("[data-test-actions]")).toBeNull();
     expect(card()?.querySelector("[data-expand]")).toBeNull();
     cleanup();
@@ -257,7 +282,7 @@ describe("the lesson card's 4 states (dl-uukj.47.71 S16, S7)", () => {
     expect(states).toEqual(["ready", "ready"]);
   });
 
-  it("from a revision with no step that reads: Lekcja do poprawy, never 0 zadań (dl-uukj.47.69)", () => {
+  it("from a revision with no step that reads: Do poprawy, never 0 zadań (dl-uukj.47.69)", () => {
     const lesson = happyTurn().view.lesson;
     if (lesson === null) throw new Error("the happy turn has a lesson");
     render(
@@ -270,13 +295,13 @@ describe("the lesson card's 4 states (dl-uukj.47.71 S16, S7)", () => {
       />,
     );
     expect(card()?.getAttribute("data-card-state")).toBe("fix");
-    expect(card()?.textContent).not.toMatch(/Lekcja gotowa|0 zadań/);
+    expect(card()?.textContent).not.toMatch(/Gotowa|0 zadań/);
   });
 });
 
 describe("what the preview says while the lesson changes (S20)", () => {
-  it("names the version coming only while a writing call runs in the open turn", () => {
-    expect(comingVersion([happyTurn()])).toBeUndefined();
+  it("says the lesson is changing only while a writing call runs in the open turn", () => {
+    expect(lessonChanging([happyTurn()])).toBe(false);
     const writing = happyTurn((v) => {
       v.turn_open = true;
       const call = v.chat.findLast((i) => i.kind === "tool" && i.verb === "lesson_edit");
@@ -291,11 +316,11 @@ describe("what the preview says while the lesson changes (S20)", () => {
           state: "running",
         });
     });
-    expect(comingVersion([writing])).toBe(3);
+    expect(lessonChanging([writing])).toBe(true);
     const thinking = happyTurn((v) => {
       v.turn_open = true;
     });
-    expect(comingVersion([thinking])).toBeUndefined();
+    expect(lessonChanging([thinking])).toBe(false);
   });
 
   it("tells added steps from changed ones by the revision before", () => {

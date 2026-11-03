@@ -78,6 +78,7 @@
   --color-destructive: var(--destructive);
   --shadow-float: var(--shadow-float);
   --shadow-dialog: var(--shadow-dialog);
+  --shadow-card: var(--shadow-card);
 
   --color-kid-correct: var(--kid-correct);
   --color-kid-correct-foreground: var(--kid-correct-foreground);
@@ -103,6 +104,7 @@
   --color-jw-placeholder: var(--jw-placeholder);
   --color-jw-line: var(--jw-line);
   --color-jw-line-strong: var(--jw-line-strong);
+  --color-jw-line-raised: var(--jw-line-raised);
   --color-jw-act: var(--jw-act);
   --color-jw-on-act: var(--jw-on-act);
   --color-jw-act-edge: var(--jw-act-edge);

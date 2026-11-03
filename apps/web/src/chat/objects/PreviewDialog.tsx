@@ -6,8 +6,8 @@
  * and the actions, and closing it (X, Escape, the scrim) leaves the chat exactly where it was, the
  * focus back on the button that opened it.
  *
- * While a turn changes the lesson, a band under the title says so and names the version coming
- * (chat handoff dl-uukj.47.71 S20, moved from the side pane into the modal by the owner, 2026-11-03).
+ * While a turn changes the lesson, a band under the title says so, with no version number (chat
+ * handoff dl-uukj.47.71 S20, in the modal by the owner's amendment; lesson card delta C5).
  */
 
 import { copy, type Language } from "@jadwigo/copy";
@@ -30,8 +30,8 @@ export function PreviewDialog({
   language: Language;
   /** The lesson's actions in the foot, the same the card has; none for another thing. */
   actions?: ReactNode;
-  /** The version a running turn is making: "Jadwigo zmienia tę lekcję. Wersja {n} pojawi się tutaj." */
-  band?: number | undefined;
+  /** A running turn is changing the lesson: "Jadwigo zmienia tę lekcję. Zmiany pojawią się tutaj." */
+  band?: boolean | undefined;
   children: ReactNode;
 }): ReactElement {
   // It opens from the URL, not from a trigger Radix knows, so it keeps the control that had the
@@ -67,16 +67,16 @@ export function PreviewDialog({
         >
           <XIcon aria-hidden className="size-5" />
         </DialogClose>
-        {band !== undefined && (
+        {band === true && (
           <p
             className="flex items-center gap-2 border-y-jw border-jw-line bg-jw-side px-6 py-2 text-jw-page-small text-jw-ink"
-            data-preview-band={band}
+            data-preview-band
           >
             <LoaderIcon
               aria-hidden
               className="size-3.5 shrink-0 text-primary motion-safe:animate-spin"
             />
-            {copy(language, "lesson_pane_band", { n: band }, "adult")}
+            {copy(language, "lesson_pane_band", {}, "adult")}
           </p>
         )}
         <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4" data-preview-body>
