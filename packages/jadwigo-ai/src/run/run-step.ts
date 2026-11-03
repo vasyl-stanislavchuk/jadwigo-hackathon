@@ -31,7 +31,7 @@ import {
   type MuseResponse,
 } from "../muse/client.ts";
 import type { RunQueue } from "../queue/types.ts";
-import { type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
+import { MAX_READS, type QueuedStep, STEP_VISIBILITY_S } from "../queue/types.ts";
 import { mergePatch } from "../verbs/input.ts";
 import type { Verbs } from "../verbs/types.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "../verbs/types.ts";
@@ -39,6 +39,7 @@ import type { AttachmentReader, Converter } from "./attachments.ts";
 import { earlierLine, refusedLine, turnFiles } from "./files.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
 import { inLanguage } from "./language.ts";
+import { lessonValidationIssue, uncheckedRevision } from "./lesson-validation.ts";
 import { movePlan, planIn, settlePlan, startPlan, startsPlan } from "./plan.ts";
 
 /**
@@ -67,6 +68,11 @@ export interface EngineDeps {
    */
   onWarning?: (warning: EngineWarning) => void;
   /**
+   * Told when a verb refused a call, which the model reads and the step survives, so no log sees it
+   * otherwise (dl-hin8.35). Ids and the refusal's type only: its message can quote a lesson line.
+   */
+  onRefusal?: (refusal: EngineRefusal) => void;
+  /**
    * Where the turn's own photos are read (dl-z5ja.11.4): S3 in the hosted runner. Without it a
    * photo reaches the model as a line saying it could not be read, never as bytes.
    */
@@ -85,6 +91,13 @@ export interface EngineWarning {
   call_no: number;
   requested: ModelTier;
   answered: ModelTier;
+}
+
+/** What `onRefusal` is told. */
+export interface EngineRefusal {
+  run_id: RunId;
+  verb: ToolCall["verb"];
+  type: string;
 }
 
 /** An inbox row as the caller gives it: the engine names the run. */
@@ -121,15 +134,28 @@ const INSTRUCTIONS = [
   "Draft it with lesson_draft, read it with lesson_show, change a step with lesson_edit and check it with lesson_check.",
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
   CARD_RULE,
+  "A nearby source is a starting point: inspect the actual question.data, not only say. Adapt data, key and help consistently to the requested operation and range. Renaming a subtraction does not turn it into addition.",
+  "A later message about the lesson you hold changes that lesson: read it with lesson_show and edit it with lesson_edit. Draft again only when the parent asks for a different lesson.",
+  "Once you have read a step and know the changes for several steps, send all their lesson_edit calls together in one response: they run in order, each on the result of the one before, and a refused one leaves the others standing. The parent is waiting, so do not spend a response on each step.",
+  "Once the questions are settled, give the lesson its title by passing title to the lesson_check that closes your work: a few plain words a child reads, naming what it practises, in the lesson's language. Never the parent's request word for word, and never a name.",
+  "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key and inherits the main question family when omitted. If a check still fails, explain the limitation and do not claim the lesson is ready.",
   FENCE_RULE,
 ].join("\n");
-/** Moves on with `INSTRUCTIONS`: 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
-const PROMPT_CACHE_KEY = `${WORKFLOW}:3`;
+/** Moves on with `INSTRUCTIONS`: 6 since follow-ups edit (dl-hin8.45), 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:6`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
  */
 const DEFAULT_TIER: ModelTier = "contributor";
+/**
+ * The tool calls a turn may make before its tools go away and the model must close (owner's number,
+ * dl-hin8.38, raised from 40 for room while the tools settle). At today's prices the budget stops a looping turn only after thousands of calls, so
+ * without this only the 30 minute deadline would, with a parent waiting.
+ */
+const MAX_TOOL_CALLS = 60;
+const OUT_OF_CALLS =
+  "You have used all the tool calls this turn may make. This message ends your turn and no tool runs after it, so never say you are doing or will do something. Say what the lesson holds now, what did not change, and that the parent can send another message to go on. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -501,7 +527,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     // The answer check reads the turn and the parent's words of the turns before it (dl-z5ja.26).
     // ...and, when the run has a lesson, that the answer is in its language (dl-z5ja.64).
     const check = (text: string) =>
-      refusalOf(text, [...prior.said, ...w.log], languageOf(w.log, prior.lesson));
+      refusalOf(
+        text,
+        [...prior.said, ...w.log],
+        languageOf(w.log, prior.lesson),
+        lessonValidationIssue(w.log, true),
+      );
     let correction: { call_no: number; text: string; refusal: Refusal } | null = null;
     const refused = last ? await refusedText(w, last) : null;
     if (last && refused !== null) {
@@ -511,7 +542,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // words the parent wrote after it give nothing the answer could have read (dl-z5ja.102).
       const until = await callEndSeq(w, last);
       const read = w.log.filter((e) => e.seq <= until);
-      const refusal = refusalOf(refused, [...prior.said, ...read], languageOf(read, prior.lesson));
+      const refusal = refusalOf(
+        refused,
+        [...prior.said, ...read],
+        languageOf(read, prior.lesson),
+        lessonValidationIssue(read, true),
+      );
       if (refusal === null) {
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
@@ -575,6 +611,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
+    // Counted from the parent's last word: a message after the limit is a new request to act on.
+    // Checked before a model call, so one response's batch may pass the limit by its own size.
+    const spokeAt = w.log.findLast((e) => parentSpokeAfter([e], 0))?.seq ?? 0;
+    const outOfCalls =
+      w.log.filter((e) => e.type === "tool_result" && e.seq > spokeAt).length >= MAX_TOOL_CALLS;
+    if (outOfCalls) instructions.push(OUT_OF_CALLS);
     instructions.push(...prior.edits);
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer, w.log));
     const page = pageOf(w.log);
@@ -624,9 +666,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         tier: asked,
         instructions: instructions.join("\n\n"),
         input: [...prior.input, ...museInput(w.log, files.parts)],
-        tools: Object.values(deps.verbs).map((verb) => verb.tool),
+        tools: outOfCalls ? [] : Object.values(deps.verbs).map((verb) => verb.tool),
         names: await namesOf(deps.store, scope),
       });
+      // With no tools offered, a call it still names cannot run.
+      if (outOfCalls) response = { ...response, tool_calls: [] };
     } catch (error) {
       // A failed call writes no model_response, so the tier it went to is told here (dl-z5ja.103).
       if (error instanceof MuseFailed && error.tier !== null) downgraded(error.tier);
@@ -816,6 +860,7 @@ async function answerEndedAt(w: Writer): Promise<number> {
 /** Why an answer's words may not be written: they say nothing, or they fail the answer check. */
 interface Refusal {
   blank: boolean;
+  lesson?: string;
   misses: AnswerMiss[];
   /** The lesson's language, when the answer was not in it (dl-z5ja.64). */
   language: Language | null;
@@ -829,11 +874,15 @@ function refusalOf(
   text: string,
   given: readonly RunEvent[],
   language: Language | null,
+  lesson: string | null = null,
 ): Refusal | null {
-  if (text.trim() === "") return { blank: true, misses: [], language: null };
+  if (text.trim() === "")
+    return { blank: true, misses: [], language: null, ...(lesson === null ? {} : { lesson }) };
   const misses = checkAnswer(text, given);
   const wrong = language !== null && !inLanguage(text, language) ? language : null;
-  return misses.length === 0 && wrong === null ? null : { blank: false, misses, language: wrong };
+  return misses.length === 0 && wrong === null && lesson === null
+    ? null
+    : { blank: false, misses, language: wrong, ...(lesson === null ? {} : { lesson }) };
 }
 
 /**
@@ -881,7 +930,7 @@ function languageOf(log: readonly RunEvent[], base: VerbContext["lesson"]): Lang
 const LANGUAGE_NAME: Record<Language, string> = { pl: "Polish", en: "English" };
 
 /** What a refusal names, for the correction note and the error. */
-function refusedFor({ blank, misses, language }: Refusal): string {
+function refusedFor({ blank, misses, language, lesson }: Refusal): string {
   if (blank) return "said nothing";
   const said = [];
   if (misses.length > 0) {
@@ -889,13 +938,15 @@ function refusedFor({ blank, misses, language }: Refusal): string {
       `named ${[...new Set(misses.map((m) => `"${m.said}"`))].join(", ")}, which no tool result of this turn gave`,
     );
   }
+  if (lesson) said.push(lesson);
   if (language) said.push(`was not in ${LANGUAGE_NAME[language]}, the lesson's language`);
   return said.join(", and ");
 }
 
 /** The error type a refusal is written as: only a refusal for its language alone is that. */
-function refusalType({ blank, misses, language }: Refusal): string {
-  if (!blank && misses.length === 0 && language !== null) return RUN_ERROR_TYPE.answerWrongLanguage;
+function refusalType({ blank, misses, language, lesson }: Refusal): string {
+  if (!blank && !lesson && misses.length === 0 && language !== null)
+    return RUN_ERROR_TYPE.answerWrongLanguage;
   return RUN_ERROR_TYPE.answerUnchecked;
 }
 
@@ -909,6 +960,11 @@ function correctionNote(text: string, refusal: Refusal): string {
     `Your last answer was not sent to the parent: it ${refusedFor(refusal)}.`,
     "Code computes every number, status and level; you only word them, and you never name a mastery level.",
     ...(refusal.language ? [`Write it in ${LANGUAGE_NAME[refusal.language]}.`] : []),
+    ...(refusal.lesson
+      ? [
+          "Read the current lesson with lesson_show. Repair the reported task data, keys and help with lesson_edit, then call lesson_check. Do not finish with a readiness claim until that check passes.",
+        ]
+      : []),
     "Write the answer again with only what the tool results say. Your answer was:",
     fence(text, "child"),
   ].join("\n");
@@ -948,6 +1004,17 @@ async function endUnchecked(
 ): Promise<RunStepOutcome> {
   await w.append([
     await uncheckedEvent(w, last.payload.call_no, refusal, "after its one correction"),
+    ...(refusal.lesson
+      ? [
+          agentMessage(
+            w,
+            languageOf(w.log, null) === "en"
+              ? "The lesson is still a draft: it has not passed its check, so it is not ready to use."
+              : "Lekcja jest jeszcze szkicem: nie przeszła sprawdzenia, więc nie jest gotowa do użycia.",
+            await w.id("call", last.payload.call_no, "lesson-not-ready"),
+          ),
+        ]
+      : []),
   ]);
   // A message or steer the parent sent meanwhile is still answered: the next step does, and that
   // answer gets its own one correction (wave 2 Lead decision 22).
@@ -1025,6 +1092,7 @@ async function runTool(
         "the lesson changed after you read it (the parent's own edit, or another turn): read it again with lesson_show, then make your change on it",
     };
   }
+  if (error !== null) deps.onRefusal?.({ run_id: scope.run.id, verb: call.verb, type: error.type });
   const result: NewRunEvent = {
     type: "tool_result",
     run_id: scope.run.id,
@@ -1156,8 +1224,63 @@ async function finish(deps: EngineDeps, w: Writer): Promise<RunStepOutcome> {
       await deps.queue.send({ run_id: w.run, attempt: w.attempt });
       return "continue";
     }
+    await checkLatest(deps, w);
     return endTurn(w, "completed", deps.now());
   });
+}
+
+/**
+ * A parent's edit on an ended turn calls no model, so its lesson is checked here, in the unit that
+ * writes it (dl-uukj.47.71.48). The check goes in before the revision under the steer's own id: the
+ * order and the `call_id` of a `lesson_check` that writes a revision, so it stands for this one.
+ */
+async function checkPatched(
+  deps: EngineDeps,
+  w: Writer,
+  run: Run,
+  steer: SteerEvent,
+  lesson: VerbContext["lesson"],
+): Promise<void> {
+  const call: ToolCall = {
+    call_id: steer.event_id,
+    verb: "lesson_check",
+    input: { draft_id: w.run, help: {}, names: [] },
+  };
+  await w.append([
+    {
+      type: "tool_call",
+      run_id: w.run,
+      event_id: await w.id("tool", call.call_id, "call"),
+      payload: call,
+    },
+  ]);
+  await runTool(deps, w, { pod: w.pod, created_by: run.created_by, run }, call, lesson);
+}
+
+/**
+ * A turn never ends on a lesson nobody checked (dl-uukj.47.71.48): the model stopped short of it.
+ * The check is code, so it runs here at no cost, as a real `lesson_check` in the log: the card, the
+ * spine and the give route read it as any other.
+ */
+async function checkLatest(deps: EngineDeps, w: Writer): Promise<void> {
+  if (!uncheckedRevision(w.log)) return;
+  const run = await deps.store.getRun(w.pod, w.run);
+  const lesson = await conversationLesson(deps.store, w.pod, w.run);
+  if (run === null || lesson === null) return;
+  const call: ToolCall = {
+    call_id: `auto_check_${lesson.revision}`,
+    verb: "lesson_check",
+    input: { draft_id: w.run, help: {}, names: [] },
+  };
+  await w.append([
+    {
+      type: "tool_call",
+      run_id: w.run,
+      event_id: await w.id("tool", call.call_id, "call"),
+      payload: call,
+    },
+  ]);
+  await runTool(deps, w, { pod: w.pod, created_by: run.created_by, run }, call, lesson);
 }
 
 async function endTurn(
@@ -1207,6 +1330,30 @@ async function endPastMax(w: Writer, attempt: number, now: Date): Promise<void> 
         error: {
           type: RUN_ERROR_TYPE.runTimedOut,
           message: `the turn ran past its ${minutes(RUN_MAX_MS)} minutes`,
+        },
+        attempt,
+        retryable: false,
+      },
+    },
+  ]);
+  await endTurn(w, "failed", now);
+}
+
+/**
+ * Ends a turn whose step failed on every delivery, or was dead-lettered (dl-hin8.28): an `error`
+ * event the chat words as "Jadwigo could not finish this", then the turn fails, so its spinner
+ * stops at once rather than at `max_deadline_at`.
+ */
+async function endAfterFailures(w: Writer, attempt: number, now: Date): Promise<void> {
+  await w.append([
+    {
+      type: "error",
+      run_id: w.run,
+      event_id: await w.id("error", "failed"),
+      payload: {
+        error: {
+          type: RUN_ERROR_TYPE.stepFailed,
+          message: "the step failed on every try, so the turn ended",
         },
         attempt,
         retryable: false,
@@ -1349,7 +1496,10 @@ function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null 
  * or not, with why (`stale_base`, `invalid_file`, `no_lesson`), so the pane reads the outcome
  * instead of re-deriving the rule. A patch not applied stays words for the model, told why.
  */
-async function applyPatches(w: Writer): Promise<number> {
+async function applyPatches(
+  w: Writer,
+  beforeRevision?: (steer: SteerEvent, lesson: VerbContext["lesson"]) => Promise<void>,
+): Promise<number> {
   let applied = 0;
   for (const steer of steersOf(w.log)) {
     const { patch, base_revision } = steer.payload;
@@ -1375,6 +1525,7 @@ async function applyPatches(w: Writer): Promise<number> {
       }
       const lesson_file = mergePatch(lesson.lesson_file, patch);
       if (!readable(lesson_file)) return resolve({ applied: false, reason: "invalid_file" });
+      await beforeRevision?.(steer, { revision: base_revision, lesson_file });
       // The resolution, then its revision, as the golden order keeps a tool_result before its
       // revision. A writer that wins between the check above and this fails the unit, and a
       // redelivery redoes it, now as stale_base.
@@ -1456,7 +1607,7 @@ async function patchEnded(
   });
   // A later unit applies every logged patch not yet resolved, this take's and any a step that
   // threw after its take left behind (lead decision 48): a redelivery redoes it, never loses it.
-  await applyPatches(w);
+  await applyPatches(w, (steer, lesson) => checkPatched(deps, w, found.run, steer, lesson));
   return w.appended;
 }
 
@@ -1627,6 +1778,16 @@ export interface FailedStep extends RunStepInput {
   read_ct: number;
 }
 
+/** How often a running step's visibility moves on: 3 beats fit in `STEP_VISIBILITY_S`. */
+const KEEP_ALIVE_MS = 20_000;
+
+function everyKeepAlive(beat: () => void): () => void {
+  const timer = setInterval(beat, KEEP_ALIVE_MS);
+  // A beat never holds the process open.
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
+
 /**
  * The consumer's loop, in-process: reads visible steps and runs each until none is visible. A step
  * that throws stays in the queue and comes back after its visibility timeout, as on pgmq; one that
@@ -1638,16 +1799,36 @@ export interface FailedStep extends RunStepInput {
  *
  * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
  * log it by run id (dl-z5ja.82); it stays in the queue either way.
+ *
+ * `keep_going` is asked before each read, so a host with a time limit stops between steps and never
+ * inside one (dl-hin8.33). What it leaves stays queued for the next drain.
  */
 export async function drain(
   deps: EngineDeps,
-  options: { max_steps?: number; onError?: (error: unknown, step: FailedStep) => void } = {},
+  options: {
+    max_steps?: number;
+    keep_going?: () => boolean;
+    onError?: (error: unknown, step: FailedStep) => void;
+    /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
+    onRead?: (run_id: RunId) => void;
+    /** Calls `beat` while a step runs, and answers how to stop. A test drives it by hand. */
+    keepAlive?: (beat: () => void) => () => void;
+  } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
+  const keepAlive = options.keepAlive ?? everyKeepAlive;
   const outputs: RunStepOutput[] = [];
   for (let reads = 0; reads < max; reads++) {
+    if (options.keep_going?.() === false) break;
     const [queued] = await deps.queue.read(STEP_VISIBILITY_S, 1);
     if (!queued) break;
+    options.onRead?.(queued.message.run_id);
+    // A healthy step can outlast its visibility: a model call with room to reason, or several edits
+    // in one response (dl-hin8.44). This host is alive, so the step stays hidden; if the host dies
+    // the beats stop and the step comes back. A beat that fails only risks that redelivery.
+    const stop = keepAlive(() => {
+      deps.queue.extend?.(queued.msg_id, STEP_VISIBILITY_S).catch(() => undefined);
+    });
     try {
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
@@ -1659,9 +1840,36 @@ export async function drain(
         msg_id: queued.msg_id,
         read_ct: queued.read_ct,
       });
+      // Its last delivery failed too: the run ends failed now, and the step leaves the queue, rather
+      // than wait in the dead letter for the deadline sweep (dl-hin8.28).
+      // A fault in failing it (the store itself down) leaves the step for the dead letter's path.
+      if (
+        queued.read_ct >= MAX_READS &&
+        (await failRun(deps, queued.message.run_id).catch(() => false))
+      )
+        await deps.queue.archive(queued.msg_id);
+    } finally {
+      stop();
     }
   }
+  // A step that never came back to throw (its host died with it) is dead-lettered by the queue on
+  // its next read: its run ends failed too, once, the next time anything drains.
+  for (const dead of await deps.queue.deadLetters())
+    await failRun(deps, dead.message.run_id).catch(() => false);
   return outputs;
+}
+
+/**
+ * Ends a run failed because its step could not finish (dl-hin8.28), through the sweep's own close,
+ * so a step still running goes stale. False when the run is gone, already ended, or another claim
+ * won it.
+ */
+async function failRun(deps: EngineDeps, run_id: RunId): Promise<boolean> {
+  const pod = await deps.store.findRunPod(run_id);
+  if (!pod) return false;
+  const run = await deps.store.getRun(pod, run_id);
+  if (isEnded(run.status)) return true;
+  return (await closeDue(deps.store, pod, run, "failed", deps.now())) !== null;
 }
 
 /**
@@ -1727,7 +1935,7 @@ async function closeDue(
   store: Store,
   pod: PodId,
   run: Run,
-  due: "idle" | "max",
+  due: "idle" | "max" | "failed",
   now: Date,
 ): Promise<{ events: number } | null> {
   // One unit, the run's row locked first: the claim, the take and the end land together, so a
@@ -1743,11 +1951,9 @@ async function closeDue(
     try {
       await takeInbox(store, w);
       await applyPatches(w);
-      if (due === "max") {
-        await endPastMax(w, run.attempt, now);
-      } else {
-        await endPastIdle(w, run.attempt, now);
-      }
+      if (due === "max") await endPastMax(w, run.attempt, now);
+      else if (due === "failed") await endAfterFailures(w, run.attempt, now);
+      else await endPastIdle(w, run.attempt, now);
     } catch (error) {
       if (error instanceof StaleAttempt) return null;
       throw error;

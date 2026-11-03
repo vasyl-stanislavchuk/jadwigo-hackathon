@@ -9,10 +9,9 @@
 import type { ConversationListClient, RunRatingClient } from "@jadwigo/api-client";
 import { ConversationId, type RunId, type RunRatingCreate } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
-import { cn } from "@jadwigo/ui";
+import { Badge, Button, cn, RegisterProvider } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useMemo, useState } from "react";
 import { queryLanguage, useLocation } from "../nav/location.ts";
-import { Button } from "./button.tsx";
 import { ChatPane } from "./ChatPane.tsx";
 import { type ConsentClient, ConsentScreen, giveConsent } from "./ConsentScreen.tsx";
 import { ConversationList } from "./ConversationList.tsx";
@@ -20,7 +19,6 @@ import type { ConversationState } from "./conversation.ts";
 import { newConversationId } from "./ids.ts";
 import { LessonPane } from "./LessonPane.tsx";
 import { useLessonWiring } from "./lessonWiring.ts";
-import type { LessonChange } from "./patches.ts";
 import { usePhase } from "./phase.ts";
 import { apiTransport } from "./realtime.ts";
 import { holdServer } from "./routesTransport.ts";
@@ -90,12 +88,12 @@ function ChatView({
   onCloseContext?: () => void;
   /** "Spróbuj ponownie" after a failed send: the exact words that failed. */
   onResend?: () => void;
-  onEdit?: (text: string, question_ids: string[], change?: LessonChange) => unknown;
+  onEdit?: (text: string, question_ids: string[]) => unknown;
   onNew?: () => void;
   /** Rates a completed turn by its run (dl-z5ja.63). */
   onRate?: ((run: RunId, body: RunRatingCreate) => Promise<unknown>) | undefined;
 }): ReactElement {
-  const lesson = useLessonWiring(state, onEdit);
+  const lesson = useLessonWiring(state);
   const { turns } = lesson;
   const { phase, now } = usePhase(turns, state, onRefetch);
   return (
@@ -131,11 +129,7 @@ function ChatView({
           language={language}
           lesson={lesson.shown}
           changed={lesson.changed}
-          onUndo={lesson.onUndo}
-          undoRefused={lesson.undoRefused}
-          undoPending={lesson.undoPending}
           onEdit={onEdit}
-          outcomeOf={lesson.outcomeOf}
         />
       }
       lessonKey={lesson.key}
@@ -176,18 +170,15 @@ function ChatLayout({
       data-tab={name}
       onClick={() => setFront(name)}
       className={cn(
-        "flex-1 rounded-md px-3 py-1 text-sm",
+        "flex-1 rounded-jw-control px-3 py-1 text-jw-page-body",
         front === name ? "bg-muted font-medium" : "text-muted-foreground",
       )}
     >
       {label}
       {badge && (
-        <span
-          data-badge
-          className="bg-primary text-primary-foreground ml-2 rounded-full px-2 text-xs"
-        >
+        <Badge data-badge variant="count" className="ml-2">
           {say("chat_lesson_changed")}
-        </span>
+        </Badge>
       )}
     </button>
   );
@@ -198,11 +189,13 @@ function ChatLayout({
       className="grid h-dvh grid-rows-[auto_auto_1fr] gap-4 p-4 text-foreground bg-background lg:grid-rows-[auto_1fr]"
     >
       <header className="flex items-center justify-between">
-        <h1 className="text-lg font-medium">{say("chat_title")}</h1>
+        <h1 className="text-jw-page-h1 font-semibold">{say("chat_title")}</h1>
         {onNew && (
-          <Button variant="outline" size="sm" onClick={onNew}>
-            {say("chat_new")}
-          </Button>
+          <RegisterProvider value="app">
+            <Button variant="outline" size="sm" onClick={onNew}>
+              {say("chat_new")}
+            </Button>
+          </RegisterProvider>
         )}
       </header>
       <div role="tablist" aria-label={say("chat_switch")} className="flex gap-1 lg:hidden">

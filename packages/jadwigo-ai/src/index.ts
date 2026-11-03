@@ -37,12 +37,14 @@ export type {
   Converter,
   ConvertRefusal,
 } from "./run/attachments.ts";
+export { lessonValidationIssue } from "./run/lesson-validation.ts";
 export {
   type AcceptMessage,
   acceptMessage,
   authorizeRun,
   drain,
   type EngineDeps,
+  type EngineRefusal,
   type EngineWarning,
   type FailedStep,
   type InboxEntry,

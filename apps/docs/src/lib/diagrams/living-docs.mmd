@@ -1,0 +1,11 @@
+flowchart TB
+  change["A change in the code<br/><i>a route, an error, an MCP tool, a design token</i>"]
+  snapshot["Its snapshot or source<br/><i>openapi.json, mcp-tools.json, foundation.css, the question-type catalog</i>"]
+  build["The docs build<br/><i>reads them as files and modules</i>"]
+  check["check-dist<br/><i>every page and generated table is there, no link into the repo</i>"]
+  publish["docs.jadwigo.pl<br/><i>published by hand</i>"]
+
+  change -- "same pull request" --> snapshot
+  snapshot --> build
+  build --> check
+  check --> publish

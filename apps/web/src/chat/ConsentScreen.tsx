@@ -11,6 +11,7 @@ import { track } from "@jadwigo/analytics";
 import type { Client } from "@jadwigo/api-client";
 import { copy, type Language } from "@jadwigo/copy";
 import { Button, Heading, Notice } from "@jadwigo/ui";
+import { CircleAlert } from "lucide-react";
 import { type ReactElement, useState } from "react";
 
 /** What the chat's fallback needs to give the consent: the pod from /me, then its PATCH. */
@@ -46,18 +47,26 @@ export function ConsentScreen({
     );
   };
   return (
-    <section data-consent aria-label={say("chat_consent_title")} className="flex flex-col gap-4">
+    <section
+      data-consent
+      aria-label={say("chat_consent_title")}
+      className="flex w-full max-w-160 flex-col gap-4"
+    >
       <Heading>{say("chat_consent_title")}</Heading>
       {LINES.map((key) => (
         <p key={key} data-consent-line={key}>
           {say(key)}
         </p>
       ))}
-      {state === "failed" && <Notice role="alert">{say("chat_consent_failed")}</Notice>}
-      <div className="flex gap-2">
+      {state === "failed" && (
+        <Notice role="alert" icon={<CircleAlert aria-hidden="true" />}>
+          {say("chat_consent_failed")}
+        </Notice>
+      )}
+      <div className="flex flex-wrap gap-2">
         <Button
           type="button"
-          size="control"
+          size="lg"
           data-consent-agree
           disabled={state === "saving"}
           onClick={agree}
@@ -65,7 +74,7 @@ export function ConsentScreen({
           {say("chat_consent_agree")}
         </Button>
         {onLater && (
-          <Button type="button" size="control" variant="outline" onClick={onLater}>
+          <Button type="button" size="lg" variant="outline" onClick={onLater}>
             {say("chat_consent_later")}
           </Button>
         )}

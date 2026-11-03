@@ -84,14 +84,35 @@ describe("the lesson column (dl-z5ja.108.1)", () => {
     expect(ghosts()).toHaveLength(0);
   });
 
-  it("tags the rows this revision changed, in words", () => {
-    render(<LessonPane language="pl" lesson={lesson()} changed={new Set(["s05"])} />);
-    const tagged = rows().filter((r) => r.querySelector("[data-changed-mark]") !== null);
-    expect(tagged.map((r) => r.getAttribute("data-step"))).toEqual(["s05"]);
-    expect(tagged[0]?.hasAttribute("data-changed")).toBe(true);
-    expect(tagged[0]?.querySelector("[data-changed-mark]")?.textContent).toBe(
-      "Zmiana od Jadwigo AI",
+  it("tags the rows this revision added or changed, nowe or zmienione, until opened (S20)", () => {
+    render(
+      <LessonPane
+        language="pl"
+        lesson={lesson()}
+        changed={new Set(["s02", "s05"])}
+        added={new Set(["s05"])}
+      />,
     );
+    const marks = () =>
+      rows().flatMap((r) => {
+        const mark = r.querySelector("[data-changed-mark]");
+        return mark === null ? [] : [[r.getAttribute("data-step"), mark.textContent]];
+      });
+    expect(marks()).toEqual([
+      ["s02", "zmienione"],
+      ["s05", "nowe"],
+    ]);
+    expect(
+      rows()
+        .find((r) => r.getAttribute("data-step") === "s05")
+        ?.hasAttribute("data-changed"),
+    ).toBe(true);
+    // Opened once, its tag has been read: closing it again brings no tag back.
+    const s02 = rows().find((r) => r.getAttribute("data-step") === "s02");
+    const button = s02?.querySelector("button[aria-expanded]") as HTMLButtonElement;
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(marks()).toEqual([["s05", "nowe"]]);
   });
 
   it("an opened step shows its skill only with a child, and where it came from", () => {
@@ -103,9 +124,61 @@ describe("the lesson column (dl-z5ja.108.1)", () => {
     expect(document.querySelector("[data-skill]")?.textContent).toBe("maths.mul.2x5");
   });
 
+  it("a revision with no question says no count, never 0 zadań (steward on #808)", () => {
+    const shown = lesson();
+    if (shown === null) throw new Error("the happy turn has a lesson");
+    const file = structuredClone(shown.lesson_file) as {
+      script: { parts: { steps: { question?: Record<string, unknown> }[] }[] };
+    };
+    for (const part of file.script.parts)
+      for (const step of part.steps)
+        if (step.question !== undefined) step.question["family"] = "nope";
+    render(<LessonPane language="pl" lesson={{ ...shown, lesson_file: file }} />);
+    expect(document.querySelector("[data-pane-count]")).toBeNull();
+    expect(document.body.textContent).not.toMatch(/0 zadań/);
+    cleanup();
+    render(<LessonPane language="pl" lesson={shown} />);
+    expect(document.querySelector("[data-pane-count]")?.textContent).toBe("4 zadania");
+  });
+
   it("without an edit handler an opened step offers no actions", () => {
     render(<LessonPane language="pl" lesson={lesson()} />);
     fireEvent.click(toggles()[0] as HTMLButtonElement);
     expect(document.querySelector("[data-step-actions]")).toBeNull();
+  });
+});
+
+describe("one edit path per question: Zmień ten krok (dl-uukj.47.71.17)", () => {
+  it("an opened step offers only Zmień ten krok: no move, no Usuń, no Cofnij, no words editor", () => {
+    render(
+      <LessonPane
+        language="pl"
+        lesson={lesson()}
+        changed={new Set(["s02"])}
+        onEdit={() => undefined}
+      />,
+    );
+    for (const toggle of toggles()) fireEvent.click(toggle);
+    expect(document.querySelector("[data-move]")).toBeNull();
+    expect(document.querySelector("[data-drop]")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Usuń" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Cofnij" })).toBeNull();
+    fireEvent.click(document.querySelector("[data-edit-step]") as HTMLElement);
+    expect(screen.queryByRole("textbox", { name: "Co ten krok mówi dziecku" })).toBeNull();
+    expect(screen.getAllByRole("textbox")).toHaveLength(1);
+  });
+
+  it("sends a steer naming the step with the parent's words, and no patch", () => {
+    const sent: unknown[][] = [];
+    render(<LessonPane language="pl" lesson={lesson()} onEdit={(...args) => sent.push(args)} />);
+    fireEvent.click(document.querySelector("[data-step='s02'] [aria-expanded]") as HTMLElement);
+    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
+    fireEvent.change(screen.getByRole("textbox", { name: "Co zmienić w tym kroku i dlaczego?" }), {
+      target: { value: "mniejsze liczby" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" }));
+    // Exactly the words and the step: no third argument, so no patch goes (dl-uukj.47.71.18).
+    expect(sent).toEqual([["Rodzic prosi o zmianę w kroku s02: mniejsze liczby", ["s02"]]]);
+    expect(screen.getByText("Twoja zmiana trafiła do Jadwigo AI.")).toBeTruthy();
   });
 });

@@ -238,6 +238,7 @@ const UTILITIES: readonly (readonly [namespace: string, utility: string])[] = [
   ["color-", "bg-"],
   ["text-", "text-"],
   ["ease-", "ease-"],
+  ["animate-", "animate-"],
 ];
 
 /** One name tailwind.css's @theme gives a token: the utility, the theme variable, what it reads. */

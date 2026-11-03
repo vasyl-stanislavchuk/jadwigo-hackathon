@@ -4,6 +4,7 @@ import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { describe, expect, it } from "vitest";
 import { contextFor, runId } from "../testing/context.ts";
 import { type BankPort, createVerbs, fixtureBank } from "./index.ts";
+import { lessonSkillIds } from "./lesson.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "./types.ts";
 
 const DRAFT = { request: "a short lesson", grade: "1", names: [], topic: "addition" };
@@ -65,6 +66,25 @@ describe("lesson_draft", () => {
     expect(steps).toHaveLength(3);
     expect(steps[0]).toMatchObject({ say: "What is 12 - 5?" });
     expect(check(lesson_file).ok).toBe(true);
+  });
+
+  it("drops the bank's proposed: mark from a step's skill ids, so the check passes (dl-hin8.26)", async () => {
+    const { lesson_file } = await drafted({ ...DRAFT, topic: "subtraction" });
+    const steps = stepsOf(lesson_file);
+    expect(steps[0]).toMatchObject({ skill_ids: ["math.sub.within-20"] });
+    expect(check(lesson_file)).toMatchObject({ ok: true, findings: [] });
+  });
+
+  it("keeps a bank skill id only once it passes SkillId, each once", () => {
+    expect(
+      lessonSkillIds([
+        "proposed:maths.addition.add-1-or-10-mentally",
+        "maths.addition.add-1-or-10-mentally",
+        "set_khan_x46f76d31",
+        "proposed:Not An Id",
+        "math.add.within-20",
+      ]),
+    ).toEqual(["maths.addition.add-1-or-10-mentally", "math.add.within-20"]);
   });
 
   it("refuses input it does not take, a pod above all", async () => {
@@ -207,6 +227,23 @@ describe("a verb is idempotent by call_id", () => {
   });
 });
 
+describe("the card names a step's fields as lesson_edit takes them (dl-hin8.45)", () => {
+  it("answers say, and a patch of that name goes through", async () => {
+    const { verbs, run, effect, at } = await drafted();
+    const cards = (effect.output as { steps: Record<string, unknown>[] }).steps;
+    expect(cards[0]).toHaveProperty("say");
+    expect(cards[0]).not.toHaveProperty("prompt");
+    const edited = await verbs.lesson_edit.run(at("call_say"), {
+      draft_id: run,
+      names: [],
+      step_id: "s01",
+      why: "the parent's ask",
+      patch: { say: "Ile jest jabłek?" },
+    });
+    expect(edited.lesson_file).toBeDefined();
+  });
+});
+
 describe("lesson_check", () => {
   it("refuses a rung the bank's copy holds, and fills one it leaves empty", async () => {
     const { verbs, run, at, lesson_file } = await drafted();
@@ -299,6 +336,60 @@ describe("lesson_check", () => {
     expect(
       await refusal(at("call_5"), { draft_id: run, names: [], help: { s01: { say: "x" } } }),
     ).toBe("input");
+  });
+});
+
+describe("lesson_edit, a twin's problem the question's own error hid (dl-hin8.34)", () => {
+  /** s01 with a boost compile refuses, which hides a twin of another family behind it. */
+  async function hidden() {
+    const { verbs, run, lesson_file } = await drafted();
+    const file = structuredClone(lesson_file) as {
+      script: { parts: { steps: { question: Record<string, unknown> }[] }[] };
+    };
+    const question = file.script.parts[0]?.steps[0]?.question;
+    if (question === undefined) throw new Error("the draft has no s01");
+    const help = question["help"] as { boost: unknown; twin: Record<string, unknown> };
+    help.boost = { text: 5 };
+    help.twin["family"] = question["family"] === "choose" ? "enter" : "choose";
+    const at = (call_id: string) =>
+      contextFor(run, call_id, { revision: 1, lesson_file: file as never });
+    return { verbs, run, at };
+  }
+
+  it("takes a patch that only fixes the question, and answers the twin's problem as a finding", async () => {
+    const { verbs, run, at } = await hidden();
+    const effect = await verbs.lesson_edit.run(at("call_boost"), {
+      draft_id: run,
+      names: [],
+      step_id: "s01",
+      why: "the parent's ask",
+      patch: { question: { help: { boost: { text: "Policz jeszcze raz." } } } },
+    });
+
+    expect(effect.lesson_file).toBeDefined();
+    expect(effect.output).toMatchObject({
+      ok: false,
+      publishable: false,
+      findings: expect.arrayContaining([
+        expect.objectContaining({ step_id: "s01t", rule: "question-type-family" }),
+      ]),
+    });
+  });
+
+  it("still refuses a patch that writes the twin into another family", async () => {
+    const { verbs, run, lesson_file } = await drafted();
+    const at = contextFor(run, "call_twin", { revision: 1, lesson_file });
+    const step = stepsOf(lesson_file)[0] as { question: { family: string } };
+    const other = step.question.family === "choose" ? "enter" : "choose";
+    await expect(
+      verbs.lesson_edit.run(at, {
+        draft_id: run,
+        names: [],
+        step_id: "s01",
+        why: "the parent's ask",
+        patch: { question: { help: { twin: { family: other } } } },
+      }),
+    ).rejects.toThrow(/nothing changed/);
   });
 });
 

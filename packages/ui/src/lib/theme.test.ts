@@ -5,7 +5,14 @@
  */
 
 import { afterEach, describe, expect, it } from "vitest";
-import { DARK_QUERY, followSystemTheme, heldTheme, holdTheme, type ThemeWindow } from "./theme.ts";
+import {
+  DARK_QUERY,
+  followSystemTheme,
+  heldTheme,
+  holdTheme,
+  setAudience,
+  type ThemeWindow,
+} from "./theme.ts";
 
 function fakeWindow(dark: boolean) {
   const listeners = new Map<string, Array<() => void>>();
@@ -35,6 +42,7 @@ function root() {
   const el = {
     setAttribute: (k: string, v: string) => attrs.set(k, v),
     removeAttribute: (k: string) => attrs.delete(k),
+    getAttribute: (k: string) => attrs.get(k) ?? null,
   } as unknown as HTMLElement;
   return { el, theme: () => attrs.get("theme") ?? null };
 }
@@ -123,5 +131,18 @@ describe("holdTheme", () => {
     expect(r.theme()).toBe("dark");
     holdTheme(r.el, null);
     expect(r.theme()).toBeNull();
+  });
+});
+
+// The adult audience is light only for now (dl-uukj.47.67 D10); a child's pages follow the laptop.
+describe("setAudience", () => {
+  it("keeps an adult page light on a dark laptop, and gives a child's page the dark back", () => {
+    const r = root();
+    followSystemTheme(r.el, fakeWindow(true).win);
+    expect(r.theme()).toBe("dark");
+    setAudience(r.el, "adult");
+    expect(r.theme()).toBeNull();
+    setAudience(r.el, "kid");
+    expect(r.theme()).toBe("dark");
   });
 });

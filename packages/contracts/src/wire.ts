@@ -26,6 +26,7 @@ import {
   AttemptAnswer,
   AttemptResult,
   Brief,
+  Credit,
   Ended,
   Goal,
   GoalProgress,
@@ -132,6 +133,36 @@ export const ReleasedHelp = z.object({
 });
 export type ReleasedHelp = z.infer<typeof ReleasedHelp>;
 
+/**
+ * A borrowed question's credit as the page draws it (dl-1eieq.3): the lesson question's credit
+ * (decision `2026-10-27-a-lesson-question-s-credit-is-source-ref-url-licence-original-la`) less
+ * the original's url, which is never shown, and `checked`, which only the import reads. `adapted`
+ * is whether the lesson changed the item (`based_on.changes` not empty): with `original_lang` and
+ * the language the question is shown in, it picks the card's licence line.
+ */
+export const PageCredit = Credit.pick({
+  source: true,
+  ref: true,
+  licence: true,
+  original_lang: true,
+}).extend({ adapted: z.boolean() });
+export type PageCredit = z.infer<typeof PageCredit>;
+
+/** A lesson question's credit as the page sees it, or null for our own and bank questions. */
+export function pageCredit(
+  question: Pick<LessonQuestion, "credit" | "based_on">,
+): PageCredit | null {
+  const { credit } = question;
+  if (credit === null) return null;
+  return {
+    source: credit.source,
+    ref: credit.ref,
+    licence: credit.licence,
+    original_lang: credit.original_lang,
+    adapted: (question.based_on?.changes.length ?? 0) > 0,
+  };
+}
+
 /** An attempt question as the page sees it: the page's half of the lesson question, never its key. */
 export const PageAttemptQuestion = z.object({
   seq: Count,
@@ -139,6 +170,11 @@ export const PageAttemptQuestion = z.object({
   question_type: QuestionType,
   say: z.string(),
   question: PageFamilyQuestion,
+  /**
+   * Who made it and on what terms, when it is borrowed: the page draws "z Khan Academy". Null
+   * when left out, so a page and an api released apart still read each other.
+   */
+  credit: PageCredit.nullable().default(null),
   added: Added,
   placed: Placed.nullable(),
   added_for: Count.nullable(),
@@ -189,10 +225,13 @@ export const AttemptSnapshot = z.object({
 });
 export type AttemptSnapshot = z.infer<typeof AttemptSnapshot>;
 
+/** The longest name a player may type on a play link's first screen. */
+const PLAYER_NAME_CHARS = 40;
+
 /** `POST /api/v1/assignments/{id}/attempts`. */
 export const AttemptStart = z.strictObject({
   learner_id: LearnerId.nullable().optional(),
-  player_name: z.string().min(1).nullable().optional(),
+  player_name: z.string().trim().min(1).max(PLAYER_NAME_CHARS).nullable().optional(),
   mode: z.enum(["real", "preview"]).optional(),
 });
 export type AttemptStart = z.infer<typeof AttemptStart>;
@@ -638,6 +677,7 @@ export const LIMITS = {
   attemptsPerAssignment: 100,
   bodyBytes: 16_384,
   enteredChars: 200,
+  playerNameChars: PLAYER_NAME_CHARS,
   /** The reports one learner's list returns (`getLearnerReports`), newest first. */
   reportsPerLearner: 50,
   /**
@@ -829,6 +869,14 @@ export const LessonGive = z.strictObject({
 });
 export type LessonGive = z.infer<typeof LessonGive>;
 
+/** `PATCH /api/v1/conversations/{id}/lessons`: the parent's new title for the latest lesson. */
+export const LessonRename = z.strictObject({ title: z.string().trim().min(1).max(80) });
+export type LessonRename = z.infer<typeof LessonRename>;
+
+/** The reply: the revision that carries the new title, which its check already passed. */
+export const LessonRenamed = z.object({ revision: Count });
+export type LessonRenamed = z.infer<typeof LessonRenamed>;
+
 /** The reply: the assignment the child plays at `/play/<assignment id>`, and the version it serves. */
 export const LessonGiven = z.object({ assignment: Assignment, lesson_version: LessonVersion });
 export type LessonGiven = z.infer<typeof LessonGiven>;
@@ -878,6 +926,24 @@ export const FeaturedLesson = z.object({
   first_say: z.string().min(1).nullable(),
 });
 export type FeaturedLesson = z.infer<typeof FeaturedLesson>;
+
+/**
+ * `GET /api/v1/assignments/{id}`: what a play link's first screen says before any attempt
+ * exists (decision 2026-11-03-a-play-link-opens-on-a-first-screen-title-and-question-count-the).
+ */
+export const AssignmentIntro = z.object({
+  title: z.string().min(1),
+  language: Language,
+  /** The planned questions the child will answer; 0 when none is published. */
+  question_count: z.int().min(0),
+  /** How players say who they are; `none` opens straight into the lesson. */
+  identity: Assignment.shape.identity,
+  /** Whether someone with no learner may start it, so the page may offer a name. */
+  open: z.boolean(),
+  /** The first name of the learner the link names, or null when it names none of this pod's. */
+  first_name: z.string().min(1).nullable(),
+});
+export type AssignmentIntro = z.infer<typeof AssignmentIntro>;
 
 /** `GET /api/v1/featured-lessons`: the featured pod's open `anyone` assignments, oldest first. */
 export const Featured = z.object({ lessons: z.array(FeaturedLesson) });
@@ -969,6 +1035,10 @@ export const ERROR_STATUS = {
    * replaced it, or it holds more than `LIMITS.questionsPerLesson` questions (dl-5ssh.136).
    */
   LessonNotPublishable: 409,
+  /** A lesson that holds a question type with no paper form (today only `explain`), dl-1eieq.8. */
+  LessonNotPrintable: 409,
+  /** The print Lambda is not set up where the API runs, so no PDF can be made. */
+  PrintUnavailable: 502,
   Unauthorized: 401,
   BankUnavailable: 502,
 } as const;

@@ -17,6 +17,9 @@
   "//": {
     "@jadwigo/testing": "the design-system check its tokens.test.ts runs (checkTokens), tests only",
     "@fontsource/andika": "Andika, the Zeszyt type a child reads, loaded by src/styles/tailwind.css",
+    "@fontsource/geist": "Geist, the adult audience's type (dl-uukj.47.67 D1), loaded by src/styles/tailwind.css",
+    "@fontsource/geist-mono": "Geist Mono, the adult audience's codes and URLs, loaded by src/styles/tailwind.css",
+    "@tanstack/react-table": "the sorting, selection and column visibility under the adult Data Table (src/parts/data-table.tsx, dl-uukj.47.67 D11)",
     "@testing-library/dom": "@testing-library/react's required peer: the queries themselves",
     "@testing-library/react": "renders a component in a *.test.tsx and queries it the way a person would",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
@@ -26,9 +29,10 @@
     "clsx": "joins class names in cn() (src/lib/utils.ts)",
     "happy-dom": "the DOM the dom Vitest project runs *.test.tsx in, as the playground's tests do",
     "lucide-react": "the icons the primitives and parts draw (a chevron, a check, a close cross, Field's problem mark)",
-    "radix-ui": "the behaviour under the shadcn/ui primitives: popover, dialog (the sheet, src/primitives/sheet.tsx), radio group (radio-group, segmented-control), tabs, and Slot for asChild (Button, Link, OutcomeTile)",
+    "radix-ui": "the behaviour under the shadcn/ui primitives: popover, tooltip, dropdown and context menu, alert dialog, dialog (the sheet, src/primitives/sheet.tsx), radio group (radio-group, segmented-control), tabs, collapsible (src/primitives/collapsible.tsx: a chat turn and its stages fold), separator (src/primitives/separator.tsx, the day divider), and Slot for asChild (Button, Link, OutcomeTile)",
     "react": "the components in src/*.tsx; 18.3.1, the version the playground runs (dl-5ssh.34.6 ports it)",
     "react-dom": "React's renderer, which @testing-library/react renders the components with",
+    "sonner": "the toast (src/primitives/toast.tsx): Zrobione, Do cofnięcia, Nie wyszło (dl-uukj.47.67 D17)",
     "tailwind-merge": "lets a later Tailwind class win over an earlier one in cn() (src/lib/utils.ts)",
     "tailwindcss": "Tailwind 4, imported by src/styles/tailwind.css, which the app's build compiles",
     "typescript": "tsc for this package's typecheck script",
@@ -47,12 +51,16 @@
   },
   "dependencies": {
     "@fontsource/andika": "catalog:",
+    "@fontsource/geist": "catalog:",
+    "@fontsource/geist-mono": "catalog:",
+    "@tanstack/react-table": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "catalog:",
     "lucide-react": "catalog:",
     "radix-ui": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "sonner": "catalog:",
     "tailwind-merge": "catalog:",
     "tailwindcss": "catalog:"
   }

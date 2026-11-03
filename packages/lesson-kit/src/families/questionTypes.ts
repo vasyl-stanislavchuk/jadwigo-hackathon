@@ -7,6 +7,7 @@
  * Explain), `idea` while it is only proposed. dl-w3.72 measured every type against the contracts.
  */
 
+import { PAPER_FORMS, type PaperForm } from "@jadwigo/contracts";
 import { Family, type FamilyName, QuestionType, type QuestionTypeName, Surface } from "./names.ts";
 import type { Marks } from "./types.ts";
 
@@ -30,7 +31,8 @@ export interface QuestionTypeInfo {
   /** After a miss: the missed parts, or the whole step (the marks rule). */
   marks: Marks;
   status: Status;
-  print: "yes" | "adapted" | "no";
+  /** Its paper form, declared once in contracts (`PAPER_FORMS`, decision dl-jo99l). */
+  print: PaperForm;
   icap: Icap;
 }
 
@@ -45,7 +47,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { select: "one", layout: "binary" },
     marks: "parts",
     status: "refined",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.TrueFalse],
     icap: "active",
   },
   {
@@ -57,7 +59,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { select: "one", layout: "grid" },
     marks: "parts",
     status: "refined",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.Recognition],
     icap: "active",
   },
   {
@@ -69,7 +71,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { select: "one", layout: "lettered" },
     marks: "parts",
     status: "refined",
-    print: "yes",
+    print: PAPER_FORMS[QuestionType.LetteredChoice],
     icap: "active",
   },
   {
@@ -81,7 +83,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { select: "many", layout: "list" },
     marks: "parts",
     status: "refined",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.MultiSelect],
     icap: "active",
   },
   {
@@ -93,7 +95,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { select: "many", layout: "inline" },
     marks: "parts",
     status: "refined",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.MarkNumbers],
     icap: "active",
   },
   {
@@ -105,7 +107,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { select: "one", layout: "grid", figure: "fraction_bars" },
     marks: "parts",
     status: "refined",
-    print: "yes",
+    print: PAPER_FORMS[QuestionType.FractionCompare],
     icap: "active",
   },
   // Enter
@@ -118,7 +120,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { input: "number", entry: "keypad" },
     marks: "whole",
     status: "refined",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.Production],
     icap: "constructive",
   },
   {
@@ -130,7 +132,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { input: "text", entry: "keyboard" },
     marks: "whole",
     status: "refined",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.ShortText],
     icap: "constructive",
   },
   {
@@ -142,7 +144,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { input: "expression", entry: "keypad" },
     marks: "whole",
     status: "refined",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.Expression],
     icap: "constructive",
   },
   {
@@ -154,7 +156,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { input: "number", entry: "keypad", figure: "ruler" },
     marks: "whole",
     status: "refined",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.Measure],
     icap: "active",
   },
   // Slots
@@ -167,7 +169,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { gaps: "one or several" },
     marks: "parts",
     status: "refined",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.FillGaps],
     icap: "constructive",
   },
   {
@@ -179,7 +181,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { gaps: "table" },
     marks: "parts",
     status: "refined",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.FillTable],
     icap: "constructive",
   },
   {
@@ -191,7 +193,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { gaps: "picture" },
     marks: "parts",
     status: "refined",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.LabelPicture],
     icap: "active",
   },
   {
@@ -203,7 +205,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { gaps: "cells", gap_kind: Family.Enter },
     marks: "parts",
     status: "refined",
-    print: "yes",
+    print: PAPER_FORMS[QuestionType.Column],
     icap: "constructive",
   },
   {
@@ -215,7 +217,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { gaps: "pyramid" },
     marks: "parts",
     status: "refined",
-    print: "yes",
+    print: PAPER_FORMS[QuestionType.Pyramid],
     icap: "constructive",
   },
   {
@@ -227,7 +229,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { gaps: "several", figure: "clock" },
     marks: "parts",
     status: "refined",
-    print: "yes",
+    print: PAPER_FORMS[QuestionType.ClockRead],
     icap: "active",
   },
   {
@@ -239,7 +241,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { gaps: "several", figure: "coins" },
     marks: "parts",
     status: "refined",
-    print: "yes",
+    print: PAPER_FORMS[QuestionType.MoneyCount],
     icap: "constructive",
   },
   // Sequence
@@ -252,7 +254,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: {},
     marks: "whole",
     status: "draft",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.Order],
     icap: "active",
   },
   // Group
@@ -265,7 +267,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { each_item: "one", layout: "zones" },
     marks: "parts",
     status: "draft",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.Bucket],
     icap: "active",
   },
   {
@@ -277,7 +279,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { each_item: "one", capacity: 1, layout: "columns" },
     marks: "parts",
     status: "draft",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.Match],
     icap: "active",
   },
   // Place
@@ -290,7 +292,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { surface: Surface.NumberLine },
     marks: "whole",
     status: "draft",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.NumberLinePlace],
     icap: "active",
   },
   {
@@ -302,7 +304,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { surface: Surface.Image },
     marks: "parts",
     status: "draft",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.Hotspot],
     icap: "active",
   },
   {
@@ -314,7 +316,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { surface: Surface.Grid },
     marks: "whole",
     status: "draft",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.SpatialBuild],
     icap: "constructive",
   },
   {
@@ -326,7 +328,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { surface: Surface.Bars },
     marks: "parts",
     status: "draft",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.DrawGraph],
     icap: "constructive",
   },
   {
@@ -338,7 +340,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { surface: Surface.Clock, minute_step: 5, hands: "geared" },
     marks: "parts",
     status: "draft",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.ClockSet],
     icap: "constructive",
   },
   {
@@ -350,7 +352,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { surface: Surface.Coins, slots: 10 },
     marks: "whole",
     status: "draft",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.MoneyPay],
     icap: "constructive",
   },
   {
@@ -362,7 +364,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { surface: Surface.Fraction, shape: "bar" },
     marks: "whole",
     status: "draft",
-    print: "adapted",
+    print: PAPER_FORMS[QuestionType.FractionShade],
     icap: "constructive",
   },
   {
@@ -374,7 +376,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { surface: Surface.Grid, split: "one", cells: "squares" },
     marks: "parts",
     status: "draft",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.AreaModel],
     icap: "constructive",
   },
   // Explain
@@ -387,7 +389,7 @@ export const QUESTION_TYPES: QuestionTypeInfo[] = [
     options: { input: "text" },
     marks: "parts",
     status: "draft",
-    print: "no",
+    print: PAPER_FORMS[QuestionType.Explain],
     icap: "constructive",
   },
 ];

@@ -1,160 +1,204 @@
 {
-  "experiment": "E7: judging a child's freeform answer (dl-5ssh.90.53.9)",
-  "ran_at": "2026-11-03T11:49:39.519Z",
-  "status": "complete",
-  "commit": "f4b1194cc0fd4b83a1fb7a3957cfb49cad4aa48a",
+  "id": "e7",
+  "title": "Judging a child's freeform answer",
+  "status": "done",
+  "model": "muse-spark-1.3-contributor + muse-wonder-full-1.0",
+  "calls": 88,
+  "tokens": {
+    "input": 272695,
+    "output": 125340
+  },
+  "usd": 0.023238138000000002,
+  "cost_source": "muse-trace",
+  "wall_s": 1242,
+  "commit": "f4b1194c",
   "commands": [
     "bun packages/lesson-kit/src/families/explain/e7-judge.ts ~/.config/jadwigo-bank/muse.env",
     "bun packages/lesson-kit/src/families/explain/e7-report.ts <commit-sha>"
   ],
-  "data": "8 invented explain tasks, criteria written first, 10 invented hand-labelled answers each (80). No text comes from a real child.",
-  "criteria_version": "e7-2026-11-03",
-  "wall_s": 1242,
-  "judges": {
-    "code": {
-      "model": "code-only (packages/lesson-kit wordCount/isShort; @jadwigo/core judge refuses explain)",
-      "calls": 80,
-      "tokens": null,
-      "usd": 0,
-      "cost_source": "none",
-      "verdicts": {
-        "explain_more": 10,
-        "unjudged": 70,
-        "of_explain_more_hand_labelled_not_yet": 5
-      },
-      "note": "Code never says right or wrong: an empty or under-minimum answer asks for a little more (the view's explain_more flag), the rest is kept unjudged for the tutor. It agrees with the hand label only where 'ask for more' is right."
+  "results": [
+    {
+      "label": "Answers judged per judge",
+      "value": 80
     },
-    "spark": {
-      "model": "muse-spark-1.3-contributor",
-      "calls": 80,
-      "tokens": {
-        "input_tokens": 21299,
-        "cached_tokens": 7269,
-        "output_tokens": 109103
-      },
-      "usd": 0.023238138000000002,
-      "cost_source": "responses-api usage + HttpMuse PRICES (not the run ledger: no product run exists for offline judging)",
-      "score": {
-        "answers": 80,
-        "criterion_agreement": 0.9647058823529412,
-        "overall_agreement": 0.9375,
-        "false_wrong": 1,
-        "false_right": 0,
-        "reasons_with_words": 170,
-        "criteria_total": 170,
-        "feedback_checked": 80,
-        "feedback_bare_wrong": 0,
-        "feedback_long": 0
-      },
-      "disagreements": [
-        {
-          "task": "even-number",
-          "answer": "a9",
-          "kind": "partly-vague",
-          "hand": "correct",
-          "judged": "not_yet",
-          "text": "Parzyste liczby idą co drugą: 2, 4, 6, 8, 10, 12, 14.",
-          "feedback": "Ładnie pokazałeś kolejność liczb parzystych! Dopisz jeszcze, że 14 kończy się na 4 albo dzieli się na 7 i 7."
-        },
-        {
-          "task": "regrouping-add",
-          "answer": "a5",
-          "kind": "wrong-carry-missed",
-          "hand": "not_yet",
-          "judged": "partly",
-          "text": "7 i 5 to 12, 2 i 1 to 3, więc 312.",
-          "feedback": "Fajnie, że rozdzieliłeś jedności i dziesiątki osobno. Spróbuj teraz połączyć 30 i 12."
-        },
-        {
-          "task": "en-past-tense",
-          "answer": "a2",
-          "kind": "partly",
-          "hand": "partly",
-          "judged": "not_yet",
-          "text": "Because played is about the past.",
-          "feedback": "You spotted that 'played' is about the past — great! Can you add what 'play' tells us and what -ed adds?"
-        },
-        {
-          "task": "en-past-tense",
-          "answer": "a4",
-          "kind": "right-misspelt",
-          "hand": "correct",
-          "judged": "partly",
-          "text": "The ed at the end shows it is finisht, not now.",
-          "feedback": "Great spot that -ed at the end matters! Can you add what 'I play' tells us?"
-        },
-        {
-          "task": "en-past-tense",
-          "answer": "a10",
-          "kind": "partly",
-          "hand": "partly",
-          "judged": "not_yet",
-          "text": "Play is now, played is not now.",
-          "feedback": "You did well to show play is for now! Next, tell what the -ed at the end adds for yesterday."
-        }
-      ]
+    {
+      "label": "Spark agreement with hand labels, overall",
+      "value": "93.8%"
     },
-    "wonder": {
-      "model": "muse-wonder-full-1.0",
-      "calls": 8,
-      "tokens": {
-        "input": 251396,
-        "output": 16237
-      },
-      "usd": null,
-      "cost_source": "muse-trace (session logs of the 8 muse exec calls; ~31k input tokens per call is Muse session overhead; subscription-billed, no USD)",
-      "score": {
-        "answers": 80,
-        "criterion_agreement": 0.9705882352941176,
-        "overall_agreement": 0.95,
-        "false_wrong": 1,
-        "false_right": 0,
-        "reasons_with_words": 170,
-        "criteria_total": 170,
-        "feedback_checked": 80,
-        "feedback_bare_wrong": 0,
-        "feedback_long": 0
-      },
-      "disagreements": [
-        {
-          "task": "even-number",
-          "answer": "a9",
-          "kind": "partly-vague",
-          "hand": "correct",
-          "judged": "not_yet",
-          "text": "Parzyste liczby idą co drugą: 2, 4, 6, 8, 10, 12, 14.",
-          "feedback": "Ładnie policzyłeś co dwa aż do 14! Dodaj jeszcze, że 14 kończy się na 4."
-        },
-        {
-          "task": "en-past-tense",
-          "answer": "a2",
-          "kind": "partly",
-          "hand": "partly",
-          "judged": "not_yet",
-          "text": "Because played is about the past.",
-          "feedback": "Good start with the past! Next, look at the -ed ending and say what 'play' means too."
-        },
-        {
-          "task": "en-past-tense",
-          "answer": "a4",
-          "kind": "right-misspelt",
-          "hand": "correct",
-          "judged": "partly",
-          "text": "The ed at the end shows it is finisht, not now.",
-          "feedback": "Well spotted, the 'ed' shows it is finished! Next, add what 'play' without it means."
-        },
-        {
-          "task": "en-past-tense",
-          "answer": "a10",
-          "kind": "partly",
-          "hand": "partly",
-          "judged": "not_yet",
-          "text": "Play is now, played is not now.",
-          "feedback": "Good start, 'play is now' is helpful! Next, say that 'played' is already finished and spot the -ed."
-        }
-      ]
+    {
+      "label": "Wonder agreement with hand labels, overall",
+      "value": "95.0%"
+    },
+    {
+      "label": "False wrong verdicts, of 80",
+      "value": "1 per model, the same borderline answer"
+    },
+    {
+      "label": "Criterion reasons written",
+      "value": "170 of 170, both models"
+    },
+    {
+      "label": "Feedback lines that are a bare wrong",
+      "value": 0
+    },
+    {
+      "label": "Code-only judge",
+      "value": "no verdict: 10 asked for more, 70 kept unjudged"
+    },
+    {
+      "label": "Spark cost source",
+      "value": "Responses API usage + HttpMuse PRICES (USD above); wonder is subscription-billed, tokens from muse trace"
     }
-  },
-  "fixtures": "packages/lesson-kit/src/families/explain/e7.fixtures.json",
-  "raw_judgements": "packages/lesson-kit/src/families/explain/e7.judgements.json"
+  ],
+  "detail": {
+    "data": "8 invented explain tasks, criteria written first, 10 invented hand-labelled answers each (80). No text comes from a real child.",
+    "criteria_version": "e7-2026-11-03",
+    "judges": {
+      "code": {
+        "model": "code-only (packages/lesson-kit wordCount/isShort; @jadwigo/core judge refuses explain)",
+        "calls": 80,
+        "tokens": null,
+        "usd": 0,
+        "cost_source": "none",
+        "verdicts": {
+          "explain_more": 10,
+          "unjudged": 70,
+          "of_explain_more_hand_labelled_not_yet": 5
+        },
+        "note": "Code never says right or wrong: an empty or under-minimum answer asks for a little more (the view's explain_more flag), the rest is kept unjudged for the tutor. It agrees with the hand label only where 'ask for more' is right."
+      },
+      "spark": {
+        "model": "muse-spark-1.3-contributor",
+        "calls": 80,
+        "tokens": {
+          "input_tokens": 21299,
+          "cached_tokens": 7269,
+          "output_tokens": 109103
+        },
+        "usd": 0.023238138000000002,
+        "cost_source": "responses-api usage + HttpMuse PRICES (not the run ledger: no product run exists for offline judging)",
+        "score": {
+          "answers": 80,
+          "criterion_agreement": 0.9647058823529412,
+          "overall_agreement": 0.9375,
+          "false_wrong": 1,
+          "false_right": 0,
+          "reasons_with_words": 170,
+          "criteria_total": 170,
+          "feedback_checked": 80,
+          "feedback_bare_wrong": 0,
+          "feedback_long": 0
+        },
+        "disagreements": [
+          {
+            "task": "even-number",
+            "answer": "a9",
+            "kind": "partly-vague",
+            "hand": "correct",
+            "judged": "not_yet",
+            "text": "Parzyste liczby idą co drugą: 2, 4, 6, 8, 10, 12, 14.",
+            "feedback": "Ładnie pokazałeś kolejność liczb parzystych! Dopisz jeszcze, że 14 kończy się na 4 albo dzieli się na 7 i 7."
+          },
+          {
+            "task": "regrouping-add",
+            "answer": "a5",
+            "kind": "wrong-carry-missed",
+            "hand": "not_yet",
+            "judged": "partly",
+            "text": "7 i 5 to 12, 2 i 1 to 3, więc 312.",
+            "feedback": "Fajnie, że rozdzieliłeś jedności i dziesiątki osobno. Spróbuj teraz połączyć 30 i 12."
+          },
+          {
+            "task": "en-past-tense",
+            "answer": "a2",
+            "kind": "partly",
+            "hand": "partly",
+            "judged": "not_yet",
+            "text": "Because played is about the past.",
+            "feedback": "You spotted that 'played' is about the past — great! Can you add what 'play' tells us and what -ed adds?"
+          },
+          {
+            "task": "en-past-tense",
+            "answer": "a4",
+            "kind": "right-misspelt",
+            "hand": "correct",
+            "judged": "partly",
+            "text": "The ed at the end shows it is finisht, not now.",
+            "feedback": "Great spot that -ed at the end matters! Can you add what 'I play' tells us?"
+          },
+          {
+            "task": "en-past-tense",
+            "answer": "a10",
+            "kind": "partly",
+            "hand": "partly",
+            "judged": "not_yet",
+            "text": "Play is now, played is not now.",
+            "feedback": "You did well to show play is for now! Next, tell what the -ed at the end adds for yesterday."
+          }
+        ]
+      },
+      "wonder": {
+        "model": "muse-wonder-full-1.0",
+        "calls": 8,
+        "tokens": {
+          "input": 251396,
+          "output": 16237
+        },
+        "usd": null,
+        "cost_source": "muse-trace (session logs of the 8 muse exec calls; ~31k input tokens per call is Muse session overhead; subscription-billed, no USD)",
+        "score": {
+          "answers": 80,
+          "criterion_agreement": 0.9705882352941176,
+          "overall_agreement": 0.95,
+          "false_wrong": 1,
+          "false_right": 0,
+          "reasons_with_words": 170,
+          "criteria_total": 170,
+          "feedback_checked": 80,
+          "feedback_bare_wrong": 0,
+          "feedback_long": 0
+        },
+        "disagreements": [
+          {
+            "task": "even-number",
+            "answer": "a9",
+            "kind": "partly-vague",
+            "hand": "correct",
+            "judged": "not_yet",
+            "text": "Parzyste liczby idą co drugą: 2, 4, 6, 8, 10, 12, 14.",
+            "feedback": "Ładnie policzyłeś co dwa aż do 14! Dodaj jeszcze, że 14 kończy się na 4."
+          },
+          {
+            "task": "en-past-tense",
+            "answer": "a2",
+            "kind": "partly",
+            "hand": "partly",
+            "judged": "not_yet",
+            "text": "Because played is about the past.",
+            "feedback": "Good start with the past! Next, look at the -ed ending and say what 'play' means too."
+          },
+          {
+            "task": "en-past-tense",
+            "answer": "a4",
+            "kind": "right-misspelt",
+            "hand": "correct",
+            "judged": "partly",
+            "text": "The ed at the end shows it is finisht, not now.",
+            "feedback": "Well spotted, the 'ed' shows it is finished! Next, add what 'play' without it means."
+          },
+          {
+            "task": "en-past-tense",
+            "answer": "a10",
+            "kind": "partly",
+            "hand": "partly",
+            "judged": "not_yet",
+            "text": "Play is now, played is not now.",
+            "feedback": "Good start, 'play is now' is helpful! Next, say that 'played' is already finished and spot the -ed."
+          }
+        ]
+      }
+    },
+    "fixtures": "packages/lesson-kit/src/families/explain/e7.fixtures.json",
+    "raw_judgements": "packages/lesson-kit/src/families/explain/e7.judgements.json"
+  }
 }

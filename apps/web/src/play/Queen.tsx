@@ -5,6 +5,11 @@
  * tap hides her, and so does the end of the clip, a load error or a refused autoplay (iOS low-power
  * mode). Safari takes the HEVC-with-alpha .mov; the others cannot play it and take the VP9 .webm,
  * so the source order matters. Under reduced motion she does not play.
+ *
+ * A load error is the video's own (it could not decode the source it took) or the last source's
+ * (no source played), never the .mov's: every browser but Safari skips the .mov and fires `error`
+ * at that <source>, and React hands a <source>'s error to the <video>'s onError, so an onError on
+ * the video hid her about 2 ms after she came, in Chrome, Firefox and Android (dl-1eieq.4).
  */
 
 import { prefersReducedMotion } from "@jadwigo/lesson-kit";
@@ -24,9 +29,15 @@ export function Queen({ onDone }: { onDone: () => void }): ReactElement | null {
 
   useEffect(() => {
     if (still) return;
+    const clip = video.current;
     document.addEventListener("pointerdown", onDone);
-    video.current?.play()?.catch(onDone);
-    return () => document.removeEventListener("pointerdown", onDone);
+    // A native listener out of the capture phase hears the video's own error, never a source's.
+    clip?.addEventListener("error", onDone);
+    clip?.play()?.catch(onDone);
+    return () => {
+      document.removeEventListener("pointerdown", onDone);
+      clip?.removeEventListener("error", onDone);
+    };
   }, [still, onDone]);
 
   if (still) return null;
@@ -37,17 +48,9 @@ export function Queen({ onDone }: { onDone: () => void }): ReactElement | null {
       className="pointer-events-none fixed right-0 z-50 w-3/4 max-w-lg"
       style={{ bottom }}
     >
-      <video
-        ref={video}
-        className="w-full"
-        autoPlay
-        muted
-        playsInline
-        onEnded={onDone}
-        onError={onDone}
-      >
+      <video ref={video} className="w-full" autoPlay muted playsInline onEnded={onDone}>
         <source src={queenMov} type='video/mp4; codecs="hvc1"' />
-        <source src={queenWebm} type="video/webm" />
+        <source src={queenWebm} type="video/webm" onError={onDone} />
       </video>
     </div>
   );

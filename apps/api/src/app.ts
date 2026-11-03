@@ -33,7 +33,8 @@ import {
 } from "./conversations.ts";
 import { ApiError, badRequest, errorResponse, json, refusal } from "./errors.ts";
 import { featuredLessons } from "./featured.ts";
-import { giveLesson } from "./give.ts";
+import { giveLesson, renameLesson } from "./give.ts";
+import { getAssignmentIntro } from "./intro.ts";
 import {
   createGoal,
   createReport,
@@ -63,6 +64,7 @@ import {
 } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type PokeStepHost, pokeAll } from "./poke.ts";
+import { getPrint, type PrintDeps, startPrint } from "./print.ts";
 import {
   type BankDeps,
   type BucketDeps,
@@ -122,6 +124,11 @@ export interface AppDeps {
   readonly mail?: MailDeps | undefined;
   /** The remote MCP's public URL and authorization server (dl-1u6fn.8). */
   readonly mcp?: McpConfig | undefined;
+  /**
+   * The print routes' bucket, the print Lambda's start and the media URL (dl-1eieq.8.4). With no
+   * bucket or start, the print routes answer 502 `PrintUnavailable`.
+   */
+  readonly print?: Omit<PrintDeps, "now"> | undefined;
 }
 
 /** No queue is wired: every send fails, and the unit that asked rolls back. */
@@ -155,6 +162,7 @@ export function createApp(
     uploads,
     mail,
     mcp = {},
+    print = { media: "" },
   }: AppDeps = {},
 ): Router {
   const app = new Router();
@@ -220,6 +228,9 @@ export function createApp(
   // Public by design: no authorize(). It reads only Jadwigo's own pod's written playground
   // examples, which hold no learner's data (dl-w3.75).
   on("playgroundExamples", (params) => run((s) => playgroundExamples(s, params.language)));
+  on("getAssignmentIntro", (params) =>
+    run((s) => getAssignmentIntro(s, params.id, params.learner_id)),
+  );
   on("startAttempt", (params, body) => run((s) => startAttempt(s, params.id, body)));
   on("getAttempt", (params) => run((s) => getAttempt(s, params.id)));
   on("answer", (params, body) => run((s) => answer(s, params.id, body)));
@@ -313,6 +324,15 @@ export function createApp(
   onSigned("rateRun", (params, body, claims) => run((s) => rateRun(s, claims, params.id, body)));
   onSigned("giveLesson", (params, body, claims) =>
     run((s) => giveLesson(s, claims, params.id, body)),
+  );
+  onSigned("renameLesson", (params, body, claims) =>
+    run((s) => renameLesson(s, claims, params.id, body)),
+  );
+  onSigned("startPrint", (params, body, claims) =>
+    run((s) => startPrint(s, { ...print, now }, claims, params.id, body)),
+  );
+  onSigned("getPrint", (params, _body, claims) =>
+    run((s) => getPrint(s, { ...print, now }, claims, params.id)),
   );
 
   // A message's photos (dl-z5ja.11.3): an upload form, under the pod's lock for the daily count,

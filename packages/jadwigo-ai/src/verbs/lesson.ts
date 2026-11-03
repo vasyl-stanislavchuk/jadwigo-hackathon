@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import { ID_PREFIXES, toolView, uuidOf } from "@jadwigo/contracts";
+import { ID_PREFIXES, PROPOSED_SKILL_MARK, SkillId, toolView, uuidOf } from "@jadwigo/contracts";
 import type { ToolView } from "@jadwigo/contracts/run";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import type { BankLanguage, BankPort, BankQuery } from "./bank.ts";
@@ -100,6 +100,15 @@ function writable(file: Json): Json {
   return file;
 }
 
+/** A model-written twin uses its parent's family when only say/data/key were supplied. */
+function inheritTwinFamily(step: Step): Step {
+  const question = isObject(step["question"]) ? step["question"] : {};
+  const help = isObject(question["help"]) ? question["help"] : {};
+  const twin = help["twin"];
+  if (!isObject(twin) || twin["family"] !== undefined) return step;
+  return mergePatch(step, { question: { help: { twin: { family: question["family"] } } } }) as Step;
+}
+
 /** A step's findings: its own and its twin's (compile names a twin `<id>t`). */
 function findingsFor(findings: readonly Finding[], step_id: string): Finding[] {
   return findings.filter((f) => f.step_id === step_id || f.step_id === `${step_id}t`);
@@ -131,8 +140,10 @@ function card(step: Step) {
   const help = isObject(question["help"]) ? question["help"] : {};
   return {
     step_id: step.id,
-    prompt: step["say"] ?? null,
+    // The name lesson_edit takes: called prompt here, the model patched a prompt no step has (dl-hin8.45).
+    say: step["say"] ?? null,
     key: question["key"] ?? null,
+    question,
     rungs: RUNGS.filter((r) => help[r] !== undefined),
     you_write: RUNGS.filter((r) => help[r] === undefined),
   };
@@ -199,10 +210,12 @@ export async function lessonDraft(
   const drawn: Step[] = questions.map((q, i) => ({
     id: `s${String(i + 1).padStart(2, "0")}`,
     question_type: q.question_type,
-    skill_ids: [...q.skill_ids],
+    skill_ids: lessonSkillIds(q.skill_ids),
     based_on: { question: q.source, changes: [] },
     say: q.say,
     question: structuredClone(q.question),
+    // A borrowed question keeps its credit, which /play draws (dl-1eieq.6.1).
+    ...(q.credit === undefined ? {} : { credit: q.credit }),
   }));
   const title = topic.charAt(0).toUpperCase() + topic.slice(1);
   const lesson_file = writable({
@@ -298,7 +311,8 @@ export function lessonCheck(context: VerbContext, raw: Json): Promise<VerbEffect
         `lesson_check: help.${step_id} takes ${HELP_WORDS.join(", ")}; to change ${unknown.join(", ")} use lesson_edit`,
       );
     }
-    const after = mergePatch(step, { question: { help: words } }) as Step;
+    const merged = mergePatch(step, { question: { help: words } }) as Step;
+    const after = words["twin"] === undefined ? merged : inheritTwinFamily(merged);
     const copied = copiedChanges(step, after);
     if (copied.length > 0) {
       throw new VerbError(
@@ -387,11 +401,13 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   if (refused.length > 0) {
     throw new VerbError(
       "edit",
-      `a patch sets say and question's data, key and help, not ${refused.join(", ")}; nothing changed`,
+      `a patch sets say and question's data, key and help, not ${refused.join(", ")}; twin changes belong in question.help.twin, not question.family; nothing changed`,
     );
   }
 
-  const edited = mergePatch(step, patch) as Step;
+  const merged = mergePatch(step, patch) as Step;
+  const helpPatch = isObject(question) && isObject(question["help"]) ? question["help"] : {};
+  const edited = helpPatch["twin"] === undefined ? merged : inheritTwinFamily(merged);
   edited.id = step.id;
   const copied = copiedChanges(step, edited);
   if (copied.length > 0 && (why === null || why.trim() === "")) {
@@ -416,6 +432,35 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   const lesson_file = writable(withStep(file, edited));
   const checks = review(lesson_file);
   const findings = findingsFor(checks.findings, step_id);
+  const before = new Set(
+    findingsFor(review(file).findings, step_id)
+      .filter((finding) => finding.level === "error")
+      .map((finding) => JSON.stringify([finding.path, finding.rule, finding.text])),
+  );
+  // compile skips a twin while its question fails, so fixing the question can bring out a twin's
+  // old problem. A patch that leaves the twin alone did not introduce that: it answers as a finding
+  // for the model to read, and lesson_check still stands in the way of publishing (dl-hin8.34).
+  const twinStep = helpPatch["twin"] === undefined ? `${step_id}t` : null;
+  const introduced = findings.filter(
+    (finding) =>
+      finding.level === "error" &&
+      finding.step_id !== twinStep &&
+      (finding.rule === "contract" || finding.rule === "question-type-family") &&
+      !before.has(JSON.stringify([finding.path, finding.rule, finding.text])),
+  );
+  if (introduced.length > 0) {
+    throw new VerbError(
+      "edit",
+      `${introduced
+        .slice(0, 3)
+        .map((finding) =>
+          finding.rule === "question-type-family" && finding.step_id === `${step_id}t`
+            ? `question.help.twin.family: a twin must use the source family; omit its family to inherit it. Do not change question.family.`
+            : `${finding.path}: ${finding.text}. ${finding.fix}`,
+        )
+        .join("\n")}; nothing changed`,
+    );
+  }
   return Promise.resolve(
     revised(checks, {
       output: {
@@ -480,4 +525,18 @@ export async function questionTypes(bank: BankPort, raw: Json): Promise<VerbEffe
   const types = (await bank.types(grade, language)).map((t) => ({ ...t }));
   const view = toolView("question_types", { grade, language, types });
   return { output: { grade, language, types }, view };
+}
+
+/**
+ * A drawn question's skill ids as a lesson step carries them (dl-hin8.26): the bank's `proposed:`
+ * mark dropped, as the decision of 2026-10-29 says and jw's `_skill_ids` does, then only those
+ * that pass `SkillId`, each once. The bank's set id, which a draw falls back to, is left out.
+ */
+export function lessonSkillIds(bankIds: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const id of bankIds) {
+    const plain = id.startsWith(PROPOSED_SKILL_MARK) ? id.slice(PROPOSED_SKILL_MARK.length) : id;
+    if (SkillId.safeParse(plain).success && !out.includes(plain)) out.push(plain);
+  }
+  return out;
 }

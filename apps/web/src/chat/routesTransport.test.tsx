@@ -138,7 +138,7 @@ describe("the routes transport (dl-z5ja.65)", () => {
       `subscribe run:${s.run.id}`,
       `events ${s.run.id} after 0`,
     ]);
-    expect(screen.getByText("Wersja 2")).toBeTruthy();
+    expect(document.querySelector('div[data-revision="2"]')).not.toBeNull();
   });
 
   it("Stop cancels the conversation's last run", async () => {

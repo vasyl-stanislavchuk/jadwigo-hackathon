@@ -19,13 +19,26 @@ export type Theme = "light" | "dark";
 
 export const DARK_QUERY = "(prefers-color-scheme: dark)";
 
+/**
+ * Mark <html> with the audience a screen speaks to (dl-uukj.47.67): "adult" for the parent's pages,
+ * "kid" for the child's; foundation.css reads it. The theme is applied again, since an adult page is
+ * light only.
+ */
+export function setAudience(root: HTMLElement, audience: "adult" | "kid"): void {
+  root.setAttribute("data-audience", audience);
+  if (followed !== null && followed.root === root) followed.apply();
+  else if (audience === "adult") root.removeAttribute("theme");
+}
+
 /** The held theme, or null when the page follows the system. Module state: one page, one root. */
 let override: Theme | null = null;
 /** The follower's own apply, so a hold or a release re-reads the system setting on the same root. */
 let followed: { root: HTMLElement; apply(): void } | null = null;
 
 function set(root: HTMLElement, dark: boolean): void {
-  if (dark) root.setAttribute("theme", "dark");
+  // The adult audience is light only for now (dl-uukj.47.67 D10): its block in foundation.css sets
+  // only what it changes, so a night role under it would mix the two.
+  if (dark && root.getAttribute?.("data-audience") !== "adult") root.setAttribute("theme", "dark");
   else root.removeAttribute("theme");
 }
 

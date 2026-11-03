@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { isAbsolute, relative, resolve } from "node:path";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import type { AttachmentReader } from "@jadwigo/jadwigo-ai";
 import { type ReadParameter, readSsm, UPLOADS_BUCKET_PARAM, uploadsBucket } from "./config.ts";
@@ -66,4 +68,27 @@ function missing(error: unknown): boolean {
   const e = error as { name?: unknown; $metadata?: { httpStatusCode?: unknown } } | null;
   const status = e?.$metadata?.httpStatusCode;
   return e?.name === "NoSuchKey" || e?.name === "AccessDenied" || status === 404 || status === 403;
+}
+
+/**
+ * The dev step host's photo reader (dl-z5ja.11.19): the file under `root` (make dev-all's
+ * `.logs/dev/uploads`, which the local api writes as it would the bucket). A missing file is
+ * undefined, as a missing key is in S3; a path that leaves the folder throws.
+ */
+export function fsAttachments(root: string): AttachmentReader {
+  const base = resolve(root);
+  return {
+    read: async (storage_path) => {
+      const path = resolve(base, storage_path);
+      const rel = relative(base, path);
+      if (isAbsolute(storage_path) || rel === "" || rel.startsWith("..") || isAbsolute(rel))
+        throw new Error("dev photos: a storage path is a relative path under the folder");
+      try {
+        return new Uint8Array(await readFile(path));
+      } catch (error) {
+        if ((error as { code?: unknown }).code === "ENOENT") return undefined;
+        throw error;
+      }
+    },
+  };
 }

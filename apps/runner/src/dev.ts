@@ -1,10 +1,12 @@
 import { rmSync } from "node:fs";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { apiBank, CONTRIBUTOR_MODEL, fixtureBank, httpBankReads } from "@jadwigo/jadwigo-ai";
+import { fsAttachments } from "./attachments.ts";
 import {
   type BankConfig,
   bankConfig,
   devDatabaseUrl,
+  localUploadsDir,
   type MuseConfig,
   museConfig,
 } from "./config.ts";
@@ -31,7 +33,10 @@ import { liveMuse, realRuntime } from "./muse.ts";
  *   `JADWIGO_BANK_READ_TOKEN`, which make dev-all's runner pane maps from BANK_ENV
  *   (`~/.config/jadwigo-bank/bank.env`). With no URL they draw from the fixture. The token comes
  *   from the environment only: a laptop never reads a deployed SSM parameter.
- * - Photos are not read here: there is no uploads bucket on this machine.
+ * - Photos are read from LOCAL_UPLOADS_DIR when set (make dev-all's `.logs/dev/uploads`, the folder
+ *   the local api's uploads stand-in writes, dl-z5ja.11.19), else not at all. The converter is not
+ *   wired here, so a PDF, a DOCX or a HEIC the browser could not re-encode reaches the model as
+ *   unconverted: JPEG photos only.
  *
  * Logs are the Lambda's: ids, counts and outcomes, never a message, a payload, a key or a URL.
  */
@@ -167,13 +172,15 @@ async function main(argv: readonly string[]): Promise<void> {
   const [muse, bank] = await Promise.all([museConfig(), devBankConfig()]);
   const log = (line: string) => process.stdout.write(`${line}\n`);
   log(settingsLine(muse, bank));
+  const uploads = localUploadsDir();
+  log(uploads === undefined ? "dev: photos are not read" : "dev: photos from LOCAL_UPLOADS_DIR");
   const host = createHost(async () =>
     postgresEngineHost(
       url,
       (store) => liveMuse(muse, realRuntime, store),
       log,
       muse.tier,
-      undefined,
+      uploads === undefined ? undefined : fsAttachments(uploads),
       undefined,
       bank === undefined ? fixtureBank() : apiBank(httpBankReads(bank)),
     ),

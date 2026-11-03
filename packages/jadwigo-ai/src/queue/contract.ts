@@ -38,6 +38,20 @@ export function runQueueContract(
       ]);
     });
 
+    it("keeps a step hidden while it is extended, counting no read, and comes back after", async () => {
+      const { q, tick } = await make();
+      const a = await q.send({ run_id: run, attempt: 1 });
+      await q.read(60, 1);
+      await tick(50);
+      await q.extend?.(a, 60);
+      await tick(50);
+      expect(await q.read(60, 5)).toEqual([]);
+      await tick(10);
+      expect((await q.read(60, 5)).map((s) => [s.msg_id, s.read_ct])).toEqual([[a, 2]]);
+      await q.archive(a);
+      await q.extend?.(a, 60);
+    });
+
     it("never delivers an archived step, and holds a delayed one back", async () => {
       const { q, tick } = await make();
       const a = await q.send({ run_id: run, attempt: 1 });

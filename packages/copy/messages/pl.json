@@ -257,6 +257,39 @@
   "answer_card_example_right": "Tak zaznaczaj",
   "answer_card_example_wrong": "Tak nie zaznaczaj",
   "answer_card_fix": "Zmieniasz zdanie? Przekreśl kółko znakiem X i zamaluj to, które wybierasz.",
+  "print_brand": "Jadwigo",
+  "print_name": "Imię:",
+  "print_date": "Data:",
+  "print_page": "strona",
+  "print_page_of": "z",
+  "print_next": "dalej",
+  "print_end": "Koniec!",
+  "print_legend_circle": "otocz",
+  "print_legend_tick": "zaznacz ✓",
+  "print_legend_write": "wpisz",
+  "print_legend_draw": "narysuj lub pokoloruj",
+  "print_legend_join": "połącz",
+  "print_legend_number": "ponumeruj",
+  "print_true": "Prawda",
+  "print_false": "Fałsz",
+  "print_many": "(może być kilka)",
+  "print_total": "Razem",
+  "print_hours_hand": "Krótka wskazówka pokazuje godziny.",
+  "print_card_title": "Karta odpowiedzi",
+  "print_card_note": "Zaznacz ✓ każde zadanie, które masz już zrobione.",
+  "print_credits_title": "Skąd są zadania",
+  "print_do_circle": "Otocz kółkiem dobrą odpowiedź.",
+  "print_do_tick": "Zaznacz ✓ każdą dobrą odpowiedź.",
+  "print_do_write": "Wpisz odpowiedź w okienko.",
+  "print_do_draw": "Narysuj albo pokoloruj odpowiedź.",
+  "print_do_join": "Połącz liniami to, co do siebie pasuje.",
+  "print_do_number": "Ponumeruj po kolei: 1, 2, 3…",
+  "print_verb_circle": "otocz",
+  "print_verb_tick": "zaznacz",
+  "print_verb_write": "wpisz",
+  "print_verb_draw": "narysuj",
+  "print_verb_join": "połącz",
+  "print_verb_number": "ponumeruj",
   "drag_beside": "{item} jest teraz obok: {other}.",
   "drag_hint": "Przeciągnij kartę albo dotknij jej, a potem właściwego miejsca.",
   "drag_picked": "{item}: teraz dotknij właściwego miejsca.",
@@ -402,6 +435,7 @@
   "credit_title_alfik": "Zadanie z Alfika Matematycznego",
   "credit_label_alfik": "z Alfika Matematycznego, źródło i licencja",
   "credit_not_affiliated_alfik": "Jadwigo nie jest związane z Alfikiem Matematycznym",
+  "credit_notice_khan": "Wszystkie materiały Khan Academy są dostępne za darmo na www.khanacademy.org",
   "leave_title": "Ten link prowadzi poza Jadwigo",
   "leave_where": "Otworzy się {where} w nowej karcie",
   "leave_stay": "Zostań",
@@ -468,6 +502,24 @@
   "play_paused_back": "Wracam do lekcji",
   "play_not_found": "Tej lekcji tu nie ma.",
   "play_link_incomplete": "Ten link jest niepełny. Poproś rodzica o nowy.",
+  "play_intro_yes": "Tak, jestem {name}",
+  "play_intro_not_me": "To nie ja",
+  "play_intro_name": "Jak masz na imię?",
+  "play_intro_start": "Zaczynamy",
+  "play_intro_anonymous": "Zagraj bez imienia",
+  "play_intro_name_missing": "Napisz swoje imię albo zagraj bez imienia.",
+  "play_intro_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
   "play_save": "Zapisz postępy",
   "play_save_note": "Dla dorosłego: zaloguj się, a ta lekcja zostanie na koncie dziecka.",
   "parent_title": "Konto rodzica",
@@ -476,6 +528,7 @@
   "parent_guardian": "Jestem rodzicem lub opiekunem tego dziecka.",
   "parent_email": "Twój e-mail",
   "parent_send_code": "Wyślij kod",
+  "parent_email_hint": "Wyślemy na ten adres kod z 6 cyfr. Hasło nie jest potrzebne.",
   "parent_send_failed": "Nie udało się wysłać kodu. Spróbuj za chwilę.",
   "parent_code": "Kod z e-maila, 6 cyfr",
   "parent_code_sent": "Wysłaliśmy kod na {email}.",
@@ -499,6 +552,7 @@
   "parent_language": "Język",
   "parent_language_pl": "Polski",
   "parent_language_en": "English",
+  "parent_page_language": "Język strony",
   "home_title": "Wybierz lekcję",
   "home_empty": "Na razie nie ma tu lekcji.",
   "review_title": "Pytanie {n} z {total}",
@@ -712,7 +766,7 @@
   "chat_send": "Wyślij",
   "chat_send_again": "Nie udało się wysłać. Spróbuj ponownie.",
   "chat_stop": "Zatrzymaj",
-  "chat_stopping": "Zatrzymywanie…",
+  "chat_stopping": "Zatrzymuję…",
   "chat_status_queued": "W kolejce",
   "chat_status_in_progress": "W toku",
   "chat_status_awaiting_input": "Czeka na Ciebie",
@@ -741,12 +795,12 @@
   "chat_queued": "W kolejce, do wysłania po tej turze",
   "chat_problem": "Coś się zacięło: {message}",
   "chat_problem_retrying": "Ponowna próba.",
+  "chat_problem_failed": "Jadwigo nie dała rady dokończyć tej prośby, mimo kilku prób.",
   "chat_copy_details": "Kopiuj szczegóły",
-  "chat_copied": "Skopiowano",
+  "chat_copied": "Skopiowane",
   "chat_restoring": "Przywracanie rozmowy…",
   "chat_new": "Nowa rozmowa",
   "chat_lesson_empty": "Tu pojawi się lekcja.",
-  "chat_lesson_revision": "Wersja {n}",
   "chat_lesson_unreadable": "Tej wersji lekcji nie da się jeszcze pokazać.",
   "chat_lesson_step_hidden": "Kroku {step} nie da się jeszcze pokazać.",
   "chat_object_lesson": "Lekcja",
@@ -758,22 +812,8 @@
   "chat_object_not_here": "Tego nie da się jeszcze tu pokazać.",
   "chat_learner_open": "Szczegóły: {name}",
   "chat_learner_open_page": "Strona dziecka: {name}",
-  "chat_lesson_card": "Lekcja gotowa",
-  "chat_lesson_card_open": "Otwórz",
-  "chat_lesson_card_open_named": "Otwórz lekcję: {title}",
-  "chat_lesson_card_first": "Na początek: {say}",
-  "chat_lesson_card_steps": [
-    {
-      "declarations": ["input n", "local q_noun = n: plural"],
-      "selectors": ["q_noun"],
-      "match": {
-        "q_noun=one": "{n} zadanie",
-        "q_noun=few": "{n} zadania",
-        "q_noun=many": "{n} zadań",
-        "q_noun=other": "{n} zadania"
-      }
-    }
-  ],
+  "chat_lesson_card_open": "Podgląd",
+  "chat_lesson_card_open_named": "Podgląd lekcji: {title}",
   "chat_citations_why": "Dlaczego?",
   "chat_citation_nth": "{title} {n}",
   "chat_tool_count": [
@@ -813,8 +853,6 @@
   "chat_steered_edit": "Twoja zmiana w lekcji",
   "chat_lesson_step": "Krok {step}",
   "chat_lesson_changed": "Lekcja się zmieniła",
-  "chat_revision_by_ai": "Zmiana od Jadwigo AI",
-  "chat_undo": "Cofnij",
   "chat_undone": "Cofnięte do wersji {n}",
   "chat_edit_sent": "Twoja zmiana trafiła do Jadwigo AI.",
   "chat_newer_wins": "Twoja wersja jest nowsza, więc zostaje. Jadwigo AI o tym wie.",
@@ -838,12 +876,24 @@
   "chat_check_ok": "Lekcja przeszła sprawdzenie.",
   "chat_check_level_error": "Do poprawy",
   "chat_check_level_warning": "Warto spojrzeć",
+  "chat_finding_schema": "Tego zadania nie da się odczytać.",
+  "chat_finding_json": "Pliku lekcji nie da się odczytać.",
+  "chat_finding_no_question": "W lekcji nie ma jeszcze żadnego pytania.",
+  "chat_finding_explain_first": "Lekcja zaczyna się od wyjaśnienia, a powinna od pytania.",
+  "chat_finding_contract": "Część zadania ma kształt, którego lekcja nie przyjmie.",
+  "chat_finding_unknown_field": "Zadanie ma część, której lekcja nie zna.",
+  "chat_finding_skill_id": "Umiejętność ma nazwę, której lekcja nie rozpoznaje.",
+  "chat_finding_skill_id_collision": "Dwie umiejętności mają tę samą nazwę.",
+  "chat_finding_question_type_family": "Rodzaj zadania nie pasuje do jego formy.",
+  "chat_finding_twin_of_twin": "Podobne pytanie ma swoje własne podobne pytanie, a może mieć tylko zadanie.",
+  "chat_finding_empty_rung": "Brakuje jednej podpowiedzi.",
+  "chat_finding_unknown_mistake_class": "Podpowiedź jest na pomyłkę, której w tym zadaniu nie da się zrobić.",
+  "chat_finding_twin_representation": "Podobne pytanie pyta inaczej niż to zadanie.",
+  "chat_finding_twin_same_picture": "Obrazek w podobnym pytaniu pokazuje liczby z tego zadania.",
+  "chat_finding_key_in_say": "Pytanie zdradza odpowiedź.",
+  "chat_finding_key_grades": "Dobra odpowiedź nie zostałaby zaliczona.",
+  "chat_finding_harsh_word": "Dziecko przeczyta tu za ostre słowo.",
   "chat_check_level_info": "Dla informacji",
-  "chat_search_none": "Żaden zestaw zadań nie pasuje jeszcze do tej prośby.",
-  "chat_search_sets": "Zestawy zadań",
-  "chat_announce_done": "Jadwigo AI: gotowe",
-  "chat_announce_needs_you": "Jadwigo AI: czeka na Twoją odpowiedź",
-  "chat_announce_stopped": "Zapisane, zatrzymane.",
   "chat_switch": "Rozmowa albo lekcja",
   "chat_check_findings": [
     {
@@ -871,7 +921,12 @@
   "parent_children_hint": "Dodaj dziecko, żeby Jadwigo śledziło, co umie. Nie jest potrzebne do lekcji.",
   "parent_breadcrumb_label": "Gdzie jesteś",
   "parent_new_lesson": "Nowa lekcja",
+  "parent_title_edit": "Zmień tytuł: {title}",
+  "parent_title_refused": "Tego tytułu nie możemy użyć. Spróbuj innych słów.",
+  "parent_title_busy": "Jadwigo właśnie zmienia lekcję. Spróbuj za chwilę.",
+  "parent_title_failed": "Nie udało się zmienić tytułu. Spróbuj jeszcze raz.",
   "parent_menu_fold": "Zwiń menu",
+  "parent_toasts_label": "Powiadomienia",
   "parent_menu_unfold": "Rozwiń menu",
   "parent_menu_open": "Otwórz menu",
   "parent_menu_close": "Zamknij menu",
@@ -915,12 +970,12 @@
   "parent_placeholder": "Np. Odejmowanie przez 10. Pomyliła się w 15 − 7 i 12 − 5.",
   "parent_attach": "Dodaj zdjęcie",
   "parent_remove_photo": "Usuń zdjęcie",
-  "parent_for": "Dla:",
+  "parent_for": "Dla",
   "parent_no_child": "Bez dziecka",
   "parent_add_child_menu": "Dodaj dziecko…",
-  "parent_add_child_hint": "Imię i klasa. Jadwigo zacznie śledzić, co umie.",
+  "parent_add_child_hint": "Imię i klasa, nic więcej.",
   "parent_send": "Zrób lekcję",
-  "parent_send_reason": "Najpierw opisz zadanie albo dodaj zdjęcie",
+  "parent_send_reason": "Napisz, czego ma się uczyć.",
   "parent_send_uploading": "Czekam, aż zdjęcia się wyślą",
   "parent_send_photo_failed": "Ponów albo usuń zdjęcie, które się nie wysłało",
   "parent_send_photo_refused": "Usuń zdjęcie, którego nie da się wysłać",
@@ -928,10 +983,6 @@
   "parent_grade": "Klasa",
   "parent_cancel": "Anuluj",
   "parent_lesson_soon": "Robienie lekcji z tego miejsca jest w drodze. Wkrótce zadziała.",
-  "chat_edit_words": "Co ten krok mówi dziecku",
-  "chat_edit_saved": "Twoja zmiana jest już w lekcji.",
-  "chat_edit_saving": "Zapisywanie Twojej zmiany w lekcji…",
-  "chat_edit_not_applied": "Tej zmiany nie udało się wprowadzić: lekcja zmieniła się w międzyczasie albo zmiana jej nie pasuje. Twój tekst jest poniżej.",
   "chat_phase_connecting": "Łączenie…",
   "chat_phase_queued": "W kolejce",
   "chat_phase_thinking": "Myślenie…",
@@ -1023,7 +1074,7 @@
   "parent_details_unfold": "Rozwiń szczegóły",
   "parent_save": "Zapisz na później",
   "parent_give": "Daj lekcję",
-  "parent_give_reason": "„Daj lekcję” zadziała, gdy lekcja przejdzie sprawdzenie",
+  "parent_give_reason": "„Daj lekcję” i „Wydrukuj” zadziałają, gdy lekcja przejdzie sprawdzenie",
   "parent_steps_ready": "Gotowe zadania: {done} z {total}",
   "parent_for_whom": "Dla kogo",
   "parent_lesson_skills": "Co ćwiczy ta lekcja",
@@ -1038,6 +1089,8 @@
   "attach_kind_docx": "DOCX",
   "attach_kind_heic": "HEIC",
   "attach_photo_alt": "Zdjęcie {n}",
+  "chat_photo_open": "Pokaż zdjęcie {n} w pełnym rozmiarze",
+  "chat_photo_unloaded": "Nie udało się pokazać zdjęcia {n}",
   "attach_uploading": "Wysyłam zdjęcie, {percent}%",
   "attach_retry": "Spróbuj ponownie",
   "attach_unreadable": "Tego pliku nie umiemy otworzyć jako zdjęcia. Wybierz zdjęcie albo zrzut ekranu",
@@ -1074,7 +1127,10 @@
   "parent_ai_about_you": "Ty decydujesz, co trafi do dziecka.",
   "parent_ai_about_link": "Więcej o Jadwigo AI",
   "parent_overview_empty": "Tu pojawi się tydzień po tygodniu, jak idzie nauka, po pierwszej lekcji.",
-  "parent_add_child_reason": "Najpierw wpisz imię",
+  "parent_result_right": "{right} z {total} dobrze",
+  "parent_add_child_reason": "Wpisz imię, żeby dziecko je rozpoznało.",
+  "parent_grade_n": "klasa {grade}",
+  "parent_grade_age": "{from}–{to} lat",
   "parent_filter_label": "Pokaż",
   "parent_filter_all": "Wszystkie",
   "parent_search": "Szukaj",
@@ -1083,6 +1139,99 @@
   "parent_col_result": "Wynik",
   "parent_list_no_match": "Nic tu nie pasuje do wyboru.",
   "parent_lesson_untitled": "Lekcja bez tytułu",
+  "parent_list_for": "Dla",
+  "parent_list_date": "Data",
+  "parent_list_today": "Dziś",
+  "parent_list_week": "Ten tydzień",
+  "parent_list_month": "Ten miesiąc",
+  "parent_list_last": "Ostatnio",
+  "parent_list_when": "Kiedy",
+  "parent_list_clear_choice": "Wyczyść wybór",
+  "parent_list_chosen": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "{n} wybrana",
+        "n_noun=few": "{n} wybrane",
+        "n_noun=many": "{n} wybranych",
+        "n_noun=other": "{n} wybranych"
+      }
+    }
+  ],
+  "parent_list_clear": "Wyczyść",
+  "parent_list_filters": "Filtry",
+  "parent_list_filters_count": "Filtry ({n})",
+  "parent_list_close": "Zamknij",
+  "parent_list_show": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "Pokaż {n} lekcję",
+        "n_noun=few": "Pokaż {n} lekcje",
+        "n_noun=many": "Pokaż {n} lekcji",
+        "n_noun=other": "Pokaż {n} lekcji"
+      }
+    }
+  ],
+  "parent_list_view": "Widok",
+  "parent_list_columns": "Kolumny",
+  "parent_list_density": "Gęstość",
+  "parent_list_comfortable": "Wygodnie",
+  "parent_list_compact": "Gęsto",
+  "parent_list_sort": "Sortuj",
+  "parent_list_sort_newest": "Ostatnio, od najnowszych",
+  "parent_list_sort_oldest": "Ostatnio, od najstarszych",
+  "parent_list_sort_title": "Lekcja, A–Z",
+  "parent_list_sort_best": "Wynik, od najlepszych",
+  "parent_list_sort_when_newest": "Kiedy, od najnowszych",
+  "parent_list_sort_when_oldest": "Kiedy, od najstarszych",
+  "parent_list_select_all": "Zaznacz wszystkie",
+  "parent_list_select_row": "Zaznacz: {title}",
+  "parent_list_selected": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "{n} zaznaczona",
+        "n_noun=few": "{n} zaznaczone",
+        "n_noun=many": "{n} zaznaczonych",
+        "n_noun=other": "{n} zaznaczonych"
+      }
+    }
+  ],
+  "parent_list_unselect": "Odznacz wszystkie",
+  "parent_list_more": "Więcej: {title}",
+  "parent_list_open": "Otwórz",
+  "parent_list_range": "{from}–{to} z {total}",
+  "parent_list_page": "Strona {page} z {pages}",
+  "parent_list_pages": "Strony",
+  "parent_list_previous": "Poprzednia strona",
+  "parent_list_next": "Następna strona",
+  "parent_list_load_more": "Pokaż więcej",
+  "parent_list_first_title": "Tu będą lekcje",
+  "parent_list_first_line": "Napisz, czego dziecko się uczy, albo wrzuć zdjęcie zadania.",
+  "parent_list_history_first_title": "Tu będzie historia",
+  "parent_list_filtered_title": "Nic nie pasuje do filtrów",
+  "parent_list_clear_filters": "Wyczyść filtry",
+  "parent_list_failed_lessons": "Nie udało się wczytać lekcji",
+  "parent_list_failed_history": "Nie udało się wczytać historii",
+  "parent_list_failed_line": "Sprawdź internet. Twoje lekcje są bezpieczne.",
+  "parent_list_retry": "Spróbuj ponownie",
+  "parent_list_score": "{right} z {total}",
+  "parent_list_archive_title": [
+    {
+      "declarations": ["input n", "local n_noun = n: plural"],
+      "selectors": ["n_noun"],
+      "match": {
+        "n_noun=one": "Zarchiwizować lekcję?",
+        "n_noun=few": "Zarchiwizować {n} lekcje?",
+        "n_noun=many": "Zarchiwizować {n} lekcji?",
+        "n_noun=other": "Zarchiwizować {n} lekcji?"
+      }
+    }
+  ],
   "parent_expand_all": "Rozwiń wszystkie",
   "parent_collapse_all": "Zwiń wszystkie",
   "parent_step_coming": "Kolejne zadanie w drodze",
@@ -1099,14 +1248,21 @@
   "parent_step_source": "Skąd to zadanie",
   "parent_source_bank": "Bank zadań Jadwigo",
   "parent_source_authored": "Napisane przez Jadwigo AI",
-  "parent_step_move_up": "Przenieś wyżej",
-  "parent_step_move_down": "Przenieś niżej",
-  "parent_step_drop": "Usuń",
-  "parent_give_title": "Jak dać lekcję?",
-  "parent_this_computer": "Otwórz na tym komputerze",
-  "parent_print": "Wydrukuj",
-  "parent_print_hint": "Kartka z zadaniami, bez odpowiedzi",
-  "parent_this_computer_soon": "Otwieranie lekcji na komputerze jest w drodze.",
+  "parent_print": "Drukuj",
+  "parent_print_preparing": "Przygotowuję kartkę…",
+  "parent_print_failed": "Nie udało się przygotować kartki. Spróbuj jeszcze raz.",
+  "parent_print_slow": "Kartka jeszcze się przygotowuje. Spróbuj za chwilę.",
+  "parent_give_refused_changed": "Lekcja zmieniła się od ostatniego sprawdzenia. Poczekaj, aż Jadwigo ją sprawdzi, i spróbuj znowu.",
+  "parent_give_refused_child": "Tego dziecka nie ma w Twojej rodzinie. Wybierz inne w „Dla”.",
+  "parent_give_failed": "Nie udało się dać lekcji. Spróbuj jeszcze raz.",
+  "parent_give_unavailable": "Dawanie lekcji zadziała po zalogowaniu.",
+  "parent_giving": "Daję lekcję…",
+  "parent_given_child": "Lekcja czeka na: {name}.",
+  "parent_given_link": "Link do lekcji",
+  "parent_given_anyone": "Każdy, kto ma ten link, może zagrać i wpisać swoje imię.",
+  "parent_given_copy": "Kopiuj",
+  "parent_given_copied": "Skopiowano",
+  "parent_given_open": "Otwórz lekcję",
   "email_subject_signup": "Twój kod do Jadwigo",
   "email_subject_magiclink": "Twój kod do logowania w Jadwigo",
   "email_subject_email_change": "Twój kod do zmiany adresu e-mail w Jadwigo",
@@ -1135,5 +1291,288 @@
   "oauth_deny": "Odmów",
   "oauth_failed": "Nie udało się połączyć. Wróć do aplikacji i spróbuj jeszcze raz.",
   "oauth_as": "Zalogowano jako {email}.",
-  "oauth_not_you": "To nie Ty? Wyloguj się"
+  "oauth_not_you": "To nie Ty? Wyloguj się",
+  "chat_phase_queued_line": "Zacznę za chwilę.",
+  "chat_phase_thinking_lesson": "Zastanawiam się nad lekcją",
+  "chat_phase_thinking_question": "Zastanawiam się nad pytaniem",
+  "chat_phase_waiting_meta": "czeka na Ciebie",
+  "chat_phase_stopped_meta": "zatrzymane · {t}",
+  "chat_phase_failed_meta": "przerwane · {t}",
+  "chat_slow_line": "To trwa dłużej niż zwykle. Pracuję dalej.",
+  "chat_stalled_title": "Nic się nie dzieje od minuty.",
+  "chat_stalled_body": "Możesz poczekać albo zacząć tę prośbę od nowa. To, co już jest w lekcji, zostanie.",
+  "chat_wait_more": "Czekaj dalej",
+  "chat_stage_again_2": "drugi raz",
+  "chat_stage_again_3": "trzeci raz",
+  "chat_stage_failed_sum": [
+    {
+      "declarations": ["input n", "local tries_noun = n: plural"],
+      "selectors": ["tries_noun"],
+      "match": {
+        "tries_noun=one": "nie wyszło po {n} próbie",
+        "tries_noun=few": "nie wyszło po {n} próbach",
+        "tries_noun=many": "nie wyszło po {n} próbach",
+        "tries_noun=other": "nie wyszło po {n} próbach"
+      }
+    }
+  ],
+  "chat_stage_stopped_sum": "zatrzymane",
+  "chat_lines_earlier": "{n} wcześniej",
+  "chat_line_waiting": "Czekam na Twoją odpowiedź poniżej",
+  "chat_line_retry": "{stage} trwało za długo, próbuję jeszcze raz",
+  "chat_stage_retry_sum": "druga próba",
+  "chat_line_recovered_types": "Nie dało się sprawdzić rodzajów zadań, więc ułożyłam lekcję bez tego",
+  "chat_line_failed_generic": "Ten krok się nie udał, poszłam dalej bez niego",
+  "chat_line_search": [
+    {
+      "declarations": ["input query", "input grade", "input n", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Szukałam „{query}” w klasie {grade}: {n} zestaw",
+        "sets_noun=few": "Szukałam „{query}” w klasie {grade}: {n} zestawy",
+        "sets_noun=many": "Szukałam „{query}” w klasie {grade}: {n} zestawów",
+        "sets_noun=other": "Szukałam „{query}” w klasie {grade}: {n} zestawu"
+      }
+    }
+  ],
+  "chat_tags_more": "+{n} więcej",
+  "chat_tags_less": "Zwiń",
+  "chat_line_search_pick": [
+    {
+      "declarations": ["input n", "input grade", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Wybrałam {n} zestaw, który pasuje do {grade} klasy",
+        "sets_noun=few": "Wybrałam {n} zestawy, które pasują do {grade} klasy",
+        "sets_noun=many": "Wybrałam {n} zestawów, które pasują do {grade} klasy",
+        "sets_noun=other": "Wybrałam {n} zestawu, które pasują do {grade} klasy"
+      }
+    }
+  ],
+  "chat_line_say": "{text}",
+  "chat_line_edit_changed": "Poprawiłam zadania {list}",
+  "chat_line_search_any": [
+    {
+      "declarations": ["input query", "input n", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Szukałam „{query}”: {n} zestaw",
+        "sets_noun=few": "Szukałam „{query}”: {n} zestawy",
+        "sets_noun=many": "Szukałam „{query}”: {n} zestawów",
+        "sets_noun=other": "Szukałam „{query}”: {n} zestawu"
+      }
+    }
+  ],
+  "chat_line_retry_plain": "Trwało to za długo, próbuję jeszcze raz",
+  "chat_line_types": "Sprawdziłam rodzaje zadań",
+  "chat_line_skills": "Przejrzałam umiejętności",
+  "chat_line_week": "Przejrzałam ten tydzień",
+  "chat_line_mistakes": "Sprawdziłam, co sprawiło trudność",
+  "chat_line_topics": "Przejrzałam tematy z podstawy programowej",
+  "chat_line_ideas": "Zebrałam pomysły na lekcje",
+  "chat_week_title": "Tydzień: {name}",
+  "chat_week_meta": [
+    {
+      "declarations": ["input from", "input to", "input n", "local lessons_noun = n: plural"],
+      "selectors": ["lessons_noun"],
+      "match": {
+        "lessons_noun=one": "{from} – {to} · {n} lekcja",
+        "lessons_noun=few": "{from} – {to} · {n} lekcje",
+        "lessons_noun=many": "{from} – {to} · {n} lekcji",
+        "lessons_noun=other": "{from} – {to} · {n} lekcji"
+      }
+    }
+  ],
+  "chat_show_all": "Pokaż wszystkie ({n})",
+  "chat_week_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
+  "chat_line_draft": [
+    {
+      "declarations": ["input n", "input topic", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Ułożyłam {n} zadanie z {topic}",
+        "q_noun=few": "Ułożyłam {n} zadania z {topic}",
+        "q_noun=many": "Ułożyłam {n} zadań z {topic}",
+        "q_noun=other": "Ułożyłam {n} zadania z {topic}"
+      }
+    }
+  ],
+  "chat_line_edit_added": "Dodałam zadanie {n}: {topic}",
+  "chat_line_edit_hints": "Poprawiłam podpowiedzi w zadaniach {list}",
+  "chat_line_check_found": [
+    {
+      "declarations": ["input n", "local things_noun = n: plural"],
+      "selectors": ["things_noun"],
+      "match": {
+        "things_noun=one": "Sprawdziłam lekcję: {n} rzecz do poprawy",
+        "things_noun=few": "Sprawdziłam lekcję: {n} rzeczy do poprawy",
+        "things_noun=many": "Sprawdziłam lekcję: {n} rzeczy do poprawy",
+        "things_noun=other": "Sprawdziłam lekcję: {n} rzeczy do poprawy"
+      }
+    }
+  ],
+  "chat_line_check_ok": "Sprawdziłam lekcję: wszystko w porządku",
+  "chat_line_read": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Przeczytałam lekcję: {n} zadanie",
+        "q_noun=few": "Przeczytałam lekcję: {n} zadania",
+        "q_noun=many": "Przeczytałam lekcję: {n} zadań",
+        "q_noun=other": "Przeczytałam lekcję: {n} zadania"
+      }
+    }
+  ],
+  "chat_steer_label": "Dopisane w trakcie",
+  "chat_steer_photos": [
+    {
+      "declarations": ["input n", "local photos_noun = n: plural"],
+      "selectors": ["photos_noun"],
+      "match": {
+        "photos_noun=one": "„{n} zdjęcie”",
+        "photos_noun=few": "„{n} zdjęcia”",
+        "photos_noun=many": "„{n} zdjęć”",
+        "photos_noun=other": "„{n} zdjęcia”"
+      }
+    }
+  ],
+  "chat_summary_done": [
+    {
+      "declarations": ["input n", "local stages_noun = n: plural"],
+      "selectors": ["stages_noun"],
+      "match": {
+        "stages_noun=one": "Zrobione w {n} etapie",
+        "stages_noun=few": "Zrobione w {n} etapach",
+        "stages_noun=many": "Zrobione w {n} etapach",
+        "stages_noun=other": "Zrobione w {n} etapach"
+      }
+    }
+  ],
+  "chat_summary_done_fix": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Zrobione, {n} zadanie do poprawy",
+        "q_noun=few": "Zrobione, {n} zadania do poprawy",
+        "q_noun=many": "Zrobione, {n} zadań do poprawy",
+        "q_noun=other": "Zrobione, {n} zadania do poprawy"
+      }
+    }
+  ],
+  "chat_summary_meta": [
+    {
+      "declarations": ["input k", "input t", "local steps_noun = k: plural"],
+      "selectors": ["steps_noun"],
+      "match": {
+        "steps_noun=one": "{k} krok · {t}",
+        "steps_noun=few": "{k} kroki · {t}",
+        "steps_noun=many": "{k} kroków · {t}",
+        "steps_noun=other": "{k} kroku · {t}"
+      }
+    }
+  ],
+  "chat_failed_title": "Nie udało się ułożyć lekcji.",
+  "chat_failed_body": [
+    {
+      "declarations": ["input n", "local times_noun = n: plural"],
+      "selectors": ["times_noun"],
+      "match": {
+        "times_noun=one": "Jadwigo próbowała {n} raz. Twoja prośba jest zapisana, możesz spróbować jeszcze raz.",
+        "times_noun=few": "Jadwigo próbowała {n} razy. Twoja prośba jest zapisana, możesz spróbować jeszcze raz.",
+        "times_noun=many": "Jadwigo próbowała {n} razy. Twoja prośba jest zapisana, możesz spróbować jeszcze raz.",
+        "times_noun=other": "Jadwigo próbowała {n} razy. Twoja prośba jest zapisana, możesz spróbować jeszcze raz."
+      }
+    }
+  ],
+  "chat_retry": "Spróbuj ponownie",
+  "chat_copy_support": "Kopiuj szczegóły dla pomocy",
+  "chat_stopped_none": "Zatrzymane. Lekcja została bez zmian.",
+  "chat_stopped_some": "Zatrzymane. W lekcji jest to, co zdążyłam zmienić.",
+  "chat_stopped_before": "Zatrzymane.",
+  "chat_send_disabled": "Napisz coś albo dodaj zdjęcie.",
+  "chat_queue_label": "Wyślę, gdy skończę",
+  "chat_queue_now": "Wyślij teraz",
+  "chat_queue_photos_wait": "Zdjęcia wyślę dopiero po tej odpowiedzi.",
+  "chat_newest": "Najnowsze",
+  "card_superseded": "jest nowsza wersja",
+  "card_tag_ready": "Gotowa",
+  "card_tag_fix": "Do poprawy",
+  "card_tag_working": "Zmieniam…",
+  "card_count": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
+  "card_more_questions": "+{n} więcej",
+  "card_open_version": "Otwórz tę wersję",
+  "card_expand": "Rozwiń lekcję",
+  "card_collapse": "Zwiń lekcję",
+  "card_fix_reason": "Daj lekcję będzie można, gdy zadania będą poprawione.",
+  "card_unchecked_reason": "Ta wersja nie została sprawdzona. „Popraw za mnie” sprawdzi ją i poprawi.",
+  "card_fix_reason_short": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Najpierw trzeba poprawić {n} zadanie.",
+        "q_noun=few": "Najpierw trzeba poprawić {n} zadania.",
+        "q_noun=many": "Najpierw trzeba poprawić {n} zadań.",
+        "q_noun=other": "Najpierw trzeba poprawić {n} zadania."
+      }
+    }
+  ],
+  "card_fix_action": "Popraw za mnie",
+  "lesson_pane_band": "Jadwigo zmienia tę lekcję. Zmiany pojawią się tutaj.",
+  "lesson_tag_new": "nowe",
+  "lesson_tag_changed": "zmienione",
+  "rating_label": "Ta lekcja jest",
+  "rating_easy": "za łatwa",
+  "rating_ok": "w sam raz",
+  "rating_hard": "za trudna",
+  "choose_label": "Jadwigo pyta",
+  "choose_recommended": "polecane",
+  "choose_own": "Albo napisz własnymi słowami…",
+  "choose_skip": "Pomiń pytanie",
+  "attach_caption": "Tak Jadwigo widzi zdjęcia",
+  "attach_caption_files": "Tak Jadwigo widzi pliki",
+  "attach_pages": [
+    {
+      "declarations": ["input n", "local pages_noun = n: plural"],
+      "selectors": ["pages_noun"],
+      "match": {
+        "pages_noun=one": "{n} strona",
+        "pages_noun=few": "{n} strony",
+        "pages_noun=many": "{n} stron",
+        "pages_noun=other": "{n} strony"
+      }
+    }
+  ],
+  "day_yesterday": "Wczoraj",
+  "day_today": "Dziś",
+  "live_working": "Jadwigo pracuje",
+  "live_waiting": "Czeka na Ciebie",
+  "live_done": "Gotowe",
+  "live_stopped": "Zatrzymane",
+  "live_failed": "Nie udało się",
+  "live_stalled": "Utknęło"
 }

@@ -24,10 +24,24 @@ describe("Queen", () => {
     const onDone = vi.fn();
     const { container } = render(<Queen onDone={onDone} />);
     const video = container.querySelector("video") as HTMLVideoElement;
+    const webm = container.querySelector('source[type="video/webm"]') as HTMLSourceElement;
     fireEvent.ended(video);
     fireEvent.error(video);
+    fireEvent.error(webm);
     fireEvent.pointerDown(document.body);
-    expect(onDone).toHaveBeenCalledTimes(3);
+    expect(onDone).toHaveBeenCalledTimes(4);
+  });
+
+  // dl-1eieq.4: every browser but Safari skips the .mov and fires `error` at its <source>, which
+  // React hands to the video's onError; she must stay for the .webm.
+  it("stays when a browser skips the .mov", () => {
+    motion(false);
+    const onDone = vi.fn();
+    const { container } = render(<Queen onDone={onDone} />);
+    const mov = container.querySelector("source") as HTMLSourceElement;
+    fireEvent.error(mov);
+    expect(onDone).not.toHaveBeenCalled();
+    expect(container.querySelector("[data-queen]")).not.toBeNull();
   });
 
   it("does not play under reduced motion", () => {

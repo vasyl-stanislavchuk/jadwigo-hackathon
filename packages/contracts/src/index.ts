@@ -2,6 +2,7 @@ export * from "./auth-email.ts";
 export * from "./bank.ts";
 export * from "./families/index.ts";
 export * from "./ids.ts";
+export * from "./print.ts";
 export * from "./records.ts";
 export * from "./routes.ts";
 export * from "./run.ts";

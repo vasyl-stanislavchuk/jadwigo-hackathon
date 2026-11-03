@@ -84,7 +84,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
   lesson_draft: {
     name: "lesson_draft",
     description:
-      "Draft a lesson for the parent's request: questions drawn from the bank and copied whole. topic is what the lesson is about in a few words, with no count, grade or name; grade the bare grade number; names every name the family uses, or []. question_types keeps only those kinds of question (a type such as recognition, a family such as choose, or family.type); take them from question_types, never guess. sets draws only from those set ids, in order, with no search. Per question it returns step_id, prompt, key, rungs and you_write: write only what you_write lists, then call lesson_check.",
+      "Draft a lesson from bank questions copied whole as a starting point. Search first when source suitability is uncertain; sets pins your chosen source sets. Nearby sources may be adapted with lesson_edit to meet the parent's request, including its operation and number range. topic is what the lesson is about in a few words, with no count, grade or name; grade the bare grade number; names every name the family uses, or []. question_types keeps only those kinds of question (a type such as recognition, a family such as choose, or family.type); take them from question_types, never guess. sets draws only from those set ids, in order, with no search. Per question it returns step_id, prompt, key, rungs and you_write: write only what you_write lists, then call lesson_check.",
     parameters: params(
       {
         request: str,
@@ -116,7 +116,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
   lesson_edit: {
     name: "lesson_edit",
     description:
-      "Change one step by a JSON merge patch on the step as lesson_show returns it: say, and question's data, key and help. A change to a part the bank's copy has needs why, the parent's ask. Returns that step's findings and card.",
+      "Adapt a copied question to the parent's request, or change one step by a JSON merge patch on the step as lesson_show returns it: say, and question's data, key and help. Changing say alone does not change the displayed task in question.data. Preserve the family's shapes: help.look and help.boost are {text}, help.almost and help.worked are arrays, and help.twin carries its own say, data and key. A change to a part the bank's copy has needs why, the parent's ask. Returns that step's findings and card.",
     parameters: params(
       {
         draft_id: str,
@@ -136,7 +136,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
   lesson_check: {
     name: "lesson_check",
     description:
-      "Check the draft with your words on it. help maps each step_id to what its you_write lists (twin, boost_by_mistake, look, boost, almost, worked); help {} checks the draft as it stands. Fix what findings list by step id until ok is true.",
+      "Check the draft with your words on it. help maps each step_id to what its you_write lists (twin, boost_by_mistake, look, boost, almost, worked); help {} checks the draft as it stands. Fix what findings list by step id until ok is true. title sets the lesson's title: a few plain words a child reads, naming what it practises.",
     parameters: params(
       {
         draft_id: str,
@@ -156,7 +156,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
   question_search: {
     name: "question_search",
     description:
-      "Search the bank for question sets that meet a need. grade is the bare grade number; words the need in plain words in language; question_types keeps only sets holding those kinds of question. Each set names its question_types.",
+      "Search the bank for candidate question sets, including similar or nearby material. Rank is not proof of an exact match. Read why_found and inspect the drawn questions. If nothing is returned, retry once with broader words for the same operation or topic to find nearby sources; retain the original requirements for the final lesson. Choose suitable sources yourself: use unchanged when they meet the request, or adapt them through lesson_edit with a why tied to the request. When changing numbers, update the key, hints, worked solution and twin consistently, then run lesson_check. Keep the final questions within the requested operation and range. grade is the bare grade number; words the need in plain words in language; question_types keeps only sets holding those kinds of question. Each set names its question_types.",
     parameters: params(
       {
         grade: str,

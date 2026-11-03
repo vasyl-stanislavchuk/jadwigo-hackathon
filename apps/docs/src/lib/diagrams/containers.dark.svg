@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 740" role="img" aria-labelledby="containers-dark-title containers-dark-desc">
+<title id="containers-dark-title">The containers</title>
+<desc id="containers-dark-desc">Jadwigo's parts: the web app, the API, the runner, the converter, Postgres, the bank, and the remote MCP.</desc>
+<defs><marker id="a-m-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9b4a7"/></marker><marker id="a-a-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#93b6ff"/></marker><marker id="a-l-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7aa6f0"/></marker></defs>
+<rect x="0" y="0" width="1000" height="740" fill="#1d1e22"/>
+<rect x="20" y="90" width="960" height="410" rx="8" fill="#2a2c33" stroke="#373941" stroke-width="1"/>
+<text x="36" y="114" font-family="ui-monospace, monospace" font-size="9" letter-spacing="1" fill="#918c83">AWS, EU-CENTRAL-1</text>
+<rect x="20" y="530" width="510" height="140" rx="8" fill="#2a2c33" stroke="#373941" stroke-width="1"/>
+<text x="36" y="554" font-family="ui-monospace, monospace" font-size="9" letter-spacing="1" fill="#918c83">SUPABASE, FRANKFURT</text>
+<polyline points="105,74 105,110 90,110 90,150" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="305,74 305,120 150,120 150,150" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="230,177 270,177" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<polyline points="460,177 500,177" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="515,74 515,120 330,120 330,150" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<polyline points="700,177 740,177" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="660,204 660,230 800,230 800,250" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="600,204 600,250" fill="none" stroke="#93b6ff" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#a-a-dark)"/>
+<polyline points="600,350 600,330 600,330 600,304" fill="none" stroke="#b9b4a7" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#a-m-dark)"/>
+<polyline points="700,290 720,290 720,370 740,370" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="800,404 800,440 365,440 365,304" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="500,277 460,277" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="540,304 540,470 120,470 120,540 120,580" fill="none" stroke="#93b6ff" stroke-width="1.2" marker-end="url(#a-a-dark)"/>
+<polyline points="540,204 540,220 480,220 480,500 180,500 180,540 180,580" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="90,204 90,540 330,540 330,580" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="560,74 560,100 960,100 960,540 420,540 420,580" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<polyline points="365,350 365,320 250,320 250,220 300,220 300,204" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<polyline points="735,74 735,110 860,110 860,452 365,452 365,404" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<polyline points="500,300 250,300 250,370 230,370" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<rect x="20" y="20" width="170" height="54" rx="20" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="105" y="44" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Child</text>
+<text x="105" y="61" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">plays, no login</text>
+<rect x="220" y="20" width="170" height="54" rx="20" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="305" y="44" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Parent</text>
+<text x="305" y="61" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">signs in, reads results</text>
+<rect x="420" y="20" width="190" height="54" rx="20" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="515" y="44" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Parent&#x27;s own AI app</text>
+<text x="515" y="61" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">OAuth 2.1</text>
+<rect x="640" y="20" width="190" height="54" rx="20" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="735" y="44" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Lesson author or agent</text>
+<text x="735" y="61" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">searches the bank</text>
+<rect x="40" y="150" width="190" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="135" y="174" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Web app</text>
+<text x="135" y="191" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">React, static in S3</text>
+<rect x="270" y="150" width="190" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="365" y="174" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">HTTP API</text>
+<text x="365" y="191" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">API Gateway, throttled</text>
+<rect x="500" y="150" width="200" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="600" y="174" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">API</text>
+<text x="600" y="191" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">one Lambda, routes + /api/mcp</text>
+<rect x="740" y="150" width="200" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="840" y="174" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Bank search</text>
+<text x="840" y="191" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">its own Lambda</text>
+<rect x="740" y="250" width="200" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="840" y="274" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Content bucket</text>
+<text x="840" y="291" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">S3: questions</text>
+<rect x="500" y="250" width="200" height="54" rx="6" fill="#1d3157" stroke="#93b6ff" stroke-width="1"/>
+<text x="600" y="274" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Runner</text>
+<text x="600" y="291" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">drains agent_step</text>
+<rect x="270" y="250" width="190" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="365" y="274" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Uploads bucket</text>
+<text x="365" y="291" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">S3: photos per pod</text>
+<rect x="40" y="250" width="190" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="135" y="274" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">jadwigo.pl + docs</text>
+<text x="135" y="291" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">static, CloudFront + S3</text>
+<rect x="740" y="350" width="200" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="840" y="374" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Converter</text>
+<text x="840" y="391" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">PDF, DOCX, HEIC to JPEGs</text>
+<rect x="500" y="350" width="200" height="54" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1" stroke-dasharray="5,4"/>
+<text x="600" y="374" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Schedule</text>
+<text x="600" y="391" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">EventBridge, every minute</text>
+<rect x="40" y="350" width="190" height="54" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1" stroke-dasharray="5,4"/>
+<text x="135" y="374" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Meta Muse API</text>
+<text x="135" y="391" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">/v1/responses</text>
+<rect x="270" y="350" width="190" height="54" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1" stroke-dasharray="5,4"/>
+<text x="365" y="374" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">jw + MCP server</text>
+<text x="365" y="391" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">Python CLI, author&#x27;s machine</text>
+<rect x="40" y="580" width="210" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="145" y="604" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Postgres</text>
+<text x="145" y="621" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">records, RLS per pod</text>
+<rect x="290" y="580" width="210" height="54" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="395" y="604" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Supabase Auth</text>
+<text x="395" y="621" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">email code, OAuth 2.1</text>
+<rect x="206" y="102" width="42" height="16" fill="#1d1e22"/>
+<text x="227" y="113" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">HTTPS</text>
+<rect x="232" y="159" width="36" height="16" fill="#1d1e22"/>
+<text x="250" y="170" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">JSON</text>
+<rect x="393" y="102" width="59" height="16" fill="#1d1e22"/>
+<text x="422" y="113" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">/API/MCP</text>
+<rect x="696" y="159" width="48" height="16" fill="#1d1e22"/>
+<text x="720" y="170" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">SEARCH</text>
+<rect x="712" y="212" width="36" height="16" fill="#1d1e22"/>
+<text x="730" y="223" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">READ</text>
+<rect x="606" y="219" width="36" height="16" fill="#1d1e22"/>
+<text x="613" y="230" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">POKE</text>
+<rect x="606" y="309" width="42" height="16" fill="#1d1e22"/>
+<text x="613" y="320" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">1 MIN</text>
+<rect x="726" y="322" width="53" height="16" fill="#1d1e22"/>
+<text x="733" y="333" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">S3 KEYS</text>
+<rect x="547" y="422" width="70" height="16" fill="#1d1e22"/>
+<text x="582" y="433" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">PAGE JPEGS</text>
+<rect x="126" y="497" width="70" height="16" fill="#1d1e22"/>
+<text x="133" y="508" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">AGENT_STEP</text>
+<rect x="287" y="482" width="87" height="16" fill="#1d1e22"/>
+<text x="330" y="493" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">1 TRANSACTION</text>
+<rect x="183" y="522" width="53" height="16" fill="#1d1e22"/>
+<text x="210" y="533" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">SIGN-IN</text>
+<rect x="658" y="522" width="64" height="16" fill="#1d1e22"/>
+<text x="690" y="533" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">OAUTH 2.1</text>
+<rect x="256" y="327" width="87" height="16" fill="#1d1e22"/>
+<text x="263" y="338" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">1 CALL / STEP</text>
+<line x1="20" y1="712" x2="44" y2="712" stroke="#93b6ff" stroke-width="1.5"/>
+<text x="50" y="716" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">FOCAL: THE RUNNER</text>
+<line x1="175.2" y1="712" x2="199.2" y2="712" stroke="#7aa6f0" stroke-width="1.5"/>
+<text x="205.2" y="716" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">HTTP / EXTERNAL</text>
+<line x1="319.2" y1="712" x2="343.2" y2="712" stroke="#b9b4a7" stroke-width="1.5"/>
+<text x="349.2" y="716" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">INSIDE AWS</text>
+<line x1="435.2" y1="712" x2="459.2" y2="712" stroke="#b9b4a7" stroke-width="1.5"/>
+<text x="465.2" y="716" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">ASYNC POKE (DASHED)</text>
+</svg>

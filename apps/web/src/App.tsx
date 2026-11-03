@@ -1,4 +1,5 @@
-import { lazy, type ReactElement, Suspense, useEffect } from "react";
+import { setAudience } from "@jadwigo/ui";
+import { lazy, type ReactElement, Suspense, useEffect, useLayoutEffect } from "react";
 import { ConsentBanner } from "./analytics/ConsentBanner.tsx";
 import { useDocumentLang, useScreenLanguage } from "./nav/language.ts";
 import { navigate, useLocation } from "./nav/location.ts";
@@ -47,6 +48,13 @@ export function App(): ReactElement | null {
   useEffect(() => {
     if (elsewhere) navigate(`/${window.location.search}`, { replace: true });
   }, [elsewhere]);
+  // The parent's pages speak to an adult, the rest to a child (dl-uukj.47.67): <html data-audience>
+  // picks the look in foundation.css. The playground is the owner's tool and keeps the child's. A
+  // layout effect, so the first paint is already the right audience.
+  const adult = inParent || consent;
+  useLayoutEffect(() => {
+    setAudience(document.documentElement, adult ? "adult" : "kid");
+  }, [adult]);
   if (inPlayground)
     return (
       <Suspense fallback={null}>

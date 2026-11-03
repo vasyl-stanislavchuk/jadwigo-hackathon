@@ -7,7 +7,7 @@
  */
 import { hosts } from "@jadwigo/config";
 import { copy, type Language } from "@jadwigo/copy";
-import { Button } from "@jadwigo/ui";
+import { Button, RegisterProvider } from "@jadwigo/ui";
 import { X } from "lucide-react";
 import type { ReactElement } from "react";
 import { CATEGORY } from "../parent/adult.ts";
@@ -21,35 +21,43 @@ export function ConsentBanner({ language }: { language: Language }): ReactElemen
   const { status, accept, reject } = useAnalyticsConsent();
   if (status !== "pending") return null;
   const say = (key: Parameters<typeof copy>[1]) => copy(language, key, {}, CATEGORY);
+  // The adult's card (handoff dl-uukj.47.67 §5, §6.10): radius 10, a 1 px line, the floating shadow.
   return (
-    <section
-      data-analytics-consent
-      aria-labelledby="consent-title"
-      className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-lg border-2 border-jw-line bg-jw-card py-5 pr-12 pl-5 text-jw-ink shadow-lg"
-    >
-      <Button
-        type="button"
-        size="icon"
-        variant="ghost"
-        data-analytics-reject
-        aria-label={say("consent_close")}
-        onClick={reject}
-        className="absolute top-2 right-2 size-11 min-h-0 min-w-0"
+    <RegisterProvider value="app">
+      <section
+        data-analytics-consent
+        aria-labelledby="consent-title"
+        className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-md rounded-jw-card border border-border bg-background py-5 pr-12 pl-5 text-jw-page-body text-foreground shadow-float"
       >
-        <X className="size-5" aria-hidden="true" />
-      </Button>
-      <h2 id="consent-title" className="mb-1 text-lg font-bold">
-        {say("consent_title")}
-      </h2>
-      <p>
-        {say("consent_text")}{" "}
-        <a className="underline" href={privacyUrl(language)} target="_blank" rel="noreferrer">
-          {say("consent_privacy")}
-        </a>
-      </p>
-      <Button type="button" size="control" data-analytics-accept onClick={accept} className="mt-3">
-        {say("consent_accept")}
-      </Button>
-    </section>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          data-analytics-reject
+          aria-label={say("consent_close")}
+          onClick={reject}
+          className="absolute top-2 right-2 size-9 min-h-0 min-w-0"
+        >
+          <X className="size-4" aria-hidden="true" />
+        </Button>
+        <h2 id="consent-title" className="mb-1 text-jw-page-h2 font-semibold">
+          {say("consent_title")}
+        </h2>
+        <p>
+          {say("consent_text")}{" "}
+          <a
+            className="text-primary underline underline-offset-3"
+            href={privacyUrl(language)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {say("consent_privacy")}
+          </a>
+        </p>
+        <Button type="button" size="lg" data-analytics-accept onClick={accept} className="mt-3">
+          {say("consent_accept")}
+        </Button>
+      </section>
+    </RegisterProvider>
   );
 }

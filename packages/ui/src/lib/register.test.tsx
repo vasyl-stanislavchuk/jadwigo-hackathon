@@ -33,10 +33,13 @@ function expectClasses(el: Element, present: readonly string[], absent: readonly
   for (const c of absent) expect(el.classList.contains(c), `lacks ${c}`).toBe(false);
 }
 
+// Outside the adult audience the page's 3 px outline; inside it the soft 3 px halo (dl-uukj.47.67 D15).
 const PAGE_OUTLINE = [
-  "focus-visible:outline-3",
-  "focus-visible:outline-offset-3",
-  "focus-visible:outline-jw-focus",
+  "not-in-data-[audience=adult]:focus-visible:outline-3",
+  "not-in-data-[audience=adult]:focus-visible:outline-offset-3",
+  "not-in-data-[audience=adult]:focus-visible:outline-jw-focus",
+  "in-data-[audience=adult]:focus-visible:ring-3",
+  "in-data-[audience=adult]:focus-visible:ring-ring/30",
 ];
 const SOFT_RING = [
   "outline-none",
@@ -180,17 +183,18 @@ describe.each(BODY_PARTS)("%s", (_name, ui, find) => {
 });
 
 describe("Field's label", () => {
+  // An app page's label is the adult's 500 (dl-uukj.47.67 §3); a learner's stays bold.
   it.each([
-    ["prose", "text-jw-page-body", "text-jw-body"],
-    ["kid", "text-jw-body", "text-jw-page-body"],
-  ] as const)("on a %s page reads %s", (width, size, other) => {
+    ["prose", "text-jw-page-body", "text-jw-body", "font-medium"],
+    ["kid", "text-jw-body", "text-jw-page-body", "font-bold"],
+  ] as const)("on a %s page reads %s", (width, size, other, weight) => {
     on(
       width,
       <Field label="Kod">
         <Input kind="text" />
       </Field>,
     );
-    expectClasses(screen.getByText("Kod"), [size, "font-bold"], [other]);
+    expectClasses(screen.getByText("Kod"), [size, weight], [other]);
   });
 });
 
@@ -231,18 +235,66 @@ describe("Input focus", () => {
 });
 
 describe("Button", () => {
+  // The adult variants and sizes (dl-uukj.47.67 §6.1).
+  it.each([
+    ["quiet", "text-muted-foreground"],
+    ["link", "text-link"],
+  ] as const)("draws the %s variant", (variant, cls) => {
+    on("prose", <Button variant={variant}>Archiwizuj</Button>);
+    expectClasses(screen.getByRole("button", { name: "Archiwizuj" }), [cls], ["bg-jw-act"]);
+  });
+
+  it.each([
+    ["sm", "min-h-jw-control-sm"],
+    ["lg", "min-h-jw-control-lg"],
+  ] as const)("sizes %s from a token", (size, cls) => {
+    on("prose", <Button size={size}>Dalej</Button>);
+    expectClasses(screen.getByRole("button", { name: "Dalej" }), [cls], []);
+  });
+
+  it.each(["control", "lg", "sm"] as const)(
+    "keeps a link free of a control's height at size %s",
+    (size) => {
+      on(
+        "prose",
+        <Button variant="link" size={size}>
+          Zobacz
+        </Button>,
+      );
+      const link = screen.getByRole("button", { name: "Zobacz" });
+      expectClasses(
+        link,
+        ["min-h-auto", "px-0"],
+        [`min-h-jw-${size === "control" ? "control" : `control-${size}`}`],
+      );
+      expect(link.className.indexOf("min-h-auto")).toBeGreaterThan(
+        link.className.indexOf("text-link"),
+      );
+    },
+  );
+
   it("outside a lesson focuses with the page's outline, not the soft ring", () => {
     on("prose", <Button>Wyślij kod</Button>);
     expectClasses(screen.getByRole("button", { name: "Wyślij kod" }), PAGE_OUTLINE, SOFT_RING);
   });
 
-  it("keeps the action, its edge and its press on an app page", () => {
+  // The edge is foundation.css's --jw-press, 0 in the adult audience (D4); the 1 px press move is a
+  // lesson's only.
+  it("keeps the action and its edge on an app page, and moves on press only in a lesson", () => {
     on("prose", <Button>Wyślij kod</Button>);
     expectClasses(
       screen.getByRole("button", { name: "Wyślij kod" }),
-      ["bg-jw-act", "text-jw-on-act", "shadow-jw-act", "active:translate-y-px"],
-      [],
+      [
+        "bg-jw-act",
+        "text-jw-on-act",
+        "shadow-jw-act",
+        "in-data-[audience=adult]:hover:bg-jw-act-hover",
+      ],
+      ["active:translate-y-px"],
     );
+    cleanup();
+    render(<Button>Sprawdź</Button>);
+    expectClasses(screen.getByRole("button", { name: "Sprawdź" }), ["active:translate-y-px"], []);
   });
 
   it("hands the page's outline to a link with asChild", () => {

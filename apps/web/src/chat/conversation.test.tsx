@@ -3,12 +3,19 @@ import { ErrorType } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
-import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { conversationReducer, EMPTY, lessonOf, turnsOf } from "./conversation.ts";
 import { LessonPane } from "./LessonPane.tsx";
-import { revertPatch } from "./patches.ts";
 import { type EngineTransport, useConversation } from "./useConversation.ts";
 import type { SendBody } from "./wire.ts";
 
@@ -55,6 +62,7 @@ describe("conversationReducer", () => {
     });
     expect(state.runs[0]?.events.map((e) => e.seq)).toEqual(events.map((e) => e.seq));
     expect(turnsOf(state)[0]?.view).toEqual(foldRun(events));
+    expect(turnsOf(state)[0]?.events?.map((e) => e.seq)).toEqual(events.map((e) => e.seq));
     // A push after the fetch that repeats what is held changes nothing.
     const again = conversationReducer(state, { type: "live", run_id: run.id, events });
     expect(again.runs[0]?.events).toHaveLength(events.length);
@@ -154,7 +162,7 @@ describe("ChatScreen on a transport", () => {
     render(<ChatScreen transport={t.transport} />);
     expect(await screen.findByText("Your lesson is ready on the right.")).toBeTruthy();
     expect(t.calls).toEqual(["runs", `subscribe ${t.run.id}`, `events ${t.run.id} after 0`]);
-    expect(screen.getByText("Wersja 2")).toBeTruthy();
+    expect(document.querySelector('div[data-revision="2"]')).not.toBeNull();
     // Each question step is named in the parent's language (dl-z5ja.45).
     const steps = document.querySelectorAll("[data-step][aria-label]");
     expect(steps.length).toBeGreaterThan(0);
@@ -170,7 +178,7 @@ describe("ChatScreen's phone switch (dl-z5ja.28)", () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     const lessonTab = screen.getByRole("tab", { name: /Lekcja/ });
     expect(screen.getByRole("tab", { name: "Rozmowa" }).getAttribute("aria-selected")).toBe("true");
     expect(lessonTab.querySelector("[data-badge]")?.textContent).toBe("Lekcja się zmieniła");
@@ -211,10 +219,6 @@ describe("a send a message limit refuses (dl-z5ja.62, .100)", () => {
   });
 });
 
-const isRevision = (e: RunEvent): boolean => e.type === "lesson_revision";
-const lessonFileOf = (e: RunEvent | undefined): unknown =>
-  e?.type === "lesson_revision" ? e.payload.lesson_file : null;
-
 describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
   /** A 3rd revision of the happy turn's lesson with step s02's words changed, as the next event. */
   function thirdRevision(events: readonly RunEvent[]): RunEvent {
@@ -233,147 +237,27 @@ describe("co-editing: an AI revision's changed steps (dl-z5ja.30)", () => {
     });
   }
 
-  it("Cofnij waits for its patch, and stops waiting when the send fails (#546's review)", async () => {
-    const events = eventsOf("happy-turn");
-    const t = fakeTransport(events);
-    let refuse = true;
-    const send = t.transport.send.bind(t.transport);
-    const transport: EngineTransport = {
-      ...t.transport,
-      send: async (body) => {
-        if (refuse && body.kind === "steer") throw new Error("offline");
-        return send(body);
-      },
-    };
-    render(<ChatScreen transport={transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
-    await act(async () => t.push([thirdRevision(events)]));
-    const undo = () => document.querySelector("[data-undo]") as HTMLButtonElement;
-    await act(async () => fireEvent.click(undo()));
-    // The send never reached the server: no log will hold the steer, so Cofnij is pressable again.
-    expect(undo().disabled).toBe(false);
-    refuse = false;
-    await act(async () => fireEvent.click(undo()));
-    // This one went: Cofnij waits for its revision.
-    expect(undo().disabled).toBe(true);
-  });
-
-  it("a step's words edit whose send fails hands the words back (#546's review)", async () => {
-    const events = eventsOf("happy-turn");
-    const t = fakeTransport(events);
-    const send = t.transport.send.bind(t.transport);
-    const transport: EngineTransport = {
-      ...t.transport,
-      send: async (body) => {
-        if (body.kind === "steer") throw new Error("offline");
-        return send(body);
-      },
-    };
-    render(<ChatScreen transport={transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
-    fireEvent.click(document.querySelector("[data-step='s02'] [aria-expanded]") as HTMLElement);
-    fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
-    const words = () => screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" });
-    fireEvent.change(words(), { target: { value: "Ile to jest dwa razy sześć?" } });
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Wyślij zmianę" })));
-    // Never saving forever: the editor opens again on the parent's words, and says it did not land.
-    expect(screen.queryByText("Zapisywanie Twojej zmiany w lekcji…")).toBeNull();
-    expect((words() as HTMLTextAreaElement).value).toBe("Ile to jest dwa razy sześć?");
-  });
-
-  it("a Cofnij the server wrote before its send timed out reads as applied (#596's review)", async () => {
-    const events = eventsOf("happy-turn");
-    const t = fakeTransport(events);
-    const send = t.transport.send.bind(t.transport);
-    const third = thirdRevision(events);
-    const transport: EngineTransport = {
-      ...t.transport,
-      send: async (body) => {
-        if (body.kind !== "steer" || third.type !== "lesson_revision") return send(body);
-        // The server logs the steer and applies its patch, then the client's send times out.
-        t.push([
-          RunEvent.parse({
-            ...third,
-            type: "steer",
-            seq: third.seq + 1,
-            event_id: body.event_id,
-            payload: {
-              text: body.text,
-              source: "lesson_edit",
-              question_ids: body.question_ids,
-              patch: body.patch,
-              base_revision: body.base_revision,
-            },
-          }),
-          RunEvent.parse({
-            ...third,
-            seq: third.seq + 2,
-            event_id: "00000000-0000-4000-8000-000000000302",
-            payload: { ...third.payload, revision: 4, call_id: body.event_id },
-          }),
-        ]);
-        throw new Error("timed out");
-      },
-    };
-    render(<ChatScreen transport={transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
-    await act(async () => t.push([third]));
-    await act(async () => fireEvent.click(document.querySelector("[data-undo]") as HTMLElement));
-    // The log holds the undo and its revision: it landed, so the pane never says it did not.
-    expect(screen.getByText("Wersja 4")).toBeTruthy();
-    expect(document.querySelector("[data-undo-refused]")).toBeNull();
-  });
-
   it("a revision that lands live marks only the step it changed, and a reload marks it again", async () => {
     const events = eventsOf("happy-turn");
     const t = fakeTransport(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     // Revisions 1 and 2 hold the same steps, so nothing is marked yet.
     expect(document.querySelector("[data-changed]")).toBeNull();
     const third = thirdRevision(events);
     await act(async () => t.push([third]));
-    expect(screen.getByText("Wersja 3")).toBeTruthy();
+    expect(document.querySelector('div[data-revision="3"]')).not.toBeNull();
     const marked = () => [...document.querySelectorAll("[data-changed]")];
     expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
-    expect(marked()[0]?.textContent).toContain("Zmiana od Jadwigo AI");
-    // Cofnij sends the patch back to revision 2 as a lesson_edit steer, which the runner applies
-    // with no model call even on an ended turn (wave 4 decision 41, dl-z5ja.111).
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
-    expect(t.sent).toEqual([
-      expect.objectContaining({
-        kind: "steer",
-        source: "lesson_edit",
-        question_ids: ["s02"],
-        text: "Rodzic prosi o cofnięcie zmiany w krokach s02: wróć do wersji 2.",
-        patch: revertPatch(lessonFileOf(third), lessonFileOf(events.findLast(isRevision))),
-        base_revision: 3,
-      }),
-    ]);
+    expect(marked()[0]?.textContent).toContain("zmienione");
+    // The parent takes nothing back by hand (dl-uukj.47.71.17): no Cofnij.
+    expect(screen.queryByRole("button", { name: "Cofnij" })).toBeNull();
 
     // A reload reads revision 2 from the log as previous_lesson (dl-z5ja.68): the same mark.
     cleanup();
     render(<ChatScreen transport={fakeTransport([...events, third]).transport} />);
-    expect(await screen.findByText("Wersja 3")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="3"]')).not.toBeNull());
     expect(marked().map((m) => m.getAttribute("data-step"))).toEqual(["s02"]);
-  });
-
-  it("Cofnij takes back the last AI revision once a handler is wired", () => {
-    const events = eventsOf("happy-turn");
-    const lesson = foldRun(events).lesson;
-    let undone = 0;
-    render(
-      <LessonPane
-        language="pl"
-        lesson={lesson}
-        changed={new Set(["s02"])}
-        onUndo={() => {
-          undone += 1;
-        }}
-      />,
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Cofnij" }));
-    expect(undone).toBe(1);
   });
 });
 

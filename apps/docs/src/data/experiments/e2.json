@@ -1,0 +1,3680 @@
+{
+  "id": "e2",
+  "title": "The next lesson drawn for each invented learner",
+  "status": "done",
+  "model": "muse-spark-1.3-contributor",
+  "calls": 36,
+  "tokens": {
+    "input": 889881,
+    "output": 22500
+  },
+  "usd": 0.0893,
+  "cost_source": "ledger",
+  "wall_s": 165.29,
+  "commit": "223b543abe31ab044d5e9448468a28a9fcf892fd",
+  "commands": [
+    "cd apps/cli && JADWIGO_BANK_DIR=~/projects/jadwigo-bank JADWIGO_MUSE_CAP_USD=500 uv run python experiments/e2.py --judge"
+  ],
+  "results": [
+    {
+      "label": "Learners",
+      "value": 12
+    },
+    {
+      "label": "Questions drawn",
+      "value": 183
+    },
+    {
+      "label": "Learners with an empty lesson",
+      "value": 1
+    },
+    {
+      "label": "Bank pages scanned",
+      "value": 412
+    },
+    {
+      "label": "Panel mean fit (of 5)",
+      "value": 2.39
+    }
+  ],
+  "detail": {
+    "cost_note": "Draw $0: a local page scan of a jadwigo-bank checkout, no hosted search. Judges through the Meta API on muse-spark-1.3-contributor via jw.muse.ask; tokens and USD from apps/cli/logs/muse rows tagged e2:*.",
+    "today": "2026-11-02",
+    "max_brief_entries_per_lesson": 3,
+    "ledger": {
+      "calls": 36,
+      "usd": 0.0893,
+      "input_tokens": 889881,
+      "output_tokens": 22500
+    },
+    "results": [
+      {
+        "label": "Learner A",
+        "profile": "steady",
+        "blurb": "Practises most days and improves a little each time.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 14,
+            "last_answered_at": "2026-10-30T08:03:00.000Z",
+            "due_at": "2026-11-21T08:03:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 12,
+            "last_answered_at": "2026-10-30T08:01:00.000Z",
+            "due_at": "2026-11-03T08:01:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 11,
+            "last_answered_at": "2026-10-30T08:04:00.000Z",
+            "due_at": "2026-12-17T08:04:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 18,
+            "last_answered_at": "2026-10-31T08:05:00.000Z",
+            "due_at": "2027-01-11T08:05:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "proficient",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-10-29T08:03:00.000Z",
+            "due_at": "2026-10-30T08:03:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-10-31T08:02:00.000Z",
+            "due_at": "2026-11-02T08:02:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 12,
+            "last_answered_at": "2026-10-31T08:01:00.000Z",
+            "due_at": "2026-11-25T08:01:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-10-30T08:05:00.000Z",
+            "due_at": "2026-10-30T08:06:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 6,
+            "last_answered_at": "2026-10-28T08:05:00.000Z",
+            "due_at": "2026-10-28T08:11:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-10-29T08:01:00.000Z",
+            "due_at": "2026-10-29T08:11:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 3,
+        "brief_entries_total": 5,
+        "questions_drawn": 18,
+        "entries": [
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x32bc2256e5645f33",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Arrays; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x06e43997a025cb67",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x0aede1e04667d5da",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Number Lines",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Number Lines; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x388e88ebd0668062",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Arrays; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x0e873a91307a59b1",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 4,
+            "questions": [
+              {
+                "item_id": "x113c9e5ea18af334",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Fill in the blank",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Fill in the blank; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x0d18927f62bed18d",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Next 2 numbers",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Next 2 numbers; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x1e0e8d24ed15e848",
+                "set_id": "set_khan_x087638d2",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type A; set set_khan_x087638d2 (rank 2); skill proposed:maths.division.divide-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x146c87714ac49a82",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, first factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x4ea7f62cb4a69af3",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, second factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, second factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x11a7f92eeb6df075",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 5, first factor",
+                "skills": ["maths.multiplication.row-5"],
+                "reason": "unseen; problem type Mult by 5, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-5"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 3,
+            "reason": "Reteaching familiar row-3 and attempted row-5 suits steady incremental growth, but reteaching already-proficient row-2 makes 18 questions overly review-heavy with no forward stretch."
+          },
+          {
+            "fit": 4,
+            "reason": "18 questions reteaching familiar row-3 and attempted row-5 with wider sampling plus light review of proficient row-2 suits steady incremental practice while leaving mastered skills alone."
+          },
+          {
+            "fit": 2,
+            "reason": "Reteaching proficient row-2 wastes steady progress while familiar row-7 is ignored."
+          }
+        ],
+        "panel_mean_fit": 3.0
+      },
+      {
+        "label": "Learner B",
+        "profile": "forgetful",
+        "blurb": "Learns fast in a session, then loses it over a gap.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 4,
+            "last_answered_at": "2026-11-01T08:01:00.000Z",
+            "due_at": "2026-10-23T08:04:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-10-30T08:01:00.000Z",
+            "due_at": "2026-10-30T08:11:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 6,
+            "last_answered_at": "2026-11-01T08:02:00.000Z",
+            "due_at": "2026-11-01T08:12:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 10,
+            "last_answered_at": "2026-10-30T08:07:00.000Z",
+            "due_at": "2026-11-18T08:07:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-11-01T08:06:00.000Z",
+            "due_at": "2026-11-01T08:07:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 4,
+            "last_answered_at": "2026-10-30T08:02:00.000Z",
+            "due_at": "2026-10-30T08:03:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-11-01T08:04:00.000Z",
+            "due_at": "2026-11-01T08:05:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 9,
+            "last_answered_at": "2026-11-01T08:03:00.000Z",
+            "due_at": "2026-11-01T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 10,
+            "last_answered_at": "2026-10-31T08:08:00.000Z",
+            "due_at": "2026-10-31T08:09:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 6,
+            "last_answered_at": "2026-11-01T08:05:00.000Z",
+            "due_at": "2026-11-01T08:06:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 6,
+        "brief_entries_total": 9,
+        "questions_drawn": 15,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.ch-h",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x32bc2256e5645f33",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Arrays; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x06e43997a025cb67",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x0aede1e04667d5da",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Number Lines",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Number Lines; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x388e88ebd0668062",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Arrays; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x0e873a91307a59b1",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 3,
+            "reason": "Reteach focus matches a forgetful learner but three attempted ortografia topics get zero questions and rows 5-7 are unreviewed."
+          },
+          {
+            "fit": 2,
+            "reason": "It correctly reteaches attempted multiplication rows for a forgetful learner but assigns zero questions to three attempted ortografia skills marked reteach."
+          },
+          {
+            "fit": 2,
+            "reason": "It reteaches attempted multiplication rows but gives zero questions for three attempted ortografia topics a forgetful learner needs to review."
+          }
+        ],
+        "panel_mean_fit": 2.33
+      },
+      {
+        "label": "Learner C",
+        "profile": "guesser",
+        "blurb": "Answers at once; about 1 try in 4 is a guess.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "mastered",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-11-01T08:08:00.000Z",
+            "due_at": "2026-11-05T08:08:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 10,
+            "last_answered_at": "2026-11-01T08:06:00.000Z",
+            "due_at": "2026-11-01T08:07:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 8,
+            "last_answered_at": "2026-10-30T08:09:00.000Z",
+            "due_at": "2026-10-30T08:10:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 9,
+            "last_answered_at": "2026-10-31T08:03:00.000Z",
+            "due_at": "2026-10-31T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 12,
+            "last_answered_at": "2026-10-31T08:00:00.000Z",
+            "due_at": "2026-11-03T08:00:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 13,
+            "last_answered_at": "2026-11-01T08:03:00.000Z",
+            "due_at": "2026-11-01T08:13:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 14,
+            "last_answered_at": "2026-10-30T08:07:00.000Z",
+            "due_at": "2026-10-30T08:17:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 17,
+            "last_answered_at": "2026-11-01T08:04:00.000Z",
+            "due_at": "2026-11-03T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 16,
+            "last_answered_at": "2026-11-01T08:01:00.000Z",
+            "due_at": "2026-11-04T08:01:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-11-01T08:07:00.000Z",
+            "due_at": "2026-11-01T08:17:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 7,
+        "brief_entries_total": 7,
+        "questions_drawn": 18,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.ch-h",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.rz-after-consonant",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x388e88ebd0668062",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Arrays; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x0e873a91307a59b1",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x4c85359703082794",
+                "set_id": "set_khan_x59551e61",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-7"],
+                "reason": "unseen; problem type Arrays; set set_khan_x59551e61 (rank 1); skill maths.multiplication.row-7"
+              },
+              {
+                "item_id": "x38ac8a31cdb4b661",
+                "set_id": "set_khan_x59551e61",
+                "problem_type": "Groups of objects",
+                "skills": ["maths.multiplication.row-7"],
+                "reason": "unseen; problem type Groups of objects; set set_khan_x59551e61 (rank 1); skill maths.multiplication.row-7"
+              },
+              {
+                "item_id": "x1f9e1e8fb58865fd",
+                "set_id": "set_khan_x59551e61",
+                "problem_type": "Number lines",
+                "skills": ["maths.multiplication.row-7"],
+                "reason": "unseen; problem type Number lines; set set_khan_x59551e61 (rank 1); skill maths.multiplication.row-7"
+              },
+              {
+                "item_id": "x0bc9eb4ba77a9216",
+                "set_id": "set_khan_xcb67609f",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-7", "maths.multiplication.row-7"],
+                "reason": "unseen; problem type A; set set_khan_xcb67609f (rank 2); skill proposed:maths.division.divide-by-7, maths.multiplication.row-7"
+              },
+              {
+                "item_id": "x60f336d3187a0f4a",
+                "set_id": "set_khan_x59551e61",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-7"],
+                "reason": "unseen; problem type Arrays; set set_khan_x59551e61 (rank 1); skill maths.multiplication.row-7"
+              },
+              {
+                "item_id": "x5e6f410dee6bd404",
+                "set_id": "set_khan_x59551e61",
+                "problem_type": "Groups of objects",
+                "skills": ["maths.multiplication.row-7"],
+                "reason": "unseen; problem type Groups of objects; set set_khan_x59551e61 (rank 1); skill maths.multiplication.row-7"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 5,
+            "reason": "Lesson reteaches only weak multiplication rows 3, 4 and 7 while giving zero questions to mastered capitals."
+          },
+          {
+            "fit": 3,
+            "reason": "Maths reteach targets exactly the weakest rows 3, 4 and 7 while sparing mastered capitals, but provides zero questions for attempted/familiar ortografia needs."
+          },
+          {
+            "fit": 2,
+            "reason": "Maths reteach correctly targets attempted/familiar rows but reteaching mastered capitals and including four skills with zero questions wastes a guess-prone learner's effort."
+          }
+        ],
+        "panel_mean_fit": 3.33
+      },
+      {
+        "label": "Learner D",
+        "profile": "slow-then-click",
+        "blurb": "Struggles for 10 days, then it clicks.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 14,
+            "last_answered_at": "2026-11-01T08:02:00.000Z",
+            "due_at": "2026-11-05T08:02:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 16,
+            "last_answered_at": "2026-10-29T08:07:00.000Z",
+            "due_at": "2026-11-01T08:07:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 20,
+            "last_answered_at": "2026-11-01T08:05:00.000Z",
+            "due_at": "2026-11-03T08:05:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-10-31T08:02:00.000Z",
+            "due_at": "2026-10-31T08:03:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 21,
+            "last_answered_at": "2026-11-01T08:01:00.000Z",
+            "due_at": "2026-11-06T08:01:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 10,
+            "last_answered_at": "2026-11-01T08:04:00.000Z",
+            "due_at": "2026-11-26T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 16,
+            "last_answered_at": "2026-10-31T08:08:00.000Z",
+            "due_at": "2026-10-31T08:09:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 16,
+            "last_answered_at": "2026-11-01T08:03:00.000Z",
+            "due_at": "2026-11-01T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 18,
+            "last_answered_at": "2026-11-01T08:00:00.000Z",
+            "due_at": "2026-10-31T08:06:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 6,
+            "last_answered_at": "2026-10-23T08:04:00.000Z",
+            "due_at": "2026-10-23T08:10:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 4,
+        "brief_entries_total": 6,
+        "questions_drawn": 18,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.rz-after-consonant",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 4,
+            "questions": [
+              {
+                "item_id": "x113c9e5ea18af334",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Fill in the blank",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Fill in the blank; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x0d18927f62bed18d",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Next 2 numbers",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Next 2 numbers; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x1e0e8d24ed15e848",
+                "set_id": "set_khan_x087638d2",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type A; set set_khan_x087638d2 (rank 2); skill proposed:maths.division.divide-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x146c87714ac49a82",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, first factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x4ea7f62cb4a69af3",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, second factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, second factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x11a7f92eeb6df075",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 5, first factor",
+                "skills": ["maths.multiplication.row-5"],
+                "reason": "unseen; problem type Mult by 5, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-5"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x15c250891a03875d",
+                "set_id": "set_khan_xa7200938",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Arrays; set set_khan_xa7200938 (rank 2); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x200c812c8dadc5e9",
+                "set_id": "set_khan_xa7200938",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_xa7200938 (rank 2); skill maths.multiplication.row-6"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 2,
+            "reason": "Reteaching attempted rows 4-6 suits a slow-then-click learner, but the attempted rz-after-consonant skill gets zero questions from zero sets so a struggle area is left unaddressed."
+          },
+          {
+            "fit": 2,
+            "reason": "Reteaching attempted multiplication rows fits slow consolidation, but including a 0-question reteach set plus 18 questions overloads a slow-then-click learner."
+          },
+          {
+            "fit": 2,
+            "reason": "It reteaches attempted multiplication rows well for a persistent learner but omits the attempted rz-after-consonant skill with zero questions."
+          }
+        ],
+        "panel_mean_fit": 2.0
+      },
+      {
+        "label": "Learner E",
+        "profile": "help-heavy",
+        "blurb": "Often right, but usually after asking for help.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 8,
+            "last_answered_at": "2026-11-01T08:01:00.000Z",
+            "due_at": "2026-11-01T08:11:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 9,
+            "last_answered_at": "2026-11-01T08:04:00.000Z",
+            "due_at": "2026-11-01T08:05:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-10-27T08:07:00.000Z",
+            "due_at": "2026-10-27T08:08:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "attempted",
+            "needs_attention": false,
+            "tries": 7,
+            "last_answered_at": "2026-11-01T08:07:00.000Z",
+            "due_at": "2026-11-01T08:13:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 9,
+            "last_answered_at": "2026-11-01T08:02:00.000Z",
+            "due_at": "2026-11-01T08:03:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 13,
+            "last_answered_at": "2026-10-26T08:07:00.000Z",
+            "due_at": "2026-10-26T08:13:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 15,
+            "last_answered_at": "2026-10-28T08:04:00.000Z",
+            "due_at": "2026-10-28T08:05:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 10,
+            "last_answered_at": "2026-10-26T08:06:00.000Z",
+            "due_at": "2026-10-26T08:12:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-11-01T08:08:00.000Z",
+            "due_at": "2026-11-01T08:09:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 11,
+            "last_answered_at": "2026-11-01T08:09:00.000Z",
+            "due_at": "2026-11-08T08:09:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 6,
+        "brief_entries_total": 8,
+        "questions_drawn": 15,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.ch-h",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x32bc2256e5645f33",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Arrays; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x06e43997a025cb67",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x0aede1e04667d5da",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Number Lines",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Number Lines; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x388e88ebd0668062",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Arrays; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x0e873a91307a59b1",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 2,
+            "reason": "Lesson reteaches already often-right familiar multiplication rows with heavy support instead of fading help toward independence and ignores familiar/attempted ortografia needs entirely."
+          },
+          {
+            "fit": 2,
+            "reason": "Reteach matches familiar/attempted multiplication needs but provides zero questions for three needed ortografia topics."
+          },
+          {
+            "fit": 2,
+            "reason": "Reteach suits a help-heavy learner but three targeted ortografia skills get zero questions and attempted row-6 is omitted."
+          }
+        ],
+        "panel_mean_fit": 2.0
+      },
+      {
+        "label": "Learner F",
+        "profile": "rusher",
+        "blurb": "Fast and careless: slips on skills already known.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "proficient",
+            "needs_attention": true,
+            "tries": 15,
+            "last_answered_at": "2026-10-31T08:04:00.000Z",
+            "due_at": "2026-10-31T08:14:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 6,
+            "last_answered_at": "2026-10-27T08:01:00.000Z",
+            "due_at": "2026-10-27T08:02:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 19,
+            "last_answered_at": "2026-10-30T08:05:00.000Z",
+            "due_at": "2026-10-30T08:06:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 13,
+            "last_answered_at": "2026-10-31T08:01:00.000Z",
+            "due_at": "2026-10-31T08:02:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 19,
+            "last_answered_at": "2026-10-31T08:02:00.000Z",
+            "due_at": "2026-11-10T08:02:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 15,
+            "last_answered_at": "2026-10-31T08:05:00.000Z",
+            "due_at": "2026-10-31T08:06:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-10-31T08:03:00.000Z",
+            "due_at": "2026-10-31T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-10-23T08:08:00.000Z",
+            "due_at": "2026-10-23T08:18:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 9,
+            "last_answered_at": "2026-10-31T08:00:00.000Z",
+            "due_at": "2026-10-31T08:01:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 10,
+            "last_answered_at": "2026-10-25T08:03:00.000Z",
+            "due_at": "2026-10-30T08:03:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 7,
+        "brief_entries_total": 9,
+        "questions_drawn": 18,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.ch-h",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.rz-after-consonant",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x388e88ebd0668062",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Arrays; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x0e873a91307a59b1",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 4,
+            "questions": [
+              {
+                "item_id": "x113c9e5ea18af334",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Fill in the blank",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Fill in the blank; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x0d18927f62bed18d",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Next 2 numbers",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Next 2 numbers; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x1e0e8d24ed15e848",
+                "set_id": "set_khan_x087638d2",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type A; set set_khan_x087638d2 (rank 2); skill proposed:maths.division.divide-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x146c87714ac49a82",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, first factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x4ea7f62cb4a69af3",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, second factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, second factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x11a7f92eeb6df075",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 5, first factor",
+                "skills": ["maths.multiplication.row-5"],
+                "reason": "unseen; problem type Mult by 5, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-5"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 2,
+            "reason": "It targets the right next multiplication rows but includes four empty reteaches and omits proficient review that a careless rusher needs."
+          },
+          {
+            "fit": 4,
+            "reason": "Lesson concentrates 18 questions on attempted/familiar multiplication rows 3-5 while giving zero drill on proficient capitals/row-2/row-7, matching a rusher who needs careful work on weak skills without over-practicing known ones."
+          },
+          {
+            "fit": 4,
+            "reason": "Lesson reteaches attempted multiplication rows 3-5 with full question coverage while avoiding over-drilling proficient skills, suiting a rusher needing focused practice."
+          }
+        ],
+        "panel_mean_fit": 3.33
+      },
+      {
+        "label": "Learner G",
+        "profile": "perfectionist",
+        "blurb": "Slow, careful, rarely wrong, sometimes skips rather than risk it.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 12,
+            "last_answered_at": "2026-10-26T08:07:00.000Z",
+            "due_at": "2026-11-02T08:07:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 8,
+            "last_answered_at": "2026-10-31T08:02:00.000Z",
+            "due_at": "2026-11-23T08:02:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 7,
+            "last_answered_at": "2026-10-30T08:01:00.000Z",
+            "due_at": "2026-11-17T08:01:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 11,
+            "last_answered_at": "2026-10-31T08:06:00.000Z",
+            "due_at": "2026-11-06T08:06:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 4,
+            "last_answered_at": "2026-10-30T08:00:00.000Z",
+            "due_at": "2026-10-30T08:01:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 11,
+            "last_answered_at": "2026-10-31T08:03:00.000Z",
+            "due_at": "2027-01-09T08:03:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 13,
+            "last_answered_at": "2026-10-31T08:05:00.000Z",
+            "due_at": "2026-12-25T08:05:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 13,
+            "last_answered_at": "2026-10-30T08:03:00.000Z",
+            "due_at": "2026-10-30T08:13:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 9,
+            "last_answered_at": "2026-10-31T08:04:00.000Z",
+            "due_at": "2026-10-27T08:06:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 10,
+            "last_answered_at": "2026-10-27T08:07:00.000Z",
+            "due_at": "2026-12-27T08:07:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 3,
+        "brief_entries_total": 3,
+        "questions_drawn": 18,
+        "entries": [
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x32bc2256e5645f33",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Arrays; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x06e43997a025cb67",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x0aede1e04667d5da",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Number Lines",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Number Lines; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 4,
+            "questions": [
+              {
+                "item_id": "x113c9e5ea18af334",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Fill in the blank",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Fill in the blank; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x0d18927f62bed18d",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Next 2 numbers",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Next 2 numbers; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x1e0e8d24ed15e848",
+                "set_id": "set_khan_x087638d2",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type A; set set_khan_x087638d2 (rank 2); skill proposed:maths.division.divide-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x146c87714ac49a82",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, first factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x4ea7f62cb4a69af3",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, second factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, second factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x11a7f92eeb6df075",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 5, first factor",
+                "skills": ["maths.multiplication.row-5"],
+                "reason": "unseen; problem type Mult by 5, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-5"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x15c250891a03875d",
+                "set_id": "set_khan_xa7200938",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Arrays; set set_khan_xa7200938 (rank 2); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x200c812c8dadc5e9",
+                "set_id": "set_khan_xa7200938",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_xa7200938 (rank 2); skill maths.multiplication.row-6"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 4,
+            "reason": "It reteaches exactly the three attempted rows while avoiding proficient skills, but 18 questions is heavy for a slow careful perfectionist."
+          },
+          {
+            "fit": 2,
+            "reason": "Three reteach topics totaling 18 questions overloads a slow perfectionist who needs focused low-volume practice to avoid skipping."
+          },
+          {
+            "fit": 3,
+            "reason": "Content correctly targets only attempted rows but 18 questions overloads a slow perfectionist and risks skipping."
+          }
+        ],
+        "panel_mean_fit": 3.0
+      },
+      {
+        "label": "Learner H",
+        "profile": "early-plateau",
+        "blurb": "Quick start, then no growth after day 7.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 10,
+            "last_answered_at": "2026-11-01T08:00:00.000Z",
+            "due_at": "2026-11-01T08:01:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 12,
+            "last_answered_at": "2026-11-01T08:05:00.000Z",
+            "due_at": "2026-11-02T08:05:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 9,
+            "last_answered_at": "2026-11-01T08:04:00.000Z",
+            "due_at": "2026-10-30T08:17:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-11-01T08:01:00.000Z",
+            "due_at": "2026-11-01T08:11:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 9,
+            "last_answered_at": "2026-10-30T08:01:00.000Z",
+            "due_at": "2026-10-30T08:11:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-10-30T08:03:00.000Z",
+            "due_at": "2026-10-30T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 7,
+            "last_answered_at": "2026-11-01T08:03:00.000Z",
+            "due_at": "2026-11-01T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 7,
+            "last_answered_at": "2026-10-30T08:08:00.000Z",
+            "due_at": "2026-11-08T08:08:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 4,
+            "last_answered_at": "2026-11-01T08:02:00.000Z",
+            "due_at": "2026-11-11T08:02:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 5,
+            "last_answered_at": "2026-10-24T08:04:00.000Z",
+            "due_at": "2026-11-25T08:04:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 6,
+        "brief_entries_total": 7,
+        "questions_drawn": 15,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.rz-after-consonant",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x32bc2256e5645f33",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Arrays; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x06e43997a025cb67",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x0aede1e04667d5da",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Number Lines",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Number Lines; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x388e88ebd0668062",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Arrays; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x0e873a91307a59b1",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 1,
+            "reason": "Three reteach targets have zero questions despite attempted status, leaving weak skills unaddressed."
+          },
+          {
+            "fit": 2,
+            "reason": "Reteach targets the right struggling skills for a plateaued learner but three ortografia topics provide zero questions so key gaps get no practice."
+          },
+          {
+            "fit": 1,
+            "reason": "It assigns zero questions to attempted capitals and rz-after-consonant while reteaching familiar row-2, ignoring the plateaued learner's stuck skills."
+          }
+        ],
+        "panel_mean_fit": 1.33
+      },
+      {
+        "label": "Learner I",
+        "profile": "weekend-only",
+        "blurb": "Practises only on Saturdays and Sundays.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 5,
+            "last_answered_at": "2026-11-01T08:09:00.000Z",
+            "due_at": "2026-11-01T08:10:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 4,
+            "last_answered_at": "2026-10-31T08:03:00.000Z",
+            "due_at": "2026-10-31T08:09:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 3,
+            "last_answered_at": "2026-10-31T08:07:00.000Z",
+            "due_at": "2026-10-31T08:08:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 5,
+            "last_answered_at": "2026-11-01T08:07:00.000Z",
+            "due_at": "2026-11-01T08:08:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 3,
+            "last_answered_at": "2026-10-31T08:09:00.000Z",
+            "due_at": "2026-12-15T08:09:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 7,
+            "last_answered_at": "2026-11-01T08:08:00.000Z",
+            "due_at": "2026-11-01T08:09:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 5,
+            "last_answered_at": "2026-11-01T08:05:00.000Z",
+            "due_at": "2026-11-01T08:15:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 6,
+            "last_answered_at": "2026-10-31T08:08:00.000Z",
+            "due_at": "2026-10-31T08:09:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 7,
+            "last_answered_at": "2026-11-01T08:02:00.000Z",
+            "due_at": "2026-11-01T08:03:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 7,
+            "last_answered_at": "2026-10-31T08:05:00.000Z",
+            "due_at": "2026-10-31T08:06:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 7,
+        "brief_entries_total": 9,
+        "questions_drawn": 18,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.ch-h",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.rz-after-consonant",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x388e88ebd0668062",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Arrays; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x0e873a91307a59b1",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 4,
+            "questions": [
+              {
+                "item_id": "x113c9e5ea18af334",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Fill in the blank",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Fill in the blank; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x0d18927f62bed18d",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Next 2 numbers",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Next 2 numbers; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x1e0e8d24ed15e848",
+                "set_id": "set_khan_x087638d2",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type A; set set_khan_x087638d2 (rank 2); skill proposed:maths.division.divide-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x146c87714ac49a82",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, first factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x4ea7f62cb4a69af3",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, second factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, second factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x11a7f92eeb6df075",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 5, first factor",
+                "skills": ["maths.multiplication.row-5"],
+                "reason": "unseen; problem type Mult by 5, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-5"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 5,
+            "reason": "All 18 questions reteach attempted multiplication rows 3-5 building directly on proficient row-2, which suits a weekend-only learner needing consolidation."
+          },
+          {
+            "fit": 3,
+            "reason": "Maths rows 3-5 correctly build on proficient row-2, but four listed ortografia topics contribute zero questions."
+          },
+          {
+            "fit": 2,
+            "reason": "Lesson correctly reteaches multiplication rows 3-5 after row-2 proficiency but includes four ortografia reteaches with zero questions and no usable content."
+          }
+        ],
+        "panel_mean_fit": 3.33
+      },
+      {
+        "label": "Learner J",
+        "profile": "uneven",
+        "blurb": "Strong at multiplication, weak at spelling throughout.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 7,
+            "last_answered_at": "2026-10-31T08:02:00.000Z",
+            "due_at": "2026-10-31T08:03:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-11-01T08:02:00.000Z",
+            "due_at": "2026-11-01T08:08:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 14,
+            "last_answered_at": "2026-11-01T08:05:00.000Z",
+            "due_at": "2026-11-01T08:06:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 16,
+            "last_answered_at": "2026-11-01T08:03:00.000Z",
+            "due_at": "2026-11-01T08:04:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 12,
+            "last_answered_at": "2026-10-30T08:09:00.000Z",
+            "due_at": "2027-01-08T08:09:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 9,
+            "last_answered_at": "2026-10-23T08:03:00.000Z",
+            "due_at": "2026-10-28T08:03:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 15,
+            "last_answered_at": "2026-10-31T08:01:00.000Z",
+            "due_at": "2027-01-07T08:01:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 12,
+            "last_answered_at": "2026-10-29T08:07:00.000Z",
+            "due_at": "2026-11-15T08:07:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 9,
+            "last_answered_at": "2026-10-30T08:01:00.000Z",
+            "due_at": "2026-11-06T08:01:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 10,
+            "last_answered_at": "2026-11-01T08:04:00.000Z",
+            "due_at": "2026-11-29T08:04:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 5,
+        "brief_entries_total": 5,
+        "questions_drawn": 0,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.ch-h",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.rz-after-consonant",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "review",
+            "why": "review_due",
+            "kind": "review",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "(review)",
+                "reason": "nothing in these sets is due for this learner"
+              }
+            ]
+          }
+        ],
+        "panel": [
+          {
+            "fit": 1,
+            "reason": "The drawn lesson delivers zero questions and reviews already-proficient multiplication instead of addressing weak spelling."
+          },
+          {
+            "fit": 1,
+            "reason": "Lesson correctly targets weak spelling for reteach but delivers zero questions and wastes time reviewing already-proficient multiplication."
+          },
+          {
+            "fit": 1,
+            "reason": "The lesson delivers zero questions and reviews already-proficient multiplication instead of supporting the learner's weak spelling."
+          }
+        ],
+        "panel_mean_fit": 1.0
+      },
+      {
+        "label": "Learner K",
+        "profile": "comeback",
+        "blurb": "A week away in the middle, then steady work again.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 5,
+            "last_answered_at": "2026-10-28T08:01:00.000Z",
+            "due_at": "2026-10-28T08:02:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 8,
+            "last_answered_at": "2026-11-01T08:00:00.000Z",
+            "due_at": "2026-11-01T08:10:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 3,
+            "last_answered_at": "2026-11-01T08:04:00.000Z",
+            "due_at": "2026-11-01T08:14:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 10,
+            "last_answered_at": "2026-10-31T08:07:00.000Z",
+            "due_at": "2026-12-26T08:07:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 7,
+            "last_answered_at": "2026-11-01T08:06:00.000Z",
+            "due_at": "2026-11-01T08:07:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-11-01T08:05:00.000Z",
+            "due_at": "2026-11-01T08:15:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 6,
+            "last_answered_at": "2026-10-31T08:06:00.000Z",
+            "due_at": "2026-10-31T08:07:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "familiar",
+            "needs_attention": true,
+            "tries": 11,
+            "last_answered_at": "2026-10-28T08:00:00.000Z",
+            "due_at": "2026-10-28T08:10:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 8,
+            "last_answered_at": "2026-11-01T08:07:00.000Z",
+            "due_at": "2026-11-01T08:08:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 7,
+            "last_answered_at": "2026-11-01T08:01:00.000Z",
+            "due_at": "2026-11-01T08:11:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 6,
+        "brief_entries_total": 9,
+        "questions_drawn": 15,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.ch-h",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x32bc2256e5645f33",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Arrays; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x06e43997a025cb67",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x0aede1e04667d5da",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Number Lines",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Number Lines; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x7d7e019783b96cdb",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, first factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x25a098a31f13ce0a",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 3, second factor",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Mult by 3, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x382fbf7581f83112",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, first factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, first factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x01ffdb4ab001b7fd",
+                "set_id": "set_khan_x7250b6df287296ce",
+                "problem_type": "Mult by 6, second factor",
+                "skills": ["maths.multiplication.row-6"],
+                "reason": "unseen; problem type Mult by 6, second factor; set set_khan_x7250b6df287296ce (rank 1); skill maths.multiplication.row-6"
+              },
+              {
+                "item_id": "x388e88ebd0668062",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Arrays; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              },
+              {
+                "item_id": "x0e873a91307a59b1",
+                "set_id": "set_khan_x9cbaa6d9",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-3"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x9cbaa6d9 (rank 2); skill maths.multiplication.row-3"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 2,
+            "reason": "Three reteach topics contribute zero questions so the comeback review is mostly empty despite steady work."
+          },
+          {
+            "fit": 2,
+            "reason": "Maths reteach suits a comeback learner, but three ortografia reteaches contain zero questions so fragile spelling skills get no practice."
+          },
+          {
+            "fit": 2,
+            "reason": "Reteach matches a comeback learner but three ortografia topics contribute zero questions, leaving attempted skills unpracticed."
+          }
+        ],
+        "panel_mean_fit": 2.0
+      },
+      {
+        "label": "Learner L",
+        "profile": "new-and-keen",
+        "blurb": "Starts from nothing and practises every day.",
+        "mastery": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 14,
+            "last_answered_at": "2026-11-01T08:05:00.000Z",
+            "due_at": "2026-11-01T08:06:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 18,
+            "last_answered_at": "2026-11-01T08:00:00.000Z",
+            "due_at": "2026-11-01T08:01:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 17,
+            "last_answered_at": "2026-11-01T08:02:00.000Z",
+            "due_at": "2026-11-01T08:03:00.000Z"
+          },
+          {
+            "skill_code": "draft.ortografia.rz-after-consonant",
+            "level": "mastered",
+            "needs_attention": false,
+            "tries": 20,
+            "last_answered_at": "2026-11-01T08:03:00.000Z",
+            "due_at": "2026-11-06T08:03:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 17,
+            "last_answered_at": "2026-11-01T08:04:00.000Z",
+            "due_at": "2026-11-01T08:05:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-3",
+            "level": "proficient",
+            "needs_attention": false,
+            "tries": 20,
+            "last_answered_at": "2026-11-01T08:01:00.000Z",
+            "due_at": "2026-11-05T08:01:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 18,
+            "last_answered_at": "2026-10-30T08:09:00.000Z",
+            "due_at": "2026-10-30T08:10:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 15,
+            "last_answered_at": "2026-10-31T08:02:00.000Z",
+            "due_at": "2026-10-31T08:08:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-6",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 14,
+            "last_answered_at": "2026-11-01T08:06:00.000Z",
+            "due_at": "2026-11-01T08:07:00.000Z"
+          },
+          {
+            "skill_code": "maths.multiplication.row-7",
+            "level": "attempted",
+            "needs_attention": true,
+            "tries": 12,
+            "last_answered_at": "2026-10-31T08:07:00.000Z",
+            "due_at": "2026-10-31T08:08:00.000Z"
+          }
+        ],
+        "brief_entries_considered": 6,
+        "brief_entries_total": 8,
+        "questions_drawn": 15,
+        "entries": [
+          {
+            "skill_code": "draft.ortografia.capitals",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.capitals",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.ch-h",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.ch-h",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "draft.ortografia.nie",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "sets_found": 0,
+            "questions": [],
+            "left_out": [
+              {
+                "id": "draft.ortografia.nie",
+                "reason": "no bank set carries this skill code"
+              }
+            ]
+          },
+          {
+            "skill_code": "maths.multiplication.row-2",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 2,
+            "questions": [
+              {
+                "item_id": "x32bc2256e5645f33",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Arrays",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Arrays; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x06e43997a025cb67",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Groups of Objects",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Groups of Objects; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x0aede1e04667d5da",
+                "set_id": "set_khan_x17ef5a60",
+                "problem_type": "Number Lines",
+                "skills": ["maths.multiplication.row-2", "maths.multiplication.strategy-doubling"],
+                "reason": "unseen; problem type Number Lines; set set_khan_x17ef5a60 (rank 1); skill maths.multiplication.row-2, maths.multiplication.strategy-doubling"
+              },
+              {
+                "item_id": "x022dce3e76c5ad54",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, first factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x2fd99e110219b0ad",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "Mult by 2, second factor",
+                "skills": ["maths.multiplication.row-2"],
+                "reason": "unseen; problem type Mult by 2, second factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-2"
+              },
+              {
+                "item_id": "x8b892a5d000ccf13",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, first factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, first factor; set set_khan_x71d0c14f99b89274 (rank 2); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-4",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 3,
+            "questions": [
+              {
+                "item_id": "x4be9ae0a72d2baf3",
+                "set_id": "set_khan_x71d0c14f99b89274",
+                "problem_type": "mult by 4, second factor",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type mult by 4, second factor; set set_khan_x71d0c14f99b89274 (rank 1); skill maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x18f59faf9679a431",
+                "set_id": "set_khan_xd6798f56",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-4", "maths.multiplication.row-4"],
+                "reason": "unseen; problem type A; set set_khan_xd6798f56 (rank 2); skill proposed:maths.division.divide-by-4, maths.multiplication.row-4"
+              },
+              {
+                "item_id": "x01539bcd2faf455b",
+                "set_id": "set_khan_xe2a974c3",
+                "problem_type": "Array",
+                "skills": ["maths.multiplication.row-4"],
+                "reason": "unseen; problem type Array; set set_khan_xe2a974c3 (rank 3); skill maths.multiplication.row-4"
+              }
+            ],
+            "left_out": []
+          },
+          {
+            "skill_code": "maths.multiplication.row-5",
+            "list": "reteach",
+            "why": "needs_attention",
+            "kind": "practice",
+            "rule_settled": false,
+            "sets_found": 4,
+            "questions": [
+              {
+                "item_id": "x113c9e5ea18af334",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Fill in the blank",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Fill in the blank; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x0d18927f62bed18d",
+                "set_id": "set_khan_xe57c7e64",
+                "problem_type": "Next 2 numbers",
+                "skills": ["proposed:maths.counting.skip-count-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type Next 2 numbers; set set_khan_xe57c7e64 (rank 1); skill proposed:maths.counting.skip-count-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x1e0e8d24ed15e848",
+                "set_id": "set_khan_x087638d2",
+                "problem_type": "A",
+                "skills": ["proposed:maths.division.divide-by-5", "maths.multiplication.row-5"],
+                "reason": "unseen; problem type A; set set_khan_x087638d2 (rank 2); skill proposed:maths.division.divide-by-5, maths.multiplication.row-5"
+              },
+              {
+                "item_id": "x146c87714ac49a82",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, first factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x4ea7f62cb4a69af3",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 10, second factor",
+                "skills": ["maths.multiplication.row-10"],
+                "reason": "unseen; problem type Mult by 10, second factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-10"
+              },
+              {
+                "item_id": "x11a7f92eeb6df075",
+                "set_id": "set_khan_x69d1a067293ca980",
+                "problem_type": "Mult by 5, first factor",
+                "skills": ["maths.multiplication.row-5"],
+                "reason": "unseen; problem type Mult by 5, first factor; set set_khan_x69d1a067293ca980 (rank 3); skill maths.multiplication.row-5"
+              }
+            ],
+            "left_out": []
+          }
+        ],
+        "panel": [
+          {
+            "fit": 2,
+            "reason": "Maths reteaches give daily practice for attempted rows, but three ortografia blocks contain zero questions and waste a keen beginner's time."
+          },
+          {
+            "fit": 2,
+            "reason": "Three attempted ortografia topics are reteaches with zero questions and two attempted multiplication rows are omitted despite daily practice capacity."
+          },
+          {
+            "fit": 2,
+            "reason": "Three reteach topics provide zero questions from zero sets, leaving a keen daily beginner with gaps instead of needed practice."
+          }
+        ],
+        "panel_mean_fit": 2.0
+      }
+    ],
+    "wonder_comparison": {
+      "recorded": "2026-11-03, E2's first panel, before the owner's contributor-only rule",
+      "model": "muse-wonder-full-1.0",
+      "transport": "muse exec on the Muse subscription (no per-call token export)",
+      "calls": 36,
+      "learners": [
+        {
+          "label": "Learner A",
+          "profile": "steady",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "Reteaching proficient row-2 and familiar row-3 offers little incremental progress for a steady learner, though reteaching attempted row-5 is appropriate."
+            },
+            {
+              "fit": 3,
+              "reason": "Row-3 and row-5 target genuine gaps for this steady learner, but reteaching proficient row-2 wastes a third of the 18 questions."
+            },
+            {
+              "fit": 3,
+              "reason": "Reteaching familiar row-3 and attempted row-5 suits steady progress, but spending a third of the lesson reteaching already-proficient row-2 instead of familiar row-7 wastes practice time."
+            }
+          ],
+          "panel_mean_fit": 2.67
+        },
+        {
+          "label": "Learner B",
+          "profile": "forgetful",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "Reteaching attempted topics suits a forgetful learner, but three of six drawn topics contribute zero questions and rows 5-7 are ignored, leaving the review incomplete and unbalanced."
+            },
+            {
+              "fit": 3,
+              "reason": "Reteaching attempted multiplication rows suits a forgetful learner, but the three empty ortografia topics waste half the lesson and leave several attempted skills unreviewed."
+            },
+            {
+              "fit": 3,
+              "reason": "Reteaching attempted multiplication suits a forgetful learner and avoids the mastered topic, but three ortografia reteach slots contain no questions, leaving those attempted skills unreviewed."
+            }
+          ],
+          "panel_mean_fit": 2.67
+        },
+        {
+          "label": "Learner C",
+          "profile": "guesser",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "It targets attempted multiplication rows 3 and 4, but four ortografia reteach slots contain zero questions, including mastered capitals, leaving attempted ch-h and familiar topics unpracticed."
+            },
+            {
+              "fit": 2,
+              "reason": "Only the attempted/familiar multiplication rows provide usable reteach, while all four orthography needs draw zero questions and mastered capitals wastes a slot, leaving a narrow lesson poorly matched to a guess-prone learner."
+            },
+            {
+              "fit": 3,
+              "reason": "It targets the weakest multiplication rows 3, 4, and 7, but four orthography reteach items contribute zero questions, leaving those attempted and familiar gaps unaddressed."
+            }
+          ],
+          "panel_mean_fit": 2.33
+        },
+        {
+          "label": "Learner D",
+          "profile": "slow-then-click",
+          "panel": [
+            {
+              "fit": 3,
+              "reason": "Reteaching only attempted topics suits a slow-then-click learner needing repetition, but the empty rz-after-consonant set and spreading across three multiplication rows dilutes the focused practice needed for it to click."
+            },
+            {
+              "fit": 3,
+              "reason": "It correctly targets only attempted topics for reteach, but splitting 18 questions across three multiplication rows plus an empty orthography item dilutes the sustained single-topic focus a slow-then-click learner needs to finally click."
+            },
+            {
+              "fit": 3,
+              "reason": "Reteaching only attempted topics fits, but splitting across three multiplication rows plus an empty rz-after-consonant set dilutes the sustained single-topic practice a slow-then-click learner needs."
+            }
+          ],
+          "panel_mean_fit": 3.0
+        },
+        {
+          "label": "Learner E",
+          "profile": "help-heavy",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "It reteaches familiar multiplication rows 2-3 with most questions while attempted orthography and row-4 get zero or few questions, mismatching this help-heavy learner's need for supported practice on attempted skills."
+            },
+            {
+              "fit": 2,
+              "reason": "Reteach of familiar and attempted multiplication suits a help-heavy learner, but half the drawn ortografia topics contribute zero questions and weaker attempted topics like row-6 and rz-after-consonant are omitted, leaving an unbalanced 15-question maths-only lesson."
+            },
+            {
+              "fit": 2,
+              "reason": "Half the reteach slots deliver zero questions, leaving attempted ortografia topics unpractised while familiar multiplication rows 2-3 dominate over attempted row-4 for a help-heavy learner needing independent consolidation."
+            }
+          ],
+          "panel_mean_fit": 2.0
+        },
+        {
+          "label": "Learner F",
+          "profile": "rusher",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "It usefully reteaches attempted/familiar multiplication rows 3-5, but the four ortografia skills including attempted ch-h, nie, and rz-after-consonant contribute zero questions and row-6 is omitted, leaving half the learner's needs unaddressed."
+            },
+            {
+              "fit": 2,
+              "reason": "The multiplication reteach targets attempted skills, but four drawn ortografia topics deliver zero questions and no practice checks the proficient skills this careless rusher slips on."
+            },
+            {
+              "fit": 4,
+              "reason": "All 18 actual questions reteach the attempted/familiar multiplication rows 3-5 that need work, though the attempted orthography skills receive no questions."
+            }
+          ],
+          "panel_mean_fit": 2.67
+        },
+        {
+          "label": "Learner G",
+          "profile": "perfectionist",
+          "panel": [
+            {
+              "fit": 4,
+              "reason": "The lesson reteaches all three attempted multiplication rows, building confidence for a slow perfectionist, though 18 questions may feel long."
+            },
+            {
+              "fit": 4,
+              "reason": "Reteaching only the three attempted multiplication rows gives this perfectionist learner low-risk consolidation, though 18 questions is heavy for a slow, careful pace."
+            },
+            {
+              "fit": 3,
+              "reason": "It correctly targets the three attempted rows for reteach, but 18 questions solely on weakest skills with no proficient confidence-builders may overwhelm a slow perfectionist prone to skipping."
+            }
+          ],
+          "panel_mean_fit": 3.67
+        },
+        {
+          "label": "Learner H",
+          "profile": "early-plateau",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "It targets attempted and familiar skills while avoiding proficient ones, but three ortografia reteach slots contain zero questions, leaving those gaps unaddressed and narrowing the lesson to maths rows 2-4 only."
+            },
+            {
+              "fit": 2,
+              "reason": "Reteaching attempted/familiar multiplication rows 2-4 suits the plateau, but three of six topics contribute zero questions, wasting half the lesson including attempted capitals and rz-after-consonant."
+            },
+            {
+              "fit": 2,
+              "reason": "The maths reteach targets weak rows 2-4, but all three orthography reteach slots contain zero questions, leaving the attempted capitals and rz-after-consonant skills unaddressed for a plateaued learner."
+            }
+          ],
+          "panel_mean_fit": 2.0
+        },
+        {
+          "label": "Learner I",
+          "profile": "weekend-only",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "The multiplication reteach matches attempted rows 3-5, but four orthography reteach slots contain zero questions, wasting the weekend-only session and leaving attempted and familiar skills unpractised."
+            },
+            {
+              "fit": 2,
+              "reason": "Maths reteach targets attempted rows 3-5, but four ortografia topics contribute zero questions and rows 6-7 are omitted, leaving much needed practice unaddressed for a weekend-only learner."
+            },
+            {
+              "fit": 2,
+              "reason": "The multiplication reteaches target attempted skills suitable after a weekday gap, but four of seven drawn topics contain zero questions, leaving all orthography needs unserved."
+            }
+          ],
+          "panel_mean_fit": 2.0
+        },
+        {
+          "label": "Learner J",
+          "profile": "uneven",
+          "panel": [
+            {
+              "fit": 1,
+              "reason": "Although it targets the learner's weak spelling areas for reteach, the lesson contains zero questions so it provides no actual practice or learning."
+            },
+            {
+              "fit": 1,
+              "reason": "The reteach topics target the learner's weak spelling, but the lesson contains zero total questions so it provides no practice."
+            },
+            {
+              "fit": 1,
+              "reason": "Although it targets the learner's weak spelling for reteaching, the lesson contains zero questions and thus delivers no practice."
+            }
+          ],
+          "panel_mean_fit": 1.0
+        },
+        {
+          "label": "Learner K",
+          "profile": "comeback",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "Three needed ortografia reteach topics contribute zero questions, leaving only maths rows 2-4 and ignoring other attempted areas for this returning learner."
+            },
+            {
+              "fit": 2,
+              "reason": "The maths rows 2-4 recap suits a comeback learner at attempted/familiar level, but all three ortografia topics draw zero questions and rows 5-7 are ignored, leaving the lesson unbalanced and incomplete."
+            },
+            {
+              "fit": 2,
+              "reason": "Maths reteach on attempted/familiar rows suits a comeback learner needing consolidation, but three of six drawn ortografia topics contribute zero questions, leaving half the lesson empty and unbalanced."
+            }
+          ],
+          "panel_mean_fit": 2.0
+        },
+        {
+          "label": "Learner L",
+          "profile": "new-and-keen",
+          "panel": [
+            {
+              "fit": 2,
+              "reason": "The multiplication reteach matches attempted skills, but three of six drawn topics contain zero questions, wasting half the lesson for a keen daily learner."
+            },
+            {
+              "fit": 2,
+              "reason": "Maths reteach of attempted rows 2, 4 and 5 suits a keen beginner, but three ortografia topics contribute zero questions, leaving half the lesson empty."
+            },
+            {
+              "fit": 2,
+              "reason": "Reteaching attempted multiplication rows 2, 4 and 5 fits the keen beginner, but half the drawn topics (capitals, ch-h, nie) contribute zero questions so those attempted needs are ignored."
+            }
+          ],
+          "panel_mean_fit": 2.0
+        }
+      ]
+    }
+  }
+}

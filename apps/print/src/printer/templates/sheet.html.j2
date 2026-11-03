@@ -1,0 +1,46 @@
+{#- The sheet: page 1's header, one row of cards after another, then "Koniec!" and the answer card.
+    Each row and card carries an anchor at its start and its end, which the two-pass pagination
+    and the every-card-on-one-page test read. -#}
+{% import "icons.html.j2" as icons %}
+{% import "parts.html.j2" as parts %}
+<!doctype html>
+<html lang="{{ sheet.language }}">
+<head>
+<meta charset="utf-8">
+<title>{{ sheet.title }}</title>
+<style>{{ css }}</style>
+</head>
+<body>
+<header class="head">
+  <h1>{{ sheet.title }}</h1>
+  <p class="who">{{ sheet.labels.name }} <span></span> {{ sheet.labels.date }} <span></span></p>
+  <p class="legend">
+  {% for action in ["circle", "tick", "write", "draw", "join", "number"] %}
+    <span class="mark">{{ icons.action(action) }}{{ sheet.labels.legend[action] }}</span>
+  {% endfor %}
+  </p>
+</header>
+<main>
+{% for row in rows %}
+  <div class="row{% if row.id in breaks %} break{% endif %}" id="{{ row.id }}">
+    <div class="cards{% if row.questions|length == 2 %} pair{% endif %}">
+    {% for q in row.questions %}
+      {{ parts.card(q, forms[q.question_type], text, sheet) }}
+    {% endfor %}
+    </div>
+    <div class="mark-end" id="{{ row.id }}-end"></div>
+  </div>
+{% endfor %}
+  <section class="end{% if 'end' in breaks %} row break{% endif %}" id="end">
+    <p class="koniec">{{ icons.star() }}{{ sheet.labels.end }}</p>
+    {% if sheet.card == "ticks" %}
+    {{ parts.tick_card(sheet) }}
+    {% endif %}
+    <div class="mark-end" id="end-end"></div>
+  </section>
+  {% if sheet.card == "alfik" %}
+  {{ parts.alfik_card(sheet) }}
+  {% endif %}
+</main>
+</body>
+</html>

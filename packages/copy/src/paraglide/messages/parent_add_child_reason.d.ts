@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Type a name first" |
+* | "Type a name so your child knows it is theirs." |
 *
 * @param {Parent_Add_Child_ReasonInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

@@ -1,10 +1,11 @@
 /**
  * Dodaj dziecko, a dialog (decision 2026-11-01-the-parent-app-is-a-sidebar-shell-and-a-3-column-
- * lesson-workspac, dl-xo0q; handoff §5.3): the first name, with the note that it never goes into a
- * lesson, and the class as one row of 1 to 6. Anuluj, Dodaj. It opens from the sidebar's "+" or from
- * Dla's "Dodaj dziecko…", leaves the page as it was, and gives the focus back to what opened it.
- * With no name, Dodaj is quiet with its reason beside it (handoff §3 "Quiet button with a reason",
- * dl-uukj.47.20), never the browser's own "Please fill out this field". Klasa stays optional.
+ * lesson-workspac, dl-xo0q; handoff dl-uukj.47.67 §6.10, S9): the first name, with the note that it
+ * never goes into a lesson, and the class as compact Radio Cards, 1 to 6 with each one's age line.
+ * Anuluj, Dodaj. It opens from the sidebar's "+" or from Dla's "Dodaj dziecko…", leaves the page as it
+ * was, and gives the focus back to what opened it. Dodaj with no name says what is missing under the
+ * field, in the ink with the alert mark (§6.2, S3), never the browser's own "Please fill out this
+ * field", and puts the caret back in it. Klasa stays optional.
  * The class is asked but not stored yet: LearnerCreate takes no school_grade (dl-e8ov.2.90).
  */
 
@@ -18,12 +19,12 @@ import {
   DialogFooter,
   Field,
   Input,
-  SegmentedControl,
+  RadioCards,
 } from "@jadwigo/ui";
-import { type FormEvent, type ReactElement, useEffect, useId, useRef, useState } from "react";
+import { type FormEvent, type ReactElement, useEffect, useRef, useState } from "react";
 import { CATEGORY } from "../adult.ts";
 
-const GRADES = ["1", "2", "3", "4", "5", "6"] as const;
+const GRADES = [1, 2, 3, 4, 5, 6] as const;
 
 export function AddChildDialog({
   language,
@@ -37,14 +38,15 @@ export function AddChildDialog({
   /** Adds the child; the dialog closes once it resolves, and stays open with its words if it fails. */
   onAdd: (child: { firstName: string; grade: number | null }) => Promise<void>;
 }): ReactElement {
-  const t = (key: CopyKey): string => copy(language, key, {}, CATEGORY);
+  const t = (key: CopyKey, params: Record<string, number> = {}): string =>
+    copy(language, key, params, CATEGORY);
   const [name, setName] = useState("");
   const [grade, setGrade] = useState("");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
-  const noteId = useId();
-  const reasonId = useId();
-  const ready = name.trim() !== "";
+  // Dodaj was pressed with no name: the field says so until there is one.
+  const [tried, setTried] = useState(false);
+  const form = useRef<HTMLFormElement>(null);
   // What had the focus when the dialog opened: the "+" or Dla. A dialog opened from state has no
   // Radix trigger to give it back to, so it is kept here.
   const opener = useRef<HTMLElement | null>(null);
@@ -54,12 +56,18 @@ export function AddChildDialog({
     setName("");
     setGrade("");
     setFailed(false);
+    setTried(false);
   }, [open]);
 
   const submit = (event: FormEvent): void => {
     event.preventDefault();
     const firstName = name.trim();
-    if (firstName === "" || busy) return;
+    if (busy) return;
+    if (firstName === "") {
+      setTried(true);
+      form.current?.querySelector<HTMLInputElement>("[data-first-name]")?.focus();
+      return;
+    }
     setBusy(true);
     setFailed(false);
     onAdd({ firstName, grade: grade === "" ? null : Number(grade) })
@@ -85,56 +93,46 @@ export function AddChildDialog({
         }}
         data-add-child-dialog
       >
-        <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Field
-              label={t("parent_first_name")}
-              problem={failed ? t("parent_load_failed") : undefined}
-            >
-              <Input
-                kind="text"
-                maxLength={60}
-                autoComplete="off"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                aria-describedby={noteId}
-                data-first-name
-              />
-            </Field>
-            <p id={noteId} className="text-jw-page-small text-jw-ink-soft">
-              {t("parent_name_note")}
-            </p>
-          </div>
-          <SegmentedControl
+        <form ref={form} onSubmit={submit} noValidate className="flex flex-col gap-4">
+          <Field
+            label={t("parent_first_name")}
+            description={t("parent_name_note")}
+            problem={
+              tried && name.trim() === ""
+                ? t("parent_add_child_reason")
+                : failed
+                  ? t("parent_load_failed")
+                  : undefined
+            }
+          >
+            <Input
+              kind="text"
+              maxLength={60}
+              autoComplete="off"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              data-first-name
+            />
+          </Field>
+          <RadioCards
             label={t("parent_grade")}
-            size="sm"
+            compact
             value={grade}
             onChange={setGrade}
-            options={GRADES.map((g) => ({ value: g, label: g }))}
+            options={GRADES.map((g) => ({
+              value: String(g),
+              label: String(g),
+              // A first grader in Poland is 7.
+              hint: t("parent_grade_age", { from: g + 6, to: g + 7 }),
+            }))}
           />
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline" size="control">
+              <Button type="button" variant="ghost" size="control">
                 {t("parent_cancel")}
               </Button>
             </DialogClose>
-            {!ready && (
-              <span
-                id={reasonId}
-                className="self-center text-jw-page-small text-jw-ink-soft"
-                data-reason
-              >
-                {t("parent_add_child_reason")}
-              </span>
-            )}
-            <Button
-              type="submit"
-              size="control"
-              aria-disabled={!ready || busy}
-              aria-busy={busy}
-              aria-describedby={ready ? undefined : reasonId}
-              data-add
-            >
+            <Button type="submit" size="control" aria-disabled={busy} aria-busy={busy} data-add>
               {t("parent_add")}
             </Button>
           </DialogFooter>

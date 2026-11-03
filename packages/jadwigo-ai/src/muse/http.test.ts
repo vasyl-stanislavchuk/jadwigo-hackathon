@@ -51,6 +51,9 @@ function muse(replies: Reply[], overrides: Partial<HttpMuseOptions> = {}) {
   return { http, sent, sleeps, budgets, live };
 }
 
+/** A reply whose stream opens and then never sends another byte. */
+const silentStream = () => new Response(new ReadableStream<Uint8Array>({ start() {} }));
+
 function contributor(run = runId()): MuseRequest {
   return { ...requestFor(run, 1, "bank:explain"), tier: "contributor" };
 }
@@ -103,7 +106,7 @@ describe("HttpMuse speaks /v1/responses", () => {
       store: false,
       prompt_cache_key: "jadwigo-lesson-compose:v1",
       reasoning: { effort: "low" },
-      max_output_tokens: 4000,
+      max_output_tokens: 12_000,
     });
   });
 
@@ -344,5 +347,51 @@ describe("GuardedMuse around HttpMuse", () => {
       [run, 1, "resp_rec_1", TEXT_USD],
       [run, 2, "", 0.0001],
     ]);
+  });
+});
+
+describe("a call that goes wrong says why, in a code (dl-hin8.43)", () => {
+  it("aborts a stream that goes silent, retries it, and answers timeout with no text", async () => {
+    let calls = 0;
+    const { http, sleeps } = muse([], {
+      no_data_ms: 5,
+      fetch: () => {
+        calls += 1;
+        return Promise.resolve(silentStream());
+      },
+    });
+    await expect(http.respond(contributor())).rejects.toMatchObject({
+      name: "MuseFailed",
+      type: "timeout",
+    });
+    expect(calls).toBe(3);
+    expect(sleeps).toHaveLength(2);
+  });
+
+  it("aborts a call whose headers never come", async () => {
+    const { http } = muse([], {
+      no_data_ms: 5,
+      attempts: 1,
+      fetch: (_url, init) =>
+        new Promise((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () => reject(new Error("aborted")));
+        }),
+    });
+    await expect(http.respond(contributor())).rejects.toMatchObject({ type: "timeout" });
+  });
+
+  it("names the token cap, and a server error by its status", async () => {
+    const capped = [
+      "event: response.incomplete",
+      `data: ${JSON.stringify({ response: { incomplete_details: { reason: "max_output_tokens" } } })}`,
+      "",
+      "",
+    ].join("\n");
+    const a = muse([{ status: 200, body: capped }], { attempts: 1 });
+    await expect(a.http.respond(contributor())).rejects.toMatchObject({
+      type: "max_output_tokens",
+    });
+    const b = muse([{ status: 500, body: "boom" }], { attempts: 1 });
+    await expect(b.http.respond(contributor())).rejects.toMatchObject({ type: "http_500" });
   });
 });

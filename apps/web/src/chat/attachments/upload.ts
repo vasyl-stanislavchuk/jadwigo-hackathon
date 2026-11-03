@@ -368,6 +368,16 @@ export class PhotoUpload {
     return this.start();
   }
 
+  /**
+   * Gives the preview to whoever shows the sent message (dl-z5ja.11.6) and forgets it here, so
+   * `dispose` no longer revokes it. Null when there is none.
+   */
+  handOff(): string | null {
+    const preview = this.view.preview;
+    this.view = { ...this.view, preview: null };
+    return preview;
+  }
+
   dispose(): void {
     this.stopped = true;
     this.xhr?.abort();

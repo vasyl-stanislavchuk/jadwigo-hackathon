@@ -6,15 +6,22 @@
 #      whether the runner would deploy (runner-deploy's path filter), and Supabase Auth's drift
 #      from infra/supabase-auth/prod.json (auth.sh diff prod: shown only, never applied here)
 #   3. one question: type prod
-#   4. the release, without stopping: migrations, jadwigo_api's login, the seed, the saved plan,
-#      the api, a health check, the runner (runner-deploy, then runner-status: every release
-#      deploys it too, decision bead dl-hmvzn), the web, the site and the docs, prod-status again,
-#      and last one engine-smoke turn on prod through the live runner (one paid Muse call)
+#   4. the release, without stopping: migrations, jadwigo_api's login, the saved plan, the api,
+#      a health check, the runner (runner-deploy, then runner-status: every release
+#      deploys it too, decision bead dl-hmvzn), the web and the site, the docs only with DOCS=1,
+#      prod-status again, and last one engine-smoke turn on prod through the live runner (one
+#      paid Muse call)
+# The docs are opt-in (dl-5ssh.34.81): make release DOCS=1 deploys docs.jadwigo.pl too, and a
+# plain release skips them. make -C infra docs-deploy ships them on their own.
+# It never seeds (dl-5ssh.34.80): a featured lesson reaches prod only by the owner's
+# make lesson-import ENV=prod FEATURED=1, and make db-seed ENV=prod is for a fresh prod only.
 # It stops before the question when the plan destroys or replaces anything: apply that by hand
 # (make -C infra plan apply). Every step is safe to rerun, so after a failure run it again.
 set -eu
 ACCOUNT=843109108289
 APP=${JW_APP_URL:-https://app.jadwigo.pl}
+# Only DOCS=1 ships the docs; empty, 0 or anything else skips them.
+if [ "${DOCS:-}" = 1 ]; then docs=deploys; else docs=skipped; fi
 
 say() { printf '\n== %s\n' "$*"; }
 die() {
@@ -111,8 +118,8 @@ case $auth_rc in
 esac
 
 say "3/4 one question"
-printf 'Release %s to prod: %s migration(s), terraform %s, the seed, then api, runner (%s), web, site and docs, and one engine-smoke turn. Type prod to go on: ' \
-  "$(git rev-parse --short HEAD)" "$migrations" "$tf" "$runner"
+printf 'Release %s to prod: %s migration(s), terraform %s, then api, runner (%s), web, site, docs (%s), and one engine-smoke turn. Type prod to go on: ' \
+  "$(git rev-parse --short HEAD)" "$migrations" "$tf" "$runner" "$docs"
 read -r answer
 [ "$answer" = prod ] || die "nothing done on prod"
 export JW_RELEASE_CONFIRMED=prod
@@ -120,7 +127,6 @@ export JW_RELEASE_CONFIRMED=prod
 say "4/4 release"
 if [ "$migrations" -gt 0 ]; then make -s db-push ENV=prod; else echo "migrations: none to push"; fi
 make -s db-role ENV=prod
-make -s db-seed ENV=prod
 if [ "$tf" = changes ]; then AWS_PROFILE=$PROFILE $TF apply -input=false "$plan"; fi
 make -s -C infra api-deploy
 code=000
@@ -134,7 +140,12 @@ echo "GET /api/health -> 200"
 make -s -C infra runner-deploy ||
   die "runner-deploy failed; the api is out, the web, site and docs are not deployed. Fix it, then run release again"
 make -s -C infra runner-status || true
-make -s -C infra web-deploy site-deploy docs-deploy
+if [ "$docs" = deploys ]; then
+  make -s -C infra web-deploy site-deploy docs-deploy
+else
+  make -s -C infra web-deploy site-deploy
+  echo "docs: skipped. make release DOCS=1, or make -C infra docs-deploy, ships them"
+fi
 make -s -C infra prod-status || true
 back="make -C infra runner-rollback VERSION=${runner_live:-<the version runner-status named before>}"
 if ! make -s engine-smoke ENV=prod; then

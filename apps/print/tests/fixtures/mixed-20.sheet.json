@@ -1,0 +1,734 @@
+{
+  "renderer": 1,
+  "language": "pl",
+  "title": "Dodawanie i czas",
+  "labels": {
+    "brand": "Jadwigo",
+    "name": "Imię:",
+    "date": "Data:",
+    "page": "strona",
+    "page_of": "z",
+    "next": "dalej",
+    "end": "Koniec!",
+    "legend": {
+      "circle": "otocz",
+      "tick": "zaznacz ✓",
+      "write": "wpisz",
+      "draw": "narysuj lub pokoloruj",
+      "join": "połącz",
+      "number": "ponumeruj"
+    },
+    "true_word": "Prawda",
+    "false_word": "Fałsz",
+    "many": "(może być kilka)",
+    "total": "Razem",
+    "hours_hand": "Krótka wskazówka pokazuje godziny.",
+    "card_title": "Karta odpowiedzi",
+    "card_note": "Zaznacz ✓ każde zadanie, które masz już zrobione.",
+    "credits_title": "Skąd są zadania",
+    "alfik_note": "Zamaluj całe kółko przy jednej literze, czarnym długopisem.",
+    "alfik_mark": "Tak zaznaczaj",
+    "alfik_no_mark": "Tak nie zaznaczaj",
+    "alfik_change": "Zmieniasz zdanie? Przekreśl kółko znakiem X i zamaluj to, które wybierasz.",
+    "alfik_title": "Zaznacz odpowiedzi"
+  },
+  "card": "ticks",
+  "questions": [
+    {
+      "n": 1,
+      "question_type": "true_false",
+      "paper": "adapted",
+      "action": "circle",
+      "say": "Czy to prawda?",
+      "credit_n": null,
+      "family": "choose",
+      "data": {
+        "stem": {
+          "text": "$7 + 5 = 12$"
+        },
+        "options": [
+          {
+            "id": "t",
+            "content": {
+              "kind": "bool",
+              "bool": true
+            }
+          },
+          {
+            "id": "f",
+            "content": {
+              "kind": "bool",
+              "bool": false
+            }
+          }
+        ],
+        "select": "one",
+        "layout": "binary"
+      }
+    },
+    {
+      "n": 2,
+      "question_type": "true_false",
+      "paper": "adapted",
+      "action": "circle",
+      "say": "Otocz: prawda czy fałsz?",
+      "credit_n": null,
+      "family": "choose",
+      "data": {
+        "stem": {
+          "text": "$9 + 9 = 17$"
+        },
+        "options": [
+          {
+            "id": "t",
+            "content": {
+              "kind": "bool",
+              "bool": true
+            }
+          },
+          {
+            "id": "f",
+            "content": {
+              "kind": "bool",
+              "bool": false
+            }
+          }
+        ],
+        "select": "one",
+        "layout": "binary"
+      }
+    },
+    {
+      "n": 3,
+      "question_type": "lettered_choice",
+      "paper": "yes",
+      "action": "circle",
+      "say": "Która suma jest równa 15?",
+      "credit_n": 1,
+      "family": "choose",
+      "data": {
+        "options": [
+          {
+            "id": "a",
+            "content": {
+              "kind": "text",
+              "text": "$7 + 7$"
+            },
+            "letter": "A"
+          },
+          {
+            "id": "b",
+            "content": {
+              "kind": "text",
+              "text": "$8 + 7$"
+            },
+            "letter": "B"
+          },
+          {
+            "id": "c",
+            "content": {
+              "kind": "text",
+              "text": "$9 + 5$"
+            },
+            "letter": "C"
+          },
+          {
+            "id": "d",
+            "content": {
+              "kind": "text",
+              "text": "$6 + 8$"
+            },
+            "letter": "D"
+          }
+        ],
+        "select": "one",
+        "layout": "lettered"
+      }
+    },
+    {
+      "n": 4,
+      "question_type": "recognition",
+      "paper": "adapted",
+      "action": "circle",
+      "say": "Na którym obrazku jest 12 kropek?",
+      "credit_n": null,
+      "family": "choose",
+      "data": {
+        "options": [
+          {
+            "id": "a",
+            "content": {
+              "kind": "array",
+              "rows": 3,
+              "cols": 4
+            }
+          },
+          {
+            "id": "b",
+            "content": {
+              "kind": "array",
+              "rows": 2,
+              "cols": 5
+            }
+          },
+          {
+            "id": "c",
+            "content": {
+              "kind": "array",
+              "rows": 3,
+              "cols": 5
+            }
+          }
+        ],
+        "select": "one",
+        "layout": "grid"
+      }
+    },
+    {
+      "n": 5,
+      "question_type": "production",
+      "paper": "adapted",
+      "action": "write",
+      "say": "Ile to jest?",
+      "credit_n": null,
+      "family": "enter",
+      "data": {
+        "stem": {
+          "text": "$6 + 7 =$"
+        },
+        "input": "number",
+        "entry": "keypad"
+      }
+    },
+    {
+      "n": 6,
+      "question_type": "production",
+      "paper": "adapted",
+      "action": "write",
+      "say": "Ile to jest?",
+      "credit_n": null,
+      "family": "enter",
+      "data": {
+        "stem": {
+          "text": "$15 - 8 =$"
+        },
+        "input": "number",
+        "entry": "keypad"
+      }
+    },
+    {
+      "n": 7,
+      "question_type": "column",
+      "paper": "yes",
+      "action": "write",
+      "say": "Dodaj w słupku.",
+      "credit_n": null,
+      "family": "slots",
+      "data": {
+        "template": "",
+        "gaps": [
+          {
+            "id": "g1",
+            "kind": "enter",
+            "input": "number",
+            "max_length": 1
+          },
+          {
+            "id": "g2",
+            "kind": "enter",
+            "input": "number",
+            "max_length": 1
+          }
+        ],
+        "column": {
+          "op": "add",
+          "operands": [
+            27,
+            35
+          ],
+          "given_steps": 0,
+          "carry_row": true
+        }
+      }
+    },
+    {
+      "n": 8,
+      "question_type": "money_count",
+      "paper": "yes",
+      "action": "write",
+      "say": "Ile to razem?",
+      "credit_n": null,
+      "family": "slots",
+      "data": {
+        "template": "{g1} zł {g2} gr",
+        "gaps": [
+          {
+            "id": "g1",
+            "kind": "enter",
+            "input": "number"
+          },
+          {
+            "id": "g2",
+            "kind": "enter",
+            "input": "number"
+          }
+        ],
+        "figure": {
+          "kind": "coins",
+          "items": [
+            "zl2",
+            "zl1",
+            "gr50"
+          ],
+          "alt": "2 zł, 1 zł i 50 gr"
+        }
+      }
+    },
+    {
+      "n": 9,
+      "question_type": "clock_read",
+      "paper": "yes",
+      "action": "write",
+      "say": "Która godzina?",
+      "credit_n": null,
+      "family": "slots",
+      "data": {
+        "template": "{g1} : {g2}",
+        "gaps": [
+          {
+            "id": "g1",
+            "kind": "enter",
+            "input": "number",
+            "range": [
+              1,
+              12
+            ]
+          },
+          {
+            "id": "g2",
+            "kind": "enter",
+            "input": "number",
+            "range": [
+              0,
+              59
+            ]
+          }
+        ],
+        "figure": {
+          "kind": "clock",
+          "h": 4,
+          "m": 0,
+          "alt": "zegar"
+        }
+      }
+    },
+    {
+      "n": 10,
+      "question_type": "clock_set",
+      "paper": "adapted",
+      "action": "draw",
+      "say": "Narysuj wskazówki na wpół do czwartej.",
+      "credit_n": null,
+      "family": "place",
+      "data": {
+        "surface": "clock",
+        "target_label": "3:30",
+        "minute_step": 30,
+        "hands": "geared"
+      }
+    },
+    {
+      "n": 11,
+      "question_type": "fill_table",
+      "paper": "adapted",
+      "action": "write",
+      "say": "Uzupełnij tabelę dodawania.",
+      "credit_n": null,
+      "family": "slots",
+      "data": {
+        "template": "",
+        "table": {
+          "header": [
+            "+",
+            "3",
+            "5",
+            "8"
+          ],
+          "rows": [
+            [
+              "4",
+              "{g1}",
+              "9",
+              "{g2}"
+            ],
+            [
+              "6",
+              "9",
+              "{g3}",
+              "14"
+            ]
+          ]
+        },
+        "gaps": [
+          {
+            "id": "g1",
+            "kind": "enter",
+            "input": "number"
+          },
+          {
+            "id": "g2",
+            "kind": "enter",
+            "input": "number"
+          },
+          {
+            "id": "g3",
+            "kind": "enter",
+            "input": "number"
+          }
+        ]
+      }
+    },
+    {
+      "n": 12,
+      "question_type": "pyramid",
+      "paper": "yes",
+      "action": "write",
+      "say": "Każda cegła to suma dwóch cegieł pod nią.",
+      "credit_n": null,
+      "family": "slots",
+      "data": {
+        "template": "",
+        "gaps": [
+          {
+            "id": "g1",
+            "kind": "enter",
+            "input": "number"
+          },
+          {
+            "id": "g2",
+            "kind": "enter",
+            "input": "number"
+          }
+        ],
+        "pyramid": [
+          [
+            "{g1}"
+          ],
+          [
+            7,
+            "{g2}"
+          ],
+          [
+            3,
+            4,
+            5
+          ]
+        ]
+      }
+    },
+    {
+      "n": 13,
+      "question_type": "fraction_shade",
+      "paper": "adapted",
+      "action": "draw",
+      "say": "Pokoloruj trzy czwarte kwadratu.",
+      "credit_n": null,
+      "family": "place",
+      "data": {
+        "surface": "fraction",
+        "shape": "rect",
+        "parts": 4,
+        "label": "$\\frac{3}{4}$"
+      }
+    },
+    {
+      "n": 14,
+      "question_type": "number_line_place",
+      "paper": "adapted",
+      "action": "draw",
+      "say": "Zaznacz liczbę 35 na osi.",
+      "credit_n": null,
+      "family": "place",
+      "data": {
+        "surface": "number_line",
+        "min": 0,
+        "max": 50,
+        "step": 5,
+        "labelled": [
+          0,
+          10,
+          20,
+          30,
+          40,
+          50
+        ],
+        "target_label": 35
+      }
+    },
+    {
+      "n": 15,
+      "question_type": "order",
+      "paper": "adapted",
+      "action": "number",
+      "say": "Ponumeruj liczby od najmniejszej do największej.",
+      "credit_n": null,
+      "family": "sequence",
+      "data": {
+        "items": [
+          {
+            "id": "a",
+            "text": "48"
+          },
+          {
+            "id": "b",
+            "text": "12"
+          },
+          {
+            "id": "c",
+            "text": "30"
+          },
+          {
+            "id": "d",
+            "text": "7"
+          }
+        ],
+        "first_label": "najmniejsza",
+        "last_label": "największa"
+      }
+    },
+    {
+      "n": 16,
+      "question_type": "match",
+      "paper": "adapted",
+      "action": "join",
+      "say": "Połącz działanie z wynikiem.",
+      "credit_n": 1,
+      "family": "group",
+      "data": {
+        "groups": [
+          {
+            "id": "r15",
+            "label": "15"
+          },
+          {
+            "id": "r14",
+            "label": "14"
+          },
+          {
+            "id": "r16",
+            "label": "16"
+          }
+        ],
+        "items": [
+          {
+            "id": "a",
+            "label": "$8 + 6$"
+          },
+          {
+            "id": "b",
+            "label": "$9 + 6$"
+          },
+          {
+            "id": "c",
+            "label": "$7 + 9$"
+          }
+        ],
+        "each_item": "one",
+        "layout": "columns"
+      }
+    },
+    {
+      "n": 17,
+      "question_type": "bucket",
+      "paper": "adapted",
+      "action": "join",
+      "say": "Parzyste czy nieparzyste?",
+      "credit_n": null,
+      "family": "group",
+      "data": {
+        "groups": [
+          {
+            "id": "even",
+            "label": "parzyste"
+          },
+          {
+            "id": "odd",
+            "label": "nieparzyste"
+          }
+        ],
+        "items": [
+          {
+            "id": "n4",
+            "label": "4"
+          },
+          {
+            "id": "n7",
+            "label": "7"
+          },
+          {
+            "id": "n10",
+            "label": "10"
+          },
+          {
+            "id": "n13",
+            "label": "13"
+          }
+        ],
+        "each_item": "one",
+        "layout": "zones"
+      }
+    },
+    {
+      "n": 18,
+      "question_type": "hotspot",
+      "paper": "adapted",
+      "action": "circle",
+      "say": "Otocz zegara, który pokazuje siódmą.",
+      "credit_n": null,
+      "family": "place",
+      "data": {
+        "surface": "image",
+        "image": "media/print/three-clocks.svg",
+        "image_alt": "trzy zegary",
+        "taps": 1
+      }
+    },
+    {
+      "n": 19,
+      "question_type": "money_pay",
+      "paper": "adapted",
+      "action": "circle",
+      "say": "Wybierz monety, które dają razem 3 zł 50 gr.",
+      "credit_n": null,
+      "family": "place",
+      "data": {
+        "surface": "coins",
+        "bank": [
+          "zl2",
+          "zl1",
+          "gr50"
+        ],
+        "amount_label": "3 zł 50 gr",
+        "slots": 6
+      }
+    },
+    {
+      "n": 20,
+      "question_type": "draw_graph",
+      "paper": "adapted",
+      "action": "draw",
+      "say": "Narysuj słupki: ile jest owoców?",
+      "credit_n": null,
+      "family": "place",
+      "data": {
+        "surface": "bars",
+        "kind": "bar",
+        "categories": [
+          {
+            "id": "apple",
+            "label": "jabłka"
+          },
+          {
+            "id": "pear",
+            "label": "gruszki"
+          },
+          {
+            "id": "plum",
+            "label": "śliwki"
+          },
+          {
+            "id": "cherry",
+            "label": "wiśnie"
+          }
+        ],
+        "max": 10,
+        "step": 1,
+        "stem": {
+          "text": "Jabłek jest 6, gruszek 3, śliwek 8, a wiśni 5."
+        }
+      }
+    }
+  ],
+  "credits": [
+    {
+      "n": 1,
+      "short": "Z Khan Academy · CC BY-NC-SA 4.0",
+      "line": "Z Khan Academy. Przetłumaczone na polski przez Jadwigo na licencji CC BY-NC-SA 4.0.",
+      "url": "https://www.khanacademy.org/math/cc-1st-grade-math"
+    }
+  ],
+  "html": {
+    "3": "3",
+    "4": "4",
+    "5": "5",
+    "6": "6",
+    "7": "7",
+    "8": "8",
+    "9": "9",
+    "10": "10",
+    "12": "12",
+    "13": "13",
+    "14": "14",
+    "15": "15",
+    "16": "16",
+    "30": "30",
+    "48": "48",
+    "Dodawanie i czas": "Dodawanie i czas",
+    "Czy to prawda?": "Czy to prawda?",
+    "$7 + 5 = 12$": "<span class=\"formula\">7 + 5 = 12</span>",
+    "Otocz: prawda czy fałsz?": "Otocz: prawda czy fałsz?",
+    "$9 + 9 = 17$": "<span class=\"formula\">9 + 9 = 17</span>",
+    "Która suma jest równa 15?": "Która suma jest równa 15?",
+    "$7 + 7$": "<span class=\"formula\">7 + 7</span>",
+    "A": "A",
+    "$8 + 7$": "<span class=\"formula\">8 + 7</span>",
+    "B": "B",
+    "$9 + 5$": "<span class=\"formula\">9 + 5</span>",
+    "C": "C",
+    "$6 + 8$": "<span class=\"formula\">6 + 8</span>",
+    "D": "D",
+    "Na którym obrazku jest 12 kropek?": "Na którym obrazku jest 12 kropek?",
+    "Ile to jest?": "Ile to jest?",
+    "$6 + 7 =$": "<span class=\"formula\">6 + 7=</span>",
+    "$15 - 8 =$": "<span class=\"formula\">15 − 8=</span>",
+    "Dodaj w słupku.": "Dodaj w słupku.",
+    "": "",
+    "Ile to razem?": "Ile to razem?",
+    "{g1} zł {g2} gr": "<span class=\"slot\" data-slot=\"g1\"></span> zł <span class=\"slot\" data-slot=\"g2\"></span> gr",
+    "Która godzina?": "Która godzina?",
+    "{g1} : {g2}": "<span class=\"slot\" data-slot=\"g1\"></span> : <span class=\"slot\" data-slot=\"g2\"></span>",
+    "Narysuj wskazówki na wpół do czwartej.": "Narysuj wskazówki na wpół do czwartej.",
+    "3:30": "3:30",
+    "Uzupełnij tabelę dodawania.": "Uzupełnij tabelę dodawania.",
+    "+": "+",
+    "{g1}": "<span class=\"slot\" data-slot=\"g1\"></span>",
+    "{g2}": "<span class=\"slot\" data-slot=\"g2\"></span>",
+    "{g3}": "<span class=\"slot\" data-slot=\"g3\"></span>",
+    "Każda cegła to suma dwóch cegieł pod nią.": "Każda cegła to suma dwóch cegieł pod nią.",
+    "Pokoloruj trzy czwarte kwadratu.": "Pokoloruj trzy czwarte kwadratu.",
+    "$\\frac{3}{4}$": "<span class=\"tex\"><span class=\"katex\"><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.1901em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8451em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">4</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">3</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span></span></span></span></span>",
+    "Zaznacz liczbę 35 na osi.": "Zaznacz liczbę 35 na osi.",
+    "Ponumeruj liczby od najmniejszej do największej.": "Ponumeruj liczby od najmniejszej do największej.",
+    "najmniejsza": "najmniejsza",
+    "największa": "największa",
+    "Połącz działanie z wynikiem.": "Połącz działanie z wynikiem.",
+    "$8 + 6$": "<span class=\"formula\">8 + 6</span>",
+    "$9 + 6$": "<span class=\"formula\">9 + 6</span>",
+    "$7 + 9$": "<span class=\"formula\">7 + 9</span>",
+    "Parzyste czy nieparzyste?": "Parzyste czy nieparzyste?",
+    "parzyste": "parzyste",
+    "nieparzyste": "nieparzyste",
+    "Otocz zegara, który pokazuje siódmą.": "Otocz zegara, który pokazuje siódmą.",
+    "Wybierz monety, które dają razem 3 zł 50 gr.": "Wybierz monety, które dają razem 3 zł 50 gr.",
+    "3 zł 50 gr": "3 zł 50 gr",
+    "Narysuj słupki: ile jest owoców?": "Narysuj słupki: ile jest owoców?",
+    "jabłka": "jabłka",
+    "gruszki": "gruszki",
+    "śliwki": "śliwki",
+    "wiśnie": "wiśnie",
+    "Jabłek jest 6, gruszek 3, śliwek 8, a wiśni 5.": "Jabłek jest 6, gruszek 3, śliwek 8, a wiśni 5."
+  },
+  "media": {
+    "media/print/three-clocks.svg": "https://media.jadwigo.test/media/print/three-clocks.svg"
+  }
+}

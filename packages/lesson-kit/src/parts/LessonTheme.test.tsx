@@ -27,9 +27,9 @@ describe("LessonTheme", () => {
       </Page>,
     );
     expect(classes("page")).toContain("text-jw-page-body");
-    expect(classes("page")).toContain("focus-visible:outline-jw-focus");
+    expect(classes("page")).toContain("in-data-[audience=adult]:focus-visible:ring-3");
     expect(classes("lesson")).not.toContain("text-jw-page-body");
-    expect(classes("lesson")).not.toContain("focus-visible:outline-jw-focus");
+    expect(classes("lesson")).not.toContain("in-data-[audience=adult]:focus-visible:ring-3");
     expect(classes("lesson")).toContain("text-jw-body");
   });
 
@@ -40,5 +40,13 @@ describe("LessonTheme", () => {
       </LessonTheme>,
     );
     expect(container.querySelector('[data-lesson-theme="zeszyt"] p')?.textContent).toBe("lesson");
+  });
+
+  // Inside an adult page, foundation.css gives a child's subtree Zeszyt back (dl-uukj.47.67).
+  it("marks the child's audience on its root", () => {
+    const { container } = render(<LessonTheme>lesson</LessonTheme>);
+    expect(container.querySelector("[data-lesson-theme]")?.getAttribute("data-audience")).toBe(
+      "kid",
+    );
   });
 });

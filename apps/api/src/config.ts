@@ -171,3 +171,25 @@ export async function uploadsBucket(read: ReadParameter = readSsm): Promise<stri
   if (direct) return direct;
   return (await read(UPLOADS_BUCKET_PARAM))?.trim() || undefined;
 }
+
+/**
+ * The folder `make dev-all`'s uploads stand-in keeps photos in (dl-z5ja.11.19), `.logs/dev/uploads`:
+ * set, serve.ts serves the photo routes from it in place of S3. Undefined when unset or blank; the
+ * Lambda never reads it.
+ */
+export function localUploadsDir(): string | undefined {
+  return process.env["LOCAL_UPLOADS_DIR"]?.trim() || undefined;
+}
+
+/**
+ * The print Lambda's ARN the print route starts with an async invoke (dl-1eieq.8.4), or undefined
+ * where none is set up: the print routes then answer 502 `PrintUnavailable`.
+ */
+export function printFunction(): string | undefined {
+  return process.env["PRINT_FUNCTION"]?.trim() || undefined;
+}
+
+/** Where lesson pictures are served from, as apps/web's `VITE_MEDIA_URL`; "" when unset. */
+export function mediaUrl(): string {
+  return process.env["MEDIA_URL"]?.trim() ?? "";
+}
