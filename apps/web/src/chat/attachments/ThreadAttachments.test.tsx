@@ -195,6 +195,47 @@ describe("ThreadAttachments", () => {
     expect(screen.getByRole("dialog", { name: "Photo 1" })).toBeTruthy();
   });
 
+  it("draws 2 documents as 2 tiles with their names, and one caption for the bubble (S18, s19)", async () => {
+    const doc = (n: number, name: string | null): [MessageAttachment, AttachmentRead] => {
+      const uuid = `0b8f4c3e-6a1d-4f2b-9c7e-1d2e3f4a5b6${n}`;
+      const id = AttachmentId.parse(idOf(ID_PREFIXES.attachment, uuid));
+      const media_type = "application/pdf";
+      const sent = { ...PHOTO, attachment_id: id, media_type, width: null, height: null } as const;
+      const row = Attachment.parse({ ...ROW, id, media_type, width: null, height: null, name });
+      return [
+        sent,
+        {
+          attachment: row,
+          url: `https://files.test/${n}`,
+          preview_url: null,
+          expires_at: at(60_000),
+        },
+      ];
+    };
+    const [first, firstRead] = doc(1, "karta-pracy.pdf");
+    const [second, secondRead] = doc(2, null);
+    const byId = new Map([
+      [first.attachment_id, firstRead],
+      [second.attachment_id, secondRead],
+    ]);
+    const read = vi.fn(async (id: AttachmentId) => byId.get(id) as AttachmentRead);
+    render(
+      <ThreadAttachments language="pl" attachments={[first, second]} read={read} now={() => NOW} />,
+    );
+    const tiles = () => [...document.querySelectorAll("[data-kind='document']")];
+    expect(tiles()).toHaveLength(2);
+    // Until the link is read, a tile names its kind.
+    expect(tiles()[0]?.querySelector("[data-name]")?.textContent).toBe("PDF");
+    await act(async () => {});
+    expect(tiles().map((t) => t.querySelector("[data-name]")?.textContent)).toEqual([
+      "karta-pracy.pdf",
+      "PDF",
+    ]);
+    // No picture is drawn for a document, and no page line until a message carries the count.
+    expect(document.querySelector("[data-thread-attachments] img")).toBeNull();
+    expect(screen.getAllByText("Tak Jadwigo widzi zdjęcia")).toHaveLength(1);
+  });
+
   it("shows nothing for a message with no attachments", () => {
     const { container } = render(
       <ThreadAttachments language="pl" attachments={[]} read={reads()} now={() => NOW} />,

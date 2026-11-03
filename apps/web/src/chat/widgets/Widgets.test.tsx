@@ -1,17 +1,14 @@
-import type { Run } from "@jadwigo/contracts/run";
-import { RunId } from "@jadwigo/contracts/run";
-import type { ChatItem, RunView } from "@jadwigo/core";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { copy } from "@jadwigo/copy";
+import type { ChatItem } from "@jadwigo/core";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SKILLS } from "../../parent/learner/fixtures.ts";
-import { ChatPane } from "../ChatPane.tsx";
 import type { ObjectRef } from "../objects/ref.ts";
+import { type ToolResult, toolResult } from "./Widgets.tsx";
 
 afterEach(cleanup);
 
 type ToolItem = Extract<ChatItem, { kind: "tool" }>;
-
-const RUN_ID = RunId.parse("run_00000000000000000000000001");
 
 const FINDINGS = {
   publishable: false,
@@ -47,46 +44,45 @@ function tool(seq: number, change: Partial<ToolItem>): ToolItem {
   };
 }
 
+/** What one finished tool line gives the turn, drawn when it is an element. */
 function draw(
-  tools: ToolItem[],
+  item: ToolItem,
   language: "pl" | "en" = "pl",
-  onSend: (text: string) => void = () => {},
+  onAsk: (text: string) => void = () => {},
   onOpen?: (object: ObjectRef) => void,
-) {
-  const view: RunView = {
-    chat: tools,
-    lesson: null,
-    previous_lesson: null,
-    status: "completed",
-    turn_open: false,
-    spent_usd: 0,
-    cap_usd: 1,
-    budget: "none",
-    cursor: tools.length,
-    plan: null,
+): ToolResult {
+  const result = toolResult(item, language, { onAsk, onOpen });
+  if (result !== null) render(result.element);
+  return result;
+}
+
+const OLA = { id: SKILLS.learner.id, first_name: "Ola" };
+const SKILLS_VIEW = {
+  learner: OLA,
+  goals: SKILLS.goals,
+  brief: SKILLS.brief,
+  skills: SKILLS.catalogue,
+};
+
+/** A lesson played in the week, under a made-up attempt: no learner's data. */
+function lesson(n: number, started_at: string, title: string, questions = 8) {
+  return {
+    attempt_id: `att_0000000000000000000000000${n}`,
+    title,
+    language: "pl",
+    started_at,
+    finished: true,
+    questions,
   };
-  const run = { id: RUN_ID, status: "completed" } as Run;
-  render(
-    <ChatPane
-      language={language}
-      turns={[{ run, view }]}
-      queued={[]}
-      restoring={false}
-      stopping={false}
-      sendFailed={false}
-      onSend={onSend}
-      onStop={() => {}}
-      onOpen={onOpen}
-    />,
-  );
 }
 
 describe("the verb → widget registry (dl-z5ja.24)", () => {
-  it("draws lesson_check's findings as its widget, in view under the fold, in plain words", () => {
-    draw([tool(1, { view: { kind: "lesson_check", data: FINDINGS } })]);
+  it("draws lesson_check's findings in plain words, folded with its line (S1: the card shows a failed check)", () => {
+    const result = draw(tool(1, { view: { kind: "lesson_check", data: FINDINGS } }));
+    expect(result?.kind).toBe("widget");
+    expect(result?.kind === "widget" && result.keepVisible).toBe(false);
     const widget = screen.getByRole("region", { name: "Sprawdzanie lekcji" });
     expect(widget.getAttribute("data-widget")).toBe("lesson_check");
-    expect(widget.closest("details")).toBeNull();
     expect(within(widget).getByText("1 uwaga do poprawy")).toBeTruthy();
     const rows = widget.querySelectorAll("li[data-level]");
     expect([...rows].map((r) => r.getAttribute("data-level"))).toEqual(["error", "warn"]);
@@ -95,180 +91,182 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
     expect(widget.textContent).not.toMatch(/\berror\b|\bwarn\b/);
   });
 
-  it("says a clean check passed, inside the fold", () => {
-    draw(
-      [tool(1, { view: { kind: "lesson_check", data: { publishable: true, findings: [] } } })],
+  it("says a clean check passed, and keeps it out of view", () => {
+    const result = draw(
+      tool(1, { view: { kind: "lesson_check", data: { publishable: true, findings: [] } } }),
       "en",
     );
+    expect(result?.kind === "widget" && result.keepVisible).toBe(false);
     const widget = screen.getByRole("region", { name: "Checking the lesson" });
     expect(widget.textContent).toContain("The lesson passed its checks.");
-    // A clean pass is no news: it folds in with the other steps (design review 2026-11-02).
-    expect(widget.closest("details")).not.toBeNull();
   });
 
-  it("draws a verb with no widget as the plain card, inside the fold", () => {
-    draw([
-      tool(1, {
-        verb: "lesson_show",
-        view: { kind: "lesson_show", data: { title: "Dodawanie", steps: [] } },
-      }),
-    ]);
-    expect(document.querySelector("[data-widget]")).toBeNull();
-    const card = document.querySelector("[data-card='plain']");
-    expect(card?.getAttribute("data-tool")).toBe("lesson_show");
-    expect(card?.parentElement?.closest("details")).not.toBeNull();
-    expect(card?.querySelector("summary")?.textContent).toBe("Szczegóły");
-    expect(card?.querySelector("[data-card-output]")?.textContent).toContain(
-      '"title": "Dodawanie"',
-    );
-  });
-
-  it("falls back to the plain card on a malformed view, and on a view naming another verb", () => {
-    draw([
-      tool(1, { view: { kind: "lesson_check", data: { publishable: "yes", findings: [] } } }),
-      tool(2, { verb: "question_search", view: { kind: "lesson_check", data: FINDINGS } }),
-    ]);
-    expect(document.querySelector("[data-widget]")).toBeNull();
-    const cards = document.querySelectorAll("[data-card='plain']");
-    expect([...cards].map((c) => c.getAttribute("data-tool"))).toEqual([
-      "lesson_check",
-      "question_search",
-    ]);
-  });
-
-  it("draws nothing until the call is done", () => {
-    draw([
-      tool(1, { state: "running", view: { kind: "lesson_check", data: FINDINGS } }),
-      tool(2, { state: "failed", view: { kind: "lesson_check", data: FINDINGS } }),
-      tool(3, { state: "rejected" }),
-    ]);
-    expect(document.querySelector("[data-widget]")).toBeNull();
-    expect(document.querySelector("[data-card]")).toBeNull();
-    expect(document.querySelector("[data-state='rejected'] summary")?.textContent).toBe(
-      "Sprawdzanie lekcji · pominięte, jak prosisz",
-    );
-  });
-
-  it("draws question_search's sets as chips, and says so when none fits", () => {
-    draw([
-      tool(1, {
-        verb: "question_search",
-        view: {
-          kind: "question_search",
-          // The whole set as question_search writes it, through the contracts' SearchSet.
-          data: {
-            sets: [
-              {
-                set_id: "set_demo",
-                title: "Adding within 20",
-                grades: ["1"],
-                skills: ["add-20"],
-                questions: 6,
-                why_found: "dodawanie",
-              },
-            ],
-          },
+  it("gives question_search, lesson_edit and lesson_show no element in view (S1, S14)", () => {
+    const search = {
+      sets: [
+        {
+          set_id: "set_demo",
+          title: "Adding within 20",
+          grades: ["1"],
+          skills: ["add-20"],
+          questions: 6,
+          why_found: "dodawanie",
         },
-      }),
+      ],
+    };
+    const items = [
+      tool(1, { verb: "question_search", view: { kind: "question_search", data: search } }),
       tool(2, { verb: "question_search", view: { kind: "question_search", data: { sets: [] } } }),
-    ]);
-    const widgets = screen.getAllByRole("region", { name: "Zestawy zadań" });
-    expect(widgets[0]?.querySelector("[data-set='set_demo']")?.textContent).toBe(
-      "Adding within 20",
-    );
-    expect(widgets[1]?.textContent).toContain(
-      "Żaden zestaw zadań nie pasuje jeszcze do tej prośby.",
-    );
-  });
-
-  it("draws the steps lesson_edit changed", () => {
-    draw([
-      tool(1, {
+      tool(3, {
         verb: "lesson_edit",
         view: { kind: "lesson_edit", data: { changed_step_ids: ["s01"] } },
       }),
-    ]);
-    const widget = screen.getByRole("region", { name: "Zmienianie lekcji" });
-    expect(widget.querySelector("[data-edited-step='s01']")?.textContent).toBe("Krok s01");
+      tool(4, {
+        verb: "lesson_show",
+        view: { kind: "lesson_show", data: { title: "Dodawanie", steps: [] } },
+      }),
+    ];
+    for (const item of items) {
+      const result = toolResult(item, "pl");
+      // The plain card, which lives folded inside the line: never a widget in view.
+      expect(result?.kind).toBe("plain");
+    }
+    for (const item of items) draw(item);
+    expect(document.querySelector("[data-widget]")).toBeNull();
+    // No "Zestawy zadań" card: the sets are tags on the search line (S14).
+    expect(screen.queryByRole("region", { name: "Zestawy zadań" })).toBeNull();
   });
 
-  it("the plain card shows what Jadwigo AI sent and what came back (dl-z5ja.68)", () => {
-    draw([
+  it("falls back to the plain card on a malformed view, and on a view naming another verb", () => {
+    const malformed = draw(
+      tool(1, { view: { kind: "lesson_check", data: { publishable: "yes", findings: [] } } }),
+    );
+    const borrowed = draw(
+      tool(2, { verb: "learner_week", view: { kind: "lesson_check", data: FINDINGS } }),
+    );
+    expect([malformed?.kind, borrowed?.kind]).toEqual(["plain", "plain"]);
+    expect(document.querySelector("[data-widget]")).toBeNull();
+  });
+
+  it("draws nothing until the call is done, and nothing for a call with nothing to show", () => {
+    expect(
+      toolResult(
+        tool(1, { state: "running", view: { kind: "lesson_check", data: FINDINGS } }),
+        "pl",
+      ),
+    ).toBeNull();
+    expect(
+      toolResult(
+        tool(2, { state: "failed", view: { kind: "lesson_check", data: FINDINGS } }),
+        "pl",
+      ),
+    ).toBeNull();
+    expect(toolResult(tool(3, { state: "rejected" }), "pl")).toBeNull();
+    expect(toolResult(tool(4, { verb: "lesson_draft" }), "pl")).toBeNull();
+  });
+
+  it("gives a verb with no widget the plain card when it sent or got something (dl-z5ja.68)", () => {
+    const result = toolResult(
       tool(1, {
         verb: "lesson_draft",
         input: { topic: "dodawanie do 20", grade: "1" },
         output: { draft_id: "run_1", title: "Dodawanie" },
       }),
-    ]);
-    const card = document.querySelector("[data-card='plain']");
-    expect(card?.querySelector("[data-card-input]")?.textContent).toContain(
-      '"topic": "dodawanie do 20"',
+      "pl",
     );
-    expect(card?.querySelector("[data-card-output]")?.textContent).toContain(
-      '"title": "Dodawanie"',
-    );
-    expect(card?.textContent).toContain("Wysłane dane");
-    expect(card?.textContent).toContain("Co wróciło");
+    expect(result?.kind).toBe("plain");
   });
 
-  it("draws learner_skills with the learner page's goal lists, in the parent's words", () => {
-    const data = {
-      learner: { id: SKILLS.learner.id, first_name: "Ola" },
-      goals: SKILLS.goals,
-      brief: SKILLS.brief,
-      skills: SKILLS.catalogue,
-    };
-    draw([tool(1, { verb: "learner_skills", view: { kind: "learner_skills", data } })]);
+  it("draws learner_skills in the frame with the learner page's goal lists, in the parent's words", () => {
+    const result = draw(
+      tool(1, { verb: "learner_skills", view: { kind: "learner_skills", data: SKILLS_VIEW } }),
+    );
+    expect(result?.kind === "widget" && result.keepVisible).toBe(true);
     const widget = screen.getByRole("region", { name: "Czytanie celów dziecka" });
-    expect(widget.querySelector("[data-goals]")).not.toBeNull();
+    expect(widget.querySelector("[data-title]")?.textContent).toBe("Czytanie celów dziecka");
+    expect(widget.querySelector("[data-body] [data-goals]")).not.toBeNull();
     expect(widget.querySelectorAll("[data-goal]")).toHaveLength(2);
     expect(widget.textContent).toContain("Dodaje w zakresie 10.");
     expect(widget.textContent).not.toMatch(/familiar|attempted|mastered|proficient/);
   });
 
   it("opens the child beside the chat from a learner widget, and offers nothing where the page can't (dl-uukj.47.59)", () => {
-    const data = {
-      learner: { id: SKILLS.learner.id, first_name: "Ola" },
-      goals: SKILLS.goals,
-      brief: SKILLS.brief,
-      skills: SKILLS.catalogue,
-    };
+    const item = tool(1, {
+      verb: "learner_skills",
+      view: { kind: "learner_skills", data: SKILLS_VIEW },
+    });
     const onOpen = vi.fn();
-    draw(
-      [tool(1, { verb: "learner_skills", view: { kind: "learner_skills", data } })],
-      "pl",
-      () => {},
-      onOpen,
-    );
+    draw(item, "pl", () => {}, onOpen);
     const widget = screen.getByRole("region", { name: "Czytanie celów dziecka" });
     within(widget).getByRole("button", { name: "Szczegóły: Ola" }).click();
     expect(onOpen).toHaveBeenCalledWith({ kind: "learner", id: SKILLS.learner.id });
     cleanup();
-    draw([tool(1, { verb: "learner_skills", view: { kind: "learner_skills", data } })]);
+    draw(item);
     expect(document.querySelector("[data-open-learner]")).toBeNull();
   });
 
-  it("draws learner_week with the week strip, and a malformed one as the plain card", () => {
-    const weeks = [
-      { monday: "2026-10-26", lessons: 0, moved_up: 0, attention: null },
-      { monday: "2026-11-02", lessons: 2, moved_up: 1, attention: 1 },
-    ];
-    const data = { learner: { id: SKILLS.learner.id, first_name: "Ola" }, weeks, lessons: [] };
-    draw([
-      tool(1, { verb: "learner_week", view: { kind: "learner_week", data } }),
-      tool(2, { verb: "learner_week", view: { kind: "learner_week", data: { weeks: 3 } } }),
+  it("draws learner_week in the frame: its title and range, a row per lesson, newest first (§4.3, s08)", () => {
+    const data = {
+      learner: OLA,
+      weeks: [{ monday: "2026-10-26", lessons: 2, moved_up: 1, attention: 1 }],
+      lessons: [
+        lesson(2, "2026-10-29T15:00:00Z", "Ó czy u", 5),
+        lesson(1, "2026-10-27T15:00:00Z", "Mnożenie przez 2 i 5"),
+      ],
+    };
+    const result = draw(tool(1, { verb: "learner_week", view: { kind: "learner_week", data } }));
+    expect(result?.kind === "widget" && result.keepVisible).toBe(true);
+    const title = copy("pl", "chat_week_title", { name: "Ola" }, "adult");
+    const widget = screen.getByRole("region", { name: title });
+    expect(widget.getAttribute("data-widget")).toBe("learner_week");
+    expect(widget.querySelector("[data-title]")?.textContent).toBe(title);
+    expect(widget.querySelector("[data-meta]")?.textContent).toBe("26 paź – 1 lis · 2 lekcje");
+    const rows = [...widget.querySelectorAll("[data-week-lesson]")];
+    expect(rows.map((r) => r.querySelector("[data-day]")?.textContent)).toEqual([
+      "czw 29",
+      "wt 27",
     ]);
-    const widget = screen.getByRole("region", { name: "Czytanie tygodnia dziecka" });
-    expect(
-      [...widget.querySelectorAll("[data-week]")].map((w) => w.getAttribute("data-week")),
-    ).toEqual(["2026-10-26", "2026-11-02"]);
-    expect(widget.querySelector("[data-lessons='2']")).not.toBeNull();
-    // The malformed one draws no widget; each line keeps its raw details under Szczegóły.
-    expect(document.querySelectorAll("[data-widget]")).toHaveLength(1);
-    expect(document.querySelectorAll("[data-card='plain']")).toHaveLength(2);
+    expect(rows.map((r) => r.querySelector("[data-topic]")?.textContent)).toEqual([
+      "Ó czy u",
+      "Mnożenie przez 2 i 5",
+    ]);
+    expect(rows.map((r) => r.querySelector("[data-count]")?.textContent)).toEqual([
+      "5 zadań",
+      "8 zadań",
+    ]);
+    // The bar waits on each lesson's right / help / miss (dl-uukj.47.71.11): none drawn yet, and
+    // no verdict hue outside it.
+    expect(widget.querySelector("[data-slot='result-bar']")).toBeNull();
+    expect(widget.querySelector("[data-show-all]")).toBeNull();
   });
 
-  it("draws lesson_ideas as its list, why and skill count, and asks for one in the parent's words (dl-z5ja.129)", () => {
+  it("shows 6 week rows, then 'Pokaż wszystkie ({n})' opens the rest in place (§4.3)", () => {
+    const days = ["26", "27", "28", "29", "30", "31"];
+    const lessons = [
+      ...days.map((d, i) => lesson(i + 1, `2026-10-${d}T15:00:00Z`, `Lekcja ${i + 1}`)),
+      lesson(7, "2026-11-01T15:00:00Z", "Lekcja 7"),
+    ];
+    const data = {
+      learner: OLA,
+      weeks: [{ monday: "2026-10-26", lessons: 7, moved_up: 0, attention: null }],
+      lessons,
+    };
+    draw(tool(1, { verb: "learner_week", view: { kind: "learner_week", data } }));
+    expect(document.querySelectorAll("[data-week-lesson]")).toHaveLength(6);
+    fireEvent.click(screen.getByRole("button", { name: "Pokaż wszystkie (7)" }));
+    expect(document.querySelectorAll("[data-week-lesson]")).toHaveLength(7);
+    expect(document.querySelector("[data-show-all]")).toBeNull();
+  });
+
+  it("draws a malformed learner_week as the plain card", () => {
+    const result = draw(
+      tool(1, { verb: "learner_week", view: { kind: "learner_week", data: { weeks: 3 } } }),
+    );
+    expect(result?.kind).toBe("plain");
+    expect(document.querySelector("[data-widget]")).toBeNull();
+  });
+
+  it("draws lesson_ideas in the frame, its list, why and skill count, and asks for one in the parent's words (dl-z5ja.129)", () => {
     const sent: string[] = [];
     const idea = (id: string, list: string, why: string, skills: string[]) => ({
       id,
@@ -279,17 +277,19 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
       citations: [{ kind: "skill", skill_code: skills[0] }],
     });
     const data = {
-      learner: { id: SKILLS.learner.id, first_name: "Ola" },
+      learner: OLA,
       ideas: [
         idea("i1", "reteach", "needs_attention", ["math.add.within-10", "math.add.within-20"]),
         idea("i2", "new", "prerequisites_met", ["math.mul.equal-groups"]),
       ],
     };
-    draw([tool(1, { verb: "lesson_ideas", view: { kind: "lesson_ideas", data } })], "pl", (t) =>
-      sent.push(t),
+    const result = draw(
+      tool(1, { verb: "lesson_ideas", view: { kind: "lesson_ideas", data } }),
+      "pl",
+      (t) => sent.push(t),
     );
+    expect(result?.kind === "widget" && result.keepVisible).toBe(true);
     const widget = screen.getByRole("region", { name: "Szukanie pomysłów na następną lekcję" });
-    expect(widget.closest("details")).toBeNull();
     const rows = [...widget.querySelectorAll("[data-idea]")];
     expect(rows.map((r) => r.getAttribute("data-idea"))).toEqual(["i1", "i2"]);
     expect(rows[0]?.textContent).toContain("Do nauczenia jeszcze raz");
@@ -306,29 +306,28 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
   });
 
   it("says when there are no ideas, and falls back to the plain card on a malformed view", () => {
-    const learner = { id: SKILLS.learner.id, first_name: "Ola" };
-    draw([
+    const empty = draw(
       tool(1, {
         verb: "lesson_ideas",
-        view: { kind: "lesson_ideas", data: { learner, ideas: [] } },
+        view: { kind: "lesson_ideas", data: { learner: OLA, ideas: [] } },
       }),
+    );
+    const malformed = draw(
       tool(2, {
         verb: "lesson_ideas",
-        view: { kind: "lesson_ideas", data: { learner, ideas: 3 } },
+        view: { kind: "lesson_ideas", data: { learner: OLA, ideas: 3 } },
       }),
-    ]);
+    );
+    expect([empty?.kind, malformed?.kind]).toEqual(["widget", "plain"]);
     const widgets = screen.getAllByRole("region", { name: "Szukanie pomysłów na następną lekcję" });
     expect(widgets).toHaveLength(1);
     expect(widgets[0]?.textContent).toContain("Na razie nie ma pomysłów na następną lekcję.");
-    expect(
-      [...document.querySelectorAll("[data-card='plain']")].map((c) => c.getAttribute("data-tool")),
-    ).toContain("lesson_ideas");
   });
 
-  it("draws learner_mistakes in the parent's words, with the child's answers as text (dl-z5ja.129)", () => {
+  it("draws learner_mistakes in the frame in the parent's words, with the child's answers as text (dl-z5ja.129)", () => {
     const attempt = "att_00000000000000000000000001";
     const data = {
-      learner: { id: SKILLS.learner.id, first_name: "Ola" },
+      learner: OLA,
       mistakes: [
         {
           mistake_class: "off_by_small",
@@ -362,7 +361,7 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
         },
       ],
     };
-    draw([tool(1, { verb: "learner_mistakes", view: { kind: "learner_mistakes", data } })]);
+    draw(tool(1, { verb: "learner_mistakes", view: { kind: "learner_mistakes", data } }));
     const widget = screen.getByRole("region", { name: "Czytanie, co sprawiło dziecku trudność" });
     const classes = [...widget.querySelectorAll("[data-mistake]")].map((m) => m.textContent);
     expect(classes).toEqual([
@@ -380,17 +379,19 @@ describe("the verb → widget registry (dl-z5ja.24)", () => {
   });
 
   it("says when nothing was hard, and falls back to the plain card on a malformed mistakes view", () => {
-    const learner = { id: SKILLS.learner.id, first_name: "Ola" };
-    draw([
+    const empty = draw(
       tool(1, {
         verb: "learner_mistakes",
-        view: { kind: "learner_mistakes", data: { learner, mistakes: [], questions: [] } },
+        view: { kind: "learner_mistakes", data: { learner: OLA, mistakes: [], questions: [] } },
       }),
+    );
+    const malformed = draw(
       tool(2, {
         verb: "learner_mistakes",
-        view: { kind: "learner_mistakes", data: { learner, mistakes: "many" } },
+        view: { kind: "learner_mistakes", data: { learner: OLA, mistakes: "many" } },
       }),
-    ]);
+    );
+    expect([empty?.kind, malformed?.kind]).toEqual(["widget", "plain"]);
     const widgets = screen.getAllByRole("region", {
       name: "Czytanie, co sprawiło dziecku trudność",
     });
