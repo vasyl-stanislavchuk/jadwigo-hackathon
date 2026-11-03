@@ -13,6 +13,7 @@
       "!**/.turbo",
       "!**/.venv",
       "!**/schemas/*.json",
+      "!apps/print/tests/fixtures/*.sheet.json",
       "!packages/contracts/openapi.json",
       "!bun.lock",
       "!packages/copy/src/paraglide"

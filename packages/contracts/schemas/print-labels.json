@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "brand": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string"
+    },
+    "page": {
+      "type": "string"
+    },
+    "page_of": {
+      "type": "string"
+    },
+    "next": {
+      "type": "string"
+    },
+    "end": {
+      "type": "string"
+    },
+    "legend": {
+      "type": "object",
+      "properties": {
+        "circle": {
+          "type": "string"
+        },
+        "tick": {
+          "type": "string"
+        },
+        "write": {
+          "type": "string"
+        },
+        "draw": {
+          "type": "string"
+        },
+        "join": {
+          "type": "string"
+        },
+        "number": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "circle",
+        "tick",
+        "write",
+        "draw",
+        "join",
+        "number"
+      ],
+      "additionalProperties": false
+    },
+    "true_word": {
+      "type": "string"
+    },
+    "false_word": {
+      "type": "string"
+    },
+    "many": {
+      "type": "string"
+    },
+    "total": {
+      "type": "string"
+    },
+    "hours_hand": {
+      "type": "string"
+    },
+    "card_title": {
+      "type": "string"
+    },
+    "card_note": {
+      "type": "string"
+    },
+    "credits_title": {
+      "type": "string"
+    },
+    "alfik_note": {
+      "type": "string"
+    },
+    "alfik_mark": {
+      "type": "string"
+    },
+    "alfik_no_mark": {
+      "type": "string"
+    },
+    "alfik_change": {
+      "type": "string"
+    },
+    "alfik_title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "brand",
+    "name",
+    "date",
+    "page",
+    "page_of",
+    "next",
+    "end",
+    "legend",
+    "true_word",
+    "false_word",
+    "many",
+    "total",
+    "hours_hand",
+    "card_title",
+    "card_note",
+    "credits_title",
+    "alfik_note",
+    "alfik_mark",
+    "alfik_no_mark",
+    "alfik_change",
+    "alfik_title"
+  ],
+  "additionalProperties": false
+}
