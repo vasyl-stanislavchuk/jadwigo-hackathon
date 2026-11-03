@@ -16,7 +16,7 @@ import {
   WONDER_MODEL,
 } from "./e7-judge.ts";
 
-interface JudgementsFile {
+export interface JudgementsFile {
   ran_at: string;
   wall_s: number;
   spark: {
@@ -66,12 +66,8 @@ function disagreements(fixtures: E7Fixtures, judgements: readonly ModelJudgement
   return out;
 }
 
-function main(): void {
-  const here = dirname(fileURLToPath(import.meta.url));
-  const fixtures = JSON.parse(readFileSync(join(here, "e7.fixtures.json"), "utf8")) as E7Fixtures;
-  const run = JSON.parse(readFileSync(join(here, "e7.judgements.json"), "utf8")) as JudgementsFile;
-  const commit = process.argv[2] ?? "unknown";
-
+/** The docs report for one committed run, in the epic's experiment schema shape. */
+export function buildReport(fixtures: E7Fixtures, run: JudgementsFile, commit: string) {
   const codeMore = run.code.filter((c) => c.verdict === "explain_more");
   const handOf = (task: string, answer: string) =>
     overallOf(
@@ -131,8 +127,18 @@ function main(): void {
     fixtures: "packages/lesson-kit/src/families/explain/e7.fixtures.json",
     raw_judgements: "packages/lesson-kit/src/families/explain/e7.judgements.json",
   };
+  return report;
+}
+
+function main(): void {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const fixtures = JSON.parse(readFileSync(join(here, "e7.fixtures.json"), "utf8")) as E7Fixtures;
+  const run = JSON.parse(readFileSync(join(here, "e7.judgements.json"), "utf8")) as JudgementsFile;
   const target = join(here, "../../../../../apps/docs/src/data/experiments/e7.json");
-  writeFileSync(target, `${JSON.stringify(report, null, 2)}\n`);
+  writeFileSync(
+    target,
+    `${JSON.stringify(buildReport(fixtures, run, process.argv[2] ?? "unknown"), null, 2)}\n`,
+  );
   process.stdout.write(`wrote ${target}\n`);
 }
 

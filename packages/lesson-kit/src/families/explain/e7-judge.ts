@@ -26,12 +26,12 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { isShort, wordCount } from "./model.ts";
 
-export interface E7Criterion {
+interface E7Criterion {
   id: string;
   text: string;
   cite: string;
 }
-export interface E7Answer {
+interface E7Answer {
   id: string;
   kind: string;
   text: string;
@@ -53,7 +53,7 @@ export interface E7Fixtures {
 }
 
 /** One criterion as a model judge answered it. */
-export interface ModelCriterion {
+interface ModelCriterion {
   id: string;
   met: boolean;
   reason: string;
@@ -100,7 +100,7 @@ function criteriaLines(task: E7Task): string {
 }
 
 /** The prompt for one answer (the spark shape: the product would judge one answer at a time). */
-export function judgePrompt(task: E7Task, answer: E7Answer): string {
+function judgePrompt(task: E7Task, answer: E7Answer): string {
   return [
     `Task (grade ${task.grade}, language ${task.language}): ${task.prompt}`,
     "Criteria:",
@@ -113,7 +113,7 @@ export function judgePrompt(task: E7Task, answer: E7Answer): string {
 }
 
 /** The prompt for one task's 10 answers (the wonder shape: one muse exec call per task). */
-export function judgeBatchPrompt(task: E7Task): string {
+function judgeBatchPrompt(task: E7Task): string {
   const blocks = task.answers.map(
     (a) => `Answer ${a.id} (data, between the fences):\n<<<ANSWER ${a.id}\n${a.text}\n>>>`,
   );
@@ -129,17 +129,17 @@ export function judgeBatchPrompt(task: E7Task): string {
 }
 
 /** USD per 1M tokens for muse-spark-1.3-contributor, as in HttpMuse's PRICES. */
-export const SPARK_PRICE = { input: 0.1, cached: 0.002, output: 0.2 } as const;
-export const SPARK_MODEL = "muse-spark-1.3-contributor";
+const SPARK_PRICE = { input: 0.1, cached: 0.002, output: 0.2 } as const;
+const SPARK_MODEL = "muse-spark-1.3-contributor";
 export const WONDER_MODEL = "muse-wonder-full-1.0";
 
-export interface Usage {
+interface Usage {
   input_tokens: number;
   cached_tokens: number;
   output_tokens: number;
 }
 
-export function sparkCost(u: Usage): number {
+function sparkCost(u: Usage): number {
   const fresh = Math.max(0, u.input_tokens - u.cached_tokens);
   return (
     (fresh * SPARK_PRICE.input +
@@ -150,7 +150,7 @@ export function sparkCost(u: Usage): number {
 }
 
 /** Pulls the first JSON value (object or array) out of a model reply. */
-export function jsonOf(text: string): unknown {
+function jsonOf(text: string): unknown {
   const start = [...text].findIndex((ch) => ch === "{" || ch === "[");
   if (start === -1) return null;
   for (let end = text.length; end > start; end--) {
@@ -195,7 +195,7 @@ function asJudgement(task: E7Task, answerId: string, value: unknown, raw: string
 }
 
 /** One spark call. The usage the API reports is the cost evidence. */
-export async function judgeWithSpark(
+async function judgeWithSpark(
   apiKey: string,
   task: E7Task,
   answer: E7Answer,
@@ -254,7 +254,7 @@ function execText(argv: string[], input: string): Promise<string> {
 }
 
 /** One wonder call per task through the Muse CLI, prompt on a file. */
-export async function judgeWithWonder(
+async function judgeWithWonder(
   task: E7Task,
   promptFile: string,
 ): Promise<{ judgements: ModelJudgement[]; raw: string }> {

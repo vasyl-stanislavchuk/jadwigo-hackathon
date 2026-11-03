@@ -11,17 +11,16 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { judge } from "../../../../core/src/index.ts";
 import { codeJudge, type E7Fixtures, type ModelJudgement, overallOf, score } from "./e7-judge.ts";
+import { buildReport, type JudgementsFile } from "./e7-report.ts";
 import { wordCount } from "./model.ts";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtures = JSON.parse(readFileSync(join(here, "e7.fixtures.json"), "utf8")) as E7Fixtures;
 
-interface JudgementsFile {
+const run = JSON.parse(readFileSync(join(here, "e7.judgements.json"), "utf8")) as JudgementsFile & {
   spark: { judgements: ModelJudgement[] };
   wonder: { judgements: ModelJudgement[] };
-  code: { task: string; answer: string; verdict: string }[];
-}
-const run = JSON.parse(readFileSync(join(here, "e7.judgements.json"), "utf8")) as JudgementsFile;
+};
 
 describe("E7 fixtures: 8 tasks, criteria first, 10 hand-labelled answers each", () => {
   it("has 8 tasks and 80 answers", () => {
@@ -104,4 +103,13 @@ describe("E7 model judges: the committed run", () => {
       }
     });
   }
+
+  it("the docs report carries the same scores and both cost sources", () => {
+    const report = buildReport(fixtures, run, "test");
+    expect(report.judges.spark.usd).toBeGreaterThan(0);
+    expect(report.judges.spark.cost_source).toContain("PRICES");
+    expect(report.judges.wonder.cost_source).toContain("muse-trace");
+    expect(report.judges.wonder.tokens.input).toBeGreaterThan(0);
+    expect(report.judges.code.verdicts.unjudged).toBe(70);
+  });
 });
