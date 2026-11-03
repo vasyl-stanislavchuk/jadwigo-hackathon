@@ -39,12 +39,20 @@ function memoryBucket(): PrintBucket & { objects: Map<string, string> } {
 function setUp({ wired = true }: { readonly wired?: boolean } = {}) {
   const bucket = memoryBucket();
   const started: string[] = [];
+  let failing = 0;
+  const failStarts = (n: number) => {
+    failing = n;
+  };
   const s = seeded(new InMemoryStore(), {
     queue: new InMemoryRunQueue(() => new Date()),
     print: wired
       ? {
           bucket,
           start: async (bucketName, key) => {
+            if (failing > 0) {
+              failing -= 1;
+              throw new Error("throttled");
+            }
             started.push(`${bucketName}/${key}`);
           },
           media: "https://media.test",
@@ -100,7 +108,7 @@ function setUp({ wired = true }: { readonly wired?: boolean } = {}) {
       call<PrintStatus & ErrorEnvelope>("GET", pathOf("getPrint", { id }));
     return { pod, print, status };
   }
-  return { s, bucket, started, parent };
+  return { s, bucket, started, parent, failStarts };
 }
 
 describe("the print routes", () => {
@@ -118,7 +126,8 @@ describe("the print routes", () => {
 
     const again = await a.print();
     expect(again.body).toEqual(first.body);
-    expect(started).toHaveLength(1);
+    // Still pending: the Lambda is started again, in case the first start or render was lost.
+    expect(started).toEqual([`uploads.test/${key}`, `uploads.test/${key}`]);
     expect((await a.status(first.body.print_id)).body).toEqual(first.body);
   });
 
@@ -146,6 +155,19 @@ describe("the print routes", () => {
       print_id: other,
       reason: "invalid_sheet",
     });
+  });
+
+  it("starts the Lambda again on the next print when the first start failed", async () => {
+    const { bucket, started, parent, failStarts } = setUp();
+    const a = await parent();
+    failStarts(1);
+    const failed = await a.print();
+    expect(failed.status).toBe(500);
+    const retried = await a.print();
+    expect(retried.body.status).toBe("pending");
+    const key = `pods/${a.pod}/prints/${retried.body.print_id}.json`;
+    expect(bucket.objects.has(key)).toBe(true);
+    expect(started).toEqual([`uploads.test/${key}`]);
   });
 
   it("never shows one pod's print to another, and 404s an id no route made", async () => {

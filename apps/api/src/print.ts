@@ -169,9 +169,12 @@ export async function startPrint(
   const id = printIdOf(sheet);
   const now = deps.now();
   const known = await statusOf(bucket, pod, id, now);
-  if (known !== undefined) return known;
+  if (known?.status === "ready" || known?.status === "failed") return known;
+  // Pending starts the Lambda again: a start that failed (a throttle, a missing grant) or a render
+  // that timed out before writing anything would otherwise stay pending for good. The Lambda
+  // returns at once when the PDF is already there, so a second start costs nothing.
   const key = `${base(pod, id)}.json`;
-  await bucket.put(key, JSON.stringify(sheet), "application/json");
+  if (known === undefined) await bucket.put(key, JSON.stringify(sheet), "application/json");
   await start(await bucket.name(), key);
   return { status: "pending", print_id: id };
 }
