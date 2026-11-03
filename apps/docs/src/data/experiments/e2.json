@@ -1,0 +1,17 @@
+{
+  "id": "e2",
+  "title": "The next lesson drawn for each invented learner",
+  "status": "running",
+  "model": "none",
+  "calls": 0,
+  "tokens": {
+    "input": 0,
+    "output": 0
+  },
+  "usd": 0,
+  "cost_source": "ledger",
+  "wall_s": 0,
+  "commit": "f4b1194c",
+  "commands": [],
+  "results": []
+}

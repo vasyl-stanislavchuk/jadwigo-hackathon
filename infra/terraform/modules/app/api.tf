@@ -146,6 +146,8 @@ resource "aws_lambda_function" "api" {
       var.runner_alias_arn == "" ? {} : { RUNNER_LIVE_ALIAS_ARN = var.runner_alias_arn },
       # The print Lambda the print route invokes (dl-1eieq.8.3); absent, the route has none.
       var.print_function_arn == "" ? {} : { PRINT_FUNCTION = var.print_function_arn },
+      # Where the print route finds a sheet's pictures, as the web does (dl-1eieq.8.9).
+      var.media_url == "" ? {} : { MEDIA_URL = var.media_url },
       # The bucket a message's photos go to (dl-z5ja.11.2); absent, the photo routes have none.
       var.uploads_bucket_name == "" ? {} : { UPLOADS_BUCKET = var.uploads_bucket_name },
       # The Send Email Hook's secrets (dl-liwi.33); absent, the hook's path answers NotFound.

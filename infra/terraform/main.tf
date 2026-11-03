@@ -199,6 +199,8 @@ module "app" {
 
   # The print route invokes the print Lambda (decision dl-o05aa), once it has an image.
   print_function_arn = module.print.function_arn
+  # And resolves the sheet's pictures against the media URL apps/web reads them from.
+  media_url = module.content.media_url
 
   # The api role presigns, checks, copies and deletes a message's photos (modules/app/uploads.tf).
   uploads_bucket_name      = module.uploads.bucket_name

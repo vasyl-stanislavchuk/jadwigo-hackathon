@@ -121,7 +121,7 @@ COLUMN_CELL_MM: Final = 8.0
 BRICK_W_MM: Final = 18.0
 BRICK_H_MM: Final = 12.0
 #: match and bucket: rows apart, and the dot a line starts from.
-JOIN_ROW_MM: Final = 11.0
+JOIN_ROW_MM: Final = 10.0
 JOIN_DOT_MM: Final = 2.6
 JOIN_GAP_MM: Final = 40.0
 #: order: the box in front of each item.
@@ -152,7 +152,7 @@ FRACTION_W_MM: Final = 70.0
 FRACTION_H_MM: Final = 14.0
 FRACTION_CIRCLE_MM: Final = 36.0
 #: draw_graph: the plot's height and each category's column.
-GRAPH_H_MM: Final = 42.0
+GRAPH_H_MM: Final = 40.0
 GRAPH_COL_MM: Final = 22.0
 #: measure: a ruler drawn to the figure's own scale, never wider than the content.
 RULER_H_MM: Final = 12.0
@@ -177,7 +177,7 @@ PIN_MM: Final = 6.0
 #: The figures' inner margins: a number line's ends, a graph's value axis and its labels.
 LINE_PAD_MM: Final = 6.0
 GRAPH_AXIS_W_MM: Final = 12.0
-GRAPH_LABELS_H_MM: Final = 10.0
+GRAPH_LABELS_H_MM: Final = 7.0
 
 # --- Layout classes ----------------------------------------------------------------------------
 #: Question types whose card is half the content width: a pair of them shares a row, read left

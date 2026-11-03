@@ -255,6 +255,7 @@ run "the_api_invokes_the_print_lambda_and_reaches_prints" {
     uploads_bucket_name      = "jadwigo-uploads-dev-test"
     uploads_bucket_param_arn = "arn:aws:ssm:eu-central-1:123456789012:parameter/jadwigo/uploads/bucket"
     print_function_arn       = "arn:aws:lambda:eu-central-1:123456789012:function:jadwigo-print-dev"
+    media_url                = "https://media.jadwigo.test"
   }
 
   assert {
@@ -268,6 +269,11 @@ run "the_api_invokes_the_print_lambda_and_reaches_prints" {
   assert {
     condition     = aws_lambda_function.api.environment[0].variables["PRINT_FUNCTION"] == "arn:aws:lambda:eu-central-1:123456789012:function:jadwigo-print-dev"
     error_message = "the api knows the print Lambda as PRINT_FUNCTION"
+  }
+
+  assert {
+    condition     = aws_lambda_function.api.environment[0].variables["MEDIA_URL"] == "https://media.jadwigo.test"
+    error_message = "the print route resolves pictures against MEDIA_URL"
   }
 
   assert {
@@ -319,5 +325,10 @@ run "the_api_without_a_print_lambda_gets_no_grant" {
   assert {
     condition     = !contains(keys(aws_lambda_function.api.environment[0].variables), "PRINT_FUNCTION")
     error_message = "with no print Lambda the api has no PRINT_FUNCTION"
+  }
+
+  assert {
+    condition     = !contains(keys(aws_lambda_function.api.environment[0].variables), "MEDIA_URL")
+    error_message = "with no media URL named the api has no MEDIA_URL"
   }
 }
