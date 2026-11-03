@@ -491,6 +491,13 @@ export const COPY_KEYS = [
   "play_paused_back",
   "play_not_found",
   "play_link_incomplete",
+  "play_intro_yes",
+  "play_intro_not_me",
+  "play_intro_name",
+  "play_intro_start",
+  "play_intro_anonymous",
+  "play_intro_name_missing",
+  "play_intro_questions",
   // end the lesson player
   // parent login (dl-e8ov.2.38)
   "play_save",

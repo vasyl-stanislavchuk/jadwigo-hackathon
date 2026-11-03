@@ -6,9 +6,15 @@
  * pytania" goes back, and a reload on a review path opens the same step again.
  */
 
-import { ApiError, type AttemptClient, TransientError } from "@jadwigo/api-client";
+import {
+  ApiError,
+  type AssignmentIntroClient,
+  type AttemptClient,
+  TransientError,
+} from "@jadwigo/api-client";
 import {
   AssignmentId,
+  type AssignmentIntro,
   type AttemptAnswerRequest,
   AttemptAnswerResult,
   AttemptId,
@@ -91,8 +97,20 @@ const refused = (): never => {
   throw new Error("not called in this test");
 };
 
-function client(changes: Partial<AttemptClient>): AttemptClient {
+const INTRO: AssignmentIntro = {
+  title: "Mnożenie przez 2 i 5",
+  language: "pl",
+  question_count: 4,
+  identity: "none",
+  open: true,
+  first_name: null,
+};
+
+function client(
+  changes: Partial<AttemptClient & AssignmentIntroClient>,
+): AttemptClient & AssignmentIntroClient {
   return {
+    getAssignmentIntro: async () => INTRO,
     startAttempt: refused,
     getAttempt: refused,
     answer: refused,
@@ -399,7 +417,9 @@ describe("PlayScreen", () => {
       attempt: finished().attempt,
       questions: [reviewQuestion(1, "correct"), reviewQuestion(2, "missed")],
     });
-    const finishedClient = (changes: Partial<AttemptClient> = {}): AttemptClient =>
+    const finishedClient = (
+      changes: Partial<AttemptClient> = {},
+    ): AttemptClient & AssignmentIntroClient =>
       client({
         getAttempt: async () => finished(),
         getResults: async () => results(),
@@ -518,7 +538,7 @@ describe("PlayScreen", () => {
     });
 
     /** A double that marks the first try at each seq in `misses` wrong, and every other try right. */
-    function lesson(misses: readonly number[]): AttemptClient {
+    function lesson(misses: readonly number[]): AttemptClient & AssignmentIntroClient {
       return client({
         startAttempt: async () => snapshot(FRESH, "in_progress", [chosen(1)]),
         answer: async (_id, body: AttemptAnswerRequest) => {
@@ -596,5 +616,116 @@ describe("PlayScreen", () => {
       await act(async () => fireEvent.pointerDown(document.body));
       expect(queen()).toBeNull();
     });
+  });
+});
+
+describe("a given lesson's first screen", () => {
+  const CHILD = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+  const given = { ...INTRO, identity: "pick" as const };
+  const started = () => vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)]));
+  const open = (search: string, intro: AssignmentIntro, startAttempt = started()) => {
+    window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}${search}`);
+    render(
+      <PlayScreen
+        assignmentId={ASSIGNMENT}
+        language="pl"
+        client={client({ getAssignmentIntro: async () => intro, startAttempt })}
+      />,
+    );
+    return startAttempt;
+  };
+  const playing = () => screen.findAllByText("Ile to jest dwa razy pięć? (1)");
+
+  it("with a child in the link, shows the title and count and starts only on 'Tak, jestem'", async () => {
+    const start = open(`?learner=${CHILD}`, { ...given, first_name: "Tymek" });
+    const yes = await screen.findByRole("button", { name: "Tak, jestem Tymek" });
+    expect(screen.getByText("Mnożenie przez 2 i 5")).toBeTruthy();
+    expect(screen.getByText("4 zadania")).toBeTruthy();
+    expect(start).not.toHaveBeenCalled();
+    fireEvent.click(yes);
+    await playing();
+    expect(start).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, { learner_id: CHILD });
+  });
+
+  it("'To nie ja' asks for a name, and the attempt is that player's, not the child's", async () => {
+    const start = open(`?learner=${CHILD}`, { ...given, first_name: "Tymek" });
+    fireEvent.click(await screen.findByRole("button", { name: "To nie ja" }));
+    fireEvent.change(screen.getByLabelText("Jak masz na imię?"), { target: { value: " Ola " } });
+    fireEvent.click(screen.getByRole("button", { name: "Zaczynamy" }));
+    await playing();
+    expect(start).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, { player_name: "Ola" });
+    expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
+    expect(storedAttempt.get(ASSIGNMENT, CHILD)).toBeNull();
+  });
+
+  it("with no child, asks for a name and refuses a blank one in kind words", async () => {
+    const start = open("", given);
+    await screen.findByLabelText("Jak masz na imię?");
+    expect(screen.queryByRole("button", { name: "To nie ja" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Zaczynamy" }));
+    expect(await screen.findByText("Napisz swoje imię albo zagraj bez imienia.")).toBeTruthy();
+    expect(start).not.toHaveBeenCalled();
+  });
+
+  it("'Zagraj bez imienia' starts with neither a name nor a child", async () => {
+    const start = open("", given);
+    fireEvent.click(await screen.findByRole("button", { name: "Zagraj bez imienia" }));
+    await playing();
+    expect(start).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, {});
+  });
+
+  it("offers nobody else on an older learners-only link", async () => {
+    open(`?learner=${CHILD}`, { ...given, open: false, first_name: "Tymek" });
+    await screen.findByRole("button", { name: "Tak, jestem Tymek" });
+    expect(screen.queryByRole("button", { name: "To nie ja" })).toBeNull();
+  });
+
+  it("leaves out a count of 0", async () => {
+    open("", { ...given, question_count: 0 });
+    await screen.findByText("Mnożenie przez 2 i 5");
+    expect(screen.queryByText(/zada/)).toBeNull();
+  });
+
+  it("a reload resumes with no first screen, the child's attempt or the guest's", async () => {
+    for (const held of [CHILD, null]) {
+      window.sessionStorage.clear();
+      storedAttempt.set(ASSIGNMENT, ATTEMPT, held);
+      window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?learner=${CHILD}`);
+      const getAttempt = vi.fn(async () =>
+        AttemptSnapshot.parse({
+          ...snapshot(ATTEMPT, "in_progress", [question(1)]),
+          attempt: {
+            ...snapshot(ATTEMPT, "in_progress", [question(1)]).attempt,
+            learner_id: held,
+          },
+        }),
+      );
+      const getAssignmentIntro = vi.fn(async () => given);
+      render(
+        <PlayScreen
+          assignmentId={ASSIGNMENT}
+          language="pl"
+          client={client({ getAttempt, getAssignmentIntro })}
+        />,
+      );
+      await playing();
+      expect(getAssignmentIntro).not.toHaveBeenCalled();
+      cleanup();
+    }
+  });
+
+  it("says a link that is gone is not found", async () => {
+    window.history.replaceState(null, "", playPath(ASSIGNMENT));
+    const getAssignmentIntro = vi.fn(async () => {
+      throw new ApiError("no such assignment", 404, "NotFound");
+    });
+    render(
+      <PlayScreen
+        assignmentId={ASSIGNMENT}
+        language="pl"
+        client={client({ getAssignmentIntro })}
+      />,
+    );
+    expect(await screen.findByText("Tej lekcji tu nie ma.")).toBeTruthy();
   });
 });
