@@ -233,7 +233,32 @@ describe("ThreadAttachments", () => {
     ]);
     // No picture is drawn for a document, and no page line until a message carries the count.
     expect(document.querySelector("[data-thread-attachments] img")).toBeNull();
+    // Documents only: the caption says files, once.
+    expect(screen.getAllByText("Tak Jadwigo widzi pliki")).toHaveLength(1);
+    expect(screen.queryByText("Tak Jadwigo widzi zdjęcia")).toBeNull();
+  });
+
+  it("captions a photos-only bubble and a mixed one with 'zdjęcia', once (dl-uukj.47.71.25)", () => {
+    const pdfId = AttachmentId.parse(
+      idOf(ID_PREFIXES.attachment, "0b8f4c3e-6a1d-4f2b-9c7e-1d2e3f4a5b70"),
+    );
+    const pdf: MessageAttachment = {
+      ...PHOTO,
+      attachment_id: pdfId,
+      media_type: "application/pdf",
+    };
+    const read = reads({ url: "https://files.test/a", expires: 60_000 });
+    const { unmount } = render(
+      <ThreadAttachments language="pl" attachments={[PHOTO]} read={read} now={() => NOW} />,
+    );
     expect(screen.getAllByText("Tak Jadwigo widzi zdjęcia")).toHaveLength(1);
+    expect(screen.queryByText("Tak Jadwigo widzi pliki")).toBeNull();
+    unmount();
+    render(
+      <ThreadAttachments language="pl" attachments={[PHOTO, pdf]} read={read} now={() => NOW} />,
+    );
+    expect(screen.getAllByText("Tak Jadwigo widzi zdjęcia")).toHaveLength(1);
+    expect(screen.queryByText("Tak Jadwigo widzi pliki")).toBeNull();
   });
 
   it("shows nothing for a message with no attachments", () => {

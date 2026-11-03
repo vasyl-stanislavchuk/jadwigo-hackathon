@@ -8,7 +8,15 @@ import {
 } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
-import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { ChatScreen } from "./ChatScreen.tsx";
 import { LessonPane } from "./LessonPane.tsx";
@@ -273,7 +281,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     const events = eventsOf("happy-turn");
     const t = transportOf(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     openStep("s02");
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     fireEvent.change(screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" }), {
@@ -293,7 +301,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     await act(async () => t.push([steer]));
     expect(screen.getByText("Zapisywanie Twojej zmiany w lekcji…")).toBeTruthy();
     await act(async () => t.push([revisionFor([...events, steer], patch, 3, body?.event_id)]));
-    expect(screen.getByText("Wersja 3")).toBeTruthy();
+    expect(document.querySelector('div[data-revision="3"]')).not.toBeNull();
     expect(document.querySelector("[data-step='s02'] [data-step-title]")?.textContent).toBe(
       "Ile to jest dwa razy sześć?",
     );
@@ -304,7 +312,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     const events = eventsOf("happy-turn");
     const t = transportOf(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     openStep("s02");
     fireEvent.click(document.querySelector("[data-edit-step='s02']") as HTMLElement);
     fireEvent.change(screen.getByRole("textbox", { name: "Co ten krok mówi dziecku" }), {
@@ -330,7 +338,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     const events = eventsOf("happy-turn");
     const t = transportOf(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     const before = lessonFile();
     const third = revisionFor(events, wordsPatch(before, "s02", "pl", "Ile jest grup?"), 3);
     await act(async () => t.push([third]));
@@ -352,7 +360,7 @@ describe("the lesson pane sends a parent's own words as a patch (dl-z5ja.111)", 
     const events = eventsOf("happy-turn");
     const t = transportOf(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     const third = revisionFor(events, wordsPatch(lessonFile(), "s02", "pl", "Ile jest grup?"), 3);
     await act(async () => t.push([third]));
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
@@ -370,7 +378,7 @@ describe("Cofnij falls back to words (dl-z5ja.111)", () => {
     const events = eventsOf("happy-turn");
     const t = transportOf(events);
     render(<ChatScreen transport={t.transport} />);
-    expect(await screen.findByText("Wersja 2")).toBeTruthy();
+    await waitFor(() => expect(document.querySelector('div[data-revision="2"]')).not.toBeNull());
     const second = lessonFile();
     // Revision 3 holds a key whose value is null; revision 4 sets it, so going back needs a null.
     const third = {
@@ -390,7 +398,7 @@ describe("Cofnij falls back to words (dl-z5ja.111)", () => {
       });
     const top = Math.max(...events.map((e) => e.seq));
     await act(async () => t.push([at(third, 3, top + 1), at(fourth, 4, top + 2)]));
-    expect(screen.getByText("Wersja 4")).toBeTruthy();
+    expect(document.querySelector('div[data-revision="4"]')).not.toBeNull();
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Cofnij" })));
     expect(t.sent).toEqual([
       expect.objectContaining({

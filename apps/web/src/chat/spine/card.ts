@@ -51,13 +51,7 @@ export function cardStateOf(
   const base = { lessonId: facts.id, version: view.lesson.revision, title: facts.title };
   if (context.living === false) return { ...base, kind: "superseded" };
   if (view.turn_open || context.changing === true)
-    return {
-      ...base,
-      kind: "working",
-      nextVersion: view.lesson.revision + 1,
-      count: facts.count,
-      first: facts.first,
-    };
+    return { ...base, kind: "working", count: facts.count, preview: facts.preview };
 
   const check = tools.findLast((t) => t.verb === "lesson_check");
   const read = check === undefined ? null : checkOf(check.output);
@@ -72,8 +66,8 @@ export function cardStateOf(
           return step === null || words === undefined ? [] : [{ step, words }];
         });
   if (read === null || rewritten || !read.publishable || facts.count === 0)
-    return { ...base, kind: "fix", count: facts.count, findings };
-  return { ...base, kind: "ready", count: facts.count, first: facts.first };
+    return { ...base, kind: "fix", count: facts.count, preview: facts.preview, findings };
+  return { ...base, kind: "ready", count: facts.count, preview: facts.preview };
 }
 
 /**

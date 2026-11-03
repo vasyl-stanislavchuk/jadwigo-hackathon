@@ -260,7 +260,15 @@ export function ThreadAttachments({
         ))}
       </ul>
       <figcaption className="text-jw-page-small text-jw-ink-soft">
-        {copy(language, "attach_caption", {}, "adult")}
+        {/* Documents only: "pliki"; any photo on the bubble keeps "zdjęcia" (dl-uukj.47.71.25). */}
+        {copy(
+          language,
+          attachments.every((a) => documentKind(a.media_type) !== null)
+            ? "attach_caption_files"
+            : "attach_caption",
+          {},
+          "adult",
+        )}
       </figcaption>
     </figure>
   );

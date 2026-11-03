@@ -2,6 +2,7 @@ import { RunEvent } from "@jadwigo/contracts/run";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import { cardStateOf, cardStatesOf } from "./card.ts";
+import { plainPrompt } from "./lessonFile.ts";
 import { checkOf } from "./lines.ts";
 import { complete } from "./logs.test-helpers.ts";
 
@@ -23,6 +24,10 @@ describe("cardStateOf (S16)", () => {
       title: "Równe grupy",
       count: 4,
     });
+    const preview = (cardStateOf(upTo("happy-turn")) as { preview: readonly string[] }).preview;
+    // The first 3 prompts as the child reads them (lesson card delta C3).
+    expect(preview).toHaveLength(3);
+    for (const prompt of preview) expect(prompt).not.toMatch(/[*`$\\{}]|\n/);
     expect(cardStateOf(upTo("long-turn"))).toMatchObject({ kind: "ready", version: 12 });
   });
 
@@ -59,8 +64,8 @@ describe("cardStateOf (S16)", () => {
     expect(cardStateOf(upTo("long-turn", 70))).toMatchObject({
       kind: "working",
       version: 8,
-      nextVersion: 9,
     });
+    expect(cardStateOf(upTo("long-turn", 70))).not.toHaveProperty("nextVersion");
   });
 
   it("is null for a turn that wrote no lesson", () => {
@@ -95,7 +100,7 @@ describe("cardStatesOf (S7)", () => {
   it("makes the living card working while a later turn is open", () => {
     const states = cardStatesOf([upTo("long-turn"), upTo("plan-and-cite", 6)]);
     expect(states.map((s) => s?.kind)).toEqual(["working", undefined]);
-    expect(states[0]).toMatchObject({ version: 12, nextVersion: 13 });
+    expect(states[0]).toMatchObject({ version: 12, kind: "working" });
   });
 
   it("leaves the newest card living, and not ready, when a later turn holds only the parent's patch", () => {
@@ -109,5 +114,16 @@ describe("cardStatesOf (S7)", () => {
     // The lesson changed after its check, so the living card is fix, never ready (dl-uukj.47.71.15).
     expect(states.map((s) => s?.kind)).toEqual(["fix", undefined]);
     expect(states[0]).toMatchObject({ version: 2, findings: [] });
+  });
+});
+
+describe("plainPrompt (delta C3)", () => {
+  it("reads a prompt as plain text: no marks, signs as signs, a gap as …, one line", () => {
+    expect(plainPrompt("Ile to $2 \\times 3$?")).toBe("Ile to 2 × 3?");
+    expect(plainPrompt("**Uzupełnij**: 2, 4, 6, {g1}")).toBe("Uzupełnij: 2, 4, 6, …");
+    expect(plainPrompt("Policz *jabłka*\nna `stole`.")).toBe("Policz jabłka na stole.");
+    expect(plainPrompt("Co to [suma](def: wynik dodawania)? ![kot](kot.png)")).toBe("Co to suma?");
+    expect(plainPrompt("$12 \\div 4 = \\square$")).toBe("12 ÷ 4 = …");
+    expect(plainPrompt("liczba_parzysta")).toBe("liczba_parzysta");
   });
 });

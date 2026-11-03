@@ -782,7 +782,6 @@
   "chat_lesson_card": "Lesson ready",
   "chat_lesson_card_open": "Preview",
   "chat_lesson_card_open_named": "Preview the lesson: {title}",
-  "chat_lesson_card_first": "First: {say}",
   "chat_lesson_card_steps": [
     {
       "declarations": ["input n", "local q_noun = n: plural"],
@@ -1428,10 +1427,21 @@
   "chat_queue_now": "Send now",
   "chat_queue_photos_wait": "I'll send photos after this answer.",
   "chat_newest": "Newest",
-  "card_ready": "Lesson ready",
-  "card_fix": "Lesson needs fixing",
-  "card_working": "Version {n} · Jadwigo is making version {next}",
-  "card_superseded": "version {n} · newer exists",
+  "card_superseded": "a newer version exists",
+  "card_tag_ready": "Ready",
+  "card_tag_fix": "Needs fixing",
+  "card_tag_working": "Changing…",
+  "card_count": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} question",
+        "q_noun=other": "{n} questions"
+      }
+    }
+  ],
+  "card_more_questions": "+{n} more",
   "card_open_version": "Open this version",
   "card_expand": "Expand lesson",
   "card_collapse": "Collapse lesson",
@@ -1447,7 +1457,7 @@
     }
   ],
   "card_fix_action": "Fix it for me",
-  "lesson_pane_band": "Jadwigo is changing this lesson. Version {n} will appear here.",
+  "lesson_pane_band": "Jadwigo is changing this lesson. Changes will appear here.",
   "lesson_tag_new": "new",
   "lesson_tag_changed": "changed",
   "rating_label": "This lesson is",
