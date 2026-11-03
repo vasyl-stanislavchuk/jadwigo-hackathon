@@ -106,6 +106,7 @@ export function LessonPane({
   outcomeOf,
   ghosts = 0,
   withChild = false,
+  bare = false,
 }: {
   /** The parent's language, for the pane's own words. */
   language: Language;
@@ -133,13 +134,15 @@ export function LessonPane({
   ghosts?: number;
   /** The lesson is for a child, so an opened step shows its skill (handoff §5.5). */
   withChild?: boolean;
+  /** In the preview, whose title names the lesson (dl-1eieq.1): no heading or title of its own. */
+  bare?: boolean;
 }): ReactElement {
   const say: Say = (key, vars = {}) => copy(language, key, vars, "adult");
   // The pane's chrome is an adult's (the kit draws flat at the parent's sizes); each step's preview
   // sets the child's register back, so what the child will see stays theirs.
   const body = (
     <section aria-label={say("chat_lesson_title")} className="flex min-h-0 flex-col gap-4">
-      <h2 className="text-jw-page-h2 font-semibold">{say("chat_lesson_title")}</h2>
+      {!bare && <h2 className="text-jw-page-h2 font-semibold">{say("chat_lesson_title")}</h2>}
       {lesson === null ? (
         ghosts > 0 ? (
           <ol className="flex flex-col gap-2" data-steps>
@@ -162,6 +165,7 @@ export function LessonPane({
           outcomeOf={outcomeOf ?? (() => "pending")}
           ghosts={ghosts}
           withChild={withChild}
+          bare={bare}
         />
       )}
     </section>
@@ -205,6 +209,7 @@ function Revision({
   outcomeOf,
   ghosts,
   withChild,
+  bare,
 }: {
   lesson: NonNullable<RunView["lesson"]>;
   say: Say;
@@ -216,6 +221,7 @@ function Revision({
   outcomeOf: (event_id: string) => PatchOutcome;
   ghosts: number;
   withChild: boolean;
+  bare: boolean;
 }): ReactElement {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const read = readDraft(lesson.lesson_file);
@@ -246,7 +252,9 @@ function Revision({
   return (
     <div data-revision={lesson.revision} className="flex flex-col gap-4 overflow-y-auto">
       <div className="flex flex-col gap-1">
-        <h3 className="min-w-0 text-jw-page-h1 font-semibold break-words">{file.title}</h3>
+        {!bare && (
+          <h3 className="min-w-0 text-jw-page-h1 font-semibold break-words">{file.title}</h3>
+        )}
         <div className="flex items-center gap-2">
           <span className="text-jw-page-small text-muted-foreground">
             {say("chat_lesson_revision", { n: lesson.revision })}

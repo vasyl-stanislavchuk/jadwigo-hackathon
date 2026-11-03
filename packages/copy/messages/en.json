@@ -773,8 +773,8 @@
   "chat_learner_open": "Details: {name}",
   "chat_learner_open_page": "Child's page: {name}",
   "chat_lesson_card": "Lesson ready",
-  "chat_lesson_card_open": "Open",
-  "chat_lesson_card_open_named": "Open the lesson: {title}",
+  "chat_lesson_card_open": "Preview",
+  "chat_lesson_card_open_named": "Preview the lesson: {title}",
   "chat_lesson_card_first": "First: {say}",
   "chat_lesson_card_steps": [
     {
