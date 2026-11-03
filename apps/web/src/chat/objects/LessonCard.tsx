@@ -183,50 +183,53 @@ export function LessonCard({
       data-card-state={state.kind}
       data-revision={state.version}
     >
-      <div className="flex w-full items-start gap-3 px-4 py-3.5 max-sm:pr-3 max-sm:pl-3">
+      {/* One grid, so the one open button moves rather than doubles: on a laptop it sits beside
+          the tag; on a phone it is a plain chevron at the right of the prompts (delta, 390). */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-start gap-x-2 px-4 py-3.5 max-sm:px-3">
         <span
           aria-hidden
-          className="grid size-8 shrink-0 place-items-center rounded-jw-control bg-jw-hover"
+          className="row-span-2 mr-1 grid size-8 shrink-0 place-items-center rounded-jw-control bg-jw-hover"
         >
           <BookOpenIcon className="size-4 text-jw-ink" />
         </span>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex items-start gap-2">
-            <span
-              className="min-w-0 flex-1 text-base leading-snug font-semibold text-jw-ink max-sm:line-clamp-2 sm:truncate"
-              data-card-title
+        <span
+          className="col-start-2 min-w-0 text-base leading-snug font-semibold text-jw-ink max-sm:line-clamp-2 sm:truncate"
+          data-card-title
+        >
+          {title}
+        </span>
+        {/* The one place the state is written (C4). */}
+        <Badge
+          variant="secondary"
+          className="col-start-3 h-6 gap-1 rounded-jw-control border-0 bg-jw-hover px-2 py-0 text-xs font-medium text-jw-ink sm:-mt-0.5 [&>svg]:size-3"
+          data-card-tag={state.kind}
+        >
+          <tag.Icon aria-hidden className={tag.tone} />
+          {say(tag.key)}
+        </Badge>
+        {/* The one way into the lesson: the preview opens over the chat, never beside it. */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => onOpen(object)}
+              aria-label={openName}
+              className="col-start-4 row-start-1 size-8 min-h-8 min-w-8 sm:-mt-1 max-sm:row-start-2 max-sm:size-9 max-sm:min-h-9 max-sm:min-w-9 max-sm:self-center max-sm:border-transparent max-sm:bg-transparent"
+              data-open-object={`${object.kind}:${object.id}`}
+              data-expand
             >
-              {title}
-            </span>
-            {/* The one place the state is written (C4). */}
-            <Badge
-              variant="secondary"
-              className="h-6 gap-1 rounded-jw-control border-0 bg-jw-hover px-2 py-0 text-xs font-medium text-jw-ink sm:-mt-0.5 [&>svg]:size-3"
-              data-card-tag={state.kind}
-            >
-              <tag.Icon aria-hidden className={tag.tone} />
-              {say(tag.key)}
-            </Badge>
-            {/* The one way into the lesson: the preview opens over the chat, never beside it. */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => onOpen(object)}
-                  aria-label={openName}
-                  className="size-8 min-h-8 min-w-8 max-sm:size-9 max-sm:min-h-9 max-sm:min-w-9 sm:-mt-1"
-                  data-open-object={`${object.kind}:${object.id}`}
-                  data-expand
-                >
-                  <Maximize2Icon aria-hidden className="size-4 max-sm:hidden" />
-                  <ChevronRightIcon aria-hidden className="size-4 sm:hidden" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{say("chat_lesson_card_open")}</TooltipContent>
-            </Tooltip>
-          </div>
+              <Maximize2Icon aria-hidden className="size-4 max-sm:hidden" />
+              <ChevronRightIcon aria-hidden className="size-4 sm:hidden" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{say("chat_lesson_card_open")}</TooltipContent>
+        </Tooltip>
+        <div
+          className="col-span-3 col-start-2 flex min-w-0 flex-col max-sm:col-span-2"
+          data-card-body
+        >
           {state.count > 0 && (
             <span
               className="mt-0.5 text-jw-page-small text-jw-ink-soft tabular-nums"
@@ -312,22 +315,33 @@ function FixFoot({
       data-card-actions
       data-fix-foot
     >
-      <p className="mr-auto text-jw-page-small text-jw-ink-soft" data-fix-reason>
+      {/* On a phone: the reason on its own row, then Popraw za mnie wide and Daj lekcję beside it,
+          both 44 tall (delta card-needs-fixing-390). */}
+      <p className="mr-auto text-jw-page-small text-jw-ink-soft max-sm:basis-full" data-fix-reason>
         {reason}
       </p>
-      <DisabledReason reason={count > 0 ? say("card_fix_reason_short", { n: count }) : reason}>
+      <DisabledReason
+        reason={count > 0 ? say("card_fix_reason_short", { n: count }) : reason}
+        className="max-sm:order-2"
+      >
         <Button
           type="button"
           variant="secondary"
           size="control"
-          className="text-jw-placeholder"
+          className="text-jw-placeholder max-sm:min-h-11"
           data-give
         >
           {say("parent_give")}
         </Button>
       </DisabledReason>
       {onFix !== undefined && (
-        <Button type="button" size="control" onClick={onFix} data-fix>
+        <Button
+          type="button"
+          size="control"
+          className="max-sm:order-1 max-sm:min-h-11 max-sm:flex-1"
+          onClick={onFix}
+          data-fix
+        >
           <PencilIcon aria-hidden className="size-4" />
           {say("card_fix_action")}
         </Button>
