@@ -4,6 +4,7 @@ import { parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import { describe, expect, it } from "vitest";
 import { contextFor, runId } from "../testing/context.ts";
 import { type BankPort, createVerbs, fixtureBank } from "./index.ts";
+import { lessonSkillIds } from "./lesson.ts";
 import { type VerbContext, type VerbEffect, VerbError } from "./types.ts";
 
 const DRAFT = { request: "a short lesson", grade: "1", names: [], topic: "addition" };
@@ -65,6 +66,25 @@ describe("lesson_draft", () => {
     expect(steps).toHaveLength(3);
     expect(steps[0]).toMatchObject({ say: "What is 12 - 5?" });
     expect(check(lesson_file).ok).toBe(true);
+  });
+
+  it("drops the bank's proposed: mark from a step's skill ids, so the check passes (dl-hin8.26)", async () => {
+    const { lesson_file } = await drafted({ ...DRAFT, topic: "subtraction" });
+    const steps = stepsOf(lesson_file);
+    expect(steps[0]).toMatchObject({ skill_ids: ["math.sub.within-20"] });
+    expect(check(lesson_file)).toMatchObject({ ok: true, findings: [] });
+  });
+
+  it("keeps a bank skill id only once it passes SkillId, each once", () => {
+    expect(
+      lessonSkillIds([
+        "proposed:maths.addition.add-1-or-10-mentally",
+        "maths.addition.add-1-or-10-mentally",
+        "set_khan_x46f76d31",
+        "proposed:Not An Id",
+        "math.add.within-20",
+      ]),
+    ).toEqual(["maths.addition.add-1-or-10-mentally", "math.add.within-20"]);
   });
 
   it("refuses input it does not take, a pod above all", async () => {

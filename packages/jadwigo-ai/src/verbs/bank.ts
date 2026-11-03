@@ -4,7 +4,7 @@
  * kinds of question it holds. The runner never calls it. `apiBank` (bank-api.ts) is the real bank;
  * `fixtureBank` is the dev page's and the tests'.
  */
-import { familyOf, QuestionType } from "@jadwigo/contracts";
+import { familyOf, PROPOSED_SKILL_MARK, QuestionType } from "@jadwigo/contracts";
 
 export type BankLanguage = "pl" | "uk" | "en";
 
@@ -136,7 +136,8 @@ const SETS: readonly FixtureSet[] = [
     set_id: "set_fixture-sub-20",
     op: "-",
     question_type: "production",
-    skill: "math.sub.within-20",
+    // Marked as the prod bank marks a skill its enrichment proposed (dl-hin8.26): a draft drops it.
+    skill: "proposed:math.sub.within-20",
     grades: ["1", "2"],
     words: [
       "subtract",
@@ -284,7 +285,9 @@ function questionOf(set: FixtureSet, index: number, language: BankLanguage): Ban
 function score(set: FixtureSet, query: BankQuery): number {
   const need = (query.words ?? "").toLowerCase();
   const words = set.words.filter((w) => need.includes(w)).length;
-  const skills = query.skills.filter((s) => s === set.skill).length;
+  const bare = (s: string) =>
+    s.startsWith(PROPOSED_SKILL_MARK) ? s.slice(PROPOSED_SKILL_MARK.length) : s;
+  const skills = query.skills.filter((s) => bare(s) === bare(set.skill)).length;
   const grade = set.grades.includes(query.grade) ? 1 : 0;
   return 2 * (words + 2 * skills) + grade;
 }
