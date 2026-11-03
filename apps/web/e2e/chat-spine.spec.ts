@@ -228,9 +228,6 @@ for (const size of SIZES) {
     test("s06: the second visit of a stage reads 'drugi raz' (dl-uukj.47.71.36)", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.36: every call lands one stage early, so the check's second visit
-      // never opens its stage. Remove this mark in the PR that fixes it.
-      test.fail();
       await atSecondCheck(page, size);
       await expect(spineOf(page).getByText("drugi raz")).toBeVisible();
     });
@@ -283,8 +280,6 @@ for (const size of SIZES) {
     test("s11: the retry is a quiet line in the open stage (dl-uukj.47.71.36)", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.36: the retry lands in the stage before. Remove this mark then.
-      test.fail();
       await atRetry(page, size);
       await expect(
         spineOf(page).locator("[data-stage='active'] [data-line='retry']"),
@@ -357,8 +352,6 @@ for (const size of SIZES) {
     test("s14: the running stage takes the square, the rest stay hollow (dl-uukj.47.71.37)", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.37. Remove this mark in the PR that fixes it.
-      test.fail();
       await stopped(page, size);
       await expect(spineOf(page).locator("[data-stage='stopped']")).toHaveCount(1);
       await expect(spineOf(page).locator("[data-stage='failed']")).toHaveCount(0);
@@ -379,8 +372,6 @@ for (const size of SIZES) {
     });
 
     test("s14: no reply under a turn stopped mid-call (dl-uukj.47.71.38)", async ({ page }) => {
-      // Red until dl-uukj.47.71.38: the sentence before the held call shows as the reply.
-      test.fail();
       await stopped(page, size);
       await expect(chatOf(page).locator("[data-reply='current']")).toHaveCount(0);
     });
@@ -446,8 +437,6 @@ for (const size of SIZES) {
     test("s18: a steer is a line in the open stage, in the parent's words (dl-uukj.47.71.36)", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.36: the steer lands in the stage before. Remove this mark then.
-      test.fail();
       await open(page, "s18", size);
       await expect(spineOf(page)).not.toHaveAttribute("data-spine", /done|queued/, {
         timeout: 20_000,
