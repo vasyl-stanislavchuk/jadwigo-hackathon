@@ -1530,6 +1530,7 @@
   "card_expand": "Rozwiń lekcję",
   "card_collapse": "Zwiń lekcję",
   "card_fix_reason": "Daj lekcję będzie można, gdy zadania będą poprawione.",
+  "card_unchecked_reason": "Ta wersja nie została sprawdzona. „Popraw za mnie” sprawdzi ją i poprawi.",
   "card_fix_reason_short": [
     {
       "declarations": ["input n", "local q_noun = n: plural"],

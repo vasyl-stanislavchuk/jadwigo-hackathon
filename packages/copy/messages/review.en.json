@@ -1025,6 +1025,7 @@
   "card_expand": false,
   "card_collapse": false,
   "card_fix_reason": false,
+  "card_unchecked_reason": false,
   "card_fix_reason_short": false,
   "card_fix_action": false,
   "lesson_pane_band": false,

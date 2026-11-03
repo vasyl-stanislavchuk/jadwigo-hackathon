@@ -1462,6 +1462,7 @@
   "card_expand": "Expand lesson",
   "card_collapse": "Collapse lesson",
   "card_fix_reason": "You can give the lesson once the questions are fixed.",
+  "card_unchecked_reason": "This version hasn't been checked. “Fix it for me” will check and fix it.",
   "card_fix_reason_short": [
     {
       "declarations": ["input n", "local q_noun = n: plural"],

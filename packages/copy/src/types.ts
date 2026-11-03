@@ -1127,6 +1127,7 @@ export const COPY_KEYS = [
   "card_expand",
   "card_collapse",
   "card_fix_reason",
+  "card_unchecked_reason",
   "card_fix_reason_short",
   "card_fix_action",
   "lesson_pane_band",
