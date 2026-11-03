@@ -342,12 +342,20 @@ function shownWidgets(turn: Turn, language: Language, context: LineContext) {
  * answer, an error's own message (it can quote input), nor the plan's words (the model's prose may
  * name the child). Only these fields are read, so nothing new in the log can leak in.
  */
+/**
+ * An error's type as support reads it: a code such as `bank-busy` or `StepFailed`. The contract
+ * types it as any string, so one that is not code-shaped (a sentence a verb put there) is `other`.
+ */
+const CODE = /^[A-Za-z][\w-]{0,39}$/;
+const codeOf = (type: string): string => (CODE.test(type) ? type : "other");
+
 function supportDetails(turn: Turn): string {
   const events = eventsOf(turn);
   const errors = events.flatMap((e) => {
-    if (e.type === "error") return [`${e.payload.error.type} (attempt ${e.payload.attempt})`];
+    if (e.type === "error")
+      return [`${codeOf(e.payload.error.type)} (attempt ${e.payload.attempt})`];
     if (e.type === "tool_result" && e.payload.error !== null)
-      return [`${e.payload.verb} ${e.payload.error.type}`];
+      return [`${e.payload.verb} ${codeOf(e.payload.error.type)}`];
     return [];
   });
   const plan = events.findLast((e) => e.type === "plan");
