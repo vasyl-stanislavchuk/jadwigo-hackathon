@@ -440,6 +440,27 @@ describe("one question number everywhere: the card, its findings and the preview
     expect(findings).toEqual([3, 3]);
   });
 
+  it("a step that cannot be drawn yet keeps its row, so nothing after it renumbers (steward on #814)", () => {
+    const file = timesFour((steps) => {
+      const s03 = steps.find((s) => s["id"] === "s03");
+      if (s03 !== undefined) (s03["question"] as Record<string, unknown>)["family"] = "nope";
+    });
+    const { findings, cardRow, paneRow } = numbers(file, "s06");
+    expect(paneRow).toBe("3");
+    expect(cardRow).toBe("3");
+    expect(findings).toEqual([3, 3]);
+    // A finding on the step that cannot be drawn reads its own row's number, 2.
+    const state = cardStateOf(checked(file, [finding("s03")]));
+    expect(state?.kind === "fix" ? state.findings.map((f) => f.step) : null).toEqual([2]);
+    render(
+      <LessonPane
+        language="pl"
+        lesson={{ revision: 1, lesson_file: file } as NonNullable<RunView["lesson"]>}
+      />,
+    );
+    expect(document.querySelector("[data-step='s03'] .tabular-nums")?.textContent).toBe("2");
+  });
+
   it("an empty prompt before it renumbers nothing", () => {
     const file = timesFour((steps) => {
       const s03 = steps.find((s) => s["id"] === "s03");

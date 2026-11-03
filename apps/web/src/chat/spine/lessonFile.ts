@@ -28,22 +28,24 @@ function steps(file: unknown): { id: string; step: Fields }[] {
 /** The step ids of the file, in lesson order. */
 export const stepIds = (file: unknown): string[] => steps(file).map((s) => s.id);
 
-/** The file's question steps in lesson order, as the preview modal lists them; none unread. */
-function questionsOf(file: unknown) {
+/**
+ * The file's rows in lesson order, exactly as the preview modal (LessonPane) lists and numbers them:
+ * every entry `lessonFileToSpecs` gives, a question or a step it cannot draw yet (skipped); a
+ * narration line is none. None while the file does not read.
+ */
+function rowsOf(file: unknown) {
   const read = readDraft(file);
   if ("error" in read) return [];
-  return lessonFileToSpecs(read.file, undefined, read.skipped)
-    .flatMap((p) => p.steps)
-    .flatMap((s) => (s.kind === "question" ? [s] : []));
+  return lessonFileToSpecs(read.file, undefined, read.skipped).flatMap((p) => p.steps);
 }
 
 /**
- * A question's number from 1, the one the parent and the child see: its place among the lesson's
- * questions, as the preview modal (LessonPane) numbers its rows, so a narration step before it never
- * moves it (dl-uukj.47.71.32). Null for a step that is no question, or not in the file.
+ * A step's number from 1, the one the parent and the child see: its row in the preview modal
+ * (LessonPane numbers every row with i + 1), so a narration line before it never moves it and a
+ * step that cannot be drawn yet keeps its place (dl-uukj.47.71.32). Null for a step with no row.
  */
 export function positionOf(file: unknown, id: string): number | null {
-  const at = questionsOf(file).findIndex((q) => q.step_id === id);
+  const at = rowsOf(file).findIndex((row) => row.step_id === id);
   return at === -1 ? null : at + 1;
 }
 
@@ -121,11 +123,15 @@ export interface LessonFacts {
 export function lessonFacts(file: unknown): LessonFacts {
   const id = isFields(file) && typeof file["id"] === "string" ? file["id"] : "";
   const title = titleOf(file);
-  const questions = questionsOf(file);
-  // Each row keeps its question's own number, so a prompt with no words never renumbers the rest.
-  const preview = questions
-    .map((q, i) => ({ place: i + 1, prompt: plainPrompt(q.spec.say) }))
+  const rows = rowsOf(file);
+  // Each prompt keeps its row's own number in the modal, so neither a prompt with no words nor a
+  // step that cannot be drawn yet renumbers the rest.
+  const preview = rows
+    .flatMap((row, i) =>
+      row.kind === "question" ? [{ place: i + 1, prompt: plainPrompt(row.spec.say) }] : [],
+    )
     .filter((row) => row.prompt !== "")
     .slice(0, PREVIEW);
+  const questions = rows.filter((row) => row.kind === "question");
   return { id, title, count: questions.length, preview };
 }
