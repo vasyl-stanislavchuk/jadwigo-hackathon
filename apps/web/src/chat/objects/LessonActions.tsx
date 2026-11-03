@@ -1,18 +1,21 @@
 /**
- * The lesson's actions in the foot of the newest lesson card (dl-uukj.47.55; decision
+ * The lesson's actions in the foot of the newest lesson card, and again in the foot of its preview
+ * (dl-1eieq.1): Daj lekcję, Drukuj, and Zapisz na później as a quiet link (dl-uukj.47.55; decision
  * 2026-11-02-the-parent-app-is-chat-first-account-in-the-top-bar-lesson-on-de, dl-hz9ks: "Actions
  * on how and when to give a lesson are going to be available directly within the chat"). What the
  * workspace's footer held before #740 (dl-z5ja.108.1.1), moved into the chat:
  *
  *   Dla kogo   who the lesson is for: the Dla child's name, or "Bez dziecka"
- *   Zapisz na później   to the family's lessons
- *   Wydrukuj   the lesson's sheet, printed in place (LessonPrint), once the lesson's latest check
+ *   Drukuj   the lesson's sheet, printed in place (LessonPrint), once the lesson's latest check
  *              passed: an unchecked sheet could reach a child on paper (steward, #747)
  *   Daj lekcję / Daj lekcję · {imię}   the one primary, quiet with its reason until the lesson's
  *              latest check passed, never a silent grey. With a child it gives the lesson to that
  *              child (POST /api/v1/conversations/{id}/lessons) and says where it waits. With no
  *              child it opens 2 choices: "Otwórz na tym komputerze" (gives it to nobody in
- *              particular and opens the player) and "Wydrukuj" (LessonPrint).
+ *              particular and opens the player) and "Drukuj" (LessonPrint).
+ *   Zapisz na później   to the family's lessons, a quiet link after the 2
+ *
+ * Drukuj prints in place until the server's PDF (dl-1eieq.2) replaces `print`.
  *
  * What the lesson practises is not here yet: the lesson file names skill ids, and wording them for a
  * parent needs the catalogue's can-do lines (dl-hin8.21).
@@ -119,9 +122,6 @@ export function LessonActions({
         >
           {child === null ? t("parent_give") : t("parent_give_child", { name: child.first_name })}
         </Button>
-        <Button type="button" variant="outline" size="control" onClick={onSave} data-save>
-          {t("parent_save")}
-        </Button>
         <Button
           type="button"
           variant="outline"
@@ -136,6 +136,17 @@ export function LessonActions({
           data-print
         >
           {t("parent_print")}
+        </Button>
+        {/* Quiet beside the 2 that act now (owner, 2026-11-03): the lesson is in Lekcje either way. */}
+        <Button
+          type="button"
+          variant="link"
+          size="control"
+          className="ml-auto"
+          onClick={onSave}
+          data-save
+        >
+          {t("parent_save")}
         </Button>
       </div>
       {giveReason !== null && (

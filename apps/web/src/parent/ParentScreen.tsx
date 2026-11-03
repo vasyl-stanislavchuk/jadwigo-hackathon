@@ -112,7 +112,6 @@ import type { Place } from "./shell/Sidebar.tsx";
 import { learnerTone } from "./tone.ts";
 import { browserEngine, firstMessage, type LessonEngine } from "./workspace/engine.ts";
 import { LessonWorkspace } from "./workspace/LessonWorkspace.tsx";
-import { ChatFoldToggle, LessonToggle } from "./workspace/Workspace.tsx";
 
 /** The parent's page: the app page's prose column. */
 /** A parent page: the prose column, or a wider one for a list that needs the room (Lekcje). */
@@ -847,8 +846,6 @@ function SignedIn({
           api={api}
           readAttachment={readAttachment}
         />,
-        <ChatFoldToggle language={language} />,
-        <LessonToggle language={language} />,
       );
     }
     case "history":
