@@ -972,6 +972,9 @@ export const COPY_KEYS = [
   // end the chat page
   // a parent's photos (dl-z5ja.11.5)
   "attach_photo_alt",
+  "chat_photos_received",
+  "chat_photo_open",
+  "chat_photo_unloaded",
   "attach_uploading",
   "attach_retry",
   "attach_unreadable",

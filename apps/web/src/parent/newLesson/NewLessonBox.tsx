@@ -40,6 +40,7 @@ import {
   useState,
 } from "react";
 import { AttachmentChips } from "../../chat/attachments/AttachmentChips.tsx";
+import { keepSent } from "../../chat/attachments/sentPreviews.ts";
 import { admit, PhotoUpload, type UploadDeps } from "../../chat/attachments/upload.ts";
 import { CATEGORY } from "../adult.ts";
 import { AboutJadwigoAi } from "./AboutJadwigoAi.tsx";
@@ -174,6 +175,13 @@ export function NewLessonBox({
     const attachmentIds = views.flatMap((view) =>
       view.attachmentId === null ? [] : [view.attachmentId],
     );
+    // The thread shows each sent photo from its local copy until the stored one loads (dl-z5ja.11.6).
+    for (const upload of uploads) {
+      const id = upload.get().attachmentId;
+      if (id === null) continue;
+      const preview = upload.handOff();
+      if (preview !== null) keepSent(id, preview);
+    }
     newLessonDraft.clear();
     onSend({ text: text.trim(), attachmentIds, learner: forLearner });
   };

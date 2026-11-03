@@ -63,6 +63,7 @@ import {
   useState,
 } from "react";
 import { browserDeps } from "../chat/attachments/browser.ts";
+import type { ReadAttachment } from "../chat/attachments/ThreadAttachments.tsx";
 import type { UploadDeps } from "../chat/attachments/upload.ts";
 import { ConsentScreen, giveConsent } from "../chat/ConsentScreen.tsx";
 import { newEventId } from "../chat/ids.ts";
@@ -182,6 +183,11 @@ export function ParentScreen({
     () => (client ? null : browserDeps(own)),
     [client, own],
   );
+  // A sent photo's link reads through the page's own client too (dl-z5ja.11.6); a test's has none.
+  const readAttachment = useMemo<ReadAttachment | null>(
+    () => (client ? null : (id) => own.getAttachment(id)),
+    [client, own],
+  );
   const podApi: PodClient | null = pods ?? (client ? null : own);
   const listApi = lessons ?? (client ? null : own);
   const route = parentRoute(useLocation().path);
@@ -247,6 +253,7 @@ export function ParentScreen({
       conversations={listApi}
       engine={engine}
       uploadDeps={uploadDeps}
+      readAttachment={readAttachment}
       language={language}
       route={route ?? { kind: "home" }}
       learner={learnerOf(query)}
@@ -531,6 +538,7 @@ function SignedIn({
   conversations,
   engine,
   uploadDeps,
+  readAttachment,
   language,
   route,
   learner,
@@ -544,6 +552,8 @@ function SignedIn({
   engine: LessonEngine | null;
   /** What the first screen's photos upload through; null keeps them off. */
   uploadDeps: UploadDeps | null;
+  /** How the thread reads a sent photo's link; null shows no photos under a message. */
+  readAttachment: ReadAttachment | null;
   language: Language;
   route: ParentRoute;
   /** The attempt page's ?learner. */
@@ -831,6 +841,7 @@ function SignedIn({
           onForChange={setForLearner}
           onAddChild={() => setAdding("dla")}
           api={api}
+          readAttachment={readAttachment}
         />,
         <ChatFoldToggle language={language} />,
         <LessonToggle language={language} />,

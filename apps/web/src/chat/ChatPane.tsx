@@ -52,6 +52,7 @@ import {
 import { ChatMarkdown } from "./ChatMarkdown.tsx";
 import { type ChooseAnswers, ChooseForm, recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
+import { type ReadAttachment, ThreadAttachments } from "./attachments/ThreadAttachments.tsx";
 import { isOpen, type SendLimit, type Turn } from "./conversation.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
 import { CitationChips } from "./objects/CitationChips.tsx";
@@ -323,11 +324,13 @@ function RowView({
   run,
   language,
   context,
+  readAttachment,
 }: {
   row: Row;
   run: RunId;
   language: Language;
   context: LineContext;
+  readAttachment?: ReadAttachment | undefined;
 }) {
   switch (row.kind) {
     case "message": {
@@ -352,9 +355,18 @@ function RowView({
               {copy(language, "chat_from_parent", {}, "adult")}
               {steer !== null && ` · ${steer}`}
             </p>
-            <p className={PARENT_BOX} data-bubble>
-              {row.text}
-            </p>
+            {row.text !== "" && (
+              <p className={PARENT_BOX} data-bubble>
+                {row.text}
+              </p>
+            )}
+            {readAttachment !== undefined && (
+              <ThreadAttachments
+                language={language}
+                attachments={row.attachments}
+                read={readAttachment}
+              />
+            )}
           </div>
         );
       return (
@@ -663,6 +675,11 @@ export interface ChatPaneProps {
   onOpen?: ((object: ObjectRef) => void) | undefined;
   /** The lesson's actions (dl-uukj.47.55), in the foot of the newest lesson card only. */
   lessonActions?: ReactNode;
+  /**
+   * Reads a sent photo's link (dl-z5ja.11.6): with it, a parent's message shows what Jadwigo
+   * received under the bubble.
+   */
+  readAttachment?: ReadAttachment | undefined;
 }
 
 export function ChatPane({
@@ -693,6 +710,7 @@ export function ChatPane({
   lessonObject,
   onOpen,
   lessonActions,
+  readAttachment,
 }: ChatPaneProps): ReactElement {
   /** The choose forms answered on this page, by call: their recap shows until the log has one. */
   const [chosen, setChosen] = useState<Readonly<Record<string, ChooseAnswers>>>({});
@@ -824,6 +842,7 @@ export function ChatPane({
                   run={turn.run.id}
                   language={language}
                   context={lineContext}
+                  readAttachment={readAttachment}
                 />
               </li>
             ),

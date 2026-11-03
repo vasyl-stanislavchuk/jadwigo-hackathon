@@ -1,3 +1,4 @@
+import { AttachmentId, ID_PREFIXES, idOf } from "@jadwigo/contracts";
 import type { Run } from "@jadwigo/contracts/run";
 import { RUN_ERROR_TYPE, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { foldRun, type RunView } from "@jadwigo/core";
@@ -671,5 +672,43 @@ describe("the context chip and the footnote (dl-uukj.47.32)", () => {
     pane({ variant: "parent" });
     expect(document.querySelector("[data-footnote]")).toBeNull();
     expect(screen.queryByText(/może się mylić/)).toBeNull();
+  });
+});
+
+const ATTACHMENT = AttachmentId.parse(
+  idOf(ID_PREFIXES.attachment, "0b8f4c3e-6a1d-4f2b-9c7e-1d2e3f4a5b6c"),
+);
+
+describe("what Jadwigo received under a parent's message (dl-z5ja.11.6)", () => {
+  const attach = (view: RunView) => {
+    const first = view.chat.find((item) => item.kind === "message" && item.from === "parent");
+    if (first?.kind !== "message") throw new Error("the golden log has no parent message");
+    first.attachments = [
+      {
+        attachment_id: ATTACHMENT,
+        storage_path: "pods/pod_made_up/attachments/atch_1.jpg",
+        media_type: "image/jpeg",
+        bytes: 1000,
+        width: 800,
+        height: 600,
+      },
+    ];
+  };
+
+  it("shows the message's photos as a strip under its bubble when the pane can read them", () => {
+    const readAttachment = vi.fn(() => new Promise<never>(() => {}));
+    pane({ variant: "parent", turns: [turnOf("happy-turn", attach)], readAttachment });
+    const row = document.querySelector("[data-from='parent']") as HTMLElement;
+    expect(within(row).getByText("Tak Jadwigo widzi zdjęcia")).toBeTruthy();
+    expect(row.querySelectorAll("[data-attachment]")).toHaveLength(1);
+    expect(readAttachment).toHaveBeenCalledWith(ATTACHMENT);
+  });
+
+  it("shows no strip without a way to read them, and none for a message with no photos", () => {
+    pane({ variant: "parent", turns: [turnOf("happy-turn", attach)] });
+    expect(document.querySelector("[data-thread-attachments]")).toBeNull();
+    cleanup();
+    pane({ variant: "parent", turns: [turnOf("happy-turn")], readAttachment: vi.fn() });
+    expect(document.querySelector("[data-thread-attachments]")).toBeNull();
   });
 });
