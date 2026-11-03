@@ -1,15 +1,71 @@
 ---
-title: "E3: dreaming, spark against wonder"
-description: Each learner's parent report written twice, by muse-spark and muse-wonder, and judged blind.
+title: "E3: dreaming, a contributor writes and judges"
+description: Each learner's parent report written by muse-spark on the API, checked by code, judged blind.
 ---
 
+import Diagram from "../../../components/Diagram.astro";
 import ExperimentResult from "../../../components/ExperimentResult.astro";
 
 This experiment is for a judge choosing the voice a parent hears: code digests each invented
-learner's work, 2 models write the narrative, and a blind panel scores accuracy, warmth and use to
-a parent.
+learner's work, 1 model writes the narrative, and a blind panel scores accuracy, warmth and use
+to a parent.
 
 <ExperimentResult id="e3" />
+
+The 12 invented learners of [E1](/experiments/e1/) were loaded into a local `jadwigo` database
+only, and `make dream` ran on each: code folds the evidence and computes the digest (counts,
+skills that moved, mistakes, the brief, proposals), and the narrative starts out empty.
+Following `/jadwigo-report-write`, `muse-spark-1.3-contributor` wrote each narrative through
+the Meta API and the product ledger. Code then scored every narrative with `narrative_check`
+(citations all in the digest, no invented numbers, no level names), and 3 blind judges on the
+same contributor model scored accuracy, warmth and usefulness from 1 to 5, never told who wrote
+what they read.
+
+<Diagram name="dream" caption="Code digests, AI narrates, the parent decides." />
+
+The run's first pass also wrote each narrative with `muse-wonder` and judged both with a wonder
+panel, before the owner's rule that scripted calls use the contributor models on the API. Those
+results are kept under `detail.wonder_comparison` in the JSON, and compared briefly below. What
+this seeds is the scheduled dream (`dl-e8ov.5.49`), the weekly parent report, and evidence for
+the report's model choice.
+
+## Every learner's report
+
+Findings are what code refused in the contributor's narrative; 0 means it could be saved as it
+stands. 2 of the 12 narratives never arrived as JSON, even after 1 retry.
+
+| Learner | Profile | Findings | Accuracy | Warmth | Usefulness |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Learner A | steady | 2 | 5 | 3.67 | 4.67 |
+| Learner B | forgetful | 1 | 5 | 2.67 | 4 |
+| Learner C | guesser | 2 | 4.67 | 3 | 4 |
+| Learner D | slow-then-click | 2 | 5 | 4 | 5 |
+| Learner E | help-heavy | no narrative | - | - | - |
+| Learner F | rusher | 2 | 3.33 | 3.67 | 4 |
+| Learner G | perfectionist | 2 | 5 | 4 | 4 |
+| Learner H | early-plateau | 0 | 5 | 3.67 | 4.67 |
+| Learner I | weekend-only | 2 | 4.67 | 4.33 | 5 |
+| Learner J | uneven | no narrative | - | - | - |
+| Learner K | comeback | 2 | 5 | 2.67 | 4 |
+| Learner L | new-and-keen | 1 | 5 | 4 | 5 |
+
+A brief comparison with the wonder run kept in the JSON:
+
+- As writers, the 2 models were close against code's checker: 1 of 12 contributor narratives
+  with no findings, 2 of 12 for wonder. The most common refusal for both was the same shape
+  slip: the standing answers came back with a `text` field where the schema's checker reads
+  `answer`, so 7 contributor narratives fail on form, not on facts.
+- As judges they were not the same. Contributor judges scored the contributor's narratives 4.77
+  for accuracy, 3.57 for warmth and 4.43 for usefulness. The wonder panel had scored the same
+  writer 3.85, 2.19 and 3, and wonder's own narratives 4.37, 2.5 and 3.2. A model judging its
+  own words reads warmer and more useful to itself; the numbers here say by how much.
+- One headline, 2 voices, for the steady learner. Contributor: "Dziecko rozwiązało 121 pytań, a
+  mnożenie przez 2, 3, 5 i 7 wymaga uwagi." Wonder: "Dziecko ćwiczy mnożenie i ortografię, a
+  mnożenie przez 2, przez 3, przez 5 i przez 7 wymaga uwagi." Both stay inside the digest;
+  neither names a level.
+- The ledger holds 49 contributor calls tagged for this experiment across both passes, 1.47M
+  input and 164k output tokens, $0.17 in all. A weekly report per learner is not a cost
+  problem; getting its shape right every time is the work that remains.
 
 ## Next
 
