@@ -28,6 +28,8 @@ export interface Preview {
   body: ReactNode;
   /** The lesson's actions, the same the card has; none for another thing. */
   actions?: ReactNode;
+  /** A running turn is changing the lesson: the band under the title (S20). */
+  band?: boolean | undefined;
 }
 
 export function Workspace({
@@ -62,6 +64,7 @@ export function Workspace({
         title={preview?.title ?? ""}
         language={language}
         {...(preview?.actions === undefined ? {} : { actions: preview.actions })}
+        band={preview?.band}
       >
         {preview?.body}
       </PreviewDialog>

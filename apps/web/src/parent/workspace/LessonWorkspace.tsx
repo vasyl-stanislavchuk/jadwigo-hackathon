@@ -26,11 +26,13 @@ import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef, useState } from "react";
 import type { ReadAttachment } from "../../chat/attachments/ThreadAttachments.tsx";
+import type { UploadDeps } from "../../chat/attachments/upload.ts";
 import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
-import { LessonPane } from "../../chat/LessonPane.tsx";
+import { addedSteps, LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
 import { type GiveState, LessonActions } from "../../chat/objects/LessonActions.tsx";
+import { lessonChanging } from "../../chat/objects/LessonCard.tsx";
 import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
 import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/registry.tsx";
 import { elapsedSeconds, phaseAnnouncement, usePhase } from "../../chat/phase.ts";
@@ -41,7 +43,7 @@ import { NavLink } from "../../nav/NavLink.tsx";
 import { playPath } from "../../play/route.ts";
 import { CATEGORY, pageLang } from "../adult.ts";
 import { DlaSelect } from "../newLesson/DlaSelect.tsx";
-import { lessonsPath, parentPath } from "../route.ts";
+import { parentPath } from "../route.ts";
 import { firstMessage, type LessonEngine } from "./engine.ts";
 import { useInspector } from "./inspector.ts";
 import { Workspace } from "./Workspace.tsx";
@@ -56,6 +58,7 @@ export function LessonWorkspace({
   onAddChild,
   api = null,
   readAttachment = null,
+  uploadDeps = null,
 }: {
   language: Language;
   /** The server's conversation: the route's id. */
@@ -72,6 +75,8 @@ export function LessonWorkspace({
   api?: ParentClient | null;
   /** Reads a sent photo's link for the thread (dl-z5ja.11.6); none shows no photos. */
   readAttachment?: ReadAttachment | null;
+  /** What a photo's upload runs on (dl-uukj.47.71.8): the chat's composer adds photos with it. */
+  uploadDeps?: UploadDeps | null;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string | number> = {}): string =>
     copy(language, key, vars, CATEGORY);
@@ -195,7 +200,15 @@ export function LessonWorkspace({
       ready={lesson.ready}
       child={child}
       lesson={lesson.shown}
-      onSave={() => navigate(lessonsPath({ lang: pageLang() }))}
+      forWhom={
+        <DlaSelect
+          language={language}
+          learners={learners}
+          value={forLearner}
+          onChange={onForChange}
+          onAddChild={onAddChild}
+        />
+      }
       given={given}
       {...(engine.give === null
         ? {}
@@ -229,7 +242,10 @@ export function LessonWorkspace({
       sendFailed={state.sendFailed}
       sendLimit={state.sendLimit}
       // Each message carries Dla as its page, as the first one did, so the run reads that child.
-      onSend={(text) => send(text, forLearner === null ? undefined : { learner_id: forLearner })}
+      onSend={(text, attachmentIds) =>
+        send(text, forLearner === null ? undefined : { learner_id: forLearner }, attachmentIds)
+      }
+      uploadDeps={uploadDeps ?? undefined}
       composerLead={
         <DlaSelect
           language={language}
@@ -294,6 +310,7 @@ export function LessonWorkspace({
                       language={language}
                       lesson={lesson.shown}
                       changed={lesson.changed}
+                      added={addedSteps(lesson.turns, lesson.changed)}
                       onUndo={lesson.onUndo}
                       undoRefused={lesson.undoRefused}
                       undoPending={lesson.undoPending}
@@ -305,6 +322,7 @@ export function LessonWorkspace({
                     />
                   ),
                 actions,
+                band: lessonChanging(lesson.turns),
               }
             : {
                 title: objectHeading(opened, panelPage),

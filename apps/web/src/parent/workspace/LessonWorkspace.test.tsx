@@ -290,7 +290,9 @@ function quietEngine() {
 const band = () => document.querySelector("[data-chat-band] [data-status]")?.textContent ?? "";
 const live = () => document.querySelector("[data-chat-band] [data-live]")?.textContent ?? "";
 const placeholder = () => document.querySelector("[data-lesson-waiting]")?.textContent ?? "";
-const activity = () => document.querySelector("[data-activity]")?.getAttribute("data-phase");
+/** The newest turn spine's phase (dl-uukj.47.71.3): the thread's one working indicator. */
+const activity = () =>
+  [...document.querySelectorAll("[data-spine]")].at(-1)?.getAttribute("data-spine") ?? null;
 const tick = async (ms: number) => {
   await act(async () => {
     vi.advanceTimersByTime(ms);
@@ -318,6 +320,9 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     expect(echo?.textContent).toBe("Odejmowanie przez 10");
     expect(band()).toMatch(/^W kolejce/);
     expect(activity()).toBe("queued");
+    // The page's one polite live region (§3, dl-uukj.47.71.10), saying only the live words.
+    expect(document.querySelectorAll("[aria-live]")).toHaveLength(1);
+    expect(live()).toBe("Jadwigo pracuje");
 
     const before = q.reads.runs;
     await tick(20_000);
@@ -332,9 +337,11 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     expect(band()).not.toMatch(/Nie udało się/);
     expect(live()).toBe("Utknęło");
     expect(screen.getByRole("button", { name: "Spróbuj ponownie" })).toBeTruthy();
-    expect(
-      document.querySelector("[data-row='stalled'] [data-details]")?.getAttribute("data-details"),
-    ).toBe(`run ${run.id}`);
+    // The spine's stalled foot (S11): Spróbuj ponownie and Czekaj dalej, no run id in view.
+    expect(document.querySelector("[data-foot='stalled']")?.textContent).toContain(
+      "Nic się nie dzieje od minuty.",
+    );
+    expect(screen.getByRole("button", { name: "Czekaj dalej" })).toBeTruthy();
   });
 
   it("comes back from slow when a late event arrives", async () => {
@@ -392,17 +399,16 @@ describe("one honest run state (dl-uukj.47.29)", () => {
     const q = quietEngine();
     firstMessage.put(CONVERSATION, "Odejmowanie przez 10");
     await workspace(q.engine);
-    for (const [wait, words] of [
-      [0, "W kolejce"],
-      [20_000, "To trwa dłużej niż zwykle"],
-      [40_000, "Utknęło"],
+    for (const [wait, words, spine] of [
+      [0, "W kolejce", "queued"],
+      [20_000, "To trwa dłużej niż zwykle", "slow"],
+      [40_000, "Utknęło", "stalled"],
     ] as const) {
       await tick(wait);
       expect(band().startsWith(words)).toBe(true);
       expect(placeholder()).toBe(words);
-      expect(
-        document.querySelector("[data-activity] [data-shimmer], [data-activity] span")?.textContent,
-      ).toBe(words);
+      // The thread's spine reads the same phase (dl-uukj.47.71.3).
+      expect(activity()).toBe(spine);
     }
     expect(live()).toBe("Utknęło");
   });

@@ -45,6 +45,8 @@
   /* The adult layer's field edge, a facet's dashed edge, and a checkbox's or radio's edge. */
   --jw-p-paper-250: #d9d3c6;
   --jw-p-paper-350: #b9b3a6;
+  /* The raised lesson card's outer edge (chat lesson card delta, 2026-11-03, dl-vxjv2). */
+  --jw-p-paper-400: #aaa395;
   --jw-p-paper-450: #8e897f;
   --jw-p-paper-500: #726f68;
   --jw-p-paper-600: #50535c;
@@ -164,6 +166,8 @@
   --jw-line: var(--jw-p-paper-200);
   /* A neutral outline under a mouse: it darkens to the soft ink. */
   --jw-line-strong: var(--jw-p-paper-600);
+  /* The one raised card's edge: the living lesson card in the chat, nothing else (dl-vxjv2). */
+  --jw-line-raised: var(--jw-p-paper-400);
   /* The one thing to press now, the edge it stands on, and the same action at rest. */
   --jw-act: var(--jw-p-ink-300);
   --jw-on-act: var(--jw-p-ink-900);
@@ -257,6 +261,7 @@
   --jw-placeholder: var(--jw-p-night-450);
   --jw-line: var(--jw-p-night-200);
   --jw-line-strong: var(--jw-p-night-600);
+  --jw-line-raised: var(--jw-p-night-600);
   --jw-act: var(--jw-p-ink-600);
   --jw-on-act: var(--jw-p-ink-50);
   --jw-act-edge: var(--jw-p-ink-750);
@@ -350,6 +355,9 @@
   --jw-control-height-sm: 2.75rem; /* 44px */
   /* An adult's large control: sign-in and consent, one step up from the app's (dl-uukj.47.67 S2). */
   --jw-control-height-lg: 2.5rem; /* 40px */
+  /* An adult's square icon button between the small and the app's: a lesson card's expand, a turn's
+     * foot (handoff dl-uukj.47.71 §4.1, §4.4). The same in every density. */
+  --jw-control-height-icon: 2rem; /* 32px */
   /* A small line on an app page: a row's second fact, a muted note. The parent's density sets 12.5. */
   --jw-page-small: 0.9375rem; /* 15px */
   /* The adult's smallest words: a count, a badge in the sidebar, a small disc's initial (handoff §3). */
@@ -402,6 +410,7 @@
   --jw-step-shift: 1.5rem; /* 24px: how far it slides */
   --jw-dur-scroll: 320ms; /* a scroll the frame makes: more below, to the band, to a new hint */
   --jw-dur-tools: 200ms; /* the laptop's tools panel unfolds upward */
+  --jw-dur-fold: 200ms; /* a collapsible opens or folds: a chat stage, a turn (handoff dl-uukj.47.71 §6) */
   --jw-dur-tick: 400ms; /* the right tick arrives */
   --jw-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -535,6 +544,11 @@
     0 8px 24px -8px color-mix(in srgb, var(--jw-ink) 16%, transparent),
     0 2px 4px color-mix(in srgb, var(--jw-ink) 4%, transparent);
   --shadow-dialog: 0 16px 40px -12px color-mix(in srgb, var(--jw-ink) 22%, transparent);
+  /* The one exception to flat page content: the living lesson card stands above the chat's work
+     * (owner, 2026-11-03, dl-vxjv2). Nothing else in the thread carries it. */
+  --shadow-card:
+    0 1px 2px color-mix(in srgb, var(--jw-ink) 5%, transparent),
+    0 6px 20px -6px color-mix(in srgb, var(--jw-ink) 14%, transparent);
 
   --kid-correct: var(--jw-right-edge);
   --kid-correct-foreground: var(--jw-on-right-act);
@@ -1326,6 +1340,7 @@
     --jw-dur-step: 0ms;
     --jw-dur-scroll: 0ms;
     --jw-dur-tools: 0ms;
+    --jw-dur-fold: 0ms;
     --jw-dur-tick: 0ms;
   }
 

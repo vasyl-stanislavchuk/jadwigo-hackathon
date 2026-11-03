@@ -20,5 +20,5 @@ export const chat_copied = /** @type {((inputs?: Chat_CopiedInputs, options?: { 
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
 	if (locale === "en") return /** @type {LocalizedString} */ ("Copied")
-	return /** @type {LocalizedString} */ ("Skopiowano")
+	return /** @type {LocalizedString} */ ("Skopiowane")
 });

@@ -15,7 +15,7 @@
  * S10). The sidebar's foot holds the fold button only. On a phone the sidebar is a drawer from the
  * left, opened by the bar's burger, with the account at its foot. N, pressed outside a field, opens
  * a new lesson (D8). The sidebar's fold is remembered per device (fold.ts). Everything inside
- * draws in the parent's density.
+ * draws in the parent's density, the toasts included (bottom right, @jadwigo/ui's Toaster).
  */
 
 import type { Learner } from "@jadwigo/contracts";
@@ -29,6 +29,7 @@ import {
   Sheet,
   SheetContent,
   SheetTitle,
+  Toaster,
 } from "@jadwigo/ui";
 import { MenuIcon } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useState } from "react";
@@ -193,6 +194,8 @@ export function ParentShell({
           {children}
         </div>
       </div>
+      {/* The toasts' one place on every signed-in page (showToast; handoff dl-uukj.47.71 §4.6). */}
+      <Toaster label={t("parent_toasts_label")} />
     </DensityScope>
   );
 }

@@ -24,7 +24,8 @@ test("1440: one scripted turn, the message and the lesson card in the chat alone
   await expect(page.locator("[data-chat-band] [data-status]")).toHaveText("Gotowe", {
     timeout: 20_000,
   });
-  await expect(page.locator("[data-chat-band] [data-live]")).toHaveText("Jadwigo AI: gotowe");
+  // The one live region speaks the live words only (handoff §3, dl-uukj.47.71.10).
+  await expect(page.locator("[data-chat-band] [data-live]")).toHaveText("Gotowe");
   await expect(chat.getByText("Lekcja jest gotowa.", { exact: true })).toBeVisible();
   await expect(cardOf(page)).toBeVisible();
   // The chat is the only view (dl-1eieq.1): no column, no Pokaż lekcję, no tabs.
@@ -140,9 +141,11 @@ test("1440: Daj lekcję from the widget gives the lesson and opens it here", asy
 // top over blank space. A short window makes the scripted turn overflow the list, so the follow has
 // to scroll; every scroll during the turn is recorded, not just the end state, so a jump the page
 // later scrolls back still fails here.
+// 360 tall: the folded spine (dl-uukj.47.71.3) made the scripted turn fit 480, so nothing had to
+// scroll; at 360 it overflows again and the follow is tested.
 for (const [width, height] of [
-  [2000, 480],
-  [1280, 480],
+  [2000, 360],
+  [1280, 360],
 ] as const) {
   test(`${width}: the lesson-ready card lands with only the message list scrolled`, async ({
     page,

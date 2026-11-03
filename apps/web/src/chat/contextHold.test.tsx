@@ -8,7 +8,7 @@
 import { LearnerId } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { RUN_LOGS } from "@jadwigo/testing";
-import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import { act, cleanup, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ChatPane } from "./ChatPane.tsx";
 import { type EngineTransport, useConversation } from "./useConversation.ts";
@@ -113,7 +113,7 @@ describe("the closable context chip", () => {
     expect(other.result.current.contextClosed).toBe(false);
   });
 
-  it("draws an × on the chip that closes it, and no chip once closed", () => {
+  it("draws no chip and no × (S21): Dla in the composer says who the lesson is for", () => {
     let closed = 0;
     const turn = {
       run: { id: RunId.parse("run_00000000000000000000000001"), status: "completed" } as Run,
@@ -154,15 +154,10 @@ describe("the closable context chip", () => {
         closed += 1;
       },
     };
-    const { rerender } = render(<ChatPane {...props} />);
-    expect(document.querySelector("[data-context-chip]")?.textContent).toBe(
-      "Jadwigo AI widzi: Ola",
-    );
-    const close = screen.getByRole("button", { name: "Ukryj kontekst" });
-    expect(close.querySelector("svg")?.getAttribute("aria-hidden")).toBe("true");
-    fireEvent.click(close);
-    expect(closed).toBe(1);
-    rerender(<ChatPane {...props} contextClosed />);
+    render(<ChatPane {...props} />);
+    // The chip is gone (handoff dl-uukj.47.71 S21): nothing to close, and closing stays the hook's.
     expect(document.querySelector("[data-context-chip]")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Ukryj kontekst" })).toBeNull();
+    expect(closed).toBe(0);
   });
 });

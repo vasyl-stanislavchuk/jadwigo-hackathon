@@ -18,9 +18,10 @@
  */
 
 import type { RunId, VerbName } from "@jadwigo/contracts/run";
-import type { CopyKey } from "@jadwigo/copy";
+import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { useEffect, useState } from "react";
 import { type ConversationState, isOpen, type Turn } from "./conversation.ts";
+import type { SpinePhase, TurnSpine } from "./spine/types.ts";
 import { TOOL_KEY } from "./tools.ts";
 
 type PhaseKind =
@@ -126,24 +127,92 @@ export const elapsedSeconds = (p: RunPhase | null, now: number): number | null =
   p?.since == null ? null : Math.max(0, Math.floor((now - p.since) / 1000));
 
 /**
- * What the polite live region says: only when a turn ends, needs the parent or stalls, never each
- * step, so a screen reader is not read every tool line. Quiet while the page reconnects.
+ * What the page's one polite live region says (handoff dl-uukj.47.71 §3, dl-uukj.47.71.10): only
+ * the 6 live words, never a line. "Jadwigo pracuje" holds through a turn's queue, thinking, tools
+ * and a slow spell, so a screen reader hears it once per turn, not once per step. Quiet while the
+ * page reconnects.
  */
-export function phaseAnnouncement(p: RunPhase | null): CopyKey | null {
-  switch (p?.kind) {
-    case "done":
-      return "chat_announce_done";
-    case "cancelled":
-      return "chat_announce_stopped";
-    case "failed":
-      return "chat_turn_unfinished";
-    case "awaiting_input":
-      return "chat_announce_needs_you";
-    case "stalled":
-      return "chat_phase_stalled";
-    default:
-      return null;
-  }
+const LIVE_KEY: Readonly<Record<PhaseKind, CopyKey | null>> = {
+  connecting: null,
+  queued: "live_working",
+  thinking: "live_working",
+  tool: "live_working",
+  slow: "live_working",
+  awaiting_input: "live_waiting",
+  stalled: "live_stalled",
+  done: "live_done",
+  failed: "live_failed",
+  cancelled: "live_stopped",
+};
+
+export const phaseAnnouncement = (p: RunPhase | null): CopyKey | null =>
+  p === null ? null : LIVE_KEY[p.kind];
+
+/** A span of time as the spine says it (§4.1): "0 s", "41 s", "1 min 04 s"; tabular in view. */
+export function durationWords(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(total / 60);
+  const seconds = total % 60;
+  return minutes === 0 ? `${seconds} s` : `${minutes} min ${String(seconds).padStart(2, "0")} s`;
+}
+
+/** The spine header's mark (§4.1): the loader while it runs, the person while it waits. */
+export type HeaderMark = "running" | "waiting" | "done" | "failed" | "stopped";
+
+const MARK: Readonly<Record<SpinePhase, HeaderMark>> = {
+  queued: "running",
+  thinking: "running",
+  tool: "running",
+  slow: "running",
+  stalled: "running",
+  awaiting_input: "waiting",
+  done: "done",
+  failed: "failed",
+  cancelled: "stopped",
+};
+
+/**
+ * The spine header in words (S9, S10, S12, S15, D5): the turn title, or the phase words before
+ * there is one; the meta at the right is the elapsed time while it runs, "czeka na Ciebie" while
+ * it waits, "zatrzymane · {t}" and "przerwane · {t}" once it ended so, and "{k} kroków · {t}" done.
+ */
+export function headerOf(
+  spine: TurnSpine,
+  now: number,
+  language: Language,
+): { mark: HeaderMark; title: string; meta: string } {
+  const say = (key: CopyKey, vars: Record<string, string | number> = {}) =>
+    copy(language, key, vars, "adult");
+  const t = durationWords((spine.endedAt ?? now) - spine.startedAt);
+  const title =
+    "text" in spine.title ? spine.title.text : say(spine.title.copyKey, spine.title.values);
+  const meta = (() => {
+    switch (spine.phase) {
+      case "awaiting_input":
+        return say("chat_phase_waiting_meta");
+      case "cancelled":
+        return say("chat_phase_stopped_meta", { t });
+      case "failed":
+        return say("chat_phase_failed_meta", { t });
+      case "done":
+        return say("chat_summary_meta", { k: spine.stepCount, t });
+      default:
+        return t;
+    }
+  })();
+  return { mark: MARK[spine.phase], title, meta };
+}
+
+/** What a done turn's folded row says (D5): "Zrobione w {n} etapach", and its meta. */
+export function summaryOf(
+  spine: TurnSpine,
+  now: number,
+  language: Language,
+): { title: string; meta: string } {
+  return {
+    title: copy(language, "chat_summary_done", { n: Math.max(1, spine.stages.length) }, "adult"),
+    meta: headerOf(spine, now, language).meta,
+  };
 }
 
 /** The page's clock, ticked each second only while `active`. */

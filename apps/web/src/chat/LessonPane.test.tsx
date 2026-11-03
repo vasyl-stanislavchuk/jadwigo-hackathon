@@ -84,14 +84,35 @@ describe("the lesson column (dl-z5ja.108.1)", () => {
     expect(ghosts()).toHaveLength(0);
   });
 
-  it("tags the rows this revision changed, in words", () => {
-    render(<LessonPane language="pl" lesson={lesson()} changed={new Set(["s05"])} />);
-    const tagged = rows().filter((r) => r.querySelector("[data-changed-mark]") !== null);
-    expect(tagged.map((r) => r.getAttribute("data-step"))).toEqual(["s05"]);
-    expect(tagged[0]?.hasAttribute("data-changed")).toBe(true);
-    expect(tagged[0]?.querySelector("[data-changed-mark]")?.textContent).toBe(
-      "Zmiana od Jadwigo AI",
+  it("tags the rows this revision added or changed, nowe or zmienione, until opened (S20)", () => {
+    render(
+      <LessonPane
+        language="pl"
+        lesson={lesson()}
+        changed={new Set(["s02", "s05"])}
+        added={new Set(["s05"])}
+      />,
     );
+    const marks = () =>
+      rows().flatMap((r) => {
+        const mark = r.querySelector("[data-changed-mark]");
+        return mark === null ? [] : [[r.getAttribute("data-step"), mark.textContent]];
+      });
+    expect(marks()).toEqual([
+      ["s02", "zmienione"],
+      ["s05", "nowe"],
+    ]);
+    expect(
+      rows()
+        .find((r) => r.getAttribute("data-step") === "s05")
+        ?.hasAttribute("data-changed"),
+    ).toBe(true);
+    // Opened once, its tag has been read: closing it again brings no tag back.
+    const s02 = rows().find((r) => r.getAttribute("data-step") === "s02");
+    const button = s02?.querySelector("button[aria-expanded]") as HTMLButtonElement;
+    fireEvent.click(button);
+    fireEvent.click(button);
+    expect(marks()).toEqual([["s05", "nowe"]]);
   });
 
   it("an opened step shows its skill only with a child, and where it came from", () => {

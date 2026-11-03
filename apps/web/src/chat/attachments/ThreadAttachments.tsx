@@ -3,14 +3,16 @@
  * bubble, "Tak Jadwigo widzi zdjęcia". Each photo shows the local copy the first screen handed over
  * (sentPreviews.ts) until the stored copy's link is read, then the stored one, which is cached until
  * its `expires_at` and read again after. A tap opens the photo at full size. A photo that will not
- * load is a name chip, and a file with no picture (a PDF, a DOCX) is its kind and number.
+ * load is a name chip. A document (a PDF, a DOCX) is a tile of the same height with its file icon and
+ * its name, its kind word until the name is read (handoff dl-uukj.47.71 S18). "{n} strony" joins it
+ * once a message carries a page count (`dl-uukj.47.71.12`).
  */
 
 import type { AttachmentId, AttachmentRead } from "@jadwigo/contracts";
 import type { MessageAttachment } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
 import { Dialog, DialogContent, DialogTrigger } from "@jadwigo/ui";
-import { FileTextIcon, ImageOffIcon } from "lucide-react";
+import { FileTextIcon, ImageIcon, ImageOffIcon } from "lucide-react";
 import { type ReactElement, useEffect, useState } from "react";
 import { releaseSent, sentPreview } from "./sentPreviews.ts";
 
@@ -23,6 +25,8 @@ const MARGIN_MS = 15_000;
 interface Link {
   url: string;
   preview_url: string | null;
+  /** The file's own name, for a document's tile; null when it came without one. */
+  name: string | null;
   expires: number;
 }
 
@@ -46,6 +50,7 @@ function readOnce(id: AttachmentId, read: ReadAttachment): Promise<Link> {
       const link = {
         url: got.url,
         preview_url: got.preview_url,
+        name: got.attachment.name,
         expires: Date.parse(got.expires_at),
       };
       links.set(id, link);
@@ -60,14 +65,21 @@ function fresh(link: Link | undefined, now: number): link is Link {
   return link !== undefined && link.expires - MARGIN_MS > now;
 }
 
+/** A photo's thumbnail: 64 x 80, and 56 x 70 on a phone (S18). */
+const SIZE = "h-20 w-16 max-sm:h-17.5 max-sm:w-14";
+
 /** The kinds a browser shows as a picture from the stored copy itself. */
 const PICTURE = new Set<MessageAttachment["media_type"]>(["image/jpeg"]);
 
-const KIND = {
-  "image/heic": "attach_kind_heic",
+/** The kinds drawn as a document's tile rather than a picture, each with its kind word. */
+const DOCUMENT = {
   "application/pdf": "attach_kind_pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "attach_kind_docx",
 } as const;
+
+function documentKind(type: MessageAttachment["media_type"]) {
+  return type in DOCUMENT ? DOCUMENT[type as keyof typeof DOCUMENT] : null;
+}
 
 function useLink(
   attachment: MessageAttachment,
@@ -135,15 +147,30 @@ function Thumb({
     link === null ? null : PICTURE.has(attachment.media_type) ? link.url : link.preview_url;
   const src = stored ?? local;
   const alt = copy(language, "attach_photo_alt", { n }, "adult");
-  const chip =
-    "flex h-20 w-16 flex-col items-center justify-center gap-1 rounded-jw-small border-jw border-jw-line bg-jw-ground text-jw-page-small text-jw-ink-soft";
-
-  if (src === null && !PICTURE.has(attachment.media_type)) {
-    const kind = KIND[attachment.media_type as keyof typeof KIND];
+  const chip = `${SIZE} flex flex-col items-center justify-center gap-1 rounded-jw-small border-jw border-jw-line bg-jw-ground text-jw-page-small text-jw-ink-soft`;
+  const kindWord = documentKind(attachment.media_type);
+  if (kindWord !== null) {
+    const name = link?.name ?? copy(language, kindWord, {}, "adult");
     return (
-      <span className={chip} data-attachment={id} data-kind="document">
-        <FileTextIcon aria-hidden className="size-5" />
-        {copy(language, kind, {}, "adult")}
+      <span
+        className="flex h-20 max-w-44 min-w-28 flex-col items-start justify-center gap-1 rounded-jw-small border-jw border-jw-line bg-jw-card px-3 max-sm:h-17.5"
+        data-attachment={id}
+        data-kind="document"
+      >
+        <FileTextIcon aria-hidden className="size-4 shrink-0 text-jw-ink" />
+        <span className="w-full truncate text-jw-page-small font-medium text-jw-ink" data-name>
+          {name}
+        </span>
+      </span>
+    );
+  }
+
+  // A HEIC has no picture until the converter renders its preview: its kind word meanwhile.
+  if (src === null && !PICTURE.has(attachment.media_type)) {
+    return (
+      <span className={chip} data-attachment={id} data-kind="loading">
+        <ImageIcon aria-hidden className="size-5" />
+        {copy(language, "attach_kind_heic", {}, "adult")}
       </span>
     );
   }
@@ -181,7 +208,7 @@ function Thumb({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="h-20 w-16 overflow-hidden rounded-jw-small border-jw border-jw-line focus-visible:outline-3 focus-visible:outline-jw-focus"
+          className={`${SIZE} overflow-hidden rounded-jw-small border-jw border-jw-line focus-visible:outline-3 focus-visible:outline-jw-focus`}
           aria-label={copy(language, "chat_photo_open", { n }, "adult")}
           data-attachment={id}
           data-source={src === stored ? "stored" : "local"}
@@ -233,7 +260,15 @@ export function ThreadAttachments({
         ))}
       </ul>
       <figcaption className="text-jw-page-small text-jw-ink-soft">
-        {copy(language, "chat_photos_received", {}, "adult")}
+        {/* Documents only: "pliki"; any photo on the bubble keeps "zdjęcia" (dl-uukj.47.71.25). */}
+        {copy(
+          language,
+          attachments.every((a) => documentKind(a.media_type) !== null)
+            ? "attach_caption_files"
+            : "attach_caption",
+          {},
+          "adult",
+        )}
       </figcaption>
     </figure>
   );

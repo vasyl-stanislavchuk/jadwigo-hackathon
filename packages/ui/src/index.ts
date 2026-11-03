@@ -70,6 +70,11 @@ export {
 export { Checkbox } from "./primitives/checkbox.tsx";
 export { Chip } from "./primitives/chip.tsx";
 export type { Choice, ControlSize } from "./primitives/choice.ts";
+export {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./primitives/collapsible.tsx";
 export { Combobox, type ComboboxOption } from "./primitives/combobox.tsx";
 export {
   ContextMenu,
@@ -120,6 +125,7 @@ export {
   SelectTrigger,
   SelectValue,
 } from "./primitives/select.tsx";
+export { Separator } from "./primitives/separator.tsx";
 export {
   Sheet,
   SheetClose,

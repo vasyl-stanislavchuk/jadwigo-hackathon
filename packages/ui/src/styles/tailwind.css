@@ -78,6 +78,7 @@
   --color-destructive: var(--destructive);
   --shadow-float: var(--shadow-float);
   --shadow-dialog: var(--shadow-dialog);
+  --shadow-card: var(--shadow-card);
 
   --color-kid-correct: var(--kid-correct);
   --color-kid-correct-foreground: var(--kid-correct-foreground);
@@ -103,6 +104,7 @@
   --color-jw-placeholder: var(--jw-placeholder);
   --color-jw-line: var(--jw-line);
   --color-jw-line-strong: var(--jw-line-strong);
+  --color-jw-line-raised: var(--jw-line-raised);
   --color-jw-act: var(--jw-act);
   --color-jw-on-act: var(--jw-on-act);
   --color-jw-act-edge: var(--jw-act-edge);
@@ -203,6 +205,7 @@
   --spacing-jw-control: var(--jw-control-height);
   --spacing-jw-control-sm: var(--jw-control-height-sm);
   --spacing-jw-control-lg: var(--jw-control-height-lg);
+  --spacing-jw-control-icon: var(--jw-control-height-icon);
   /* The parent's app frame (foundation.css): w-jw-shell-side, h-jw-shell-bar, max-w-jw-shell-box. */
   --spacing-jw-shell-side: var(--jw-shell-side);
   --spacing-jw-shell-rail: var(--jw-shell-rail);
@@ -225,6 +228,27 @@
   --transition-duration-jw-band: var(--jw-dur-band);
   --transition-duration-jw-step: var(--jw-dur-step);
   --ease-jw-out: var(--jw-ease-out);
+  /* A Collapsible's content opens to and folds from the height Radix measures (src/primitives/
+     * collapsible.tsx): animate-jw-fold-open, animate-jw-fold-shut. 0 ms under reduced motion. */
+  --animate-jw-fold-open: jw-fold-open var(--jw-dur-fold) var(--jw-ease-out);
+  --animate-jw-fold-shut: jw-fold-shut var(--jw-dur-fold) var(--jw-ease-out);
+}
+
+@keyframes jw-fold-open {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+@keyframes jw-fold-shut {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 /* A line at Zeszyt's width (--jw-border): 2 px, and 1 px in the parent's density. Tailwind's border

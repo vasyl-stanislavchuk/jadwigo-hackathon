@@ -63,11 +63,15 @@ describe("Good, Bad and Try again on each completed turn (dl-z5ja.63)", () => {
     expect(screen.getAllByRole("button", { name: "Spróbuj jeszcze raz" })).toHaveLength(2);
   });
 
-  it("is a labelled choice: Dobrze and Słabo say their words beside their icons (S11)", () => {
+  it("is a labelled choice: Dobrze and Słabo in words on one track, the label shown (S8)", () => {
     pane([turnOf("happy-turn")]);
     const group = screen.getByRole("radiogroup", { name: "Jak poszło?" });
     const names = [...group.querySelectorAll('[role="radio"]')].map((r) => r.textContent);
     expect(names).toEqual(["Dobrze", "Słabo"]);
+    expect(group.querySelector("svg")).toBeNull();
+    expect(document.getElementById(group.getAttribute("aria-labelledby") ?? "")?.textContent).toBe(
+      "Jak poszło?",
+    );
     const retry = screen.getByRole("button", { name: "Spróbuj jeszcze raz" });
     expect(retry.textContent).toBe("Spróbuj jeszcze raz");
   });

@@ -223,3 +223,14 @@ describe("the menu and the children", () => {
     expect(add).toHaveBeenCalledOnce();
   });
 });
+
+describe("the toasts", () => {
+  it("has one named place for them on every page the shell frames", () => {
+    shell();
+    const regions = document.querySelectorAll("section[aria-label]");
+    const toasts = [...regions].filter((r) =>
+      r.getAttribute("aria-label")?.startsWith("Powiadomienia"),
+    );
+    expect(toasts).toHaveLength(1);
+  });
+});
