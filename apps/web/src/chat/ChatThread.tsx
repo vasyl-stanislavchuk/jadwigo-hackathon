@@ -27,7 +27,6 @@ import { recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
 import { type ReadAttachment, ThreadAttachments } from "./attachments/ThreadAttachments.tsx";
 import { isOpen, type Turn } from "./conversation.ts";
-import { useFoldAtEnd } from "./foldMotion.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
 import { CitationChips } from "./objects/CitationChips.tsx";
 import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
@@ -115,36 +114,6 @@ function parentTextOf(turn: Turn): string | null {
 /** Whether the parent asked the system for less motion. */
 export const lessMotion = (): boolean =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-
-/**
- * A turn's spine row: the card while it runs, the summary row once it is done. It enters with a
- * fade and folds to the summary over 240 ms (§6, chat.css and foldMotion.ts), neither under
- * reduced motion.
- */
-function SpineRow({
-  done,
-  last,
-  still,
-  children,
-}: {
-  done: boolean;
-  last: boolean;
-  still: boolean;
-  children: ReactNode;
-}): ReactElement {
-  const ref = useFoldAtEnd<HTMLLIElement>(done);
-  return (
-    <li
-      ref={ref}
-      className="flex flex-col"
-      data-chat-row
-      data-turn={last ? "current" : "older"}
-      {...(still ? {} : { "data-enter": "" })}
-    >
-      {children}
-    </li>
-  );
-}
 
 /** Smooth unless the parent asked the system for less motion. */
 const scrollBehavior = (): ScrollBehavior => (lessMotion() ? "auto" : "smooth");
@@ -534,7 +503,13 @@ export function ChatThread({
       noLesson: !turns.slice(0, index + 1).some((t) => t.view.lesson !== null),
     };
     entries.push(
-      <SpineRow key={`${id}-spine`} done={done} last={last} still={still}>
+      <li
+        key={`${id}-spine`}
+        className="flex flex-col"
+        data-chat-row
+        data-turn={last ? "current" : "older"}
+        {...(still ? {} : { "data-enter": "" })}
+      >
         <AiHeader language={language} />
         {done ? (
           <TurnSummary
@@ -554,7 +529,7 @@ export function ChatThread({
         ) : (
           <TurnSpine spine={spine} now={now} language={language} actions={actions} />
         )}
-      </SpineRow>,
+      </li>,
     );
     for (const item of turn.view.chat)
       if (item.kind === "approval" || item.kind === "steer")
