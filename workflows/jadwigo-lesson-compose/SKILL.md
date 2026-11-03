@@ -59,10 +59,13 @@ to adapt them, recording `change` and a `why` tied to the parent's request. Keep
 reference; update the data, answer key, hints, worked solution, twin and mistake-specific help
 consistently. Recompute the answer for the adapted question; do not retain the old key when
 its numbers change. Run `lesson_check` and inspect the final questions against the requested
-operation, range and count. A structurally valid lesson can still miss the topic. Changing only `say` to "dodawanie"
+operation, range and count. A structurally valid lesson can still miss the topic. Read the actual `question` data on the
+draft card before choosing what to adapt; do not infer its content from `say` or its title. Changing only `say` to "dodawanie"
 does not turn a subtraction still present in `question.data` into addition. Preserve the
 family shapes when editing help: `look`/`boost` are `{text}`, `almost`/`worked` are arrays,
-and `twin` has its own `say`, `data` and `key`. Do not present a failed `lesson_check` as ready.
+and `twin` has its own `say`, `data` and `key`. Do not present a failed `lesson_check` as ready. Edits introducing new family-contract errors
+leave the draft unchanged; correct the path and shape named by the error, then
+retry. After repairing the draft, run `lesson_check` on the current revision.
 
 Do not silently broaden the request to harder or unrelated practice. If none of the nearby
 questions can be adapted faithfully, explain the shortage instead of treating a high search

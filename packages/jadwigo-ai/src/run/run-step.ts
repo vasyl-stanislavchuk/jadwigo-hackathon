@@ -39,6 +39,7 @@ import type { AttachmentReader, Converter } from "./attachments.ts";
 import { earlierLine, refusedLine, turnFiles } from "./files.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
 import { inLanguage } from "./language.ts";
+import { lessonValidationIssue } from "./lesson-validation.ts";
 import { movePlan, planIn, settlePlan, startPlan, startsPlan } from "./plan.ts";
 
 /**
@@ -121,10 +122,12 @@ const INSTRUCTIONS = [
   "Draft it with lesson_draft, read it with lesson_show, change a step with lesson_edit and check it with lesson_check.",
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
   CARD_RULE,
+  "A nearby source is a starting point: inspect the actual question.data, not only say. Adapt data, key and help consistently to the requested operation and range. Renaming a subtraction does not turn it into addition.",
+  "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key. If a check still fails, explain the limitation and do not claim the lesson is ready.",
   FENCE_RULE,
 ].join("\n");
-/** Moves on with `INSTRUCTIONS`: 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
-const PROMPT_CACHE_KEY = `${WORKFLOW}:3`;
+/** Moves on with `INSTRUCTIONS`: 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:4`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
@@ -501,7 +504,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
     // The answer check reads the turn and the parent's words of the turns before it (dl-z5ja.26).
     // ...and, when the run has a lesson, that the answer is in its language (dl-z5ja.64).
     const check = (text: string) =>
-      refusalOf(text, [...prior.said, ...w.log], languageOf(w.log, prior.lesson));
+      refusalOf(
+        text,
+        [...prior.said, ...w.log],
+        languageOf(w.log, prior.lesson),
+        lessonValidationIssue(w.log, true),
+      );
     let correction: { call_no: number; text: string; refusal: Refusal } | null = null;
     const refused = last ? await refusedText(w, last) : null;
     if (last && refused !== null) {
@@ -511,7 +519,12 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       // words the parent wrote after it give nothing the answer could have read (dl-z5ja.102).
       const until = await callEndSeq(w, last);
       const read = w.log.filter((e) => e.seq <= until);
-      const refusal = refusalOf(refused, [...prior.said, ...read], languageOf(read, prior.lesson));
+      const refusal = refusalOf(
+        refused,
+        [...prior.said, ...read],
+        languageOf(read, prior.lesson),
+        lessonValidationIssue(read, true),
+      );
       if (refusal === null) {
         await w.append([
           agentMessage(w, refused, await w.id("call", last.payload.call_no, "message")),
@@ -816,6 +829,7 @@ async function answerEndedAt(w: Writer): Promise<number> {
 /** Why an answer's words may not be written: they say nothing, or they fail the answer check. */
 interface Refusal {
   blank: boolean;
+  lesson?: string;
   misses: AnswerMiss[];
   /** The lesson's language, when the answer was not in it (dl-z5ja.64). */
   language: Language | null;
@@ -829,11 +843,15 @@ function refusalOf(
   text: string,
   given: readonly RunEvent[],
   language: Language | null,
+  lesson: string | null = null,
 ): Refusal | null {
-  if (text.trim() === "") return { blank: true, misses: [], language: null };
+  if (text.trim() === "")
+    return { blank: true, misses: [], language: null, ...(lesson === null ? {} : { lesson }) };
   const misses = checkAnswer(text, given);
   const wrong = language !== null && !inLanguage(text, language) ? language : null;
-  return misses.length === 0 && wrong === null ? null : { blank: false, misses, language: wrong };
+  return misses.length === 0 && wrong === null && lesson === null
+    ? null
+    : { blank: false, misses, language: wrong, ...(lesson === null ? {} : { lesson }) };
 }
 
 /**
@@ -881,7 +899,7 @@ function languageOf(log: readonly RunEvent[], base: VerbContext["lesson"]): Lang
 const LANGUAGE_NAME: Record<Language, string> = { pl: "Polish", en: "English" };
 
 /** What a refusal names, for the correction note and the error. */
-function refusedFor({ blank, misses, language }: Refusal): string {
+function refusedFor({ blank, misses, language, lesson }: Refusal): string {
   if (blank) return "said nothing";
   const said = [];
   if (misses.length > 0) {
@@ -889,13 +907,15 @@ function refusedFor({ blank, misses, language }: Refusal): string {
       `named ${[...new Set(misses.map((m) => `"${m.said}"`))].join(", ")}, which no tool result of this turn gave`,
     );
   }
+  if (lesson) said.push(lesson);
   if (language) said.push(`was not in ${LANGUAGE_NAME[language]}, the lesson's language`);
   return said.join(", and ");
 }
 
 /** The error type a refusal is written as: only a refusal for its language alone is that. */
-function refusalType({ blank, misses, language }: Refusal): string {
-  if (!blank && misses.length === 0 && language !== null) return RUN_ERROR_TYPE.answerWrongLanguage;
+function refusalType({ blank, misses, language, lesson }: Refusal): string {
+  if (!blank && !lesson && misses.length === 0 && language !== null)
+    return RUN_ERROR_TYPE.answerWrongLanguage;
   return RUN_ERROR_TYPE.answerUnchecked;
 }
 
@@ -909,6 +929,11 @@ function correctionNote(text: string, refusal: Refusal): string {
     `Your last answer was not sent to the parent: it ${refusedFor(refusal)}.`,
     "Code computes every number, status and level; you only word them, and you never name a mastery level.",
     ...(refusal.language ? [`Write it in ${LANGUAGE_NAME[refusal.language]}.`] : []),
+    ...(refusal.lesson
+      ? [
+          "Read the current lesson with lesson_show. Repair the reported task data, keys and help with lesson_edit, then call lesson_check. Do not finish with a readiness claim until that check passes.",
+        ]
+      : []),
     "Write the answer again with only what the tool results say. Your answer was:",
     fence(text, "child"),
   ].join("\n");
@@ -948,6 +973,17 @@ async function endUnchecked(
 ): Promise<RunStepOutcome> {
   await w.append([
     await uncheckedEvent(w, last.payload.call_no, refusal, "after its one correction"),
+    ...(refusal.lesson
+      ? [
+          agentMessage(
+            w,
+            languageOf(w.log, null) === "en"
+              ? "The lesson is still a draft: its current version has not passed validation. It is not ready to use."
+              : "Lekcja pozostaje szkicem: jej obecna wersja nie przeszła sprawdzenia. Nie jest jeszcze gotowa do użycia.",
+            await w.id("call", last.payload.call_no, "lesson-not-ready"),
+          ),
+        ]
+      : []),
   ]);
   // A message or steer the parent sent meanwhile is still answered: the next step does, and that
   // answer gets its own one correction (wave 2 Lead decision 22).

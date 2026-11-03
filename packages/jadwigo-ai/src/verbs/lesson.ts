@@ -133,6 +133,7 @@ function card(step: Step) {
     step_id: step.id,
     prompt: step["say"] ?? null,
     key: question["key"] ?? null,
+    question,
     rungs: RUNGS.filter((r) => help[r] !== undefined),
     you_write: RUNGS.filter((r) => help[r] === undefined),
   };
@@ -416,6 +417,26 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   const lesson_file = writable(withStep(file, edited));
   const checks = review(lesson_file);
   const findings = findingsFor(checks.findings, step_id);
+  const before = new Set(
+    findingsFor(review(file).findings, step_id)
+      .filter((finding) => finding.level === "error")
+      .map((finding) => JSON.stringify([finding.path, finding.rule, finding.text])),
+  );
+  const introduced = findings.filter(
+    (finding) =>
+      finding.level === "error" &&
+      finding.rule === "contract" &&
+      !before.has(JSON.stringify([finding.path, finding.rule, finding.text])),
+  );
+  if (introduced.length > 0) {
+    throw new VerbError(
+      "edit",
+      `${introduced
+        .slice(0, 3)
+        .map((finding) => `${finding.path}: ${finding.text}. ${finding.fix}`)
+        .join("\n")}; nothing changed`,
+    );
+  }
   return Promise.resolve(
     revised(checks, {
       output: {

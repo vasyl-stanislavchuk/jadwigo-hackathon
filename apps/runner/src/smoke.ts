@@ -1,6 +1,11 @@
 import type { PodId } from "@jadwigo/contracts";
 import { type RunEvent, RunId } from "@jadwigo/contracts/run";
-import { apiBank, httpBankReads, type MuseClient } from "@jadwigo/jadwigo-ai";
+import {
+  apiBank,
+  httpBankReads,
+  lessonValidationIssue,
+  type MuseClient,
+} from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
 import { additionWithinTen } from "./addition-smoke.ts";
 import { apiDatabaseUrl, bankConfig, isLocalDatabaseUrl, museConfig } from "./config.ts";
@@ -124,19 +129,7 @@ async function main(argv: readonly string[]): Promise<boolean> {
       if (additionPractice) {
         const revision = events.filter((event) => event.type === "lesson_revision").at(-1);
         const failures = additionWithinTen(revision?.payload.lesson_file);
-        const checked = events
-          .filter((event) => event.type === "tool_result")
-          .filter((event) => event.payload.verb === "lesson_check")
-          .at(-1);
-        const output = checked?.payload.output;
-        const checkOk =
-          output !== null &&
-          typeof output === "object" &&
-          !Array.isArray(output) &&
-          output?.["ok"] === true &&
-          revision !== undefined &&
-          checked !== undefined &&
-          (checked.seq >= revision.seq || checked.payload.call_id === revision.payload.call_id);
+        const checkOk = lessonValidationIssue(events) === null;
         for (const failure of failures) out(`addition-within-10: ${failure}`);
         out(
           `addition-within-10: final questions suitable ${failures.length === 0}, lesson_check ok ${checkOk}`,
