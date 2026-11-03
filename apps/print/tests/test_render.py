@@ -66,7 +66,7 @@ def test_the_fetcher_allows_only_assets_and_the_media_origin() -> None:
     from printer.render import ASSETS, FetchRefused, url_fetcher_for
 
     fetch = url_fetcher_for(MEDIA)
-    assert fetch((ASSETS / "katex.css").resolve().as_uri()).path is not None or True
+    assert b".katex" in fetch((ASSETS / "katex.css").resolve().as_uri()).read(), "our assets are fetched"
     for url in ("https://evil.test/x.png", "file:///etc/passwd", "http://media.jadwigo.test/a.png",
                 (ASSETS / ".." / "render.py").resolve().as_uri()):  # fmt: skip
         with pytest.raises(FetchRefused):

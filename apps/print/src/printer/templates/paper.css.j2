@@ -60,8 +60,8 @@ svg text { font-family: {{ FONTS }}; }
 .icon { flex: none; width: {{ g.ICON_MM|mm }}; height: {{ g.ICON_MM|mm }}; margin-top: {{ ((g.BADGE_MM - g.ICON_MM) / 2)|mm }}; }
 .say { flex: 1; padding-top: {{ ((g.BADGE_MM - g.BODY_PT * g.LINE_HEIGHT / g.PT_PER_MM) / 2)|mm }}; }
 .say .many { color: {{ g.GREY }}; }
-.body { margin-top: {{ g.SPACE_S_MM|mm }}; }
-.body > * + * { margin-top: {{ g.SPACE_S_MM|mm }}; }
+.body { margin-top: {{ (g.SPACE_S_MM * 0.75)|mm }}; }
+.body > * + * { margin-top: {{ (g.SPACE_S_MM * 0.75)|mm }}; }
 .card .top { min-height: {{ g.BADGE_MM|mm }}; }
 .credit { font-size: {{ g.CREDIT_PT }}pt; color: {{ g.GREY }}; text-align: right; line-height: 1.2;
   margin-top: {{ (g.CARD_PAD_MM / 2)|mm }}; }
