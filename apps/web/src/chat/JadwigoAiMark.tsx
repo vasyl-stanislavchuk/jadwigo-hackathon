@@ -10,7 +10,13 @@ import type { ReactElement } from "react";
 
 export function JadwigoAiMark(): ReactElement {
   return (
-    <span aria-hidden className="grid size-6 shrink-0 place-items-center" data-ai-mark>
+    <span
+      aria-hidden
+      // Lifted 2 px and tucked toward the name, so the crown sits on the name's line (design review
+      // 2026-11-03).
+      className="grid size-6 shrink-0 -translate-y-0.5 translate-x-0.5 place-items-center"
+      data-ai-mark
+    >
       <Logo mark label="" className="h-4" />
     </span>
   );

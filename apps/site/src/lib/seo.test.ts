@@ -82,8 +82,16 @@ describe("headTags", () => {
     ]);
   });
 
-  it("adds the image and the large card only when the page names one", () => {
-    expect(find(headTags(page, "/"), "og:image")).toBeUndefined();
+  it("shows the app icon with the small card when the page names no image", () => {
+    const tags = headTags(page, "/");
+    expect(find(tags, "og:image")).toMatchObject({ content: "https://jadwigo.pl/icon-512.png" });
+    expect(find(tags, "twitter:image")).toMatchObject({
+      content: "https://jadwigo.pl/icon-512.png",
+    });
+    expect(find(tags, "twitter:card")).toMatchObject({ content: "summary" });
+  });
+
+  it("adds the large card when the page names its own image", () => {
     const tags = headTags({ ...page, ogImage: "/og.png" }, "/");
     expect(find(tags, "og:image")).toMatchObject({ content: "https://jadwigo.pl/og.png" });
     expect(find(tags, "twitter:card")).toMatchObject({ content: "summary_large_image" });

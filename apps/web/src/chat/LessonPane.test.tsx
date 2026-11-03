@@ -48,9 +48,12 @@ describe("the lesson column (dl-z5ja.108.1)", () => {
     expect(expanded()).toEqual(["false", "true", "false", "false"]);
     const body = document.getElementById(second.getAttribute("aria-controls") ?? "");
     expect(body?.hasAttribute("data-step-body")).toBe(true);
-    // Left the child's view, right the answer and the facts.
-    expect(body?.querySelector("[data-child-view]")).not.toBeNull();
-    expect(body?.querySelector("[data-step-facts] [data-answer]")).not.toBeNull();
+    // The child's view once, the facts beside it; "Pokaż odpowiedzi" marks the answers in it.
+    expect(body?.querySelectorAll("[data-child-view]")).toHaveLength(1);
+    expect(body?.querySelector("[data-answer]")).toBeNull();
+    expect(body?.querySelector("[data-answers-shown]")).toBeNull();
+    fireEvent.click(screen.getByRole("switch", { name: "Pokaż odpowiedzi" }));
+    expect(body?.querySelector("[data-answers-shown]")).not.toBeNull();
     expect(body?.querySelector("[data-help]")?.textContent).toMatch(/^Pomoc: \d$/);
     fireEvent.click(second);
     expect(expanded()).toEqual(["false", "false", "false", "false"]);
