@@ -7,6 +7,7 @@ import {
   fixtureBank,
   InMemoryRunQueue,
   ScriptedMuse,
+  VerbError,
 } from "@jadwigo/jadwigo-ai";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
@@ -159,6 +160,29 @@ describe("the step host", () => {
 
     expect(report.steps).toBe(26);
     expect(report.outcomes.at(-1)).toBe("turn_complete");
+  });
+
+  it("names the runs it worked and counts the calls verbs refused, without their words", async () => {
+    const t = await setup();
+    const run = await t.say("one");
+    const engine = t.deps().engine;
+    const refusing = {
+      ...engine.verbs.lesson_check,
+      run: () => Promise.reject(new VerbError("copied-rung", "a line quoted from a lesson")),
+    };
+    const report = await createHost(
+      () =>
+        Promise.resolve(
+          t.deps({ engine: { ...engine, verbs: { ...engine.verbs, lesson_check: refusing } } }),
+        ),
+      fakeMeter(),
+    )();
+
+    expect(report.runs).toEqual([run]);
+    expect(report.refused).toEqual([
+      { run_id: run, verb: "lesson_check", type: "copied-rung", count: 1 },
+    ]);
+    expect(JSON.stringify(report.refused)).not.toContain("quoted");
   });
 
   it("logs a step that threw by its ids, keeps it queued, and reports the dead letters", async () => {
