@@ -1331,6 +1331,53 @@
       }
     }
   ],
+  "chat_line_say": "{text}",
+  "chat_line_edit_changed": "Poprawiłam zadania {list}",
+  "chat_line_search_any": [
+    {
+      "declarations": ["input query", "input n", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Szukałam „{query}”: {n} zestaw",
+        "sets_noun=few": "Szukałam „{query}”: {n} zestawy",
+        "sets_noun=many": "Szukałam „{query}”: {n} zestawów",
+        "sets_noun=other": "Szukałam „{query}”: {n} zestawu"
+      }
+    }
+  ],
+  "chat_line_retry_plain": "Trwało to za długo, próbuję jeszcze raz",
+  "chat_line_types": "Sprawdziłam rodzaje zadań",
+  "chat_line_skills": "Przejrzałam umiejętności",
+  "chat_line_week": "Przejrzałam ten tydzień",
+  "chat_line_mistakes": "Sprawdziłam, co sprawiło trudność",
+  "chat_line_topics": "Przejrzałam tematy z podstawy programowej",
+  "chat_line_ideas": "Zebrałam pomysły na lekcje",
+  "chat_week_title": "Tydzień {name}",
+  "chat_week_meta": [
+    {
+      "declarations": ["input from", "input to", "input n", "local lessons_noun = n: plural"],
+      "selectors": ["lessons_noun"],
+      "match": {
+        "lessons_noun=one": "{from} – {to} · {n} lekcja",
+        "lessons_noun=few": "{from} – {to} · {n} lekcje",
+        "lessons_noun=many": "{from} – {to} · {n} lekcji",
+        "lessons_noun=other": "{from} – {to} · {n} lekcji"
+      }
+    }
+  ],
+  "chat_show_all": "Pokaż wszystkie ({n})",
+  "chat_week_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
   "chat_line_draft": [
     {
       "declarations": ["input n", "input topic", "local q_noun = n: plural"],
