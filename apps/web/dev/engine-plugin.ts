@@ -22,7 +22,8 @@ import type {
   MuseRequest,
   MuseResponse,
   ScriptedMuse,
-  ScriptedReply,
+  Verb,
+  Verbs,
 } from "@jadwigo/jadwigo-ai";
 import type * as Store from "@jadwigo/store";
 import type { Plugin, ViteDevServer } from "vite";
@@ -37,16 +38,13 @@ import {
   type SendAnswer,
   type SendBody,
 } from "../src/chat/wire.ts";
+import { type PacePlay, playOf } from "./paces.ts";
 
 const ENGINE_PLUGIN = "jadwigo-engine";
-/** How long the scripted model "thinks" per call, so the page shows a turn in progress. */
-const THINK_MS = 400;
-/** The same under `?pace=slow` (dl-uukj.47.27): long enough to watch each step land. */
-const SLOW_THINK_MS = 2000;
-/** How far past a turn's longest life `?pace=fail` runs its clock, so the turn ends failed. */
+/** How far past a turn's longest life a `pastMax` pace runs its clock, so the turn ends failed. */
 const PAST_MAX_MS = 24 * 60 * 60 * 1000;
-/** How many follow-ups a turn's script answers after it drafts and checks. */
-const FOLLOW_UPS = 10;
+/** How far a retrying pace moves its queue's clock, past a step's visibility timeout (60 s). */
+const PAST_VISIBILITY_MS = 61_000;
 
 /** The engine's fence around words someone wrote (packages/jadwigo-ai src/fence): tag, what it says, the words. */
 const FENCED = /^<jadwigo_untrusted source="[a-z]+">\n[^\n]*\n([\s\S]*)\n<\/jadwigo_untrusted>$/;
@@ -69,40 +67,7 @@ function lastWords(request: MuseRequest): string {
   return last.text.flatMap((p) => (p.type === "input_text" ? [unfenced(p.text)] : [])).join(" ");
 }
 
-/** One turn's script: draft from the parent's words, check, say it is ready; then an edit and a
- * line for each follow-up that arrives mid-turn. */
-function turnScript(): ScriptedReply[] {
-  return [
-    {
-      tool_calls: [
-        {
-          verb: "lesson_draft",
-          input: (r) => ({ request: lastWords(r), grade: "1", names: [], topic: lastWords(r) }),
-        },
-      ],
-      cost_usd: 0.02,
-    },
-    {
-      tool_calls: [{ verb: "lesson_check", input: (r) => ({ draft_id: r.run_id, help: {} }) }],
-      cost_usd: 0.02,
-    },
-    { text: "Lekcja jest gotowa.", cost_usd: 0.01 },
-    ...Array.from({ length: FOLLOW_UPS }, (): ScriptedReply[] => [
-      {
-        tool_calls: [
-          {
-            verb: "lesson_edit",
-            input: (r) => ({ draft_id: r.run_id, step_id: "s01", patch: { prompt: lastWords(r) } }),
-          },
-        ],
-        cost_usd: 0.02,
-      },
-      { text: "Zmienione.", cost_usd: 0.01 },
-    ]).flat(),
-  ];
-}
-
-interface Modules {
+export interface Modules {
   contracts: typeof Contracts;
   run: typeof RunContracts;
   engine: typeof Engine;
@@ -124,34 +89,40 @@ async function load(server: ViteDevServer): Promise<Modules> {
   };
 }
 
-/** The engine for one dev server: one made-up pod and parent, everything in memory. */
-function engine(server: ViteDevServer, m: Modules) {
-  const { acceptMessage, createVerbs, drain, fixtureBank, InMemoryRunQueue } = m.engine;
+/** Where the engine pushes a run's events, and where it logs: the dev server, or a test. */
+export interface EngineHost {
+  push(channel: string, data: LivePush): void;
+  error(message: string): void;
+}
+
+/** Which queue a pace's steps go to (see `devEngine`). */
+type LaneKind = "main" | "held" | "failing" | "retrying";
+const laneKind = (play: PacePlay): LaneKind => {
+  // A retry first: its step must come back, which a held lane never lets it.
+  if (play.failOnce !== undefined) return "retrying";
+  if (play.stall || play.hold) return "held";
+  return play.pastMax ? "failing" : "main";
+};
+
+const never = <T>(): Promise<T> => new Promise<T>(() => {});
+
+/**
+ * The engine for one dev server: one made-up pod and parent, everything in memory. Each
+ * conversation plays the pace it was sent with (`dev/paces.ts`), so 2 pages at different paces
+ * never pace each other's turns: a run's pace is its conversation's.
+ */
+export function devEngine(host: EngineHost, m: Modules) {
+  const { acceptMessage, createVerbs, drain, fixtureBank, InMemoryRunQueue, VerbError } = m.engine;
   const { ConversationId, RunId } = m.run;
 
-  /** A script per run, so every turn of the dev page plays the same way from its start. */
+  /** A script per run, so every turn plays its pace from its start. */
   const scripts = new Map<string, ScriptedMuse>();
-  /**
-   * The pace each conversation was sent with (`?pace=`), so 2 pages at different paces never
-   * pace each other's turns: a run's pace is its conversation's.
-   */
+  /** Each run's verb calls so far, by verb: a hold and a refusal count them. */
+  const calls = new Map<string, Map<string, number>>();
+  /** The runs whose failing model call has failed its once. */
+  const failedOnce = new Set<string>();
   const paces = new Map<string, Pace>();
   const conversations = new Map<string, string>();
-  const muse: MuseClient = {
-    async respond(request: MuseRequest): Promise<MuseResponse> {
-      let scripted = scripts.get(request.run_id);
-      if (scripted === undefined) {
-        scripted = new m.engine.ScriptedMuse(turnScript());
-        scripts.set(request.run_id, scripted);
-      }
-      const pace = await paceOfRun(request.run_id);
-      // `stall`: the step has taken the parent's words into the log; the model never answers.
-      if (pace === "stall") return new Promise<MuseResponse>(() => {});
-      const think = pace === "slow" ? SLOW_THINK_MS : THINK_MS;
-      await new Promise((resolve) => setTimeout(resolve, think));
-      return scripted.respond(request);
-    },
-  };
 
   /** The store, with every append pushed to the page on `run:<id>`. */
   const store = new m.store.InMemoryStore();
@@ -159,79 +130,128 @@ function engine(server: ViteDevServer, m: Modules) {
   store.appendRunEvents = async (pod, run, attempt, events) => {
     const appended = await append(pod, run, attempt, events);
     if (!appended.stale && appended.value.length > 0)
-      server.hot.send(runChannel(run), {
-        run_id: run,
-        events: [...appended.value],
-      } satisfies LivePush);
+      host.push(runChannel(run), { run_id: run, events: [...appended.value] });
     return appended;
   };
 
-  /** A run's pace: its conversation's, looked up once. */
-  async function paceOfRun(run: string): Promise<Pace | null> {
+  /** A run's play: its conversation's pace, looked up once. */
+  async function playOfRun(run: string): Promise<PacePlay> {
     let conversation = conversations.get(run);
     if (conversation === undefined) {
       const pod = await store.findRunPod(RunId.parse(run));
-      if (!pod) return null;
+      if (!pod) return playOf(null);
       conversation = (await store.getRun(pod, RunId.parse(run))).conversation_id ?? "";
       conversations.set(run, conversation);
     }
-    return paces.get(conversation) ?? null;
+    return playOf(paces.get(conversation) ?? null);
   }
 
   /**
-   * The queue, paced: a stalled or failing conversation's steps go to a lane of their own, which
-   * only that pace's drains read, so no pace ever plays another's turn. A stalled step is archived
-   * the moment it is read: its model never answers, and a step delivered again would hang the next
-   * stalled drain on it (and write a retry into a log that must stay still). A failing lane drains
-   * on a clock past the turn's max deadline, so the engine ends it failed with `RunTimedOut`.
+   * The queues. A held pace's steps (a model or a verb that never answers) go to a lane that
+   * archives a step the moment it is read: the step hangs, and one delivered again would hang the
+   * next drain on it and write a retry into a log that must stay still. A failing lane drains on a
+   * clock past the turn's max deadline, so the engine ends it failed with `RunTimedOut`. A retrying
+   * lane's clock jumps past the visibility timeout when its model call fails, so the same drain
+   * reads the step again and logs the retry. Each lane is read only by its own drains.
    */
-  const lane = (): Engine.InMemoryRunQueue => new InMemoryRunQueue(() => new Date());
-  const stalled = lane();
-  const readStalled = stalled.read.bind(stalled);
-  stalled.read = async (vt_s, qty) => {
-    const read = await readStalled(vt_s, qty);
-    for (const step of read) await stalled.archive(step.msg_id);
+  const lane = (clock: () => Date = () => new Date()): Engine.InMemoryRunQueue =>
+    new InMemoryRunQueue(clock);
+  const held = lane();
+  const readHeld = held.read.bind(held);
+  held.read = async (vt_s, qty) => {
+    const read = await readHeld(vt_s, qty);
+    for (const step of read) await held.archive(step.msg_id);
     return read;
   };
   const failing = lane();
+  let skew = 0;
+  const retrying = lane(() => new Date(Date.now() + skew));
   const queue = lane();
   const enqueue = queue.send.bind(queue);
+  const LANES: Readonly<Record<Exclude<LaneKind, "main">, Engine.InMemoryRunQueue>> = {
+    held,
+    failing,
+    retrying,
+  };
   queue.send = async (message, delay_s) => {
-    const pace = await paceOfRun(message.run_id);
-    if (pace === "stall") return stalled.send(message, delay_s);
-    if (pace === "fail") return failing.send(message, delay_s);
-    return enqueue(message, delay_s);
+    const kind = laneKind(await playOfRun(message.run_id));
+    return kind === "main" ? enqueue(message, delay_s) : LANES[kind].send(message, delay_s);
   };
+
+  const muse: MuseClient = {
+    async respond(request: MuseRequest): Promise<MuseResponse> {
+      const play = await playOfRun(request.run_id);
+      let scripted = scripts.get(request.run_id);
+      if (scripted === undefined) {
+        scripted = new m.engine.ScriptedMuse(play.script(lastWords));
+        scripts.set(request.run_id, scripted);
+      }
+      // `stall`: the step has taken the parent's words into the log; the model never answers.
+      if (play.stall) return never();
+      await new Promise((resolve) => setTimeout(resolve, play.think_ms));
+      if (
+        play.failOnce !== undefined &&
+        scripted.calls.length === play.failOnce &&
+        !failedOnce.has(request.run_id)
+      ) {
+        failedOnce.add(request.run_id);
+        skew += PAST_VISIBILITY_MS;
+        throw new Error("the scripted model failed once, as a dev pace asks");
+      }
+      return scripted.respond(request);
+    },
+  };
+
   const now = () => new Date();
-  const deps: EngineDeps = {
-    store,
-    muse,
-    // The learner verbs read the dev page's own made-up pod (dl-z5ja.25).
-    verbs: createVerbs({ bank: fixtureBank(), learners: store, now }),
-    queue,
-    now,
-  };
+  // The learner verbs read the dev page's own made-up pod (dl-z5ja.25).
+  const real = createVerbs({ bank: fixtureBank(), learners: store, now });
+  /** Each verb, counted per run, so a pace can hold one call or refuse the first. */
+  const paced = (verb: Verb): Verb => ({
+    ...verb,
+    async run(context, input) {
+      const play = await playOfRun(context.run_id);
+      const counted = calls.get(context.run_id) ?? new Map<string, number>();
+      calls.set(context.run_id, counted);
+      const n = (counted.get(verb.name) ?? 0) + 1;
+      counted.set(verb.name, n);
+      if (play.hold?.verb === verb.name && play.hold.call === n) return never();
+      if (play.refuseOnce === verb.name && n === 1)
+        throw new VerbError("input", `${verb.name}: refused once, as a dev pace asks`);
+      return verb.run(context, input);
+    },
+  });
+  const verbs = Object.fromEntries(
+    Object.entries(real).map(([name, verb]) => [name, paced(verb)]),
+  ) as unknown as Verbs;
+  const deps: EngineDeps = { store, muse, verbs, queue, now };
   const member = store.createAccount(m.contracts.Uuid.parse(crypto.randomUUID()), "pl");
   let draining: Promise<unknown> = Promise.resolve();
-  /** A paced lane's drain: on its own, so it never holds up another turn's. */
+  /** A step that throws stays in its queue; the host logs why, by run. */
+  const logged = {
+    onError: (e: unknown, step: { run_id: string }) =>
+      host.error(`[${ENGINE_PLUGIN}] run ${step.run_id}: ${String(e)}`),
+  };
+  /** A lane's drain: on its own, so it never holds up another turn's. */
   const drainLane = (lane: EngineDeps["queue"], clock: () => Date) => {
-    drain({ ...deps, queue: lane, now: clock }).catch((e: unknown) =>
-      server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
+    drain({ ...deps, queue: lane, now: clock }, logged).catch((e: unknown) =>
+      host.error(`[${ENGINE_PLUGIN}] ${String(e)}`),
     );
   };
   /** One drain at a time; a message mid-drain is picked up by the drain running. */
   const kick = () => {
     draining = draining
-      .then(() => drain(deps))
-      .catch((e: unknown) => server.config.logger.error(`[${ENGINE_PLUGIN}] ${String(e)}`));
+      .then(() => drain(deps, logged))
+      .catch((e: unknown) => host.error(`[${ENGINE_PLUGIN}] ${String(e)}`));
   };
 
   return {
+    store,
     async send(body: SendBody, pace: Pace | null = null): Promise<SendAnswer> {
       const { pod, account } = await member;
       const conversation_id = ConversationId.parse(body.conversation_id);
       if (pace === null) paces.delete(conversation_id);
       else paces.set(conversation_id, pace);
+      const kind = laneKind(playOf(pace));
       await store.createConversation(pod, {
         id: conversation_id,
         created_by: account,
@@ -259,21 +279,20 @@ function engine(server: ViteDevServer, m: Modules) {
                 }
               : { event_id: body.event_id, kind: "cancel", payload: {} },
       });
-      // A stalled turn's step hangs on its model and was archived when read, so a cancel there has
-      // no step to end it: it gets one of its own, which finds the cancel and ends the turn.
+      // A held turn's step hangs and was archived when read, so a cancel there has no step to end
+      // it: it gets one of its own, which finds the cancel and ends the turn.
       const open = run.status === "queued" || run.status === "in_progress";
-      if (pace === "stall" && body.kind === "cancel" && open) {
+      if (kind === "held" && body.kind === "cancel" && open) {
         await enqueue({ run_id: run.id, attempt: run.attempt });
         setTimeout(kick, 0);
         return { run };
       }
-      // After the answer: the page subscribes, then fetches after its cursor. A `stall` step logs
-      // the parent's message and then waits on a model that never answers; a `fail` step finds
-      // its turn past its max deadline. Each drains in its own lane.
+      // After the answer: the page subscribes, then fetches after its cursor. Each lane drains on
+      // its own.
       setTimeout(() => {
-        if (pace === "stall") drainLane(stalled, now);
-        else if (pace === "fail") drainLane(failing, () => new Date(Date.now() + PAST_MAX_MS));
-        else kick();
+        if (kind === "main") kick();
+        else if (kind === "failing") drainLane(failing, () => new Date(Date.now() + PAST_MAX_MS));
+        else drainLane(LANES[kind], now);
       }, 0);
       return { run };
     },
@@ -343,9 +362,17 @@ export function enginePlugin(): Plugin {
     apply: "serve",
     configureServer(server: ViteDevServer) {
       // Loaded on the first request, so a server start never waits on the engine.
-      let live: Promise<ReturnType<typeof engine>> | null = null;
+      let live: Promise<ReturnType<typeof devEngine>> | null = null;
       const ready = () => {
-        live ??= load(server).then((m) => engine(server, m));
+        live ??= load(server).then((m) =>
+          devEngine(
+            {
+              push: (channel, data) => server.hot.send(channel, data),
+              error: (message) => server.config.logger.error(message),
+            },
+            m,
+          ),
+        );
         return live;
       };
       server.middlewares.use(ENGINE_BASE, (req, res) => {
