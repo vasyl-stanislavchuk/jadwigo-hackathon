@@ -178,6 +178,15 @@ describe("paper words", () => {
       "Otocz zwierzęcia, które żyje w wodzie.",
     );
     expect(paperSay("Dotknij!", "circle", "pl")).toBe("Otocz kółkiem dobrą odpowiedź.");
+    for (const [said, printed] of [
+      ["Dotknij 7.", "Otocz 7."],
+      ["Kliknij 3 + 4 = ?", "Otocz 3 + 4 = ?"],
+      ["Tap 12 ÷ 3.", "Circle 12 ÷ 3."],
+      ["Tap ½.", "Circle ½."],
+      ["Dotknij $3 \\times 4$!", "Otocz $3 \\times 4$!"],
+      ["Dotknij {o1}.", "Otocz {o1}."],
+    ])
+      expect(paperSay(said ?? "", "circle", said?.startsWith("Tap") ? "en" : "pl")).toBe(printed);
   });
 
   it("leaves words that are not screen actions as written", () => {

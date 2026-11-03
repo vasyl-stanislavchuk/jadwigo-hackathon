@@ -118,10 +118,14 @@ const SCREEN_VERBS = new RegExp(SCREEN_VERB.source, "giu");
 /**
  * A text for paper: in each sentence a screen verb becomes the type's paper verb and every other
  * word stays, so the criterion the child needs is kept ("Tap the word that rhymes with cat." becomes
- * "Circle the word that rhymes with cat."). A sentence that is the verb alone ("Dotknij!") becomes
- * the type's paper line. A Polish verb that takes the genitive ("Dotknij zegara") keeps its object's
+ * "Circle the word that rhymes with cat.", "Dotknij 7." becomes "Otocz 7."). A sentence that is the
+ * verb alone ("Dotknij!") becomes the type's paper line. A Polish verb that takes the genitive ("Dotknij zegara") keeps its object's
  * case, a small grammar slip chosen over losing the question.
  */
+/** What is left of a sentence once its screen verb is gone, if the problem is in it: a letter, a
+ * number (½ included), a sign (+ ÷ =), maths or a slot. Only punctuation and spaces mean nothing. */
+const PROBLEM = /[\p{L}\p{N}\p{S}$]|\{[a-z][a-z0-9_]*\}/u;
+
 export function paperSay(text: string, action: PaperAction, language: Language): string {
   const line = copy(language, DO_KEYS[action]);
   const verb = copy(language, VERB_KEYS[action]);
@@ -129,7 +133,7 @@ export function paperSay(text: string, action: PaperAction, language: Language):
   for (const sentence of text.split(/(?<=[.!?…])\s+/)) {
     let next = sentence;
     if (SCREEN_VERB.test(sentence))
-      next = /\p{L}/u.test(sentence.replace(SCREEN_VERBS, ""))
+      next = PROBLEM.test(sentence.replace(SCREEN_VERBS, ""))
         ? sentence.replace(SCREEN_VERBS, (found) =>
             found[0] === found[0]?.toUpperCase()
               ? verb.charAt(0).toUpperCase() + verb.slice(1)
