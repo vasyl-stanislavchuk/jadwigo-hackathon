@@ -176,7 +176,7 @@ describe("the chat pane, one state per golden log", () => {
     expect(screen.getByText("Przywracanie rozmowy…")).toBeTruthy();
   });
 
-  it("a failed turn's foot copies its run log for support (D7, S3)", () => {
+  it("a failed turn's foot copies the run, its attempt, error types and stage places for support (D7, S3)", () => {
     const writeText = vi.fn((_text: string) => Promise.resolve());
     Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
     const turn = turnOf("failed-turn");
@@ -184,9 +184,66 @@ describe("the chat pane, one state per golden log", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     const foot = document.querySelector("[data-foot='failed']") as HTMLElement;
     fireEvent.click(within(foot).getByRole("button", { name: "Kopiuj szczegóły dla pomocy" }));
-    const copied = JSON.parse(String(writeText.mock.calls.at(0)?.at(0)));
-    expect(copied.run).toBe(turn.run.id);
-    expect(copied.events).toHaveLength(turn.events?.length ?? -1);
+    const copied = String(writeText.mock.calls.at(0)?.at(0));
+    const lines = copied.split("\n");
+    expect(lines[0]).toBe(`run ${turn.run.id}`);
+    expect(lines[1]).toBe("attempt 1");
+    expect(lines.map((l) => l.split(/[ :]/)[0])).toEqual([
+      "run",
+      "attempt",
+      "status",
+      "errors",
+      "plan",
+    ]);
+    expect(lines[3]).toMatch(
+      /^errors: (none|[\w -]+( \(attempt \d+\))?(, [\w -]+( \(attempt \d+\))?)*)$/,
+    );
+    expect(lines[4]).toMatch(/^plan: (none|\d+ \w+( · \d+ \w+)*)$/);
+  });
+
+  it("copies no learner data: no name, answer, message, tool output, error message or plan words (dl-uukj.47.71.28)", () => {
+    const writeText = vi.fn((_text: string) => Promise.resolve());
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+    const PLANTED = "Ola odpowiedziała 17 jabłek";
+    const turn = turnOf("failed-turn");
+    // Plant the child's name and answer everywhere the log can carry words.
+    const planted = (turn.events ?? []).map((e): RunEvent => {
+      switch (e.type) {
+        case "message":
+          return { ...e, payload: { ...e.payload, text: PLANTED } };
+        case "tool_call":
+          return { ...e, payload: { ...e.payload, input: { answer: PLANTED } } };
+        case "tool_result":
+          return {
+            ...e,
+            payload: {
+              ...e.payload,
+              output: { answer: PLANTED },
+              error: e.payload.error === null ? null : { ...e.payload.error, message: PLANTED },
+            },
+          };
+        case "error":
+          return {
+            ...e,
+            payload: { ...e.payload, error: { ...e.payload.error, message: PLANTED } },
+          };
+        case "plan":
+          return {
+            ...e,
+            payload: { entries: e.payload.entries.map((x) => ({ ...x, text: PLANTED })) },
+          };
+        default:
+          return e;
+      }
+    });
+    expect(JSON.stringify(planted)).toContain(PLANTED);
+    pane({ turns: [{ ...turn, events: planted }], phase: failedPhase(turn) });
+    const foot = document.querySelector("[data-foot='failed']") as HTMLElement;
+    fireEvent.click(within(foot).getByRole("button", { name: "Kopiuj szczegóły dla pomocy" }));
+    const copied = String(writeText.mock.calls.at(0)?.at(0));
+    expect(copied).toContain(`run ${turn.run.id}`);
+    for (const word of ["Ola", "17", "jabłek", "answer", "{", '"'])
+      expect(copied).not.toContain(word);
   });
 
   it("a follow-up sent mid-turn is listed as queued", () => {
