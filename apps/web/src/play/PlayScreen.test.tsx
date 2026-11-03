@@ -680,6 +680,20 @@ describe("a given lesson's first screen", () => {
     expect(screen.queryByRole("button", { name: "To nie ja" })).toBeNull();
   });
 
+  it("says a learners-only link naming no child is not complete, with nothing to tap", async () => {
+    const start = open("", { ...given, open: false });
+    expect(await screen.findByText("Ten link jest niepełny. Poproś rodzica o nowy.")).toBeTruthy();
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(start).not.toHaveBeenCalled();
+  });
+
+  it("a lesson with no identity step opens straight in, with no first screen", async () => {
+    const start = open("", INTRO);
+    await playing();
+    expect(document.querySelector("[data-intro]")).toBeNull();
+    expect(start).toHaveBeenCalledExactlyOnceWith(ASSIGNMENT, {});
+  });
+
   it("leaves out a count of 0", async () => {
     open("", { ...given, question_count: 0 });
     await screen.findByText("Mnożenie przez 2 i 5");
