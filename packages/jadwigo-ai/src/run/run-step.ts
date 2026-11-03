@@ -39,7 +39,7 @@ import type { AttachmentReader, Converter } from "./attachments.ts";
 import { earlierLine, refusedLine, turnFiles } from "./files.ts";
 import { eventIdFor, turnRunIdFor } from "./ids.ts";
 import { inLanguage } from "./language.ts";
-import { lessonValidationIssue } from "./lesson-validation.ts";
+import { lessonValidationIssue, uncheckedRevision } from "./lesson-validation.ts";
 import { movePlan, planIn, settlePlan, startPlan, startsPlan } from "./plan.ts";
 
 /**
@@ -1224,8 +1224,63 @@ async function finish(deps: EngineDeps, w: Writer): Promise<RunStepOutcome> {
       await deps.queue.send({ run_id: w.run, attempt: w.attempt });
       return "continue";
     }
+    await checkLatest(deps, w);
     return endTurn(w, "completed", deps.now());
   });
+}
+
+/**
+ * A parent's edit on an ended turn calls no model, so its lesson is checked here, in the unit that
+ * writes it (dl-uukj.47.71.48). The check goes in before the revision under the steer's own id: the
+ * order and the `call_id` of a `lesson_check` that writes a revision, so it stands for this one.
+ */
+async function checkPatched(
+  deps: EngineDeps,
+  w: Writer,
+  run: Run,
+  steer: SteerEvent,
+  lesson: VerbContext["lesson"],
+): Promise<void> {
+  const call: ToolCall = {
+    call_id: steer.event_id,
+    verb: "lesson_check",
+    input: { draft_id: w.run, help: {}, names: [] },
+  };
+  await w.append([
+    {
+      type: "tool_call",
+      run_id: w.run,
+      event_id: await w.id("tool", call.call_id, "call"),
+      payload: call,
+    },
+  ]);
+  await runTool(deps, w, { pod: w.pod, created_by: run.created_by, run }, call, lesson);
+}
+
+/**
+ * A turn never ends on a lesson nobody checked (dl-uukj.47.71.48): the model stopped short of it.
+ * The check is code, so it runs here at no cost, as a real `lesson_check` in the log: the card, the
+ * spine and the give route read it as any other.
+ */
+async function checkLatest(deps: EngineDeps, w: Writer): Promise<void> {
+  if (!uncheckedRevision(w.log)) return;
+  const run = await deps.store.getRun(w.pod, w.run);
+  const lesson = await conversationLesson(deps.store, w.pod, w.run);
+  if (run === null || lesson === null) return;
+  const call: ToolCall = {
+    call_id: `auto_check_${lesson.revision}`,
+    verb: "lesson_check",
+    input: { draft_id: w.run, help: {}, names: [] },
+  };
+  await w.append([
+    {
+      type: "tool_call",
+      run_id: w.run,
+      event_id: await w.id("tool", call.call_id, "call"),
+      payload: call,
+    },
+  ]);
+  await runTool(deps, w, { pod: w.pod, created_by: run.created_by, run }, call, lesson);
 }
 
 async function endTurn(
@@ -1441,7 +1496,10 @@ function revisionOf(log: readonly RunEvent[], steer: SteerEvent): number | null 
  * or not, with why (`stale_base`, `invalid_file`, `no_lesson`), so the pane reads the outcome
  * instead of re-deriving the rule. A patch not applied stays words for the model, told why.
  */
-async function applyPatches(w: Writer): Promise<number> {
+async function applyPatches(
+  w: Writer,
+  beforeRevision?: (steer: SteerEvent, lesson: VerbContext["lesson"]) => Promise<void>,
+): Promise<number> {
   let applied = 0;
   for (const steer of steersOf(w.log)) {
     const { patch, base_revision } = steer.payload;
@@ -1467,6 +1525,7 @@ async function applyPatches(w: Writer): Promise<number> {
       }
       const lesson_file = mergePatch(lesson.lesson_file, patch);
       if (!readable(lesson_file)) return resolve({ applied: false, reason: "invalid_file" });
+      await beforeRevision?.(steer, { revision: base_revision, lesson_file });
       // The resolution, then its revision, as the golden order keeps a tool_result before its
       // revision. A writer that wins between the check above and this fails the unit, and a
       // redelivery redoes it, now as stale_base.
@@ -1548,7 +1607,7 @@ async function patchEnded(
   });
   // A later unit applies every logged patch not yet resolved, this take's and any a step that
   // threw after its take left behind (lead decision 48): a redelivery redoes it, never loses it.
-  await applyPatches(w);
+  await applyPatches(w, (steer, lesson) => checkPatched(deps, w, found.run, steer, lesson));
   return w.appended;
 }
 
