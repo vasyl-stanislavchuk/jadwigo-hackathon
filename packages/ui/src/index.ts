@@ -3,6 +3,15 @@
 // an app page is built from (dl-uukj.32.3), and the register they draw in (dl-uukj.32.17).
 
 export {
+  type ListQuery,
+  type ListQuerySchema,
+  type ListSort,
+  PAGE_PARAM,
+  readListQuery,
+  SORT_PARAM,
+  writeListQuery,
+} from "./lib/list-query.ts";
+export {
   type Density,
   DensityScope,
   type Register,
@@ -13,7 +22,24 @@ export {
 export { followSystemTheme, heldTheme, holdTheme, setAudience, type Theme } from "./lib/theme.ts";
 export { TONE_COUNT, toneClasses } from "./lib/tone.ts";
 export { cn } from "./lib/utils.ts";
+export {
+  DataTable,
+  type DataTableColumn,
+  type DataTableSelection,
+  dataTableColumns,
+  type RowAction,
+} from "./parts/data-table.tsx";
+export { Facet, type FacetChoice, type FacetOption, FacetToggles } from "./parts/facet.tsx";
 export { Field } from "./parts/field.tsx";
+export {
+  activeFilterWords,
+  FilterBar,
+  type FilterBarFacet,
+  type FilterBarLabels,
+  SortMenu,
+  type TableDensity,
+  ViewMenu,
+} from "./parts/filter-bar.tsx";
 export { Heading } from "./parts/heading.tsx";
 export { Label } from "./parts/label.tsx";
 export { Link, linkVariants } from "./parts/link.tsx";
