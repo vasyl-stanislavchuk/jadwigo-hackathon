@@ -115,6 +115,68 @@ describe("the composer's Stop (S6)", () => {
   });
 });
 
+describe("Esc after a choose form (the steward's finding on #801)", () => {
+  /** plan-and-cite as far as it asks the parent a choose form: the turn is still running. */
+  function asking(): Turn {
+    const asked = (RUN_LOGS.find((l) => l.name === "plan-and-cite")?.events ?? []).map((e) =>
+      RunEvent.parse(e),
+    );
+    const view = foldRun(asked.filter((e) => e.seq <= 12));
+    return {
+      run: { id: RunId.parse(asked[0]?.run_id), status: "awaiting_input" } as Run,
+      view,
+    };
+  }
+
+  it("stops from the composer that comes back once the form is answered, the turn still running", async () => {
+    const onStop = vi.fn();
+    render(
+      <ChatPane
+        language="pl"
+        variant="parent"
+        turns={[asking()]}
+        queued={[]}
+        restoring={false}
+        stopping={false}
+        sendFailed={false}
+        onSend={() => {}}
+        onStop={onStop}
+      />,
+    );
+    // The form stands in the box's place first: no box, so nothing for Esc there yet.
+    expect(document.querySelector("[data-composer]")).toBeNull();
+    await act(async () => fireEvent.keyDown(document.activeElement as HTMLElement, { key: "2" }));
+    expect(document.querySelector("[data-choose]")).toBeNull();
+    expect(document.activeElement).toBe(words());
+    fireEvent.keyDown(words(), { key: "Escape" });
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+
+  it("follows the box when the composer shows, the form takes its place, and the box comes back", async () => {
+    const onStop = vi.fn();
+    const props = {
+      language: "pl" as const,
+      variant: "parent" as const,
+      queued: [],
+      restoring: false,
+      stopping: false,
+      sendFailed: false,
+      onSend: () => {},
+      onStop,
+    };
+    const view = render(<ChatPane {...props} turns={[turn(2)]} />);
+    const first = document.querySelector("[data-composer]");
+    view.rerender(<ChatPane {...props} turns={[asking()]} />);
+    expect(document.querySelector("[data-choose]")).not.toBeNull();
+    await act(async () => fireEvent.keyDown(document.activeElement as HTMLElement, { key: "1" }));
+    const again = document.querySelector("[data-composer]");
+    expect(again).not.toBeNull();
+    expect(again).not.toBe(first);
+    fireEvent.keyDown(words(), { key: "Escape" });
+    expect(onStop).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("one focus ring (S22, dl-uukj.47.73)", () => {
   it("draws the ring on the box while the words have focus, and none on the textarea", () => {
     pane();

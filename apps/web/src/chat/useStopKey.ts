@@ -27,11 +27,18 @@ function isStopKey(event: KeyboardEvent, doc: Document = document): boolean {
 }
 
 export function useStopKey(root: RefObject<HTMLElement | null>, stop: StopKey): void {
-  // The latest values, so the listener stays mounted once and never reads a stale turn.
+  // The latest values, so the listener never reads a stale turn.
   const latest = useRef(stop);
   latest.current = stop;
+  /** The element the listener is on now, and how to take it off. */
+  const attached = useRef<{ el: HTMLElement; off: () => void } | null>(null);
+  // After every render: the ref may hold another element now (the composer's box comes back as a
+  // new form after the choose form took its place), so the listener follows it.
   useEffect(() => {
     const el = root.current;
+    if (attached.current?.el === el) return;
+    attached.current?.off();
+    attached.current = null;
     if (el === null) return;
     const onKey = (event: KeyboardEvent) => {
       const { running, stopping, onStop } = latest.current;
@@ -40,6 +47,14 @@ export function useStopKey(root: RefObject<HTMLElement | null>, stop: StopKey): 
       onStop();
     };
     el.addEventListener("keydown", onKey);
-    return () => el.removeEventListener("keydown", onKey);
-  }, [root]);
+    attached.current = { el, off: () => el.removeEventListener("keydown", onKey) };
+  });
+  // Off for good when the owner unmounts.
+  useEffect(
+    () => () => {
+      attached.current?.off();
+      attached.current = null;
+    },
+    [],
+  );
 }
