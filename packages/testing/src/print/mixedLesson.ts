@@ -269,7 +269,6 @@ export const MIXED_PRINT_LESSON: {
     q(17, "bucket", "Parzyste czy nieparzyste?", {
       family: "group",
       data: {
-        stem: { text: "Przeciągnij każdą liczbę do właściwego koszyka." },
         groups: [
           { id: "even", label: "parzyste" },
           { id: "odd", label: "nieparzyste" },

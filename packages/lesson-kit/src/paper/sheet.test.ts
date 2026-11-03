@@ -154,8 +154,14 @@ describe("paper words", () => {
   });
 
   it("rewrites the stem of every family, a group's too", () => {
-    const bucket = mixed().questions[16];
-    expect(bucket?.data.stem?.text).toBe("Połącz liniami to, co do siebie pasuje.");
+    const bucket = MIXED_PRINT_LESSON.questions[16];
+    if (bucket?.family !== "group") throw new Error("fixture");
+    const stemmed = {
+      ...bucket,
+      data: { ...bucket.data, stem: { text: "Przeciągnij każdą liczbę do właściwego koszyka." } },
+    } as MixedPrintQuestion;
+    const [question] = sheetOf([stemmed]).questions;
+    expect(question?.data.stem?.text).toBe("Połącz liniami to, co do siebie pasuje.");
   });
 
   it("keeps a sentence that carries the problem, swapping only the verb", () => {
