@@ -6,7 +6,7 @@ sequenceDiagram
   participant M as Meta Muse, /v1/responses
   W->>API: POST a chat message, photos attached
   API->>PG: 1 transaction: message, run, pgmq.send
-  API-->>W: 202, the message as sent
+  API-->>W: 201, the run
   API-)R: async invoke, live alias, 0 retries
   R->>PG: read agent_step
   R->>M: 1 step: the prompt and the lesson verbs
