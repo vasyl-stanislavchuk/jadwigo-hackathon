@@ -881,6 +881,7 @@
   "parent_breadcrumb_label": "Where you are",
   "parent_new_lesson": "New lesson",
   "parent_menu_fold": "Fold the menu",
+  "parent_toasts_label": "Notifications",
   "parent_menu_unfold": "Unfold the menu",
   "parent_menu_open": "Open the menu",
   "parent_menu_close": "Close the menu",
@@ -1234,5 +1235,199 @@
   "oauth_deny": "Deny",
   "oauth_failed": "We couldn't connect. Go back to the app and try again.",
   "oauth_as": "Signed in as {email}.",
-  "oauth_not_you": "Not you? Sign out"
+  "oauth_not_you": "Not you? Sign out",
+  "chat_phase_queued_line": "Starting in a moment.",
+  "chat_phase_thinking_lesson": "Thinking about the lesson",
+  "chat_phase_thinking_question": "Thinking about your question",
+  "chat_phase_waiting_meta": "waiting for you",
+  "chat_phase_stopped_meta": "stopped · {t}",
+  "chat_phase_failed_meta": "stopped early · {t}",
+  "chat_slow_line": "This is taking longer than usual. Still working.",
+  "chat_stalled_title": "Nothing has happened for a minute.",
+  "chat_stalled_body": "You can wait or start this request again. What is already in the lesson stays.",
+  "chat_wait_more": "Keep waiting",
+  "chat_stage_again_2": "second time",
+  "chat_stage_again_3": "third time",
+  "chat_stage_failed_sum": [
+    {
+      "declarations": ["input n", "local tries_noun = n: plural"],
+      "selectors": ["tries_noun"],
+      "match": {
+        "tries_noun=one": "didn't work after {n} try",
+        "tries_noun=other": "didn't work after {n} tries"
+      }
+    }
+  ],
+  "chat_stage_stopped_sum": "stopped",
+  "chat_lines_earlier": "{n} earlier",
+  "chat_line_waiting": "Waiting for your answer below",
+  "chat_line_retry": "{stage} took too long, trying again",
+  "chat_stage_retry_sum": "second try",
+  "chat_line_recovered_types": "Couldn't check the question types, so I built the lesson without them",
+  "chat_line_failed_generic": "This step didn't work, I carried on without it",
+  "chat_line_search": [
+    {
+      "declarations": ["input query", "input grade", "input n", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Searched “{query}” in grade {grade}: {n} set",
+        "sets_noun=other": "Searched “{query}” in grade {grade}: {n} sets"
+      }
+    }
+  ],
+  "chat_tags_more": "+{n} more",
+  "chat_tags_less": "Show less",
+  "chat_line_search_pick": [
+    {
+      "declarations": ["input n", "input grade", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Picked {n} set that fits grade {grade}",
+        "sets_noun=other": "Picked {n} sets that fit grade {grade}"
+      }
+    }
+  ],
+  "chat_line_draft": [
+    {
+      "declarations": ["input n", "input topic", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Built {n} question on {topic}",
+        "q_noun=other": "Built {n} questions on {topic}"
+      }
+    }
+  ],
+  "chat_line_edit_added": "Added question {n}: {topic}",
+  "chat_line_edit_hints": "Fixed the hints in questions {list}",
+  "chat_line_check_found": [
+    {
+      "declarations": ["input n", "local things_noun = n: plural"],
+      "selectors": ["things_noun"],
+      "match": {
+        "things_noun=one": "Checked the lesson: {n} thing to fix",
+        "things_noun=other": "Checked the lesson: {n} things to fix"
+      }
+    }
+  ],
+  "chat_line_check_ok": "Checked the lesson: all good",
+  "chat_line_read": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Read the lesson: {n} question",
+        "q_noun=other": "Read the lesson: {n} questions"
+      }
+    }
+  ],
+  "chat_steer_label": "Added while working",
+  "chat_steer_photos": [
+    {
+      "declarations": ["input n", "local photos_noun = n: plural"],
+      "selectors": ["photos_noun"],
+      "match": {
+        "photos_noun=one": "“{n} photo”",
+        "photos_noun=other": "“{n} photos”"
+      }
+    }
+  ],
+  "chat_summary_done": [
+    {
+      "declarations": ["input n", "local stages_noun = n: plural"],
+      "selectors": ["stages_noun"],
+      "match": {
+        "stages_noun=one": "Done in {n} stage",
+        "stages_noun=other": "Done in {n} stages"
+      }
+    }
+  ],
+  "chat_summary_done_fix": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Done, {n} question to fix",
+        "q_noun=other": "Done, {n} questions to fix"
+      }
+    }
+  ],
+  "chat_summary_meta": [
+    {
+      "declarations": ["input k", "input t", "local steps_noun = k: plural"],
+      "selectors": ["steps_noun"],
+      "match": {
+        "steps_noun=one": "{k} step · {t}",
+        "steps_noun=other": "{k} steps · {t}"
+      }
+    }
+  ],
+  "chat_failed_title": "Couldn't build the lesson.",
+  "chat_failed_body": [
+    {
+      "declarations": ["input n", "local times_noun = n: plural"],
+      "selectors": ["times_noun"],
+      "match": {
+        "times_noun=one": "Jadwigo tried {n} time. Your request is saved, you can try again.",
+        "times_noun=other": "Jadwigo tried {n} times. Your request is saved, you can try again."
+      }
+    }
+  ],
+  "chat_retry": "Try again",
+  "chat_copy_support": "Copy details for support",
+  "chat_stopped_none": "Stopped. The lesson is still version {n}; I didn't change anything.",
+  "chat_stopped_some": "Stopped. The lesson is now version {n}, with what I managed to change.",
+  "chat_send_disabled": "Type something or add a photo.",
+  "chat_queue_label": "I'll send this when I'm done",
+  "chat_queue_now": "Send now",
+  "chat_queue_photos_wait": "I'll send photos after this answer.",
+  "chat_newest": "Newest",
+  "card_ready": "Lesson ready",
+  "card_fix": "Lesson needs fixing",
+  "card_working": "Version {n} · Jadwigo is making version {next}",
+  "card_superseded": "version {n} · newer exists",
+  "card_open_version": "Open this version",
+  "card_expand": "Expand lesson",
+  "card_collapse": "Collapse lesson",
+  "card_fix_reason": "You can give the lesson once the questions are fixed.",
+  "card_fix_reason_short": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} question needs fixing first.",
+        "q_noun=other": "{n} questions need fixing first."
+      }
+    }
+  ],
+  "card_fix_action": "Fix it for me",
+  "lesson_pane_band": "Jadwigo is changing this lesson. Version {n} will appear here.",
+  "lesson_tag_new": "new",
+  "lesson_tag_changed": "changed",
+  "rating_label": "This lesson is",
+  "rating_easy": "too easy",
+  "rating_ok": "just right",
+  "rating_hard": "too hard",
+  "choose_label": "Jadwigo asks",
+  "choose_recommended": "recommended",
+  "choose_own": "Or say it in your own words…",
+  "choose_skip": "Skip question",
+  "attach_caption": "This is how Jadwigo sees the photos",
+  "attach_pages": [
+    {
+      "declarations": ["input n", "local pages_noun = n: plural"],
+      "selectors": ["pages_noun"],
+      "match": {
+        "pages_noun=one": "{n} page",
+        "pages_noun=other": "{n} pages"
+      }
+    }
+  ],
+  "day_yesterday": "Yesterday",
+  "day_today": "Today",
+  "live_working": "Jadwigo is working",
+  "live_waiting": "Waiting for you",
+  "live_done": "Done",
+  "live_stopped": "Stopped",
+  "live_failed": "Didn't work",
+  "live_stalled": "Stuck"
 }

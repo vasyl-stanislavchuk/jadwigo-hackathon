@@ -742,7 +742,7 @@
   "chat_send": "Wyślij",
   "chat_send_again": "Nie udało się wysłać. Spróbuj ponownie.",
   "chat_stop": "Zatrzymaj",
-  "chat_stopping": "Zatrzymywanie…",
+  "chat_stopping": "Zatrzymuję…",
   "chat_status_queued": "W kolejce",
   "chat_status_in_progress": "W toku",
   "chat_status_awaiting_input": "Czeka na Ciebie",
@@ -773,7 +773,7 @@
   "chat_problem_retrying": "Ponowna próba.",
   "chat_problem_failed": "Jadwigo nie dała rady dokończyć tej prośby, mimo kilku prób.",
   "chat_copy_details": "Kopiuj szczegóły",
-  "chat_copied": "Skopiowano",
+  "chat_copied": "Skopiowane",
   "chat_restoring": "Przywracanie rozmowy…",
   "chat_new": "Nowa rozmowa",
   "chat_lesson_empty": "Tu pojawi się lekcja.",
@@ -903,6 +903,7 @@
   "parent_breadcrumb_label": "Gdzie jesteś",
   "parent_new_lesson": "Nowa lekcja",
   "parent_menu_fold": "Zwiń menu",
+  "parent_toasts_label": "Powiadomienia",
   "parent_menu_unfold": "Rozwiń menu",
   "parent_menu_open": "Otwórz menu",
   "parent_menu_close": "Zamknij menu",
@@ -1272,5 +1273,225 @@
   "oauth_deny": "Odmów",
   "oauth_failed": "Nie udało się połączyć. Wróć do aplikacji i spróbuj jeszcze raz.",
   "oauth_as": "Zalogowano jako {email}.",
-  "oauth_not_you": "To nie Ty? Wyloguj się"
+  "oauth_not_you": "To nie Ty? Wyloguj się",
+  "chat_phase_queued_line": "Zacznę za chwilę.",
+  "chat_phase_thinking_lesson": "Zastanawiam się nad lekcją",
+  "chat_phase_thinking_question": "Zastanawiam się nad pytaniem",
+  "chat_phase_waiting_meta": "czeka na Ciebie",
+  "chat_phase_stopped_meta": "zatrzymane · {t}",
+  "chat_phase_failed_meta": "przerwane · {t}",
+  "chat_slow_line": "To trwa dłużej niż zwykle. Pracuję dalej.",
+  "chat_stalled_title": "Nic się nie dzieje od minuty.",
+  "chat_stalled_body": "Możesz poczekać albo zacząć tę prośbę od nowa. To, co już jest w lekcji, zostanie.",
+  "chat_wait_more": "Czekaj dalej",
+  "chat_stage_again_2": "drugi raz",
+  "chat_stage_again_3": "trzeci raz",
+  "chat_stage_failed_sum": [
+    {
+      "declarations": ["input n", "local tries_noun = n: plural"],
+      "selectors": ["tries_noun"],
+      "match": {
+        "tries_noun=one": "nie wyszło po {n} próbie",
+        "tries_noun=few": "nie wyszło po {n} próbach",
+        "tries_noun=many": "nie wyszło po {n} próbach",
+        "tries_noun=other": "nie wyszło po {n} próbach"
+      }
+    }
+  ],
+  "chat_stage_stopped_sum": "zatrzymane",
+  "chat_lines_earlier": "{n} wcześniej",
+  "chat_line_waiting": "Czekam na Twoją odpowiedź poniżej",
+  "chat_line_retry": "{stage} trwało za długo, próbuję jeszcze raz",
+  "chat_stage_retry_sum": "druga próba",
+  "chat_line_recovered_types": "Nie dało się sprawdzić rodzajów zadań, więc ułożyłam lekcję bez tego",
+  "chat_line_failed_generic": "Ten krok się nie udał, poszłam dalej bez niego",
+  "chat_line_search": [
+    {
+      "declarations": ["input query", "input grade", "input n", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Szukałam „{query}” w klasie {grade}: {n} zestaw",
+        "sets_noun=few": "Szukałam „{query}” w klasie {grade}: {n} zestawy",
+        "sets_noun=many": "Szukałam „{query}” w klasie {grade}: {n} zestawów",
+        "sets_noun=other": "Szukałam „{query}” w klasie {grade}: {n} zestawu"
+      }
+    }
+  ],
+  "chat_tags_more": "+{n} więcej",
+  "chat_tags_less": "Zwiń",
+  "chat_line_search_pick": [
+    {
+      "declarations": ["input n", "input grade", "local sets_noun = n: plural"],
+      "selectors": ["sets_noun"],
+      "match": {
+        "sets_noun=one": "Wybrałam {n} zestaw, który pasuje do {grade} klasy",
+        "sets_noun=few": "Wybrałam {n} zestawy, które pasują do {grade} klasy",
+        "sets_noun=many": "Wybrałam {n} zestawów, które pasują do {grade} klasy",
+        "sets_noun=other": "Wybrałam {n} zestawu, które pasują do {grade} klasy"
+      }
+    }
+  ],
+  "chat_line_draft": [
+    {
+      "declarations": ["input n", "input topic", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Ułożyłam {n} zadanie z {topic}",
+        "q_noun=few": "Ułożyłam {n} zadania z {topic}",
+        "q_noun=many": "Ułożyłam {n} zadań z {topic}",
+        "q_noun=other": "Ułożyłam {n} zadania z {topic}"
+      }
+    }
+  ],
+  "chat_line_edit_added": "Dodałam zadanie {n}: {topic}",
+  "chat_line_edit_hints": "Poprawiłam podpowiedzi w zadaniach {list}",
+  "chat_line_check_found": [
+    {
+      "declarations": ["input n", "local things_noun = n: plural"],
+      "selectors": ["things_noun"],
+      "match": {
+        "things_noun=one": "Sprawdziłam lekcję: {n} rzecz do poprawy",
+        "things_noun=few": "Sprawdziłam lekcję: {n} rzeczy do poprawy",
+        "things_noun=many": "Sprawdziłam lekcję: {n} rzeczy do poprawy",
+        "things_noun=other": "Sprawdziłam lekcję: {n} rzeczy do poprawy"
+      }
+    }
+  ],
+  "chat_line_check_ok": "Sprawdziłam lekcję: wszystko w porządku",
+  "chat_line_read": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Przeczytałam lekcję: {n} zadanie",
+        "q_noun=few": "Przeczytałam lekcję: {n} zadania",
+        "q_noun=many": "Przeczytałam lekcję: {n} zadań",
+        "q_noun=other": "Przeczytałam lekcję: {n} zadania"
+      }
+    }
+  ],
+  "chat_steer_label": "Dopisane w trakcie",
+  "chat_steer_photos": [
+    {
+      "declarations": ["input n", "local photos_noun = n: plural"],
+      "selectors": ["photos_noun"],
+      "match": {
+        "photos_noun=one": "„{n} zdjęcie”",
+        "photos_noun=few": "„{n} zdjęcia”",
+        "photos_noun=many": "„{n} zdjęć”",
+        "photos_noun=other": "„{n} zdjęcia”"
+      }
+    }
+  ],
+  "chat_summary_done": [
+    {
+      "declarations": ["input n", "local stages_noun = n: plural"],
+      "selectors": ["stages_noun"],
+      "match": {
+        "stages_noun=one": "Zrobione w {n} etapie",
+        "stages_noun=few": "Zrobione w {n} etapach",
+        "stages_noun=many": "Zrobione w {n} etapach",
+        "stages_noun=other": "Zrobione w {n} etapach"
+      }
+    }
+  ],
+  "chat_summary_done_fix": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Zrobione, {n} zadanie do poprawy",
+        "q_noun=few": "Zrobione, {n} zadania do poprawy",
+        "q_noun=many": "Zrobione, {n} zadań do poprawy",
+        "q_noun=other": "Zrobione, {n} zadania do poprawy"
+      }
+    }
+  ],
+  "chat_summary_meta": [
+    {
+      "declarations": ["input k", "input t", "local steps_noun = k: plural"],
+      "selectors": ["steps_noun"],
+      "match": {
+        "steps_noun=one": "{k} krok · {t}",
+        "steps_noun=few": "{k} kroki · {t}",
+        "steps_noun=many": "{k} kroków · {t}",
+        "steps_noun=other": "{k} kroku · {t}"
+      }
+    }
+  ],
+  "chat_failed_title": "Nie udało się ułożyć lekcji.",
+  "chat_failed_body": [
+    {
+      "declarations": ["input n", "local times_noun = n: plural"],
+      "selectors": ["times_noun"],
+      "match": {
+        "times_noun=one": "Jadwigo próbowała {n} raz. Twoja prośba jest zapisana, możesz spróbować jeszcze raz.",
+        "times_noun=few": "Jadwigo próbowała {n} razy. Twoja prośba jest zapisana, możesz spróbować jeszcze raz.",
+        "times_noun=many": "Jadwigo próbowała {n} razy. Twoja prośba jest zapisana, możesz spróbować jeszcze raz.",
+        "times_noun=other": "Jadwigo próbowała {n} razy. Twoja prośba jest zapisana, możesz spróbować jeszcze raz."
+      }
+    }
+  ],
+  "chat_retry": "Spróbuj ponownie",
+  "chat_copy_support": "Kopiuj szczegóły dla pomocy",
+  "chat_stopped_none": "Zatrzymane. Lekcja została w wersji {n}, nic w niej nie zmieniłam.",
+  "chat_stopped_some": "Zatrzymane. Lekcja została w wersji {n}, z tym, co zdążyłam zmienić.",
+  "chat_send_disabled": "Napisz coś albo dodaj zdjęcie.",
+  "chat_queue_label": "Wyślę, gdy skończę",
+  "chat_queue_now": "Wyślij teraz",
+  "chat_queue_photos_wait": "Zdjęcia wyślę dopiero po tej odpowiedzi.",
+  "chat_newest": "Najnowsze",
+  "card_ready": "Lekcja gotowa",
+  "card_fix": "Lekcja do poprawy",
+  "card_working": "Wersja {n} · Jadwigo robi wersję {next}",
+  "card_superseded": "wersja {n} · jest nowsza",
+  "card_open_version": "Otwórz tę wersję",
+  "card_expand": "Rozwiń lekcję",
+  "card_collapse": "Zwiń lekcję",
+  "card_fix_reason": "Daj lekcję będzie można, gdy zadania będą poprawione.",
+  "card_fix_reason_short": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "Najpierw trzeba poprawić {n} zadanie.",
+        "q_noun=few": "Najpierw trzeba poprawić {n} zadania.",
+        "q_noun=many": "Najpierw trzeba poprawić {n} zadań.",
+        "q_noun=other": "Najpierw trzeba poprawić {n} zadania."
+      }
+    }
+  ],
+  "card_fix_action": "Popraw za mnie",
+  "lesson_pane_band": "Jadwigo zmienia tę lekcję. Wersja {n} pojawi się tutaj.",
+  "lesson_tag_new": "nowe",
+  "lesson_tag_changed": "zmienione",
+  "rating_label": "Ta lekcja jest",
+  "rating_easy": "za łatwa",
+  "rating_ok": "w sam raz",
+  "rating_hard": "za trudna",
+  "choose_label": "Jadwigo pyta",
+  "choose_recommended": "polecane",
+  "choose_own": "Albo napisz własnymi słowami…",
+  "choose_skip": "Pomiń pytanie",
+  "attach_caption": "Tak Jadwigo widzi zdjęcia",
+  "attach_pages": [
+    {
+      "declarations": ["input n", "local pages_noun = n: plural"],
+      "selectors": ["pages_noun"],
+      "match": {
+        "pages_noun=one": "{n} strona",
+        "pages_noun=few": "{n} strony",
+        "pages_noun=many": "{n} stron",
+        "pages_noun=other": "{n} strony"
+      }
+    }
+  ],
+  "day_yesterday": "Wczoraj",
+  "day_today": "Dziś",
+  "live_working": "Jadwigo pracuje",
+  "live_waiting": "Czeka na Ciebie",
+  "live_done": "Gotowe",
+  "live_stopped": "Zatrzymane",
+  "live_failed": "Nie udało się",
+  "live_stalled": "Utknęło"
 }

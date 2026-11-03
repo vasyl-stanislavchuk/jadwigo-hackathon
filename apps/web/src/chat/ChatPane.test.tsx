@@ -89,7 +89,7 @@ describe("the chat pane, one state per golden log", () => {
 
   it("stopping: Stop turns into a disabled Stopping until the turn ends", () => {
     pane({ turns: [turnOf("reload-with-duplicates")], stopping: true });
-    const stopping = screen.getByRole("button", { name: "Zatrzymywanie…" }) as HTMLButtonElement;
+    const stopping = screen.getByRole("button", { name: "Zatrzymuję…" }) as HTMLButtonElement;
     expect(stopping.disabled).toBe(true);
   });
 
@@ -157,7 +157,7 @@ describe("the chat pane, one state per golden log", () => {
     expect(row.textContent).toContain("Ponowna próba.");
     fireEvent.click(within(row).getByRole("button", { name: "Kopiuj szczegóły" }));
     expect(writeText).toHaveBeenCalledWith(`run ${turn.run.id} attempt 1: StepTimedOut`);
-    expect(await within(row).findByRole("button", { name: "Skopiowano" })).toBeTruthy();
+    expect(await within(row).findByRole("button", { name: "Skopiowane" })).toBeTruthy();
   });
 
   it("a follow-up sent mid-turn is listed as queued", () => {

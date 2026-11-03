@@ -9,7 +9,8 @@
 // block sets the press to 0, D4: no edge, no lift, no press move), the default variant the primary, ink
 // blue with white text and a darker ink under the mouse (D5), outline on the field edge, ghost and
 // secondary on stone, quiet for Archiwizuj (never red, S3), link for navigation inside text. Sizes sm 28,
-// control 34 in the parent's density (48 outside it), lg 40 for sign-in, icon square. Disabled is a
+// control 34 in the parent's density (48 outside it), lg 40 for sign-in, icon square;
+// icon-sm 28, icon-control 32 and icon-touch 40 square for an adult's icon buttons. Disabled is a
 // quiet fill and the soft ink at full opacity; the screen says why beside it or in a tooltip (S5).
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "radix-ui";
@@ -48,6 +49,16 @@ const buttonVariants = cva(
         // The adult's small (a pager, a chip's inner button, a table's toolbar) and large (sign-in).
         sm: "min-h-jw-control-sm min-w-jw-control-sm gap-1.5 px-2.5 text-jw-page-small [&_svg:not([class*='size-'])]:size-3.5",
         lg: "min-h-jw-control-lg min-w-jw-control-lg px-5 text-jw-page-body [&_svg:not([class*='size-'])]:size-4",
+        // The adult's square icon buttons (handoff dl-uukj.47.71 §4, §9): icon-sm at the small control
+        // (28 in the parent's density), a queue row's Wyślij teraz and its close; icon-control at
+        // 32, a lesson card's expand and a turn's foot; icon-touch at 40, the phone's Zatrzymaj and
+        // Wyślij. Each names itself with an aria-label or a hidden word.
+        "icon-sm":
+          "size-jw-control-sm min-h-jw-control-sm min-w-jw-control-sm p-0 [&_svg:not([class*='size-'])]:size-3.5",
+        "icon-control":
+          "size-jw-control-icon min-h-jw-control-icon min-w-jw-control-icon p-0 [&_svg:not([class*='size-'])]:size-4",
+        "icon-touch":
+          "size-jw-control-lg min-h-jw-control-lg min-w-jw-control-lg p-0 [&_svg:not([class*='size-'])]:size-4",
       },
       // outline-none would set the outline's style to none, so the app's outline could not draw.
       register: {
