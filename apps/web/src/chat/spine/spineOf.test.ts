@@ -635,6 +635,29 @@ describe("the engine's own sequences", () => {
     expect(spine.stages.some((s) => s.summary?.copyKey === "chat_stage_failed_sum")).toBe(false);
   });
 
+  it("reads the settle after a repeat draft as the settle: its stage was done, so no end move (round 4)", () => {
+    const events = append(
+      start(),
+      ...searchedAndDrafted,
+      say("Układam jeszcze raz."),
+      call("call_7", "lesson_draft", { topic: "dodawanie" }),
+      result("call_7", "lesson_draft", { draft_id: "drf_2" }),
+      ...ending("cancelled", "done", "done", "failed"),
+    );
+    expect(spineOf(events, null, 0).stages.map((s) => s.status)).toEqual(["done", "done", "todo"]);
+  });
+
+  it("reads the settle after a repeat search as the settle (round 4)", () => {
+    const events = append(
+      start(),
+      ...searchedAndDrafted.slice(0, 5),
+      call("call_8", "question_search", { query: "dodawanie", grade: "1" }),
+      result("call_8", "question_search", { sets: [] }),
+      ...ending("cancelled", "done", "failed", "failed"),
+    );
+    expect(spineOf(events, null, 0).stages.map((s) => s.status)).toEqual(["done", "todo", "todo"]);
+  });
+
   it("keeps the plan's own end move before a stop: a check that finished reads done (the steward's input)", () => {
     // A stop asked for while the check ran: runTool writes the result and the plan's end move, the
     // next step finds the cancel, and endTurn writes no settle, since every stage is done.

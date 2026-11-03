@@ -511,10 +511,12 @@ function settled(entries: readonly { status: string }[]): string[] | null {
  * The seqs of the plan events that are the engine's end-of-turn settle (dl-uukj.47.71.37). The
  * settle says nothing about the stages, so the fold reads the plan before it. A plan event is one
  * only when all 3 hold: it comes right before the turn's end status (`endTurn` writes them
- * together); it is exactly `settlePlan` of the plan before it; and it is not the move a staged verb's
- * result ends its stage with, which comes right after that result or its revision (`runTool`). The
- * last keeps a check that failed and was then stopped (done, done, failed, no settle written) failed:
- * by content alone it is the settle of (done, done, in_progress).
+ * together); it is exactly `settlePlan` of the plan before it; and it is not the end move a result
+ * comes with, which `runTool` writes right after the result or its revision, as the engine's
+ * `movePlan` makes it (`movePlanPort` asks the same). The last keeps a check that failed and was
+ * then stopped (done, done, failed, no settle written) failed, since by content alone it is the
+ * settle of (done, done, in_progress); and it lets a settle that follows a repeat draft or search,
+ * whose stage was already done and so has no end move, be read as the settle.
  *
  * Depends on the engine's write order: `runTool` in packages/jadwigo-ai/src/run/run-step.ts appends
  * a verb's result, its revision and its plan end move together in one unit, so nothing comes between
@@ -523,6 +525,7 @@ function settled(entries: readonly { status: string }[]): string[] | null {
  */
 function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
   const found = new Set<number>();
+  // What each call was, and whether it failed: the end move runTool writes depends on both.
   const verbOf = new Map(
     log.flatMap((e) =>
       e.type === "tool_call" ? [[e.payload.call_id, e.payload.verb] as const] : [],
@@ -535,24 +538,58 @@ function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
     const prior = log[i - 1];
     const atEnd =
       next?.type === "status" && ["completed", "failed", "cancelled"].includes(next.payload.status);
-    // The end move follows a result (or its revision) of a verb the plan stages; an unstaged verb
-    // (a read, an edit) writes none, so a settle may come right after its result.
-    const verb =
+    // The result (or its revision) right before this event, and how it ended.
+    const ended =
       prior?.type === "tool_result"
-        ? prior.payload.verb
+        ? { verb: prior.payload.verb, failed: prior.payload.error !== null }
         : prior?.type === "lesson_revision"
-          ? verbOf.get(prior.payload.call_id)
-          : undefined;
-    const afterResult = verb !== undefined && PLAN_STAGE_OF[verb] !== undefined;
+          ? { verb: verbOf.get(prior.payload.call_id), failed: false }
+          : null;
+    // Is this event that result's own end move? Exactly when the engine's movePlan, run on the plan
+    // before it, makes one and makes this one. A verb with no stage, or a stage already done (a
+    // repeat draft or search), makes none, so a settle may follow its result straight away.
+    const move =
+      ended?.verb === undefined
+        ? null
+        : movePlanPort(before, ended.verb, ended.failed ? "failed" : "done");
+    const endMove = move !== null && sameStatuses(move, e.payload.entries);
     const expected = before === null ? null : settled(before);
-    const same =
-      expected !== null &&
-      expected.length === e.payload.entries.length &&
-      e.payload.entries.every((entry, k) => entry.status === expected[k]);
-    if (atEnd && same && !afterResult) found.add(e.seq);
+    const isSettle = expected !== null && sameStatuses(expected, e.payload.entries);
+    if (atEnd && isSettle && !endMove) found.add(e.seq);
     before = e.payload.entries;
   });
   return found;
+}
+
+/** Whether 2 plans have the same statuses, entry by entry. */
+function sameStatuses(
+  statuses: readonly string[],
+  entries: readonly { status: string }[],
+): boolean {
+  return statuses.length === entries.length && entries.every((e, k) => e.status === statuses[k]);
+}
+
+/**
+ * The engine's movePlan, ported exactly: packages/jadwigo-ai/src/run/plan.ts `movePlan`. The
+ * statuses with `verb`'s stage moved to `status`, or null when nothing changes: no plan, a verb
+ * outside PLAN_STAGE_OF, or the stage already there. A stage once done stays done; a draft moves a
+ * search still pending to done. `movePlan.test.ts` runs this and the engine's over the same inputs,
+ * so a change to the engine fails it.
+ */
+export function movePlanPort(
+  entries: readonly { status: string }[] | null,
+  verb: VerbName,
+  status: "pending" | "in_progress" | "done" | "failed",
+): string[] | null {
+  const stage = PLAN_STAGE_OF[verb];
+  if (entries === null || stage === undefined) return null;
+  const next = entries.map((e) => e.status);
+  const at = next[stage];
+  if (at === undefined) return null;
+  if (at === "done") return null;
+  next[stage] = status;
+  if (stage === 1 && next[0] === "pending") next[0] = "done";
+  return next.every((s, i) => s === entries[i]?.status) ? null : next;
 }
 
 /**
