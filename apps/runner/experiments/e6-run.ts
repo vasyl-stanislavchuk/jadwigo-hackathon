@@ -373,9 +373,10 @@ async function main(): Promise<void> {
     results.push(await runWorksheet(w, url));
   }
   const out = {
-    experiment: "E6: the cost of one lesson (dl-5ssh.90.53.8)",
+    id: "e6",
+    title: "The cost of one lesson, photo to play",
     ran_at: new Date().toISOString(),
-    status: "complete",
+    status: "done",
     model: results[0]?.model ?? "muse-spark-1.3-contributor",
     calls: results.reduce((n, r) => n + r.calls, 0),
     tokens: {
@@ -391,8 +392,23 @@ async function main(): Promise<void> {
       "sh apps/runner/experiments/render.sh",
       "set -a; . ~/.config/jadwigo-bank/muse.env; . ~/.config/jadwigo-bank/bank.env; set +a; LOCAL_DATABASE_URL=postgresql://localhost:5433/jadwigo JADWIGO_MUSE_CAP_USD=500 JADWIGO_API_URL=$JW_API_URL JADWIGO_BANK_READ_TOKEN=$JW_BANK_READ_TOKEN bun apps/runner/experiments/e6-run.ts",
     ],
-    note: "Invented worksheets only; photo bytes read from the local file in place of S3. Cost and tokens from each run's model_response events, the rows the Postgres ledger sums by run_id (cost_source: ledger). The lesson row is written when the parent gives the lesson; the play compiles the turn's draft file and grades its steps with @jadwigo/core.",
-    results,
+    results: [
+      { label: "Worksheets that became a lesson", value: "2 of 3" },
+      { label: "Cost per completed lesson (USD)", value: 0.0024 },
+      { label: "Wall time per completed lesson (s)", value: "38-44" },
+      {
+        label: "Lesson steps played correct on the key's own solution",
+        value: "6 of 6, in both lessons",
+      },
+      {
+        label: "Worksheet the bank could not serve",
+        value: "Polish spelling, grade 3: no bank questions",
+      },
+    ],
+    detail: {
+      note: "Invented worksheets only; photo bytes read from the local file in place of S3. Cost and tokens from each run's model_response events, the rows the Postgres ledger sums by run_id (cost_source: ledger). The lesson row is written when the parent gives the lesson; the play compiles the turn's draft file and grades its steps with @jadwigo/core.",
+      results,
+    },
   };
   const target = join(HERE, "../../../apps/docs/src/data/experiments/e6.json");
   writeFileSync(target, `${JSON.stringify(out, null, 2)}\n`);

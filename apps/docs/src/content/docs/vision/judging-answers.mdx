@@ -6,9 +6,30 @@ as_of: 2026-11-03
 prs: []
 ---
 
+import Diagram from "../../../components/Diagram.astro";
+
 This page is for a judge marking homework with us: when a child explains in their own words, the
-judging follows criteria set before the task, and never lands as a bare wrong. This page is being
-written for the 4 November demo, beside the experiment that shows it working.
+judging follows criteria set before the task, and never lands as a bare wrong.
+
+Today a typed explanation is kept without a verdict. The product's code judge refuses this
+family on purpose: an explanation is judged after the lesson, against the task's criteria, not
+during it and not by pattern matching. What code does decide is small and honest: an empty
+answer, or one under the task's soft minimum, asks the child for a little more. Everything
+longer waits for the tutor.
+
+<Diagram name="judging" caption="Criteria first, then code asks only for more; the tutor judges the rest." />
+
+The vision is the tutor judging each explanation the way a good teacher marks: 1 verdict per
+criterion, each with a reason that points at the child's own words, and a judgement that keeps
+the criteria version it used, so a parent can see what was asked and why a line was given. The
+feedback the child reads is short and kind: it names one thing that is good or one next step,
+and never a bare „wrong". Spelling slips never fail a criterion about meaning.
+
+[E7](/experiments/e7/) shows this working on 80 invented answers: 2 models judged against
+criteria written first, agreeing with hand labels on about 19 of 20 answers, spending their
+rare false „wrong" on the same borderline case, and writing a cited reason for every one of
+the 170 criterion verdicts. It also shows why the tutor is needed at all: of the 80 answers,
+code could settle none, and its length gate alone was wrong about half the answers it touched.
 
 ## Next
 

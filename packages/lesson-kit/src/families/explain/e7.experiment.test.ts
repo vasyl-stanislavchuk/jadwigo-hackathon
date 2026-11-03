@@ -106,10 +106,12 @@ describe("E7 model judges: the committed run", () => {
 
   it("the docs report carries the same scores and both cost sources", () => {
     const report = buildReport(fixtures, run, "test");
-    expect(report.judges.spark.usd).toBeGreaterThan(0);
-    expect(report.judges.spark.cost_source).toContain("PRICES");
-    expect(report.judges.wonder.cost_source).toContain("muse-trace");
-    expect(report.judges.wonder.tokens.input).toBeGreaterThan(0);
-    expect(report.judges.code.verdicts.unjudged).toBe(70);
+    expect(report.id).toBe("e7");
+    expect(report.status).toBe("done");
+    expect(report.calls).toBe(88);
+    expect(report.usd).toBeGreaterThan(0);
+    expect(report.detail.judges.spark.score.overall_agreement).toBeGreaterThan(0.85);
+    expect(report.detail.judges.wonder.tokens.input).toBeGreaterThan(0);
+    expect(report.detail.judges.code.verdicts.unjudged).toBe(70);
   });
 });

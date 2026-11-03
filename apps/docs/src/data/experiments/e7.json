@@ -51,6 +51,7 @@
     }
   ],
   "detail": {
+    "ran_at": "2026-11-03T11:49:39.519Z",
     "data": "8 invented explain tasks, criteria written first, 10 invented hand-labelled answers each (80). No text comes from a real child.",
     "criteria_version": "e7-2026-11-03",
     "judges": {

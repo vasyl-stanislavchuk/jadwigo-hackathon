@@ -10,6 +10,41 @@ judged by code and by 2 models, and compared on agreement with hand labels and o
 
 <ExperimentResult id="e7" />
 
+The tasks are 8 invented explain tasks for grades 2 and 3, in Polish and English: multiplication
+as groups, even numbers, adding past a ten, halves, the rz spelling rule, a 2-step word problem,
+the English past tense, and why a plant turns yellow. Each carries 2 or 3 criteria with a cited
+source, written before any answer. The 80 answers are invented and hand-labelled per criterion:
+right, partly right, right answer with a wrong reason, off-topic, right but misspelt, and too
+short. No text comes from a real child.
+
+3 judges saw the same criteria. Code alone has no verdict for a freeform answer: the product's
+judge refuses this family by design, so code can only ask for a little more when an answer is
+empty or under the soft minimum, and keep the rest unjudged for the tutor. Muse-spark judged 1
+answer per call through the product's model API; muse-wonder judged 1 task's 10 answers per
+call through the Muse CLI, the only route to that model. Every model verdict is 1 decision per
+criterion with a reason that points at the child's words, plus the feedback line the child
+would read.
+
+## Every judge against the hand labels
+
+| Judge | Criterion agreement | Overall agreement | False „wrong" | Reasons per criterion | Bare „wrong" feedback |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Code only | no verdict exists | — | 0 | — | — |
+| muse-spark-1.3-contributor | 96.5% | 93.8% | 1 of 80 | 170 of 170 | 0 of 80 |
+| muse-wonder-full-1.0 | 97.1% | 95.0% | 1 of 80 | 170 of 170 | 0 of 80 |
+
+The code check asked for more on 10 answers; only 5 of them were hand-labelled as not there
+yet, so length alone is a blunt gate and 70 answers waited for a model. Both models spent their
+one false „wrong" on the same borderline answer, a bare list of the even numbers that states
+the rule without saying it. The other disagreements are strictness about where one criterion
+ends and the next begins, not misreading: misspelt but right answers were judged right, and
+right answers with wrong reasons were not waved through. Spark judged all 80 answers for
+$0.0232; wonder's input tokens are mostly its CLI session overhead, read from `muse trace`.
+
+Feedback held the house rule mechanically: every line the child would read names a strength or
+one next step, none is a bare „wrong", and none runs past 30 words. The full judgements, all
+170 per model, are committed beside the fixtures they were scored against.
+
 ## Next
 
 - [Judging answers](/vision/judging-answers/): what this run seeds.
