@@ -3,6 +3,7 @@ title: "E4: how Meta models indexed the bank"
 description: The ledger of 3,249 enrichment calls, plus one live 3-set run on spark and wonder.
 ---
 
+import Diagram from "../../../components/Diagram.astro";
 import ExperimentResult from "../../../components/ExperimentResult.astro";
 
 This experiment is for a judge auditing what indexing the bank took: every enrichment call from
@@ -11,7 +12,74 @@ by side.
 
 <ExperimentResult id="e4" />
 
+The bank's model calls all go through 1 client in the bank repo, and every call lands in a
+ledger: model, tag, seconds, tokens and USD. Before this experiment the ledger held 3,250 rows,
+3,249 of them on `muse-spark-1.3-contributor`: 103,113,871 input tokens, 13,725,036 output
+tokens and $10.27. That spend built the searchable bank: 143 Khan grade-3 sets enriched, their
+2,738 items enriched, 215 golden needs labelled, and the labels topped up after the index
+changed. No question text is quoted on this page beyond short field values; the bank itself
+stays outside this repo.
+
+<Diagram
+  name="bank-pipeline"
+  caption="Sources in, lessons out, and a gate before anything new is used."
+/>
+
+The live half enriches 3 grade-3 sets (equal groups, fractions on the number line, line plots
+with fractions) with 1 draft call each, first on `muse-spark-1.3-contributor` through the
+product client and its ledger, then on `muse-wonder-full-1.0` through `muse exec`, with the
+same prompt and output schema. Each draft then faces the same code checks the pipeline runs: a
+claim whose quote is not in its source is dropped, curriculum tags must exist, and hint text
+must not leak. This is the pipeline's draft step only; the full path runs 3 drafts and a critic
+per set, which is how the ledger's 572 set-enrichment calls were made.
+
+## Every lane in the ledger
+
+Calls, tokens and USD by the tag's first segment, with the enrichment lanes also priced per set
+and per item. The full table, including every task tag, is in the experiment's JSON under
+`detail`, and it reproduces from the ledger with 1 command in the bank repo.
+
+| Lane | Calls | Input tokens | USD | Per unit |
+| --- | ---: | ---: | ---: | --- |
+| golden (first labels, 215 needs) | 1,323 | 43,404,492 | $4.20 | $0.0195 a need |
+| eval (label top-up) | 768 | 23,136,878 | $1.78 | |
+| enrich (143 sets) | 572 | 20,605,761 | $2.57 | $0.018 a set |
+| items (2,738 items) | 402 | 11,080,491 | $1.22 | $0.00044 an item |
+| alt (picture words) | 141 | 4,045,683 | $0.39 | |
+| filters, smoke, samples, product | 44 | 840,566 | $0.10 | |
+
+By step, the golden labels split evenly over their 3 lenses (441 calls each: intent, skill,
+mistake), and set enrichment splits into 431 drafts at $1.68 and 141 critic calls at $0.90.
+Scaled linearly from 143 sets, set plus item enrichment projects to $26.52 and about 6,811
+calls per 1,000 sets, before a person's review of every field.
+
+## Every set in the live run
+
+What the code checks kept, and how far the 2 models' drafts agree. Grounds are the claims each
+field rests on; a dropped ground is a claim the code could not find in the source.
+
+| Set | Spark: grounds kept | Wonder: grounds kept | Curriculum tags agree | Keywords agree |
+| --- | --- | --- | ---: | ---: |
+| Equal groups | 14 of 15 | 12 of 14 | 0.75 | 0.07 |
+| Fractions on the number line | 12 of 13 | 16 of 16 | 0.67 | 0.10 |
+| Read line plots (fractions) | 16 of 16 | 8 of 16 | 0.60 | 0.10 |
+
+3 readings a judge can check in the JSON:
+
+- Neither model leaked a hint or an answer on any set, and both wrote all 9 fields with 10
+  synthetic needs each. Wonder's summaries run longer (571 to 700 characters against spark's
+  288 to 586, Polish and English counted together).
+- The structured fields agree where the source pins them down: curriculum tags overlap at 0.60
+  to 0.75, while free-chosen keywords barely overlap at 0.07 to 0.10. That gap is what the
+  critic step and a person's review are for, and it is why the pipeline keeps 3 drafts.
+- Grounding is checkable, not trusted: on 1 set wonder lost 8 of its 16 grounds to the quote
+  check while spark lost 0, and on another the order reversed. The code drops those claims
+  either way, so a wrong quote never reaches a set page.
+
+The live run cost $0.0128 on spark for the 3 sets. Wonder used 133,272 input and 10,626 output
+tokens and is unpriced on this path, so its cost source says so instead of inventing a price.
+
 ## Next
 
 - [Growing the bank](/vision/growing-the-bank/): what this run seeds.
-- [Experiments](/experiments/): the other runs.
+- [E5: golden-set evals](/experiments/e5/): the gate those labels feed.

@@ -11,7 +11,88 @@ answers.
 
 <ExperimentResult id="e5" />
 
+A golden set is a frozen list of questions with known right answers. Jadwigo has 2 of them after
+this run. The bank's set holds 215 needs written from the Polish klasa 3 curriculum, never from
+Khan's own titles, each labelled by 3 independent model passes and split once into 150 tune
+cases and 65 holdout cases (seed 3107). Search is scored against it, and a gate blocks any
+change that drops a metric past a written limit. The brain's set is new here: 20 questions a
+judge would ask the project brain, each with the decision page that must be cited, recorded with
+`md context eval record` and scored 3 times.
+
+## Every metric the bank gate read
+
+The gate ran arm C (hybrid search with a Voyage rerank) against the current index: 411 sets and
+5,677 vectors, up from the 143 sets the first baselines were scored on. It makes no Muse call;
+a run costs about $0.03 of OpenAI and Voyage calls, estimated, because neither client reports
+usage. Limits are in points, hundredths of the metric.
+
+| Split | Metric | Baseline | Now | Limit | Verdict |
+| --- | --- | ---: | ---: | ---: | --- |
+| tune | recall@10 | 0.8611 | 0.9167 | drop 2 | pass |
+| tune | nDCG@10 | 0.6704 | 0.6871 | drop 3 | pass |
+| tune | abstain precision | 0.7143 | 1.0000 | drop 20 | pass |
+| tune | abstain recall (gaps) | 0.5556 | 0.3333 | drop 15 | block, drop 22.23 |
+| holdout | recall@10 | 0.9565 | 0.963 | drop 2 | cannot judge |
+| holdout | nDCG@10 | 0.7724 | 0.7398 | drop 3 | cannot judge |
+| holdout | abstain precision | 0.800 | 0.750 | drop 20 | cannot judge |
+| holdout | abstain recall (gaps) | 0.800 | 0.750 | drop 15 | cannot judge |
+
+2 findings, stated plainly:
+
+- On tune the gate blocks. Search finds more than it did (recall@10 up 5.56 points, only 1 case
+  lost its top-10 hit, `need-parent-words-014` from rank 9 to 12), but it also abstains less on
+  the gaps needs it should decline: 3 of 9 instead of 5 of 9. On a bank that grew from 143 to
+  411 sets, more needs now have a near miss worth returning. The gate did its job by stopping:
+  the next step is a person's call on whether those gaps needs are still gaps, not a threshold
+  edit made to pass.
+- On holdout the gate refuses to judge at all. Its baseline was scored on an older version of
+  the golden set, so the 2 runs measure different questions. The run's own numbers sit in the
+  table beside the baseline's for size only. Updating that baseline is a deliberate change of
+  its own, in the bank repo, and this run leaves it undone on purpose. The holdout read itself
+  is recorded by the gate, with its reason.
+
+## Every case in the brain's golden set
+
+20 questions, each scored 3 times; the rank is where the merged answer carried the decision
+that must be cited. All 20 passed. Recall is 0.60 at rank 1, 0.85 in the top 10 and 0.95 in the
+top 20, with an MRR of 0.6817. The baseline was saved, so later runs are judged against these
+ranks and their spread.
+
+| Case | Must-cite rank |
+| --- | ---: |
+| What is the parent happy path for the 4 November demo? | 3 |
+| Who decided printing is in the demo scope? | 2 |
+| How is the print PDF rendered? | 1 |
+| What does the dream do, and how is it run? | 1 |
+| May a learner's data, names included, reach a Meta model? | 1 |
+| What does docs.jadwigo.pl show: vision or only what is live? | 1 |
+| Which domains: jadwigo.pl or jadwigo.kids? | 16 |
+| Is the goals loop part of the submission? | 1 |
+| Can a parent set many goals for one child? | 1 |
+| How does a parent's own AI app connect? | 28 |
+| What happens when a play link carries a learner? | 7 |
+| How many questions may one lesson hold? | 1 |
+| Is the parent app chat-first? | 1 |
+| PostHog replay, under what consent? | 1 |
+| Are lessons in Polish only for now? | 12 |
+| Is voice input in scope for children? | 1 |
+| One meta project or many? | 1 |
+| A break after a merge: revert or fix forward? | 3 |
+| Is the curriculum shared across pods? | 7 |
+| What did the demo scope add about using Jadwigo with AI? | 1 |
+
+2 honest details from the scoring: the brain answers 13 of the 20 at rank 1 or 2, and the weak
+spots are the questions with many near neighbours, where the ruling sits at rank 16 or 28
+behind beads and notes on the same words. And the first attempt to save the baseline was
+refused by the tool itself: 1 case disagreed with itself across its 3 passes (absent once, then
+rank 28 twice), and a baseline built on an unstable case would read as a clean one. The second
+scoring was stable and the baseline saved. That refusal is the golden set working as designed.
+
+This seeds 2 habits: the bank gate as a check a bank change must pass, and a scored golden set
+for the brain, so a retrieval change that buries a ruling turns a case red instead of quietly
+answering from the wrong page.
+
 ## Next
 
 - [Growing the bank](/vision/growing-the-bank/): what this run seeds.
-- [Experiments](/experiments/): the other runs.
+- [E4: how Meta models indexed the bank](/experiments/e4/): where the labels came from.
