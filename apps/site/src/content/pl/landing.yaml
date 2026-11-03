@@ -36,6 +36,8 @@ steps:
   title: Jak działa Jadwigo
   description: Piszesz, co dziecko ćwiczy w szkole. Dziecko przerabia krótką lekcję. Ty wiesz, co już umie i nad czym pracuje.
   heading: Jak to działa
+  # The landing page's line under "Jak to działa" (dl-w0b4.123; draft).
+  lead: Twoja część zajmuje kilka minut, a niżej rozwiążesz pytanie tak, jak widzi je dziecko.
   intro: Nie musisz siedzieć obok przez całą lekcję. Wystarczy kilka minut, żeby wiedzieć, co dziecko umie i z czym ma trudność.
   pic: Jadwiga otwiera wielki zeszyt, a Gumka, Ołówek i Linijka szykują stół.
   items:
@@ -125,6 +127,8 @@ partner:
   heading: Nauka, przy której jesteś blisko.
   text: Dziecko ćwiczy w swoim tempie, a Ty widzisz, jak rośnie.
   pic: "Z doniczki na kredki wyrasta kiełek szybciej, niż dwór nadąża: Jadwiga podlewa go, stojąc na Linijce, Gumka ją przytrzymuje, a Ołówek zaznacza nową wysokość."
+  # The screenshot of the app's child page beside it (dl-w0b4.123; draft): its alt text.
+  app: "Zrzut ekranu aplikacji Jadwigo: strona dziecka o imieniu Marta z zakładkami Przegląd, Umiejętności, Lekcje i Historia, celami i tygodniem po tygodniu."
   child: { initial: Z, name: Zosia, sub: klasa 3 · z Jadwigo od września }
   practising: "Ćwiczy:"
   allDone: Umie wszystko.
@@ -170,6 +174,8 @@ lessons:
   other: Inne lekcje
   row:
     heading: Zagraj bez logowania
+    # Under the heading, to the parent (dl-w0b4.123; draft).
+    text: "Daj dziecku jedną z tych lekcji: otwiera się od razu w przeglądarce, bez konta."
     gradeLabel: Klasa
     pic: ilustracja
     pics:

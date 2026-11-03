@@ -35,6 +35,8 @@ steps:
   title: How Jadwigo works
   description: You write what your child practices at school, your child plays a short lesson, and you know what they can do and what they're working on.
   heading: How it works
+  # The landing page's line under "How it works" (dl-w0b4.123; draft).
+  lead: Your part takes a few minutes, and below you can answer a question the way your child sees it.
   intro: You don't need to sit beside your child for the whole lesson. A few minutes are enough to know what they can do and where they struggle.
   pic: Jadwiga opens a huge notebook while Gumka, Ołówek and Linijka get the table ready.
   items:
@@ -122,6 +124,8 @@ promises:
 partner:
   heading: Learning with you close by.
   text: Your child practices at their own pace, and you see them grow.
+  # The screenshot of the app's child page beside it (dl-w0b4.123; draft): its alt text.
+  app: "A screenshot of the Jadwigo app: the page of a child named Marta, with the Overview, Skills, Lessons and History tabs, goals and week by week."
   pic: "A sprout grows out of the pencil pot faster than the court can keep up: Jadwiga waters it from the top of Linijka, Gumka holds her steady and Ołówek marks the new height."
   child: { initial: S, name: Sophie, sub: Grade 3 · with Jadwigo since September }
   practising: "Practicing:"
@@ -168,6 +172,8 @@ lessons:
   other: More lessons
   row:
     heading: Play without signing in
+    # Under the heading, to the parent (dl-w0b4.123; draft).
+    text: "Give your child one of these lessons: it opens right in the browser, no account needed."
     gradeLabel: Grade
     pic: illustration
     pics:

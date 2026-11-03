@@ -48,6 +48,8 @@ export const landingSchema = z.object({
   steps: z.object({
     ...head,
     intro: text,
+    // The landing page's one line to the parent under its "Jak to działa" heading (dl-w0b4.123).
+    lead: text,
     pic: text,
     items: z.array(z.object({ who: text, title: text, text })).length(3),
     request: z.object({ ask: text, lines: z.array(text).min(1), soon: text, screencast: text }),
@@ -88,6 +90,8 @@ export const landingSchema = z.object({
     heading: text,
     text,
     pic: text,
+    // The parent app's child page, a screenshot with made-up names (dl-w0b4.123): its alt text.
+    app: text,
     child: z.object({ initial: text, name: text, sub: text }),
     practising: text,
     allDone: text,
@@ -122,6 +126,8 @@ export const landingSchema = z.object({
     // with no grade tabs and no subject filter (owner, 2026-11-02, dl-5ssh.4.42).
     row: z.object({
       heading: text,
+      // The one line to the parent under the row's heading (dl-w0b4.123).
+      text,
       // /lekcje's heading over each grade's group ("Klasa 1").
       gradeLabel: text,
       // The grey slot's label on a card with no picture yet.
