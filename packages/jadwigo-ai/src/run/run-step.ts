@@ -68,6 +68,11 @@ export interface EngineDeps {
    */
   onWarning?: (warning: EngineWarning) => void;
   /**
+   * Told when a verb refused a call, which the model reads and the step survives, so no log sees it
+   * otherwise (dl-hin8.35). Ids and the refusal's type only: its message can quote a lesson line.
+   */
+  onRefusal?: (refusal: EngineRefusal) => void;
+  /**
    * Where the turn's own photos are read (dl-z5ja.11.4): S3 in the hosted runner. Without it a
    * photo reaches the model as a line saying it could not be read, never as bytes.
    */
@@ -86,6 +91,13 @@ export interface EngineWarning {
   call_no: number;
   requested: ModelTier;
   answered: ModelTier;
+}
+
+/** What `onRefusal` is told. */
+export interface EngineRefusal {
+  run_id: RunId;
+  verb: ToolCall["verb"];
+  type: string;
 }
 
 /** An inbox row as the caller gives it: the engine names the run. */
@@ -1062,6 +1074,7 @@ async function runTool(
         "the lesson changed after you read it (the parent's own edit, or another turn): read it again with lesson_show, then make your change on it",
     };
   }
+  if (error !== null) deps.onRefusal?.({ run_id: scope.run.id, verb: call.verb, type: error.type });
   const result: NewRunEvent = {
     type: "tool_result",
     run_id: scope.run.id,
@@ -1702,13 +1715,19 @@ export interface FailedStep extends RunStepInput {
  */
 export async function drain(
   deps: EngineDeps,
-  options: { max_steps?: number; onError?: (error: unknown, step: FailedStep) => void } = {},
+  options: {
+    max_steps?: number;
+    onError?: (error: unknown, step: FailedStep) => void;
+    /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
+    onRead?: (run_id: RunId) => void;
+  } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
   const outputs: RunStepOutput[] = [];
   for (let reads = 0; reads < max; reads++) {
     const [queued] = await deps.queue.read(STEP_VISIBILITY_S, 1);
     if (!queued) break;
+    options.onRead?.(queued.message.run_id);
     try {
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));

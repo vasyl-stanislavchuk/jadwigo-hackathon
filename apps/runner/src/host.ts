@@ -1,5 +1,5 @@
-import type { RunStepOutput } from "@jadwigo/contracts/run";
-import { drain, type EngineDeps, type FailedStep } from "@jadwigo/jadwigo-ai";
+import type { RunId, RunStepOutput } from "@jadwigo/contracts/run";
+import { drain, type EngineDeps, type EngineRefusal, type FailedStep } from "@jadwigo/jadwigo-ai";
 
 /**
  * The step host (dl-z5ja.20): a thin wrapper around `drain` from `@jadwigo/jadwigo-ai`. Each
@@ -66,6 +66,15 @@ export interface HostReport {
   /** Steps that threw in this invoke: they stay queued, and come back after their visibility. */
   failed: readonly FailedStep[];
   dead_letters: number | null;
+  /** The runs this invoke read a step of, once each. */
+  runs: readonly RunId[];
+  /** The calls verbs refused, counted by run, verb and type. The run went on: not a failure. */
+  refused: readonly RefusalCount[];
+}
+
+/** One line of `HostReport.refused`. Ids and a code's own type: never the refusal's message. */
+export interface RefusalCount extends EngineRefusal {
+  count: number;
 }
 
 const LOADED_MS = performance.now();
@@ -95,12 +104,23 @@ export function createHost(
       throw error;
     }
     const failed: FailedStep[] = [];
-    const outputs = await drain(host.engine, {
+    const runs = new Set<RunId>();
+    const refused = new Map<string, RefusalCount>();
+    const engine: EngineDeps = {
+      ...host.engine,
+      onRefusal: (refusal) => {
+        const key = `${refusal.run_id} ${refusal.verb} ${refusal.type}`;
+        const seen = refused.get(key);
+        refused.set(key, { ...refusal, count: (seen?.count ?? 0) + 1 });
+      },
+    };
+    const outputs = await drain(engine, {
       max_steps: host.max_steps,
       onError: (error, step) => {
         failed.push(step);
         host.warn(failure(error, step));
       },
+      onRead: (run_id) => runs.add(run_id),
     });
     const stuck = host.stuck ? await host.stuck() : null;
     if (stuck) reportStuck(stuck, host.warn);
@@ -118,6 +138,8 @@ export function createHost(
       stuck,
       failed,
       dead_letters,
+      runs: [...runs],
+      refused: [...refused.values()],
     };
   };
 }
