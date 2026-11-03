@@ -73,7 +73,7 @@ export interface HostReport {
 }
 
 /** One line of `HostReport.refused`. Ids and a code's own type: never the refusal's message. */
-export interface RefusalCount extends EngineRefusal {
+interface RefusalCount extends EngineRefusal {
   count: number;
 }
 
