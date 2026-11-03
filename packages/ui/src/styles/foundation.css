@@ -217,6 +217,8 @@
   --jw-act-hover: var(--jw-p-ink-625);
   --jw-pick-row: var(--jw-p-ink-75);
   --jw-pick-soft-edge: var(--jw-p-ink-300);
+  /* A list's filter facet, a dashed outline a step darker than a field's edge (handoff §7.1). */
+  --jw-facet-edge: var(--jw-p-paper-350);
   /* A child's disc in its tone, and the parent's own avatar in the app's pale ink, never a child's
      * tone (D7). Day only: the adult audience is light only (D10). */
   --jw-tone-0-fill: var(--jw-p-tone-0-fill);
@@ -296,6 +298,7 @@
   --jw-act-hover: var(--jw-p-ink-750);
   --jw-pick-row: var(--jw-p-ink-950);
   --jw-pick-soft-edge: var(--jw-p-ink-500);
+  --jw-facet-edge: var(--jw-p-night-450);
 }
 
 /* ---- Type, shape, space and motion (the same by day and by night) ----------------------------- */

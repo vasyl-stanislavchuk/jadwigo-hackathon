@@ -156,6 +156,7 @@ const ROLES = [
   "act-hover",
   "pick-row",
   "pick-soft-edge",
+  "facet-edge",
 ];
 
 // Every pair a child reads: text on each surface, the main action, a picked option, help, each

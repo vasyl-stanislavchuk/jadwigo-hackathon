@@ -123,6 +123,18 @@ For the parent's screens only. They show state; none is a control except where s
 | **Result bar** | How a lesson went, on a lesson row: "6 z 8 dobrze". | Segments right, with help and not yet, in the verdict hues, then the words in tabular figures. With the attempt review, the only adult place a verdict hue appears. | A score or a grade. |
 | **Pagination** | A table's pager: "1–20 z 214", the per-page select, "Strona 1 z 11" and ‹ ›. | Small controls (28); every word and both buttons' names come from the caller. | A phone, which loads more on scroll. |
 
+## Every adult list part
+
+For Lekcje and Historia: one pattern for every list. The app owns the rows, the state and every
+word; `readListQuery` and `writeListQuery` keep the filters, the sort and the page in the URL, and
+drop a value they don't know.
+
+| Part | Use it for | Behaviour | Not for |
+| --- | --- | --- | --- |
+| **Facet** | One filter: Dziecko, Status, Data. | A dashed outline button with `plus-circle` (the facet edge token); once set, up to 2 value chips, then "3 wybrane". It opens a popover of checkbox rows (an optional disc, the name, a count) with "Wyczyść wybór" at the foot, and no search. Enter opens it, the focus lands on the first row, Space toggles a row, Escape closes. `single` keeps one value (Data's presets); `hidden` drops it (no Dziecko with one child). | A view switch: that is a segmented control. |
+| **Filter bar** | The row above a list. | Always one row on a laptop: the facets scroll sideways under a fade, then Widok (an icon button with its tooltip: column toggles and Wygodnie / Gęsto) and "Wyczyść ×", shown only while a filter is set, pinned right. Below 768 it is "Filtry (n)" and a sort menu, and the filters open in a bottom sheet whose primary states the count. | A search: there is none. |
+| **Data table** | A list of lessons or attempts, on TanStack Table. | A bordered card with a 36 stone head that sticks under the top bar. A header sorts asc → desc → off. The whole row opens, by a click or Enter; its checkbox and ⋯ don't, and a right-click repeats the ⋯ items. A light selection bar shows only while rows are checked. Loading draws skeleton rows under a live head; with no rows it shows the app's Empty. The pager sits inside the card; below 768 the rows are two lines and a load-more follows. | A grid of numbers: that is the heatmap's table. |
+
 ## Next
 
 - [Question types](/design-system/question-types/): the interaction families built on these.

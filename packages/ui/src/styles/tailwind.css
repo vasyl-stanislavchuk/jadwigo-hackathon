@@ -140,6 +140,7 @@
   --color-jw-side-active: var(--jw-side-active);
   --color-jw-field-edge: var(--jw-field-edge);
   --color-jw-control-edge: var(--jw-control-edge);
+  --color-jw-facet-edge: var(--jw-facet-edge);
   --color-jw-act-hover: var(--jw-act-hover);
   --color-jw-pick-row: var(--jw-pick-row);
   --color-jw-pick-soft-edge: var(--jw-pick-soft-edge);
