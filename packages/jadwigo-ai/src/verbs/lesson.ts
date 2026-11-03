@@ -140,7 +140,8 @@ function card(step: Step) {
   const help = isObject(question["help"]) ? question["help"] : {};
   return {
     step_id: step.id,
-    prompt: step["say"] ?? null,
+    // The name lesson_edit takes: called prompt here, the model patched a prompt no step has (dl-hin8.45).
+    say: step["say"] ?? null,
     key: question["key"] ?? null,
     question,
     rungs: RUNGS.filter((r) => help[r] !== undefined),

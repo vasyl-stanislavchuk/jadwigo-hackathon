@@ -227,6 +227,23 @@ describe("a verb is idempotent by call_id", () => {
   });
 });
 
+describe("the card names a step's fields as lesson_edit takes them (dl-hin8.45)", () => {
+  it("answers say, and a patch of that name goes through", async () => {
+    const { verbs, run, effect, at } = await drafted();
+    const cards = (effect.output as { steps: Record<string, unknown>[] }).steps;
+    expect(cards[0]).toHaveProperty("say");
+    expect(cards[0]).not.toHaveProperty("prompt");
+    const edited = await verbs.lesson_edit.run(at("call_say"), {
+      draft_id: run,
+      names: [],
+      step_id: "s01",
+      why: "the parent's ask",
+      patch: { say: "Ile jest jabłek?" },
+    });
+    expect(edited.lesson_file).toBeDefined();
+  });
+});
+
 describe("lesson_check", () => {
   it("refuses a rung the bank's copy holds, and fills one it leaves empty", async () => {
     const { verbs, run, at, lesson_file } = await drafted();
