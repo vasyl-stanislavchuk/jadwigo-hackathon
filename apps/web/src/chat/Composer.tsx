@@ -2,7 +2,8 @@
  * The chat's composer (handoff dl-uukj.47.71 §4.5, S6, S12, S22; lane D of wave dl-uukj.47.71).
  *
  * The parent's box: the words on top, then Dla on the left, Zatrzymaj while a turn runs and Wyślij
- * on the right. It draws one focus ring (S22, fixes dl-uukj.47.73): the box's border and the DS
+ * on the right; with a way to upload, a photo button after Dla, the photos as chips under the words,
+ * and a photo pasted or dropped joins too (dl-uukj.47.71.8). It draws one focus ring (S22, fixes dl-uukj.47.73): the box's border and the DS
  * halo while the words have focus, the textarea none of its own, and a button its own halo only.
  * Zatrzymaj is outline with a square; once pressed it reads "Zatrzymuję…" with a spinner at the
  * same width until the engine says the turn is cancelled. Esc does the same from the box
@@ -14,11 +15,14 @@
  * field with Stop beside it.
  */
 
+import type { AttachmentId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { ChatItem } from "@jadwigo/core";
 import { Button, cn, Kbd, Spinner, Tooltip, TooltipContent, TooltipTrigger } from "@jadwigo/ui";
-import { SendIcon, SquareIcon } from "lucide-react";
+import { ImageIcon, SendIcon, SquareIcon } from "lucide-react";
 import {
+  type ClipboardEvent,
+  type DragEvent,
   type FormEvent,
   type KeyboardEvent,
   type ReactElement,
@@ -29,9 +33,12 @@ import {
   useRef,
   useState,
 } from "react";
+import { AttachmentChips } from "./attachments/AttachmentChips.tsx";
+import type { UploadDeps } from "./attachments/upload.ts";
 import { type ChooseAnswers, ChooseForm } from "./ChooseForm.tsx";
 import "./chat.css";
 import { isOpen, type Turn } from "./conversation.ts";
+import { imagesOf, usePhotoUploads } from "./usePhotoUploads.ts";
 import { useStopKey } from "./useStopKey.ts";
 
 /** The key cap in Zatrzymaj's tooltip: the key's own name, the same in every language. */
@@ -59,7 +66,10 @@ export interface ComposerProps {
   onAnswer(answers: ChooseAnswers): void;
   draft: string;
   setDraft(text: string): void;
-  send(text: string): void;
+  /** Sends the words, with the uploaded photos' ids when there are any. */
+  send(text: string, attachmentIds?: readonly AttachmentId[]): void;
+  /** What a photo's upload runs on; without it the composer has no photo button (§4.5). */
+  uploadDeps?: UploadDeps | undefined;
   open: boolean;
   stopping: boolean;
   onStop(): void;
@@ -144,8 +154,16 @@ function StopButton({
  * draws it. It is one button throughout, so typing the first word never swaps it out from under
  * the parent: only aria-disabled and the reason change.
  */
-function SendButton({ language, empty }: { language: Language; empty: boolean }): ReactElement {
+function SendButton({
+  language,
+  reason,
+}: {
+  language: Language;
+  /** Why it can't go yet (no words and no photo, a photo still uploading), or null. */
+  reason: CopyKey | null;
+}): ReactElement {
   const say = (key: CopyKey) => copy(language, key, {}, "adult");
+  const empty = reason !== null;
   const reasonId = useId();
   const [asked, setAsked] = useState(false);
   return (
@@ -168,14 +186,14 @@ function SendButton({ language, empty }: { language: Language; empty: boolean })
             <SendIcon aria-hidden />
           </Button>
         </TooltipTrigger>
-        <TooltipContent>{say("chat_send_disabled")}</TooltipContent>
+        {reason !== null && <TooltipContent>{say(reason)}</TooltipContent>}
       </Tooltip>
       {empty && (
         <span
           id={reasonId}
           className="hidden text-jw-page-small text-muted-foreground pointer-coarse:block"
         >
-          {say("chat_send_disabled")}
+          {say(reason)}
         </span>
       )}
     </span>
@@ -190,6 +208,7 @@ export function Composer({
   draft,
   setDraft,
   send,
+  uploadDeps,
   open,
   stopping,
   onStop,
@@ -201,15 +220,38 @@ export function Composer({
   const box = useRef<HTMLFormElement>(null);
   useStopKey(box, { running: open, stopping, onStop });
   useFocusAfterTurn(open, box, composer);
+  const photos = usePhotoUploads(parent ? (uploadDeps ?? null) : null);
+  const picker = useRef<HTMLInputElement>(null);
+  const reason: CopyKey | null =
+    draft.trim() === "" && photos.uploads.length === 0 ? "chat_send_disabled" : photos.reason;
+  /** Words, photos or both; nothing while a photo is still on its way or failed. */
+  const go = () => {
+    if (!parent) return send(draft);
+    if (reason !== null) return;
+    const ids = photos.take();
+    if (ids.length === 0) send(draft);
+    else send(draft, ids);
+  };
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    send(draft);
+    go();
   };
   const enterSends = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      send(draft);
+      go();
     }
+  };
+  const paste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const pasted = imagesOf(e.clipboardData.files);
+    if (!photos.on || pasted.length === 0) return;
+    e.preventDefault();
+    photos.add(pasted);
+  };
+  const drop = (e: DragEvent<HTMLFormElement>) => {
+    if (!photos.on) return;
+    e.preventDefault();
+    photos.add(imagesOf(e.dataTransfer.files));
   };
   return asking !== null ? (
     <ChooseForm key={asking.call_id} form={asking.choose} language={language} onAnswer={onAnswer} />
@@ -217,6 +259,8 @@ export function Composer({
     <form
       ref={box}
       onSubmit={submit}
+      onDragOver={(e) => photos.on && e.preventDefault()}
+      onDrop={drop}
       // One ring (S22): the box's border and halo while the words have focus. A button inside
       // draws only its own halo, so focus-within would draw two.
       className="flex flex-col gap-2 rounded-jw-box border-jw border-input bg-background px-3 pt-2.5 pb-2.5 transition-[border-color,box-shadow] duration-jw-fast has-[textarea:focus]:border-primary has-[textarea:focus]:ring-3 has-[textarea:focus]:ring-ring/30"
@@ -233,14 +277,53 @@ export function Composer({
           className="resize-none border-0 bg-transparent text-jw-page-body text-jw-ink outline-none placeholder:text-jw-placeholder focus-visible:[box-shadow:none] max-sm:text-base"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={enterSends}
+          onPaste={paste}
           data-composer-words
         />
       </label>
+      <AttachmentChips
+        language={language}
+        uploads={photos.uploads}
+        leftOff={photos.leftOff}
+        onRemove={photos.remove}
+      />
       <div className="flex items-center gap-2">
         {composerLead}
+        {photos.on && (
+          <>
+            <input
+              ref={picker}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={(e) => {
+                photos.add(imagesOf(e.target.files ?? []));
+                e.target.value = "";
+              }}
+              data-photo-input
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-control"
+                  aria-label={say("parent_attach")}
+                  onClick={() => picker.current?.click()}
+                  className="text-muted-foreground max-sm:size-10"
+                  data-attach
+                >
+                  <ImageIcon aria-hidden />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{say("parent_attach")}</TooltipContent>
+            </Tooltip>
+          </>
+        )}
         <span className="flex-1" />
         {open && <StopButton language={language} stopping={stopping} onStop={onStop} />}
-        <SendButton language={language} empty={draft.trim() === ""} />
+        <SendButton language={language} reason={reason} />
       </div>
     </form>
   ) : (
