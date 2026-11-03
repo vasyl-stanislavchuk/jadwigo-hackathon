@@ -27,6 +27,9 @@ const VERDICT = ["rgb(196, 64, 47)", "rgb(63, 138, 70)", "rgb(160, 124, 20)"];
 const ENGINE_TEXT = /[a-z_]+\(|\{|"[a-z_]+":|\bs\d{2}\b/;
 /** English the engine writes, which never reaches a parent reading Polish (S3). */
 const ENGLISH = /\b(the|and|lesson|step|error|failed|retry|retried|timed out|question|draft)\b/i;
+/** chat_line_recovered_types and chat_line_failed_generic, as the parent reads them. */
+const RECOVERED_TYPES = "Nie dało się sprawdzić rodzajów zadań, więc ułożyłam lekcję bez tego";
+const FAILED_GENERIC = "Ten krok się nie udał, poszłam dalej bez niego";
 /** A version, gone from the chat and the preview (the card delta, C5). */
 const VERSION = /wersj|version \d/i;
 
@@ -144,6 +147,14 @@ async function threeTurns(page: Page, size: Size): Promise<void> {
     await expect(chatOf(page).locator("[data-from='parent']").getByText(words)).toBeVisible();
     await phase(page, "done");
   }
+}
+
+/** A done turn opened: its summary row, then every done stage in it. */
+async function openEveryStage(page: Page): Promise<void> {
+  const turn = chatOf(page).locator("[data-turn='current']");
+  await turn.locator("[data-summary-row]").click();
+  for (const row of await turn.locator("[data-stage='done'] [data-stage-row]").all())
+    await row.click();
 }
 
 /** s14: the lesson drafted, its check held, then Esc in the composer. */
@@ -280,19 +291,39 @@ for (const size of SIZES) {
       ).toBeVisible();
     });
 
-    test("s12: a recovered failure shows only after the turn, inside its opened stage", async ({
+    test("s12: the question types could not be read; after the turn the search stage says so", async ({
       page,
     }, info) => {
       await open(page, "s12", size);
       await phase(page, "done");
       const turn = chatOf(page).locator("[data-turn='current']");
-      await expect(turn.locator("[data-line='skip']")).toHaveCount(0);
+      // Shown only after the turn (S13), and only inside its opened stage.
+      await expect(turn.getByText(RECOVERED_TYPES)).toHaveCount(0);
       await turn.locator("[data-summary-row]").click();
-      for (const row of await turn.locator("[data-stage='done'] [data-stage-row]").all())
-        await row.click();
-      await expect(turn.locator("[data-line='skip']").first()).toBeVisible();
+      const search = turn.locator("[data-stage]", { hasText: "Szukanie zadań w banku" });
+      await search.locator("[data-stage-row]").click();
+      await expect(search.locator("[data-line='skip']")).toHaveText(RECOVERED_TYPES);
       await wordsHold(page);
       await shoot(page, info, "s12-failed-step-recovered", size.name);
+    });
+
+    test("s12: an edit refused, then the same edit going through, shows nothing after the turn", async ({
+      page,
+    }) => {
+      await open(page, "s12-fixed", size);
+      await phase(page, "done");
+      await openEveryStage(page);
+      // A refusal the agent fixed shows nothing (dl-uukj.47.71.45, #847).
+      await expect(chatOf(page).locator("[data-line='skip']")).toHaveCount(0);
+      await expect(chatOf(page).getByText(FAILED_GENERIC)).toHaveCount(0);
+    });
+
+    test("s12: a refusal nothing fixes still says the step did not work", async ({ page }) => {
+      await open(page, "s12-dropped", size);
+      await phase(page, "done");
+      await openEveryStage(page);
+      await expect(chatOf(page).locator("[data-line='skip']")).toHaveText(FAILED_GENERIC);
+      await wordsHold(page);
     });
 
     test("s13: a failed turn is drawn in its spine, the foot retries, and focus stays", async ({

@@ -117,8 +117,25 @@ const long = (words: Words): ScriptedReply[] => [
   ...followUps(words),
 ];
 
-/** A turn whose edit is refused once and tried again (s12): the recovered line shows after it. */
-const recovered = (words: Words): ScriptedReply[] => [
+/**
+ * s12, the handoff's own example: the question types cannot be read, so the lesson is built
+ * without them. A failed question_types keeps its recovered line after the turn (S13,
+ * chat_line_recovered_types), inside the search stage it joined.
+ */
+const typesRecovered = (words: Words): ScriptedReply[] => [
+  { text: "Szukam zadań o tym w banku.", tool_calls: [search(words)], cost_usd: 0.02 },
+  { tool_calls: [{ verb: "question_types", input: { grade: "1" } }], cost_usd: 0.02 },
+  { text: "Układam lekcję z tych zadań.", tool_calls: [draft(words)], cost_usd: 0.02 },
+  { tool_calls: [check], cost_usd: 0.02 },
+  { text: "Lekcja jest gotowa.", cost_usd: 0.01 },
+  ...followUps(words),
+];
+
+/**
+ * An edit refused once, then the same edit goes through (s12-fixed): a refusal the agent fixed
+ * shows nothing after the turn (dl-uukj.47.71.45, #847).
+ */
+const editFixed = (words: Words): ScriptedReply[] => [
   { tool_calls: [draft(words)], cost_usd: 0.02 },
   {
     text: "Poprawiam podpowiedź.",
@@ -129,6 +146,24 @@ const recovered = (words: Words): ScriptedReply[] => [
   { tool_calls: [check], cost_usd: 0.02 },
   { text: "Lekcja jest gotowa.", cost_usd: 0.01 },
   ...followUps(words),
+];
+
+/**
+ * An edit refused once that the model then drops (s12-dropped): nothing fixes it and no check
+ * passes after it, so it shows chat_line_failed_generic after the turn. Words only after the
+ * refusal: the engine asks again when a turn ends on an unchecked lesson.
+ */
+const editDropped = (words: Words): ScriptedReply[] => [
+  { tool_calls: [draft(words)], cost_usd: 0.02 },
+  {
+    text: "Poprawiam podpowiedź.",
+    tool_calls: [edit("s01", "Policz na palcach.")],
+    cost_usd: 0.02,
+  },
+  ...Array.from({ length: FOLLOW_UPS }, () => ({
+    text: "Zostawiam to zadanie bez zmian.",
+    cost_usd: 0.01,
+  })),
 ];
 
 /**
@@ -180,7 +215,9 @@ const PLAYS: Readonly<Record<Pace | "normal", PacePlay>> = {
     // Held on a lane that redelivers, so about a minute later the check is tried once more.
     hold: { verb: "lesson_check", call: 1 },
   },
-  s12: { script: recovered, think_ms: THINK_MS, refuseOnce: "lesson_edit" },
+  s12: { script: typesRecovered, think_ms: THINK_MS, refuseOnce: "question_types" },
+  "s12-fixed": { script: editFixed, think_ms: THINK_MS, refuseOnce: "lesson_edit" },
+  "s12-dropped": { script: editDropped, think_ms: THINK_MS, refuseOnce: "lesson_edit" },
   s13: FAIL,
   // s14: the lesson drafted, its check running, then stopped by the parent's Esc.
   s14: { script: planned, think_ms: THINK_MS, hold: { verb: "lesson_check", call: 1 } },
