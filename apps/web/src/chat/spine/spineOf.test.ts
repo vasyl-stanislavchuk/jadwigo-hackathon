@@ -1,4 +1,4 @@
-import { RunEvent } from "@jadwigo/contracts/run";
+import { RunEvent, type VerbName } from "@jadwigo/contracts/run";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import type { RunPhase } from "../phase.ts";
@@ -144,7 +144,7 @@ describe.each(ORDERS)("in %s", (_order, order) => {
       }
     });
 
-    it("re-opens the check stage a second time at seq 70 (s06)", () => {
+    it("re-opens the check stage a second time at seq 70, the edits inside it (s06)", () => {
       const events = upTo("long-turn", 70);
       const spine = spineOf(events, null, lastAt(events));
       expect(spine.stages.map((s) => [s.name, s.status, s.visit])).toEqual([
@@ -153,13 +153,15 @@ describe.each(ORDERS)("in %s", (_order, order) => {
         ["Sprawdzanie lekcji", "active", 2],
       ]);
       const open = spine.stages[2]?.lines ?? [];
+      expect(open.map((l) => l.copyKey)).toContain("chat_line_edit_changed");
       expect(open.at(-1)).toMatchObject({
         kind: "now",
         copyKey: SAY_KEY,
         values: { text: "Teraz bliźniacze zadanie do nowego pytania." },
       });
-      // Both checks of the visit merge into one line (S2): the later one found 3 things.
-      expect(open.filter((l) => l.copyKey.startsWith("chat_line_check"))).toEqual([
+      // The first check's line and the second's, which found 3 things.
+      const checks = open;
+      expect(checks.filter((l) => l.copyKey.startsWith("chat_line_check"))).toEqual([
         { kind: "done", copyKey: "chat_line_check_found", values: { n: 2 } },
         { kind: "done", copyKey: "chat_line_check_found", values: { n: 3 } },
       ]);
@@ -175,10 +177,10 @@ describe.each(ORDERS)("in %s", (_order, order) => {
         values: { query: "mnożenie przez 10", grade: "2", n: 7 },
       });
       expect(search[0]?.tags?.map((t) => t.copyKey)).toEqual(Array(7).fill(SAY_KEY));
-      for (const stage of spine.stages) {
-        const visitVerbs = stage.lines.map((l) => l.copyKey);
-        expect(visitVerbs.length).toBeLessThanOrEqual(2 * new Set(visitVerbs).size);
-      }
+      // One edit line per visit (S2): 2 drafting visits, then the edits of the re-check as one.
+      const edits = (i: number) =>
+        spine.stages[i]?.lines.filter((l) => l.copyKey.startsWith("chat_line_edit")) ?? [];
+      expect([edits(1).length, edits(2).length]).toEqual([2, 1]);
     });
 
     it("folds at the end: every stage done, the reply, no now line (D4, D5)", () => {
@@ -317,6 +319,8 @@ describe.each(ORDERS)("in %s", (_order, order) => {
         payload: { status: "cancelled" },
       });
       const spine = spineOf(events, null, 0);
+      // The edit at work when the turn stopped is the re-check's.
+      expect(spine.stages.map((s) => s.status)).toEqual(["done", "done", "stopped"]);
       expect(spine.stages[2]).toMatchObject({
         status: "stopped",
         summary: { copyKey: "chat_stage_stopped_sum", values: {} },
@@ -409,19 +413,11 @@ describe("the engine's own sequences", () => {
     payload: { entries: NAMES.map((text, i) => ({ text, status: marks[i] ?? "pending" })) },
   });
   const say = (text: string): Body => ({ type: "message", payload: { from: "agent", text } });
-  const call = (
-    call_id: string,
-    verb: "question_search" | "lesson_draft" | "lesson_check",
-    input: Record<string, unknown>,
-  ): Body => ({
+  const call = (call_id: string, verb: VerbName, input: Record<string, unknown>): Body => ({
     type: "tool_call",
     payload: { call_id, verb, input },
   });
-  const result = (
-    call_id: string,
-    verb: "question_search" | "lesson_draft" | "lesson_check",
-    output: Record<string, unknown>,
-  ): Body => ({
+  const result = (call_id: string, verb: VerbName, output: Record<string, unknown>): Body => ({
     type: "tool_result",
     payload: { call_id, verb, output, error: null },
   });
@@ -455,7 +451,85 @@ describe("the engine's own sequences", () => {
     expect(spine.stages.map((s) => [s.status, s.lines.map((l) => l.copyKey)])).toEqual([
       ["done", ["chat_line_search"]],
       ["done", ["chat_tool_lesson_draft_about"]],
-      ["todo", []],
+      // Between calls the plan's next stage is the open one.
+      ["active", []],
+    ]);
+  });
+
+  /** After the draft: a check that finds a thing, an edit, and the check again, as the engine
+   * writes it: no plan event re-opens a done stage (jadwigo-ai plan.ts `movePlan`). */
+  const fixedAndCheckedAgain: Body[] = [
+    say("Sprawdzam lekcję."),
+    call("call_3", "lesson_check", {}),
+    plan("done", "done", "in_progress"),
+    result("call_3", "lesson_check", {
+      publishable: false,
+      findings: [{ step_id: null, level: "error" }],
+    }),
+    plan("done", "done", "done"),
+    say("Poprawiam podpowiedź."),
+    call("call_4", "lesson_edit", { step_id: "s01" }),
+    result("call_4", "lesson_edit", { changed_step_ids: ["s01"] }),
+    say("Sprawdzam lekcję jeszcze raz."),
+    call("call_5", "lesson_check", {}),
+  ];
+
+  it("draws s06 in the engine's order: edits after a check open its second visit, and the check again continues it (dl-uukj.47.71.36)", () => {
+    const events = append(start(), ...searchedAndDrafted, ...fixedAndCheckedAgain);
+    const spine = spineOf(events, null, lastAt(events));
+    expect(spine.stages.map((s) => [s.name, s.status, s.visit])).toEqual([
+      ["Szukanie zadań w banku", "done", 1],
+      ["Układanie lekcji", "done", 1],
+      ["Sprawdzanie lekcji", "active", 2],
+    ]);
+    // "Sprawdzanie lekcji · drugi raz": the first check's line, the fix, then the check again.
+    expect(spine.stages[2]?.lines.map((l) => [l.kind, l.copyKey])).toEqual([
+      ["done", "chat_line_check_found"],
+      ["done", "chat_tool_lesson_edit"],
+      ["now", SAY_KEY],
+    ]);
+    expect(spine.stages[2]?.lines.at(-1)?.values).toEqual({
+      text: "Sprawdzam lekcję jeszcze raz.",
+    });
+  });
+
+  it("counts one visit for consecutive work in a stage, and a new one only on coming back", () => {
+    // The fix and the check after it: one visit, the second, never a third.
+    const checked = append(start(), ...searchedAndDrafted, ...fixedAndCheckedAgain);
+    const done = append(
+      checked,
+      result("call_5", "lesson_check", { publishable: true, findings: [] }),
+    );
+    expect(spineOf(done, null, lastAt(done)).stages[2]?.visit).toBe(2);
+    // An edit made while the lesson is drafted stays under Układanie lekcji, in its own visit.
+    const drafting = append(
+      start(),
+      ...searchedAndDrafted.slice(0, 9),
+      call("call_6", "lesson_edit", { step_id: "s01" }),
+      result("call_6", "lesson_edit", { changed_step_ids: ["s01"] }),
+      ...searchedAndDrafted.slice(9),
+    );
+    const spine = spineOf(drafting, null, 0);
+    expect(spine.stages[1]).toMatchObject({ name: "Układanie lekcji", visit: 1 });
+    expect(spine.stages[1]?.lines.map((l) => l.copyKey)).toEqual([
+      "chat_tool_lesson_draft_about",
+      "chat_tool_lesson_edit",
+    ]);
+  });
+
+  it("reads a lesson_show between stages in the stage the plan opens next, which the draft continues", () => {
+    const events = append(
+      start(),
+      ...searchedAndDrafted.slice(0, 5),
+      call("call_9", "lesson_show", {}),
+      result("call_9", "lesson_show", { steps: ["s01", "s02"] }),
+      ...searchedAndDrafted.slice(5),
+    );
+    const spine = spineOf(events, null, 0);
+    expect(spine.stages.map((s) => [s.visit, s.lines.map((l) => l.copyKey)])).toEqual([
+      [1, ["chat_line_search"]],
+      [1, ["chat_line_read", "chat_tool_lesson_draft_about"]],
+      [1, []],
     ]);
   });
 

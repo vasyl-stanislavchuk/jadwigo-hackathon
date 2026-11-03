@@ -3,7 +3,7 @@
  * `@jadwigo/testing`, which only a test file imports (dependency-cruiser), so each test file reads them.
  */
 
-import { RunEvent } from "@jadwigo/contracts/run";
+import { PLAN_STAGE_OF, RunEvent } from "@jadwigo/contracts/run";
 
 /** The epoch ms of the log's last event, plus `after`. */
 export const lastAt = (events: readonly RunEvent[], after = 0): number =>
@@ -42,54 +42,58 @@ export const complete = (events: readonly RunEvent[]): RunEvent[] =>
     { type: "turn_complete", payload: {} },
   );
 
-/** Whether a plan event starts a stage: an entry in progress that was not in the plan before it. */
-const startsStage = (
+/** The stage a plan event starts: an entry in progress that was not before it, or -1. */
+const startedBy = (
   before: readonly { status: string }[],
   e: Extract<RunEvent, { type: "plan" }>,
-): boolean =>
-  e.payload.entries.some(
+): number =>
+  e.payload.entries.findIndex(
     (entry, i) => entry.status === "in_progress" && before[i]?.status !== "in_progress",
   );
 
 /**
  * A log in the engine's own order (jadwigo-ai run-step.ts): the model's reply, its message and every
- * tool_call are written first, and the plan event that starts a call's stage only when that call
- * runs. The golden logs write the plan first, so each plan event that starts a stage moves to just
- * after the next tool_call, unless a result, an error or the turn's end comes first. The events are
- * numbered again in their new order; each keeps its event_id and its time (dl-uukj.47.71.36).
+ * tool_call are written first, and the plan event that starts a stage only when a call of that
+ * stage's verb (`PLAN_STAGE_OF`) runs. The golden logs write the plan first, so each plan event that
+ * starts a stage moves to just after the next call of that stage's verb, when one comes before the
+ * next plan event or the turn's end; else it stays. The events are numbered again in their new
+ * order, and each keeps its event_id and its time (dl-uukj.47.71.36).
  */
 export function engineOrder(events: readonly RunEvent[]): RunEvent[] {
   const sorted = [...events].sort((a, b) => a.seq - b.seq);
+  const kept = sorted.filter((e, i) => sorted.findIndex((x) => x.event_id === e.event_id) === i);
   const out: RunEvent[] = [];
-  let held: RunEvent[] = [];
+  let held: { event: RunEvent; stage: number } | null = null;
   let entries: readonly { status: string }[] = [];
-  const flush = () => {
-    out.push(...held);
-    held = [];
-  };
-  for (const e of sorted) {
-    if (out.some((x) => x.event_id === e.event_id) || held.some((x) => x.event_id === e.event_id))
-      continue;
+  for (const e of kept) {
+    const ends = e.type === "status" || e.type === "turn_complete" || e.type === "plan";
+    if (held !== null && ends) {
+      out.push(held.event);
+      held = null;
+    }
     if (e.type === "plan") {
-      const starts = startsStage(entries, e);
+      const stage = startedBy(entries, e);
       entries = e.payload.entries;
-      if (starts) {
-        flush();
-        held = [e];
+      const call = kept.find(
+        (x) => x.seq > e.seq && x.type === "tool_call" && PLAN_STAGE_OF[x.payload.verb] === stage,
+      );
+      const nextPlan = kept.find((x) => x.seq > e.seq && x.type === "plan");
+      if (
+        stage !== -1 &&
+        call !== undefined &&
+        (nextPlan === undefined || call.seq < nextPlan.seq)
+      ) {
+        held = { event: e, stage };
         continue;
       }
     }
-    if (
-      e.type !== "message" &&
-      e.type !== "model_response" &&
-      e.type !== "usage" &&
-      e.type !== "tool_call"
-    )
-      flush();
     out.push(e);
-    if (e.type === "tool_call") flush();
+    if (held !== null && e.type === "tool_call" && PLAN_STAGE_OF[e.payload.verb] === held.stage) {
+      out.push(held.event);
+      held = null;
+    }
   }
-  flush();
+  if (held !== null) out.push(held.event);
   return out.map((e, i) => ({ ...e, seq: i + 1 }));
 }
 

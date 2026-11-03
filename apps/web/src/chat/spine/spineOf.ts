@@ -3,12 +3,18 @@
  * plan's stages, each holding the lines of the calls made while it was in progress; the now line;
  * the reply; and the foot of a turn that failed, stalled or was stopped. Pure: `now` comes in.
  *
- * No contract change (wave plan): a call joins the stage that is `in_progress` when it is called,
- * and a stage's visit count comes from its `in_progress` transitions, by plan index. Every line is
- * a copy key with values; the engine's own text never reaches one (S3, `dl-uukj.47.72`).
+ * A call joins its verb's stage by the table the engine moves its plan by (`PLAN_STAGE_OF`), and
+ * entering a stage other than the one being worked on is a visit: a second check reads "drugi raz"
+ * though the engine never re-opens a done stage (dl-uukj.47.71.36). Every line is a copy key with
+ * values; the engine's own text never reaches one (S3, `dl-uukj.47.72`).
  */
 
-import { RUN_ERROR_TYPE, type RunEvent, type VerbName } from "@jadwigo/contracts/run";
+import {
+  PLAN_STAGE_OF,
+  RUN_ERROR_TYPE,
+  type RunEvent,
+  type VerbName,
+} from "@jadwigo/contracts/run";
 import type { CopyKey } from "@jadwigo/copy";
 import { mergeLive } from "@jadwigo/core";
 import type { RunPhase } from "../phase.ts";
@@ -69,11 +75,20 @@ const TITLE_MAX = 60;
 /** No stage: a line made before the plan, or in a turn without one. */
 const LOOSE = -1;
 /**
- * Not placed yet: made while the plan had no stage in progress. The engine writes a call before the
- * plan event that starts its stage (jadwigo-ai run-step.ts, `runTool`), so the line joins the next
- * stage to start, else the last one that ran (dl-uukj.47.71.36).
+ * Not placed yet: said between calls (the model's sentence, a retry, a steer). It joins the stage of
+ * the next call, the work it leads into, else the stage worked on last (dl-uukj.47.71.36).
  */
 const NEXT = -2;
+
+/**
+ * Which stage a call joins: the engine's table, and on the chat's side only, the question-type
+ * lookup under the search, a search-stage verb. Any other verb (an edit, a read, a learner verb)
+ * joins the stage being worked on (handoff §2 item 2): edits after a check re-check (s06).
+ */
+const STAGE_OF: Readonly<Partial<Record<VerbName, number>>> = {
+  ...PLAN_STAGE_OF,
+  question_types: 0,
+};
 
 /** A line placed in the turn: its stage, and the order it came in. */
 interface Placed {
@@ -147,7 +162,8 @@ export function spineOf(
   // Walk the log: the plan's stages and visits, where each call and line lands.
   let entries: { text: string; status: string }[] = [];
   const visits: number[] = [];
-  let lastActive: number | null = null;
+  /** The stage being worked on: the last one a call or the plan entered. */
+  let current: number | null = null;
   const calls = new Map<string, Call>();
   const placed: Placed[] = [];
   const agent: { text: string; seq: number; at: number; stage: number }[] = [];
@@ -158,29 +174,40 @@ export function spineOf(
   let sawParent = false;
   let endedAt: number | undefined;
 
-  const inProgress = (): number => entries.findIndex((e) => e.status === "in_progress");
-  /** The stage open at the end, or the last that ran: where the now, wait and slow lines go. */
-  const activeStage = (): number => {
-    const open = inProgress();
-    if (open !== -1) return open;
-    if (lastActive !== null) return lastActive;
-    return entries.length > 0 ? 0 : LOOSE;
-  };
-  /** Where a line made now lands: the stage in progress, else the next one to start. */
-  const stageNow = (): number => {
-    const open = inProgress();
-    if (open !== -1) return open;
-    return entries.length > 0 ? NEXT : LOOSE;
-  };
-  /** Gives every line and call still waiting for a stage the one that just started. */
+  const running = (): boolean => [...calls.values()].some((c) => c.result === undefined);
+  /** Gives every line said between calls the stage `stage`. */
   const place = (stage: number): void => {
     for (const p of placed) if (p.stage === NEXT) p.stage = stage;
     for (const m of agent) if (m.stage === NEXT) m.stage = stage;
-    for (const c of calls.values())
-      if (c.stage === NEXT) {
-        c.stage = stage;
-        c.visit = visits[stage] ?? 0;
-      }
+  };
+  /** Work moves to `stage`: a visit when it was not the stage being worked on (D1). */
+  /** Stages the plan marked done since work last entered them. */
+  const settled = new Set<number>();
+  /**
+   * Work enters `stage`. A new visit (D1, "drugi raz") when work comes back to it from another
+   * stage, or after it settled done; consecutive work in one stage is one visit.
+   */
+  const enter = (stage: number): void => {
+    if (current !== stage || settled.has(stage)) {
+      visits[stage] = (visits[stage] ?? 0) + 1;
+      current = stage;
+    }
+    settled.delete(stage);
+    place(stage);
+  };
+  /**
+   * The stage work is on between calls: the one worked on, or, once it is done, the plan's next
+   * stage still pending, which the stages run in order to (jadwigo-ai plan.ts).
+   */
+  const openStage = (): number | null => {
+    if (current === null || entries[current]?.status !== "done") return current;
+    const pending = entries.findIndex((e) => e.status === "pending");
+    return pending === -1 ? current : pending;
+  };
+  /** Where a line said now lands: the call at work's stage, else the next call's. */
+  const stageNow = (): number => {
+    if (entries.length === 0) return LOOSE;
+    return running() && current !== null ? current : NEXT;
   };
   // The engine settles the plan as the turn ends: every stage not done reads failed (jadwigo-ai
   // plan.ts `settlePlan`), a stopped or completed turn too. That says nothing about the stages, so
@@ -201,22 +228,33 @@ export function spineOf(
       case "plan": {
         if (settles.has(e.seq)) break;
         const next = e.payload.entries;
-        let started: number | null = null;
+        const started = next.findIndex(
+          (entry, i) => entry.status === "in_progress" && entries[i]?.status !== "in_progress",
+        );
+        const first = entries.length === 0;
         next.forEach((entry, i) => {
-          const was = entries[i]?.status;
-          if (entry.status === "in_progress" && was !== "in_progress") {
-            visits[i] = (visits[i] ?? 0) + 1;
-            started ??= i;
-          }
-          if (entry.status === "in_progress") lastActive = i;
+          if (entry.status === "done" && entries[i]?.status !== "done") settled.add(i);
         });
         entries = next.map((entry) => ({ text: entry.text, status: entry.status }));
-        if (started !== null) place(started);
+        if (started !== -1) enter(started);
+        // Calls made before the turn had a plan take their stage now, as they would have then.
+        if (first)
+          for (const c of calls.values()) {
+            if (c.stage !== LOOSE) continue;
+            const own = STAGE_OF[c.verb] ?? current ?? 0;
+            if (current === null) enter(own);
+            c.stage = own;
+            c.visit = visits[own] ?? 0;
+          }
         break;
       }
       case "tool_call": {
         if (calls.has(e.payload.call_id)) break;
-        const stage = stageNow();
+        // A verb with a stage enters it; any other joins the stage work is on, resuming it as its
+        // next visit when it settled done (s06: edits after a check open the check again).
+        const own = STAGE_OF[e.payload.verb] ?? (running() ? current : openStage());
+        if (own !== null && own !== undefined && entries.length > 0) enter(own);
+        const stage = entries.length === 0 ? LOOSE : (own ?? NEXT);
         calls.set(e.payload.call_id, {
           call_id: e.payload.call_id,
           verb: e.payload.verb,
@@ -231,13 +269,6 @@ export function spineOf(
       case "tool_result": {
         const call = calls.get(e.payload.call_id);
         if (call === undefined || call.result !== undefined) break;
-        // A call belongs to the stage under way while it ran: the engine starts it after the call
-        // and ends it after the result, and a model reply with several calls runs them in turn.
-        const open = inProgress();
-        if (open !== -1) {
-          call.stage = open;
-          call.visit = visits[open] ?? 0;
-        }
         call.result = { seq: e.seq, output: e.payload.output, failed: e.payload.error !== null };
         const steps = e.payload.output?.["steps"];
         if (call.verb === "lesson_show" && Array.isArray(steps))
@@ -293,14 +324,10 @@ export function spineOf(
       case "error": {
         tries = Math.max(tries, e.payload.attempt);
         if (e.payload.error.type !== RUN_ERROR_TYPE.stepTimedOut) break;
-        const stage = stageNow();
-        // One quiet retry line per stage, however many deliveries timed out (S5).
-        if (stage !== NEXT && retried.has(stage)) break;
-        if (stage !== NEXT) retried.add(stage);
-        // Named once it has a stage: one that starts after it may still take it in.
+        // Named, and one per stage kept, once it has a stage (S5).
         placed.push({
           seq: e.seq,
-          stage,
+          stage: stageNow(),
           line: { kind: "retry", copyKey: "chat_line_retry_plain", values: {} },
         });
         break;
@@ -316,9 +343,9 @@ export function spineOf(
     }
   }
 
-  // Nothing started after them: they join the last stage that ran, else the first.
-  place(lastActive ?? 0);
-  // One quiet retry line per stage (S5), however many timed out before their stage started.
+  // Said after the last call: it stays in the stage worked on last, else the first.
+  place(current ?? 0);
+  // One quiet retry line per stage (S5), however many deliveries timed out.
   const firstRetry = new Map<number, Placed>();
   for (const p of placed)
     if (p.line.kind === "retry" && !firstRetry.has(p.stage)) firstRetry.set(p.stage, p);
@@ -333,6 +360,7 @@ export function spineOf(
     if (name !== undefined)
       p.line = { kind: "retry", copyKey: "chat_line_retry", values: { stage: name } };
   }
+  const stillRunning = running();
 
   const all = [...calls.values()];
   const kind = phase === null ? phaseFromLog(log, all, now) : PHASE[phase.kind];
@@ -397,7 +425,10 @@ export function spineOf(
     });
 
   // The open stage's tail: the now line, the waiting line, the slow line.
-  const here = activeStage();
+  // Between calls the open stage is the one work goes on in (`openStage`): the model's sentence leads
+  // into it. Once the turn ended, the stage worked on last.
+  const here =
+    (!ended && !stillRunning ? openStage() : current) ?? (entries.length > 0 ? 0 : LOOSE);
   const tail: SpineLine[] = [];
   if (!ended && kind !== "awaiting_input") {
     const now_ = nowLine(agent, all);
@@ -415,7 +446,13 @@ export function spineOf(
         const lines = ordered
           .filter((p) => p.stage === i || (i === 0 && p.stage === LOOSE))
           .map((p) => p.line);
-        const status = stageStatus(entry.status, i === here, kind);
+        const status = stageStatus(
+          entry.status,
+          i === here,
+          (visits[i] ?? 0) > 0,
+          stillRunning,
+          kind,
+        );
         return {
           id: String(i),
           name: entry.text,
@@ -506,23 +543,36 @@ function nowLine(
   return { kind: "now", ...plainWords(running.verb, running.input), startedAt: running.at };
 }
 
-/** A stage's mark from its plan status, the open stage taking the turn's phase (§4.1). */
-function stageStatus(plan: string, open: boolean, phase: SpinePhase): StageStatus {
-  if (plan === "done") return "done";
-  // A stopped turn: the stage it stopped in takes the square, the rest never ran (S15).
-  if (phase === "cancelled") return open && plan === "in_progress" ? "stopped" : "todo";
-  if (plan === "failed") return "failed";
-  if (plan === "pending" && !open) return "todo";
-  if (!open) return phase === "done" ? "done" : plan === "in_progress" ? "active" : "todo";
+/**
+ * A stage's mark (§4.1). The stage being worked on takes the turn's phase; one left for another is
+ * done once it ran, since the engine never re-opens it, and todo when it never did. A stopped turn
+ * shows no failed stage: the engine's settle says nothing (S15, dl-uukj.47.71.37).
+ */
+function stageStatus(
+  plan: string,
+  open: boolean,
+  visited: boolean,
+  running: boolean,
+  phase: SpinePhase,
+): StageStatus {
+  if (!open) {
+    if (plan === "failed" && phase !== "cancelled") return "failed";
+    if (plan === "done") return "done";
+    return visited ? "done" : "todo";
+  }
   switch (phase) {
-    case "awaiting_input":
-      return "waiting";
-    case "failed":
-      return plan === "in_progress" ? "failed" : "todo";
     case "done":
       return "done";
+    case "cancelled":
+      if (running || plan === "in_progress") return "stopped";
+      return plan === "done" || visited ? "done" : "todo";
+    case "failed":
+      if (plan === "done" && !running) return "done";
+      return visited || plan === "in_progress" ? "failed" : "todo";
+    case "awaiting_input":
+      return "waiting";
     default:
-      return plan === "in_progress" ? "active" : "todo";
+      return "active";
   }
 }
 
