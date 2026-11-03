@@ -167,7 +167,7 @@ export const MIXED_PRINT_LESSON: {
         gaps: { g1: { kind: "enter", accept: ["4"] }, g2: { kind: "enter", accept: ["00"] } },
       },
     }),
-    q(10, "clock_set", "Przesuń wskazówki na wpół do czwartej.", {
+    q(10, "clock_set", "Przeciągnij wskazówki na wpół do czwartej.", {
       family: "place",
       data: { surface: "clock", target_label: "3:30", minute_step: 30, hands: "geared" },
       key: { surface: "clock", h: 3, m: 30 },
@@ -269,6 +269,7 @@ export const MIXED_PRINT_LESSON: {
     q(17, "bucket", "Parzyste czy nieparzyste?", {
       family: "group",
       data: {
+        stem: { text: "Przeciągnij każdą liczbę do właściwego koszyka." },
         groups: [
           { id: "even", label: "parzyste" },
           { id: "odd", label: "nieparzyste" },

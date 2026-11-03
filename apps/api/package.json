@@ -24,6 +24,7 @@
     "@aws-sdk/client-ssm": "reads the SecureString with DATABASE_URL once per cold start in src/config.ts (dl-5ssh.25)",
     "@jadwigo/contracts": "the route table, the wire schemas, the error types and pageEnded",
     "@jadwigo/core": "the family judges and the help ladder the answer and help routes run",
+    "@jadwigo/lesson-kit": "builds a checked lesson's print sheet, the whitelist the print Lambda renders, in src/print.ts (dl-1eieq.8.4)",
     "@jadwigo/lesson-import": "compiles a checked lesson revision into a lesson version in src/give.ts (dl-5ssh.136), and seeds the route tests' stores with the fixture lessons",
     "@jadwigo/store": "the Store the routes read and write through, in memory or on Postgres",
     "@jadwigo/testing": "the fixture lesson files and the pinned clock of the route tests",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@jadwigo/lesson-import": "workspace:*",
+    "@jadwigo/lesson-kit": "workspace:*",
     "@jadwigo/testing": "workspace:*",
     "@types/node": "catalog:",
     "@types/react": "catalog:",

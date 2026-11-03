@@ -1481,6 +1481,108 @@
         }
       }
     },
+    "/api/v1/conversations/{id}/prints": {
+      "post": {
+        "operationId": "startPrint",
+        "summary": "Starts the PDF of the conversation's checked lesson, or answers the one already made.",
+        "description": "The same checked revision `giveLesson` would publish, else 409 `LessonNotPublishable`; a lesson with a question type that has no paper form is 409 `LessonNotPrintable`. Nothing is published or assigned. The print's id is the sha256 of its sheet: a lesson already printed answers `ready` with a link that reads the PDF for 5 minutes, else the print Lambda starts and the reply is `pending`, to be followed with `getPrint`. 502 `PrintUnavailable` where no print Lambda is set up.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ConversationId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PrintStart"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/api/v1/prints/{id}": {
+      "get": {
+        "operationId": "getPrint",
+        "summary": "Answers where a print stands: pending, ready with a 5-minute link to the PDF, or failed.",
+        "description": "A print is read in the caller's pod only, so another pod's print id is 404 `NotFound`, as is an id no `startPrint` made. The page asks again about once a second while it is `pending`.",
+        "tags": [
+          "conversations"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/PrintId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "4XX": {
+            "$ref": "#/components/responses/Error"
+          },
+          "5XX": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
     "/api/v1/attachments": {
       "post": {
         "operationId": "createAttachment",
@@ -4361,6 +4463,8 @@
           "AttachmentExpired",
           "AttachmentLimitDay",
           "LessonNotPublishable",
+          "LessonNotPrintable",
+          "PrintUnavailable",
           "Unauthorized",
           "BankUnavailable"
         ]
@@ -9186,6 +9290,99 @@
           "y"
         ]
       },
+      "PrintFailure": {
+        "type": "string",
+        "enum": [
+          "render_failed",
+          "picture_unavailable",
+          "bad_sheet"
+        ]
+      },
+      "PrintId": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      },
+      "PrintStart": {
+        "type": "object",
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "additionalProperties": false
+      },
+      "PrintStatus": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "const": "pending"
+              },
+              "print_id": {
+                "$ref": "#/components/schemas/PrintId"
+              }
+            },
+            "required": [
+              "status",
+              "print_id"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "const": "ready"
+              },
+              "print_id": {
+                "$ref": "#/components/schemas/PrintId"
+              },
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "expires_at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+              }
+            },
+            "required": [
+              "status",
+              "print_id",
+              "url",
+              "expires_at"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "const": "failed"
+              },
+              "print_id": {
+                "$ref": "#/components/schemas/PrintId"
+              },
+              "reason": {
+                "$ref": "#/components/schemas/PrintFailure"
+              }
+            },
+            "required": [
+              "status",
+              "print_id",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
       "ProposalDecision": {
         "type": "object",
         "properties": {
@@ -12078,7 +12275,7 @@
     },
     "responses": {
       "Error": {
-        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`, `AiConsentMissing`, `ConversationArchived`, `AttachmentMismatch`, `AttachmentAttached`, `AttachmentExpired`, `LessonNotPublishable`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`, `AttachmentLimitDay`\n- 502: `BankUnavailable`",
+        "description": "An error: `{error: {type, message}}`. The type names the cause, and answers with one status:\n\n- 400: `BadRequest`, `ServerFieldSupplied`\n- 401: `NotSignedIn`, `Unauthorized`\n- 404: `NotFound`\n- 409: `AccountMissing`, `AttemptClaimed`, `AttemptPreview`, `AssignmentClosed`, `AttemptFinished`, `AttemptNotFinished`, `AttemptPaused`, `QuestionNotOpen`, `TryOutOfOrder`, `AnswerConflict`, `EventIdMismatch`, `WriteOnce`, `AiConsentMissing`, `ConversationArchived`, `AttachmentMismatch`, `AttachmentAttached`, `AttachmentExpired`, `LessonNotPublishable`, `LessonNotPrintable`\n- 429: `AnswerLimit`, `MessageLimitMinute`, `MessageLimitDay`, `AttachmentLimitDay`\n- 502: `PrintUnavailable`, `BankUnavailable`",
         "content": {
           "application/json": {
             "schema": {

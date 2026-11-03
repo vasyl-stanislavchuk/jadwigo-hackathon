@@ -125,6 +125,9 @@ module "app" {
     "POST /api/v1/runs/{id}/ratings",
     # A conversation's checked lesson given to play (dl-5ssh.136); a token route.
     "POST /api/v1/conversations/{id}/lessons",
+    # The checked lesson's PDF, started and then asked about (dl-1eieq.8.4); token routes.
+    "POST /api/v1/conversations/{id}/prints",
+    "GET /api/v1/prints/{id}",
     # A message's photos (dl-z5ja.11): an upload form, then a link to the stored copy; token routes.
     "POST /api/v1/attachments",
     "GET /api/v1/attachments/{id}",
@@ -158,6 +161,8 @@ module "app" {
     "POST /api/v1/runs/{id}/cancellations",
     "POST /api/v1/runs/{id}/ratings",
     "POST /api/v1/conversations/{id}/lessons",
+    "POST /api/v1/conversations/{id}/prints",
+    "GET /api/v1/prints/{id}",
     "POST /api/v1/attachments",
     "GET /api/v1/attachments/{id}",
   ]

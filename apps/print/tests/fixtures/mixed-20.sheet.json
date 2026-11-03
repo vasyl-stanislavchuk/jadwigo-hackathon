@@ -546,6 +546,9 @@
       "credit_n": null,
       "family": "group",
       "data": {
+        "stem": {
+          "text": "Połącz liniami to, co do siebie pasuje."
+        },
         "groups": [
           {
             "id": "even",
@@ -716,6 +719,7 @@
     "$9 + 6$": "<span class=\"formula\">9 + 6</span>",
     "$7 + 9$": "<span class=\"formula\">7 + 9</span>",
     "Parzyste czy nieparzyste?": "Parzyste czy nieparzyste?",
+    "Połącz liniami to, co do siebie pasuje.": "Połącz liniami to, co do siebie pasuje.",
     "parzyste": "parzyste",
     "nieparzyste": "nieparzyste",
     "Wybierz monety, które dają razem 3 zł 50 gr.": "Wybierz monety, które dają razem 3 zł 50 gr.",
