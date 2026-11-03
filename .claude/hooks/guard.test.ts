@@ -83,6 +83,10 @@ const cases: Array<[name: string, want: "allow" | "DENY", command: string]> = [
   ["bun run import in the package", "allow", "bun run --cwd packages/lesson-import import x.json"],
   // lesson-withdraw's prod form too: it takes a lesson off prod's featured list (dl-9t2o.12)
   ["make lesson-withdraw ENV=prod", "DENY", "make lesson-withdraw LESSON=les_x ENV=prod"],
+  // run-timeline changes nothing, but reads a family's runs on prod: the owner's (dl-hin8.37)
+  ["make run-timeline ENV=prod", "DENY", "make run-timeline CONV=cnv_x ENV=prod"],
+  ["make run-timeline ENV=dev", "allow", "make run-timeline CONV=cnv_x ENV=dev"],
+  ["make run-timeline, local", "allow", "make run-timeline CONV=cnv_x"],
   ["lesson-withdraw, ENV=prod in front", "DENY", "ENV=prod make lesson-withdraw ASSIGNMENT=asg_x"],
   ["lesson-withdraw UNDO=1 ENV=prod", "DENY", "make lesson-withdraw LESSON=les_x UNDO=1 ENV=prod"],
   [

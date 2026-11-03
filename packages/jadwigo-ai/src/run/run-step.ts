@@ -68,6 +68,11 @@ export interface EngineDeps {
    */
   onWarning?: (warning: EngineWarning) => void;
   /**
+   * Told when a verb refused a call, which the model reads and the step survives, so no log sees it
+   * otherwise (dl-hin8.35). Ids and the refusal's type only: its message can quote a lesson line.
+   */
+  onRefusal?: (refusal: EngineRefusal) => void;
+  /**
    * Where the turn's own photos are read (dl-z5ja.11.4): S3 in the hosted runner. Without it a
    * photo reaches the model as a line saying it could not be read, never as bytes.
    */
@@ -86,6 +91,13 @@ export interface EngineWarning {
   call_no: number;
   requested: ModelTier;
   answered: ModelTier;
+}
+
+/** What `onRefusal` is told. */
+export interface EngineRefusal {
+  run_id: RunId;
+  verb: ToolCall["verb"];
+  type: string;
 }
 
 /** An inbox row as the caller gives it: the engine names the run. */
@@ -123,16 +135,26 @@ const INSTRUCTIONS = [
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
   CARD_RULE,
   "A nearby source is a starting point: inspect the actual question.data, not only say. Adapt data, key and help consistently to the requested operation and range. Renaming a subtraction does not turn it into addition.",
+  "When you already know the changes for several steps, send all their lesson_edit calls together in one response: they run in order, each on the result of the one before, and a refused one leaves the others standing. The parent is waiting, so do not spend a response on each step.",
+  "Once the questions are settled, give the lesson its title by passing title to the lesson_check that closes your work: a few plain words a child reads, naming what it practises, in the lesson's language. Never the parent's request word for word, and never a name.",
   "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key and inherits the main question family when omitted. If a check still fails, explain the limitation and do not claim the lesson is ready.",
   FENCE_RULE,
 ].join("\n");
-/** Moves on with `INSTRUCTIONS`: 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
-const PROMPT_CACHE_KEY = `${WORKFLOW}:4`;
+/** Moves on with `INSTRUCTIONS`: 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:5`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
  */
 const DEFAULT_TIER: ModelTier = "contributor";
+/**
+ * The tool calls a turn may make before its tools go away and the model must close (owner's number,
+ * dl-hin8.38). At today's prices the budget stops a looping turn only after thousands of calls, so
+ * without this only the 30 minute deadline would, with a parent waiting.
+ */
+const MAX_TOOL_CALLS = 40;
+const OUT_OF_CALLS =
+  "You have used all the tool calls this turn may make. Answer the parent now, with no tools: say what the lesson holds and what is not finished. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -588,6 +610,8 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
+    const outOfCalls = w.log.filter((e) => e.type === "tool_result").length >= MAX_TOOL_CALLS;
+    if (outOfCalls) instructions.push(OUT_OF_CALLS);
     instructions.push(...prior.edits);
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer, w.log));
     const page = pageOf(w.log);
@@ -637,9 +661,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
         tier: asked,
         instructions: instructions.join("\n\n"),
         input: [...prior.input, ...museInput(w.log, files.parts)],
-        tools: Object.values(deps.verbs).map((verb) => verb.tool),
+        tools: outOfCalls ? [] : Object.values(deps.verbs).map((verb) => verb.tool),
         names: await namesOf(deps.store, scope),
       });
+      // With no tools offered, a call it still names cannot run.
+      if (outOfCalls) response = { ...response, tool_calls: [] };
     } catch (error) {
       // A failed call writes no model_response, so the tier it went to is told here (dl-z5ja.103).
       if (error instanceof MuseFailed && error.tier !== null) downgraded(error.tier);
@@ -1061,6 +1087,7 @@ async function runTool(
         "the lesson changed after you read it (the parent's own edit, or another turn): read it again with lesson_show, then make your change on it",
     };
   }
+  if (error !== null) deps.onRefusal?.({ run_id: scope.run.id, verb: call.verb, type: error.type });
   const result: NewRunEvent = {
     type: "tool_result",
     run_id: scope.run.id,
@@ -1701,13 +1728,19 @@ export interface FailedStep extends RunStepInput {
  */
 export async function drain(
   deps: EngineDeps,
-  options: { max_steps?: number; onError?: (error: unknown, step: FailedStep) => void } = {},
+  options: {
+    max_steps?: number;
+    onError?: (error: unknown, step: FailedStep) => void;
+    /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
+    onRead?: (run_id: RunId) => void;
+  } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
   const outputs: RunStepOutput[] = [];
   for (let reads = 0; reads < max; reads++) {
     const [queued] = await deps.queue.read(STEP_VISIBILITY_S, 1);
     if (!queued) break;
+    options.onRead?.(queued.message.run_id);
     try {
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
