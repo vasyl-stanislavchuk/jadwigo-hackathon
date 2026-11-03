@@ -5,8 +5,9 @@
  *
  * The lesson column (dl-z5ja.108.1; handoff §3 "Collapsed list" and "Ghost rows", §5.4–5.5): one
  * row per step, collapsed by default (chevron · number · title · tag · kind), a button with
- * `aria-expanded`; "Rozwiń wszystkie" opens or closes them all; the rows this revision changed carry
- * a tag in words; dashed ghost rows say how many steps are still coming. An opened step shows the
+ * `aria-expanded`; "Rozwiń wszystkie" opens or closes them all; the rows this revision added or
+ * changed carry a tag in words, "nowe" or "zmienione", until the parent opens them (chat handoff
+ * dl-uukj.47.71 S20); dashed ghost rows say how many steps are still coming. An opened step shows the
  * child's view on the left, and on the right the right answer, the help, the skill (only with a
  * child), where it came from, and Zmień ten krok · Przenieś · Usuń. A row slides in with Zeszyt's
  * `jw-step-in` only when the system allows motion.
@@ -35,6 +36,7 @@ import {
   useId,
   useState,
 } from "react";
+import type { Turn } from "./conversation.ts";
 import { lessonFileToSpecs } from "./lesson/adapter.ts";
 import { readDraft } from "./lesson/readDraft.ts";
 import {
@@ -99,6 +101,7 @@ export function LessonPane({
   language,
   lesson,
   changed = new Set(),
+  added = new Set(),
   onUndo,
   undoRefused = false,
   undoPending = false,
@@ -113,6 +116,8 @@ export function LessonPane({
   lesson: RunView["lesson"];
   /** The steps the last AI revision changed (`revisions.ts`), tagged in their rows (dl-z5ja.30). */
   changed?: ReadonlySet<string>;
+  /** Of those, the steps the revision added: their tag reads "nowe", the others' "zmienione". */
+  added?: ReadonlySet<string>;
   /** Takes back the last AI revision; "Cofnij" shows only when it is given. */
   onUndo?: (() => void) | undefined;
   /** The last Cofnij's patch was not applied: the pane says so beside it (dl-z5ja.111). */
@@ -158,6 +163,7 @@ export function LessonPane({
           lesson={lesson}
           say={say}
           changed={changed}
+          added={added}
           onUndo={onUndo}
           undoRefused={undoRefused}
           undoPending={undoPending}
@@ -202,6 +208,7 @@ function Revision({
   lesson,
   say,
   changed,
+  added,
   onUndo,
   undoRefused,
   undoPending,
@@ -214,6 +221,7 @@ function Revision({
   lesson: NonNullable<RunView["lesson"]>;
   say: Say;
   changed: ReadonlySet<string>;
+  added: ReadonlySet<string>;
   onUndo: (() => void) | undefined;
   undoRefused: boolean;
   undoPending: boolean;
@@ -224,6 +232,24 @@ function Revision({
   bare: boolean;
 }): ReactElement {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+  // The steps the parent opened in this revision: their tag has been read, so it goes.
+  const [seen, setSeen] = useState<{ revision: number; ids: ReadonlySet<string> }>({
+    revision: lesson.revision,
+    ids: new Set(),
+  });
+  const seenNow = seen.revision === lesson.revision ? seen.ids : new Set<string>();
+  useEffect(() => {
+    if (open.size === 0) return;
+    setSeen((was) => {
+      const ids = new Set(was.revision === lesson.revision ? was.ids : []);
+      for (const id of open) ids.add(id);
+      return ids.size === was.ids.size && was.revision === lesson.revision
+        ? was
+        : { revision: lesson.revision, ids };
+    });
+  }, [open, lesson.revision]);
+  const tagOf = (id: string): Tag | null =>
+    !changed.has(id) || seenNow.has(id) || open.has(id) ? null : added.has(id) ? "new" : "changed";
   const read = readDraft(lesson.lesson_file);
   if ("error" in read)
     return (
@@ -301,6 +327,7 @@ function Revision({
             open={open.has(step.step_id)}
             onToggle={() => toggle(step.step_id)}
             changed={changed.has(step.step_id)}
+            tag={tagOf(step.step_id)}
             say={say}
             lessonLanguage={lessonLanguage}
             category={category}
@@ -368,6 +395,7 @@ function StepRow({
   open,
   onToggle,
   changed,
+  tag,
   say,
   lessonLanguage,
   category,
@@ -381,6 +409,8 @@ function StepRow({
   open: boolean;
   onToggle: () => void;
   changed: boolean;
+  /** The row's tag in words, until it is opened. */
+  tag: Tag | null;
   say: Say;
   lessonLanguage: Language;
   category: Category;
@@ -401,7 +431,7 @@ function StepRow({
         <span className="min-w-35 flex-1 truncate">
           {say("chat_lesson_step_hidden", { step: step.step_id })}
         </span>
-        {changed && <ChangedTag say={say} />}
+        {tag !== null && <ChangedTag tag={tag} say={say} />}
       </li>
     );
   const title =
@@ -445,7 +475,7 @@ function StepRow({
         <span className="min-w-35 flex-1 truncate" data-step-title>
           {title}
         </span>
-        {changed && <ChangedTag say={say} />}
+        {tag !== null && <ChangedTag tag={tag} say={say} />}
         <span className="shrink-0 text-jw-page-small text-jw-ink-soft" data-step-kind>
           {say(KIND[step.spec.family])}
         </span>
@@ -527,11 +557,50 @@ function StepRow({
   );
 }
 
-/** The tag on a row this revision changed: words, not only a coloured edge. */
-function ChangedTag({ say }: { say: Say }): ReactElement {
+/** The step ids of a revision's lesson file; none while it does not read. */
+function stepIds(lesson: RunView["lesson"]): ReadonlySet<string> {
+  if (lesson === null) return new Set();
+  const read = readDraft(lesson.lesson_file);
+  if ("error" in read) return new Set();
+  return new Set(
+    lessonFileToSpecs(read.file, undefined, read.skipped).flatMap((p) =>
+      p.steps.map((s) => s.step_id),
+    ),
+  );
+}
+
+/**
+ * Of the steps the newest revision changed (`changedOf`), the ones it added: not in the revision
+ * before it, in its own turn (`previous_lesson`) or the turn before's. None with nothing before.
+ */
+export function addedSteps(
+  turns: readonly Turn[],
+  changed: ReadonlySet<string>,
+): ReadonlySet<string> {
+  if (changed.size === 0) return new Set();
+  const at = turns.findLastIndex((t) => t.view.lesson !== null);
+  const newest = turns[at];
+  if (newest === undefined) return new Set();
+  const before =
+    newest.view.previous_lesson ??
+    turns.slice(0, at).findLast((t) => t.view.lesson !== null)?.view.lesson ??
+    null;
+  if (before === null) return new Set();
+  const had = stepIds(before);
+  return new Set([...changed].filter((id) => !had.has(id)));
+}
+
+/** A row's tag: the revision added it ("nowe") or changed it ("zmienione"). */
+type Tag = "new" | "changed";
+
+/** The tag on a row this revision added or changed: words, not only a coloured edge. */
+function ChangedTag({ tag, say }: { tag: Tag; say: Say }): ReactElement {
   return (
-    <span data-changed-mark className="shrink-0 text-jw-page-small font-medium text-link">
-      {say("chat_revision_by_ai")}
+    <span
+      data-changed-mark={tag}
+      className="shrink-0 rounded-jw-small bg-jw-side-active px-2 py-0.5 text-jw-page-small font-medium text-jw-ink-soft"
+    >
+      {say(tag === "new" ? "lesson_tag_new" : "lesson_tag_changed")}
     </span>
   );
 }
