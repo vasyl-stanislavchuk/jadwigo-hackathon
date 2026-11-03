@@ -18,13 +18,8 @@ describe("the lists' facets", () => {
     expect(inPreset(new Date(2026, 9, 31, 23).toISOString(), "miesiac", now)).toBe(false);
   });
 
-  it("names each child by the folded first name, or the id when names clash", () => {
-    const slugs = childSlugs([
-      learner("lrn_a", "Żółw Ola"),
-      learner("lrn_b", "Kuba"),
-      learner("lrn_c", "kuba"),
-      learner("lrn_d", "Bez"),
-    ]);
-    expect([...slugs.values()]).toEqual(["zolw-ola", "lrn_b", "lrn_c", "lrn_d"]);
+  it("names each child by its id, never by a name", () => {
+    const slugs = childSlugs([learner("lrn_a", "Żółw Ola"), learner("lrn_b", "Kuba")]);
+    expect([...slugs.values()]).toEqual(["lrn_a", "lrn_b"]);
   });
 });

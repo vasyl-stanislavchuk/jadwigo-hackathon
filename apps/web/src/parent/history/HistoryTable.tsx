@@ -125,6 +125,9 @@ export function HistoryTable({
     col.accessor((row) => (row.total === 0 ? 0 : (row.right + row.help) / row.total), {
       id: "wynik",
       header: t("parent_col_result"),
+      // Never sorted: ranking a child's attempts best-first is the ranking Jadwigo promises not to
+      // keep (the #765 review, dl-uukj.47.67.31).
+      enableSorting: false,
       cell: ({ row }) =>
         row.original.total === 0 ? (
           <span className="text-muted-foreground">—</span>
@@ -187,7 +190,6 @@ export function HistoryTable({
       ]}
       sorts={{
         lekcja: (a, b) => a.played.title.localeCompare(b.played.title, language),
-        wynik: (a, b) => result(a) - result(b),
         kiedy: (a, b) => a.played.attempt.started_at.localeCompare(b.played.attempt.started_at),
       }}
       defaultSort={{ id: "kiedy", desc: true }}
@@ -195,7 +197,6 @@ export function HistoryTable({
         { value: "-kiedy", label: t("parent_list_sort_when_newest") },
         { value: "kiedy", label: t("parent_list_sort_when_oldest") },
         { value: "lekcja", label: t("parent_list_sort_title") },
-        { value: "-wynik", label: t("parent_list_sort_best") },
       ]}
       onOpen={open}
       rowTitle={(row) => row.played.title}

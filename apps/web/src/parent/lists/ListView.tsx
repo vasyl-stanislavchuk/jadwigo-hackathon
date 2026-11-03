@@ -1,7 +1,7 @@
 /**
  * The one list pattern Lekcje and Historia share (handoff dl-uukj.47.67 §7, D8, D9, D11, S14-S18):
  * the kit's FilterBar over its DataTable, no header row above them. Every filter, the sort and the
- * page live in the URL (`?dziecko=marta&data=tydzien&sort=-ostatnio&strona=2`), written with replace
+ * page live in the URL (`?dziecko=<learner id>&data=tydzien&sort=-ostatnio&strona=2`), written with replace
  * so the address always says what shows. The rows arrive whole; this filters, sorts and pages them
  * here, 20 to a page on a laptop and "Pokaż więcej" on a phone. It draws the four states: skeleton
  * rows after 300 ms, empty the first time, empty under the filters, and the error with a retry.

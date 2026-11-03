@@ -94,7 +94,7 @@ describe("HistoryTable", () => {
   });
 
   it("narrows the rows to the child the URL names", async () => {
-    window.history.replaceState(null, "", "/parent/history?dziecko=tymek");
+    window.history.replaceState(null, "", `/parent/history?dziecko=${TYMEK.id}`);
     await shown([OLA, TYMEK]);
     expect(titles()).toEqual(["Żółw liczy kroki", "Tabliczka mnożenia"]);
     fireEvent.click(screen.getByRole("button", { name: "Wyczyść" }));
