@@ -495,3 +495,87 @@ describe("addition-within-10 gap over the HTTP bank seam (dl-n9fr.76)", () => {
     }
   });
 });
+
+describe("nearby source choice and adaptation (dl-n9fr.76)", () => {
+  it("shows source descriptions in the model's search output and view", async () => {
+    const { reads } = fakeReads(BODIES, PAGES);
+    reads.search = async () => ({
+      version: 1,
+      rows: [
+        {
+          ...row("set_near", 1),
+          enrichment: {
+            summary: {
+              pl: "Dodawanie 1 do liczb dwucyfrowych, np. 36 + 1.",
+              en: "Two-digit addition.",
+            },
+            can_do: { en: "Add one to a two-digit number." },
+          },
+        },
+      ],
+      state: [],
+    });
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const effect = await verbs.question_search.run(contextFor(runId(), "near"), QUERY);
+    for (const data of [effect.output, effect.view?.data]) {
+      expect(data).toMatchObject({ sets: [{ why_found: expect.stringContaining("36 + 1") }] });
+      expect(data).toMatchObject({
+        sets: [{ why_found: expect.stringContaining("Add one to a two-digit number") }],
+      });
+      expect(data).toMatchObject({
+        sets: [{ why_found: expect.stringContaining("not verified") }],
+      });
+    }
+  });
+
+  it("lets the model adapt a nearby question while retaining its source and reason", async () => {
+    const source = body("xmade000", 36, 1);
+    const { reads } = fakeReads({ xmade000: source }, [page("set_near", ["xmade000"])]);
+    const verbs = createVerbs({ bank: apiBank(reads) });
+    const run = runId();
+    const draft = await verbs.lesson_draft.run(contextFor(run, "draft"), {
+      request: "dodawanie do 10",
+      topic: "dodawanie do 10",
+      grade: "1",
+      names: [],
+      count: 1,
+    });
+    if (draft.lesson_file === undefined) throw new Error("expected a draft");
+    const effect = await verbs.lesson_edit.run(
+      contextFor(run, "adapt", { revision: 1, lesson_file: draft.lesson_file }),
+      {
+        draft_id: run,
+        step_id: "s01",
+        names: [],
+        change: "numbers",
+        why: "The parent asked for sums at most 10; adapt the nearby source.",
+        patch: {
+          say: "Ile to jest 3 + 1?",
+          question: {
+            data: { figure: { text: "3 + 1 = ?" } },
+            key: { accept: ["4"] },
+            help: { worked: ["3 + 1 = 4"] },
+          },
+        },
+      },
+    );
+    expect(effect.lesson_file).toMatchObject({
+      script: {
+        parts: [
+          {
+            steps: [
+              {
+                based_on: {
+                  question: "bank:xmade000",
+                  changes: [{ change: "numbers", why: expect.stringContaining("at most 10") }],
+                },
+                question: { data: { figure: { text: "3 + 1 = ?" } }, key: { accept: ["4"] } },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(source.pl?.key).toEqual({ accept: ["37"] });
+  });
+});
