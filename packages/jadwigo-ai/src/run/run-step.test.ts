@@ -809,6 +809,51 @@ describe("runStep and drain", () => {
     expect(t.muse.calls[60]?.tools.length).toBeGreaterThan(0);
   });
 
+  describe("a step that outlasts its visibility (dl-hin8.44)", () => {
+    /** A model call that takes `seconds`, beating once half way if `beats`, and what a read saw. */
+    async function longCall(beats: boolean) {
+      const t = await setup([{ text: "Done." }]);
+      let beat = () => {};
+      let stopped = 0;
+      const seenMidCall: number[] = [];
+      const inner = t.deps.muse;
+      const deps: EngineDeps = {
+        ...t.deps,
+        muse: {
+          respond: async (request) => {
+            t.tick(50_000);
+            if (beats) beat();
+            t.tick(50_000);
+            seenMidCall.push((await t.queue.read(STEP_VISIBILITY_S, 5)).length);
+            return inner.respond(request);
+          },
+        },
+      };
+      await t.say("Go.");
+      await drain(deps, {
+        keepAlive: (b) => {
+          beat = b;
+          return () => {
+            stopped += 1;
+          };
+        },
+      });
+      return { seenMidCall, stopped, t };
+    }
+
+    it("stays hidden while its host beats, and stops beating when it ends", async () => {
+      const { seenMidCall, stopped, t } = await longCall(true);
+      expect(seenMidCall).toEqual([0]);
+      expect(stopped).toBe(1);
+      expect(await t.queue.read(STEP_VISIBILITY_S, 5)).toEqual([]);
+    });
+
+    it("comes back when no beat arrived, as when the host died", async () => {
+      const { seenMidCall } = await longCall(false);
+      expect(seenMidCall).toEqual([1]);
+    });
+  });
+
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
     // lesson_check names the run's draft, known once the parent has spoken.
     const check: Record<string, unknown> = { help: {}, names: [] };
