@@ -57,6 +57,11 @@ one (`dl-5ssh.129`).
    parent's account, pod and children live in the local `jadwigo` database. No mail, no network.
    `make dev-all-supabase` (or `DEV_AUTH=supabase`) signs in with jadwigo-dev's real Supabase from
    `.env.local` instead. `make dev` and `make dev-app` always use that one.
+   Photos on a message work too (`dl-z5ja.11.19`): the api keeps them in `.logs/dev/uploads`, its
+   stand-in for the uploads bucket, and answers the browser's upload and the thread's links at
+   `/__uploads` on its own port. The runner reads the same folder. JPEG only: the converter is not
+   wired on this machine, so a PDF, a DOCX or a HEIC the browser could not re-encode uploads, but
+   the model is not shown its pages.
 3. Only part of it:
    - `make dev-app`: web, api and the copy compile, without the site and the docs, whose start
      (typedoc and the OpenAPI prepare) is the slowest.
