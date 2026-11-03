@@ -149,10 +149,10 @@ const PROMPT_CACHE_KEY = `${WORKFLOW}:5`;
 const DEFAULT_TIER: ModelTier = "contributor";
 /**
  * The tool calls a turn may make before its tools go away and the model must close (owner's number,
- * dl-hin8.38). At today's prices the budget stops a looping turn only after thousands of calls, so
+ * dl-hin8.38, raised from 40 for room while the tools settle). At today's prices the budget stops a looping turn only after thousands of calls, so
  * without this only the 30 minute deadline would, with a parent waiting.
  */
-const MAX_TOOL_CALLS = 40;
+const MAX_TOOL_CALLS = 60;
 const OUT_OF_CALLS =
   "You have used all the tool calls this turn may make. This message ends your turn and no tool runs after it, so never say you are doing or will do something. Say what the lesson holds now, what did not change, and that the parent can send another message to go on. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
 const STEER =
