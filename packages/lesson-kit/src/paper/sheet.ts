@@ -115,16 +115,12 @@ export const SCREEN_VERB =
   /(?<!\p{L})(?:dotknij(?:cie)?|kliknij(?:cie)?|stuknij(?:cie)?|przeciągnij(?:cie)?|tap|tapping|click|drag)(?!\p{L})/iu;
 const SCREEN_VERBS = new RegExp(SCREEN_VERB.source, "giu");
 
-/** What makes a sentence part of the problem: a number, maths, or a `{gN}` / `{oN}` slot. */
-const CONTENT = /[\d$]|\{[a-z][a-z0-9_]*\}/;
-
 /**
- * A text for paper. A sentence with no screen verb stays as written. A sentence with one that is
- * only an instruction ("Dotknij większej liczby.") becomes the type's paper line ("Otocz kółkiem
- * dobrą odpowiedź."), whole, because swapping a Polish verb alone can break the sentence's grammar.
- * A sentence that also carries the problem (a number, maths or a slot) keeps every word and swaps
- * only the verb ("Przeciągnij 5 jabłek…" becomes "Połącz 5 jabłek…"), so nothing the child needs
- * is lost.
+ * A text for paper: in each sentence a screen verb becomes the type's paper verb and every other
+ * word stays, so the criterion the child needs is kept ("Tap the word that rhymes with cat." becomes
+ * "Circle the word that rhymes with cat."). A sentence that is the verb alone ("Dotknij!") becomes
+ * the type's paper line. A Polish verb that takes the genitive ("Dotknij zegara") keeps its object's
+ * case, a small grammar slip chosen over losing the question.
  */
 export function paperSay(text: string, action: PaperAction, language: Language): string {
   const line = copy(language, DO_KEYS[action]);
@@ -133,7 +129,7 @@ export function paperSay(text: string, action: PaperAction, language: Language):
   for (const sentence of text.split(/(?<=[.!?…])\s+/)) {
     let next = sentence;
     if (SCREEN_VERB.test(sentence))
-      next = CONTENT.test(sentence)
+      next = /\p{L}/u.test(sentence.replace(SCREEN_VERBS, ""))
         ? sentence.replace(SCREEN_VERBS, (found) =>
             found[0] === found[0]?.toUpperCase()
               ? verb.charAt(0).toUpperCase() + verb.slice(1)

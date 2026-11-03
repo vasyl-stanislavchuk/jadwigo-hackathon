@@ -146,10 +146,10 @@ describe("paper words", () => {
   it("turns a sentence with a screen verb into the type's paper line", () => {
     const sheet = mixed();
     const say = (n: number) => sheet.questions[n - 1]?.say;
-    expect(say(2)).toBe("Otocz kółkiem dobrą odpowiedź.");
-    expect(say(10)).toBe("Narysuj albo pokoloruj odpowiedź.");
-    expect(say(15)).toBe("Ponumeruj po kolei: 1, 2, 3…");
-    expect(say(18)).toBe("Otocz kółkiem dobrą odpowiedź.");
+    expect(say(2)).toBe("Otocz: prawda czy fałsz?");
+    expect(say(10)).toBe("Narysuj wskazówki na wpół do czwartej.");
+    expect(say(15)).toBe("Ponumeruj liczby od najmniejszej do największej.");
+    expect(say(18)).toBe("Otocz zegara, który pokazuje siódmą.");
     expect(say(1)).toBe("Czy to prawda?");
   });
 
@@ -161,17 +161,23 @@ describe("paper words", () => {
       data: { ...bucket.data, stem: { text: "Przeciągnij każdą liczbę do właściwego koszyka." } },
     } as MixedPrintQuestion;
     const [question] = sheetOf([stemmed]).questions;
-    expect(question?.data.stem?.text).toBe("Połącz liniami to, co do siebie pasuje.");
+    expect(question?.data.stem?.text).toBe("Połącz każdą liczbę do właściwego koszyka.");
   });
 
-  it("keeps a sentence that carries the problem, swapping only the verb", () => {
+  it("keeps every word of the problem, swapping only the screen verb", () => {
     expect(paperSay("Dotknij dobrego słowa: Ala {o1} {o2} kota.", "circle", "pl")).toBe(
       "Otocz dobrego słowa: Ala {o1} {o2} kota.",
     );
     expect(paperSay("Przeciągnij 5 jabłek do koszyka.", "join", "pl")).toBe(
       "Połącz 5 jabłek do koszyka.",
     );
-    expect(paperSay("Tap the bigger number.", "circle", "en")).toBe("Circle the right answer.");
+    expect(paperSay("Tap the word that rhymes with cat.", "circle", "en")).toBe(
+      "Circle the word that rhymes with cat.",
+    );
+    expect(paperSay("Dotknij zwierzęcia, które żyje w wodzie.", "circle", "pl")).toBe(
+      "Otocz zwierzęcia, które żyje w wodzie.",
+    );
+    expect(paperSay("Dotknij!", "circle", "pl")).toBe("Otocz kółkiem dobrą odpowiedź.");
   });
 
   it("leaves words that are not screen actions as written", () => {
