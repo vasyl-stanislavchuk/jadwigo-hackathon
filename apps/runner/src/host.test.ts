@@ -6,6 +6,7 @@ import {
   type EngineDeps,
   fixtureBank,
   InMemoryRunQueue,
+  MuseFailed,
   ScriptedMuse,
   VerbError,
 } from "@jadwigo/jadwigo-ai";
@@ -164,6 +165,19 @@ describe("the step host", () => {
       { run_id: run, verb: "lesson_check", type: "copied-rung", count: 1 },
     ]);
     expect(JSON.stringify(report.refused)).not.toContain("quoted");
+  });
+
+  it("logs a failed model call's code and never its words", async () => {
+    const usage = { input_tokens: 0, output_tokens: 0, cached_tokens: 0 };
+    const t = await setup({
+      respond: () =>
+        Promise.reject(new MuseFailed("quoting a prompt", 0, usage, null, "max_output_tokens")),
+    });
+    await t.say("one");
+    await createHost(() => Promise.resolve(t.deps()), fakeMeter())();
+
+    expect(t.warnings.join()).toContain("threw MuseFailed (max_output_tokens)");
+    expect(t.warnings.join()).not.toContain("quoting");
   });
 
   it("logs a step that threw by its ids, keeps it queued, and reports the dead letters", async () => {
