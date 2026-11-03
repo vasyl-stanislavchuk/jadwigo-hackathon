@@ -414,13 +414,7 @@ const RAW =
  * tool line (dl-z5ja.68, dl-uukj.47.30). What came back is the call's output, or its view when the
  * log holds no output.
  */
-export function ToolDetails({
-  tool,
-  language,
-}: {
-  tool: ToolItem;
-  language: Language;
-}): ReactElement {
+function ToolDetails({ tool, language }: { tool: ToolItem; language: Language }): ReactElement {
   const say = (key: CopyKey) => copy(language, key, {}, "adult");
   const back = tool.output !== undefined ? tool.output : (tool.view?.data ?? null);
   return (

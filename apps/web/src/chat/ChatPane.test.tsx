@@ -289,6 +289,14 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
+  it("a stopped turn's foot names the version that stands (S15)", () => {
+    // cancel-during-a-verb wrote revision 1 before the stop, so that is the version that stands.
+    pane({ turns: [turnOf("cancel-during-a-verb")] });
+    expect(document.querySelector("[data-foot='stopped']")?.textContent).toBe(
+      "Zatrzymane. Lekcja została w wersji 1, z tym, co zdążyłam zmienić.",
+    );
+  });
+
   it("Escape in the thread stops a running turn once, and does nothing once it has ended (S6)", () => {
     const { onStop } = pane({ turns: [turnOf("reload-with-duplicates")] });
     fireEvent.keyDown(document.querySelector("[data-spine]") as HTMLElement, { key: "Escape" });

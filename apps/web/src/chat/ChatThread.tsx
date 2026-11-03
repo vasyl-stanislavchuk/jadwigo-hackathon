@@ -58,8 +58,18 @@ const eventsOf = (turn: Turn): readonly RunEvent[] => turn.events ?? [];
  * The spine of one turn. The foot follows the page's own phase when the fold gives none: a stall
  * is only known to the page's clock, and a turn that ended badly always says so in its card (D7).
  */
-function spineFor(turn: Turn, phase: RunPhase | null, now: number): Spine {
-  const spine = spineOf(eventsOf(turn), phase, now);
+function spineFor(
+  turn: Turn,
+  phase: RunPhase | null,
+  now: number,
+  priorRevision: number | undefined,
+): Spine {
+  const spine = spineOf(
+    eventsOf(turn),
+    phase,
+    now,
+    priorRevision === undefined ? {} : { priorRevision },
+  );
   if (spine.foot !== undefined) return spine;
   if (spine.phase === "stalled") return { ...spine, foot: { kind: "stalled" } };
   if (spine.phase === "failed") return { ...spine, foot: { kind: "failed" } };
@@ -366,7 +376,10 @@ export function ChatThread({
   const turnEntries = (turn: Turn, index: number): ReactElement[] => {
     const last = index === turns.length - 1;
     const id = turn.run.id;
-    const spine = spineFor(turn, last ? (phase ?? null) : null, now);
+    // The lesson's version before this turn: a stopped turn's foot names the one that stands (S15).
+    const prior =
+      Math.max(0, ...turns.slice(0, index).map((t) => t.view.lesson?.revision ?? 0)) || undefined;
+    const spine = spineFor(turn, last ? (phase ?? null) : null, now, prior);
     const reply = replyOf(turn, spine);
     const entries: ReactElement[] = [];
     const at = Date.parse(turn.run.created_at);
