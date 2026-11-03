@@ -368,7 +368,9 @@ export function useConversation(
       // too, with its photos (dl-uukj.47.71.9): it goes as its own turn once this one ends.
       const busy = (last !== undefined && isOpen(last)) || latest.current.pending !== null;
       if (busy && queue.ready) {
-        queue.add(text, attachmentIds);
+        // With the page it was sent from: a photo of one child's worksheet goes with that child,
+        // even if Dla names another by the time it drains.
+        queue.add(text, attachmentIds, context);
         return;
       }
       void post(text, context, false, attachmentIds);
@@ -384,7 +386,7 @@ export function useConversation(
     (index: number) => {
       const row = queue.rows[index];
       if (row === undefined) return;
-      const { text, attachmentIds } = row;
+      const { text, attachmentIds, context } = row;
       const running = () => {
         const last = turnsOf(latest.current).at(-1);
         return last !== undefined && isOpen(last);
@@ -394,8 +396,8 @@ export function useConversation(
       void stillOwner().then((mine) => {
         if (!mine) return;
         if (!running()) {
-          void post(text, undefined, true, heldIds(attachmentIds)).then(
-            (ok) => ok && queue.remove(text),
+          void post(text, context, true, heldIds(attachmentIds)).then(
+            (ok) => ok && queue.remove(row),
           );
           return;
         }
@@ -411,7 +413,7 @@ export function useConversation(
           })
           .then((run) => {
             went();
-            queue.remove(text);
+            queue.remove(row);
             return follow(run);
           })
           .catch(() =>
@@ -446,8 +448,10 @@ export function useConversation(
     if (row === undefined || draining.current) return;
     draining.current = true;
     void stillOwner()
-      .then((mine) => (mine ? post(row.text, undefined, true, heldIds(row.attachmentIds)) : false))
-      .then((ok) => ok && queue.remove(row.text))
+      .then((mine) =>
+        mine ? post(row.text, row.context, true, heldIds(row.attachmentIds)) : false,
+      )
+      .then((ok) => ok && queue.remove(row))
       .finally(() => {
         draining.current = false;
       });

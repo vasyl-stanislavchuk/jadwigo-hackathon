@@ -7,7 +7,7 @@
  * transport is queue.test.tsx's.
  */
 
-import { AttachmentId, ID_PREFIXES, idOf } from "@jadwigo/contracts";
+import { AttachmentId, ID_PREFIXES, idOf, LearnerId } from "@jadwigo/contracts";
 import { ConversationId, type Run, RunEvent, RunId } from "@jadwigo/contracts/run";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, render, renderHook } from "@testing-library/react";
@@ -89,6 +89,9 @@ const PHOTO = AttachmentId.parse(
   idOf(ID_PREFIXES.attachment, "0b8f4c3e-6a1d-4f2b-9c7e-1d2e3f4a5b6c"),
 );
 
+const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
+const JAS = LearnerId.parse("lrn_3k5n9hzx1gc2dw03pmrx1qy9gr");
+
 beforeEach(() => window.sessionStorage.clear());
 afterEach(cleanup);
 
@@ -106,6 +109,43 @@ describe("photos in the queue (dl-uukj.47.71.9)", () => {
     expect(said(s.sent)).toEqual(["message:Pierwsza", "message:"]);
     expect(s.sent.at(-1)).toMatchObject({ kind: "message", attachment_ids: [PHOTO] });
     expect(result.current.nextRows).toEqual([]);
+  });
+
+  it("a queued photo goes with the child Dla named when it was sent, over a reload", async () => {
+    const s = standIn();
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION));
+    await act(async () => {});
+    // The turn runs for Ola; mid-turn the parent switches Dla to Jaś and sends his worksheet.
+    await act(async () => result.current.send("Lekcja dla Oli", { learner_id: OLA }));
+    await act(async () => result.current.send("", { learner_id: JAS }, [PHOTO]));
+    expect(result.current.nextRows).toEqual([
+      { text: "", attachmentIds: [PHOTO], context: { learner_id: JAS } },
+    ]);
+    // A reload keeps the row's child with its photo: the tab holds it beside the row.
+    const held = JSON.parse(window.sessionStorage.getItem(`jw.chat.next.${CONVERSATION}`) ?? "{}");
+    expect(held).toMatchObject({ items: [""], contexts: [{ learner_id: JAS }] });
+
+    await s.end(1);
+    expect(s.sent.at(-1)).toMatchObject({
+      kind: "message",
+      attachment_ids: [PHOTO],
+      context: { learner_id: JAS },
+    });
+  });
+
+  it("Wyślij teraz on a words row keeps the photo row with the same words", async () => {
+    const s = standIn();
+    const { result } = renderHook(() => useConversation(s.transport, CONVERSATION));
+    await act(async () => {});
+    await act(async () => result.current.send("Pierwsza"));
+    await act(async () => result.current.send("to", undefined, [PHOTO]));
+    await act(async () => result.current.send("to"));
+    await act(async () => result.current.sendNow(1));
+    expect(said(s.sent)).toEqual(["message:Pierwsza", "steer:to"]);
+    // The row that went leaves; the photo row with the same words still waits, and still goes.
+    expect(result.current.nextRows).toEqual([{ text: "to", attachmentIds: [PHOTO] }]);
+    await s.end(1);
+    expect(s.sent.at(-1)).toMatchObject({ kind: "message", text: "to", attachment_ids: [PHOTO] });
   });
 
   it("leaves a photo row waiting on Wyślij teraz while the turn runs: a steer carries no photos", async () => {
