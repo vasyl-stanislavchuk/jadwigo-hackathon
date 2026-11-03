@@ -81,7 +81,8 @@ export interface MuseClient {
  * A call that no attempt completed. `spent_usd` is what the failed attempts still cost (a stream
  * that failed after it started is billed), so the ledger can hold it. `tier` is the tier the call
  * went to, when the client routed it, so a downgrade is told even when no answer came
- * (`dl-z5ja.103`).
+ * (`dl-z5ja.103`). `type` is why, from code (`timeout`, `http_503`, `max_output_tokens`): the host logs
+ * it, and never the message, which may quote a prompt (`dl-hin8.43`).
  */
 export class MuseFailed extends Error {
   constructor(
@@ -89,6 +90,7 @@ export class MuseFailed extends Error {
     readonly spent_usd: number,
     readonly usage: ModelUsage,
     readonly tier: ModelTier | null = null,
+    readonly type: string = "failed",
   ) {
     super(message);
     this.name = "MuseFailed";

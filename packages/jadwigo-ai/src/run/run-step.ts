@@ -135,13 +135,14 @@ const INSTRUCTIONS = [
   "The draft you are working on has the id of this run. Answer the parent in their language, briefly.",
   CARD_RULE,
   "A nearby source is a starting point: inspect the actual question.data, not only say. Adapt data, key and help consistently to the requested operation and range. Renaming a subtraction does not turn it into addition.",
-  "When you already know the changes for several steps, send all their lesson_edit calls together in one response: they run in order, each on the result of the one before, and a refused one leaves the others standing. The parent is waiting, so do not spend a response on each step.",
+  "A later message about the lesson you hold changes that lesson: read it with lesson_show and edit it with lesson_edit. Draft again only when the parent asks for a different lesson.",
+  "Once you have read a step and know the changes for several steps, send all their lesson_edit calls together in one response: they run in order, each on the result of the one before, and a refused one leaves the others standing. The parent is waiting, so do not spend a response on each step.",
   "Once the questions are settled, give the lesson its title by passing title to the lesson_check that closes your work: a few plain words a child reads, naming what it practises, in the lesson's language. Never the parent's request word for word, and never a name.",
   "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key and inherits the main question family when omitted. If a check still fails, explain the limitation and do not claim the lesson is ready.",
   FENCE_RULE,
 ].join("\n");
-/** Moves on with `INSTRUCTIONS`: 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
-const PROMPT_CACHE_KEY = `${WORKFLOW}:5`;
+/** Moves on with `INSTRUCTIONS`: 6 since follow-ups edit (dl-hin8.45), 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:6`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).
@@ -149,12 +150,12 @@ const PROMPT_CACHE_KEY = `${WORKFLOW}:5`;
 const DEFAULT_TIER: ModelTier = "contributor";
 /**
  * The tool calls a turn may make before its tools go away and the model must close (owner's number,
- * dl-hin8.38). At today's prices the budget stops a looping turn only after thousands of calls, so
+ * dl-hin8.38, raised from 40 for room while the tools settle). At today's prices the budget stops a looping turn only after thousands of calls, so
  * without this only the 30 minute deadline would, with a parent waiting.
  */
-const MAX_TOOL_CALLS = 40;
+const MAX_TOOL_CALLS = 60;
 const OUT_OF_CALLS =
-  "You have used all the tool calls this turn may make. Answer the parent now, with no tools: say what the lesson holds and what is not finished. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
+  "You have used all the tool calls this turn may make. This message ends your turn and no tool runs after it, so never say you are doing or will do something. Say what the lesson holds now, what did not change, and that the parent can send another message to go on. If lesson_check has not passed on the current revision, do not say the lesson is ready.";
 const STEER =
   "You have used half of this turn's budget. Finish the lesson with what you have, with no more searching.";
 const STOP_TEXT = "I stopped here to stay within the budget. The lesson so far is on the right.";
@@ -610,7 +611,11 @@ async function step(deps: EngineDeps, w: Writer, scope: Scope): Promise<RunStepO
       ]);
       instructions.push(STEER);
     }
-    const outOfCalls = w.log.filter((e) => e.type === "tool_result").length >= MAX_TOOL_CALLS;
+    // Counted from the parent's last word: a message after the limit is a new request to act on.
+    // Checked before a model call, so one response's batch may pass the limit by its own size.
+    const spokeAt = w.log.findLast((e) => parentSpokeAfter([e], 0))?.seq ?? 0;
+    const outOfCalls =
+      w.log.filter((e) => e.type === "tool_result" && e.seq > spokeAt).length >= MAX_TOOL_CALLS;
     if (outOfCalls) instructions.push(OUT_OF_CALLS);
     instructions.push(...prior.edits);
     for (const steer of steersOf(w.log)) instructions.push(steerLine(steer, w.log));
@@ -1735,11 +1740,15 @@ function everyKeepAlive(beat: () => void): () => void {
  *
  * A step that throws is handed to `onError` with what it carried and its `msg_id`, so the host can
  * log it by run id (dl-z5ja.82); it stays in the queue either way.
+ *
+ * `keep_going` is asked before each read, so a host with a time limit stops between steps and never
+ * inside one (dl-hin8.33). What it leaves stays queued for the next drain.
  */
 export async function drain(
   deps: EngineDeps,
   options: {
     max_steps?: number;
+    keep_going?: () => boolean;
     onError?: (error: unknown, step: FailedStep) => void;
     /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
     onRead?: (run_id: RunId) => void;
@@ -1751,6 +1760,7 @@ export async function drain(
   const keepAlive = options.keepAlive ?? everyKeepAlive;
   const outputs: RunStepOutput[] = [];
   for (let reads = 0; reads < max; reads++) {
+    if (options.keep_going?.() === false) break;
     const [queued] = await deps.queue.read(STEP_VISIBILITY_S, 1);
     if (!queued) break;
     options.onRead?.(queued.message.run_id);
