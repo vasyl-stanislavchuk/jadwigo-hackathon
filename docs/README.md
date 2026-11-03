@@ -14,6 +14,7 @@ design-system pages are generated from the code, so they are not written here (`
 | [`research/`](research/) | one note per research question, ending in an outcome block | [`research/README.md`](research/README.md), `tools/src/check-research.ts` |
 | [`runbooks/`](runbooks/) | steps the owner runs by hand: deploy, roll back, secrets | [`runbooks/README.md`](runbooks/README.md) |
 | [`audits/`](audits/) | one page per design pass over the running app: the gaps against the System page, each with its screenshot, its fix and its state | the rows the issue names |
+| [`demo-video/`](demo-video/) | the stills, animations and sound effects for the 4 November demo video, each with its source line | [`demo-video/README.md`](demo-video/README.md) |
 | [`worklog/`](worklog/) | what a running epic needs between sessions and that spans issues, such as wave plans. Deleted when the epic closes | [`worklog/README.md`](worklog/README.md), `tools/src/check-worklog.ts` |
 
 ## Workstreams
