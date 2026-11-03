@@ -1,5 +1,5 @@
 import { isDeepStrictEqual } from "node:util";
-import { ID_PREFIXES, toolView, uuidOf } from "@jadwigo/contracts";
+import { ID_PREFIXES, PROPOSED_SKILL_MARK, SkillId, toolView, uuidOf } from "@jadwigo/contracts";
 import type { ToolView } from "@jadwigo/contracts/run";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import type { BankLanguage, BankPort, BankQuery } from "./bank.ts";
@@ -199,7 +199,7 @@ export async function lessonDraft(
   const drawn: Step[] = questions.map((q, i) => ({
     id: `s${String(i + 1).padStart(2, "0")}`,
     question_type: q.question_type,
-    skill_ids: [...q.skill_ids],
+    skill_ids: lessonSkillIds(q.skill_ids),
     based_on: { question: q.source, changes: [] },
     say: q.say,
     question: structuredClone(q.question),
@@ -480,4 +480,18 @@ export async function questionTypes(bank: BankPort, raw: Json): Promise<VerbEffe
   const types = (await bank.types(grade, language)).map((t) => ({ ...t }));
   const view = toolView("question_types", { grade, language, types });
   return { output: { grade, language, types }, view };
+}
+
+/**
+ * A drawn question's skill ids as a lesson step carries them (dl-hin8.26): the bank's `proposed:`
+ * mark dropped, as the decision of 2026-10-29 says and jw's `_skill_ids` does, then only those
+ * that pass `SkillId`, each once. The bank's set id, which a draw falls back to, is left out.
+ */
+export function lessonSkillIds(bankIds: readonly string[]): string[] {
+  const out: string[] = [];
+  for (const id of bankIds) {
+    const plain = id.startsWith(PROPOSED_SKILL_MARK) ? id.slice(PROPOSED_SKILL_MARK.length) : id;
+    if (SkillId.safeParse(plain).success && !out.includes(plain)) out.push(plain);
+  }
+  return out;
 }
