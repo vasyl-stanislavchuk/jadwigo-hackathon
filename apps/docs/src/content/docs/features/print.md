@@ -8,7 +8,7 @@ prs: [698, 747, 783]
 
 This page is for a judge who wants to see a lesson on paper.
 
-Wydrukuj on the lesson card prints the lesson in place. It mounts a print sheet, opens the
+Drukuj on the lesson card prints the lesson in place. It mounts a print sheet, opens the
 browser's print dialog once, and removes the sheet when printing ends (#747, from #698). That is
 what runs today.
 

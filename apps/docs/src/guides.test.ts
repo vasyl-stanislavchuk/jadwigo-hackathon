@@ -26,6 +26,14 @@ describe("the pages", () => {
   it.each(pages)("%s links only to API reference pages that are built", (_path, text) => {
     expect(unknownApiLinks(text)).toEqual([]);
   });
+
+  it("the chat page names the lesson card's real actions, and no save", () => {
+    const chat = pages.find(([path]) => path.endsWith(join("features", "chat-and-workspace.md")));
+    expect(chat).toBeDefined();
+    expect(chat?.[1]).toContain("Daj lekcję");
+    expect(chat?.[1]).toContain("Drukuj");
+    expect(chat?.[1]).not.toContain("Zapisz na później\n(save");
+  });
 });
 
 describe("unknownApiPaths", () => {

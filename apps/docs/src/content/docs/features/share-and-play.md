@@ -1,7 +1,7 @@
 ---
 title: Sharing and play links
 description: A given lesson reaches the child as a link. A link with a learner in it starts as that child, with no sign-in.
-status: live
+status: main
 as_of: 2026-11-03
 prs: [698, 711, 712, 729]
 ---
@@ -14,7 +14,8 @@ open the lesson on this computer, or print it. With a child named, the parent ge
 with the learner in it, as `?learner=`. The child opens the link and the lesson starts as that
 child. No sign-in stands between the child and the first question.
 
-Giving on this computer and printing in place are live (#698). The `?learner=` links are on
+Giving on this computer and printing in place are live (#698). This page is labelled `main`
+for the links below. The `?learner=` links are on
 `main`, not yet on prod: the play page starting as the named child (#711), the route that gives a
 checked revision (#712), and the end-to-end test that plays such a link to the results (#729).
 
