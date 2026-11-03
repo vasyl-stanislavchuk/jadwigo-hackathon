@@ -11,7 +11,7 @@
   "usd": 0.023083828,
   "cost_source": "muse-trace",
   "wall_s": 1137,
-  "commit": "529260fb8b0d0d0d0d0d0d0d0d0d0d0d0d0d0d",
+  "commit": "529260fb31edcdee466d3594139d05ed781e57fb",
   "commands": [
     "bun packages/lesson-kit/src/families/explain/e7-judge.ts ~/.config/jadwigo-bank/muse.env",
     "bun packages/lesson-kit/src/families/explain/e7-report.ts <commit-sha>"
