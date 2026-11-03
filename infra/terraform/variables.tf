@@ -63,6 +63,12 @@ variable "runner_schedule_enabled" {
   default     = false
 }
 
+variable "print_image_tag" {
+  description = "The print image's ECR tag, as `make -C apps/print push` prints it. Blank: the repo only, no function, and the api gets no print Lambda"
+  type        = string
+  default     = ""
+}
+
 variable "converter_image_tag" {
   description = "The converter image's ECR tag, as `make -C apps/converter push` prints it. Blank: the repo only, no function, and the runner gets no converter"
   type        = string
