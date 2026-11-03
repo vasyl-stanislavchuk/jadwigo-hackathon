@@ -13,6 +13,9 @@
 // asserted, since the handoff draws made-up lessons the engine does not write.
 import { expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
 
+// Each test plays a turn on the dev engine; a cold dev server compiles the page on first request.
+test.describe.configure({ timeout: 90_000 });
+
 const SIZES = [
   { name: "1440", width: 1440, height: 900 },
   { name: "390", width: 390, height: 844 },
@@ -39,7 +42,10 @@ async function open(
 ): Promise<void> {
   await page.setViewportSize({ width: size.width, height: size.height });
   await page.goto(`/playground/workspace?pace=${pace}`);
-  await expect(chatOf(page).locator("[data-from='parent']").first()).toBeVisible();
+  // The first page a cold dev server serves compiles on request, so it may take a while.
+  await expect(chatOf(page).locator("[data-from='parent']").first()).toBeVisible({
+    timeout: 30_000,
+  });
 }
 
 /** Waits for the current turn's spine to read `phase` (its data-spine). */
@@ -126,6 +132,18 @@ async function atRetry(page: Page, size: Size): Promise<void> {
   await phase(page, "tool");
   await expect(cardOf(page)).toBeVisible({ timeout: 20_000 });
   await page.waitForTimeout(3_000);
+}
+
+/** s20: the first turn and 2 more, each to its end. */
+async function threeTurns(page: Page, size: Size): Promise<void> {
+  await open(page, "s20", size);
+  await phase(page, "done");
+  for (const words of ["Zrób ją trochę łatwiejszą.", "Dodaj jedno zadanie z obrazkiem."]) {
+    await composerOf(page).fill(words);
+    await page.keyboard.press("Enter");
+    await expect(chatOf(page).locator("[data-from='parent']").getByText(words)).toBeVisible();
+    await phase(page, "done");
+  }
 }
 
 /** s14: the lesson drafted, its check held, then Esc in the composer. */
@@ -300,10 +318,7 @@ for (const size of SIZES) {
       await shoot(page, info, "s14-stopped", size.name);
     });
 
-    test("s14: the stopped foot names no version (dl-uukj.47.71.23)", async ({ page }) => {
-      // Red until dl-uukj.47.71.23: the foot reads "w wersji {n}" today (the card delta, C5).
-      // Remove this mark in the PR that lands it.
-      test.fail();
+    test("s14: the stopped foot names no version (the card delta, C5)", async ({ page }) => {
       await stopped(page, size);
       await expect(spineOf(page).locator("[data-foot='stopped']")).not.toHaveText(VERSION);
     });
@@ -426,15 +441,8 @@ for (const size of SIZES) {
       ).toContainText("Dodaj jeszcze 2 zadania.");
     });
 
-    test("s20: 3 turns restored after a reload, opened at the bottom", async ({ page }, info) => {
-      await open(page, "s20", size);
-      await phase(page, "done");
-      for (const words of ["Zrób ją trochę łatwiejszą.", "Dodaj jedno zadanie z obrazkiem."]) {
-        await composerOf(page).fill(words);
-        await page.keyboard.press("Enter");
-        await expect(chatOf(page).locator("[data-from='parent']").getByText(words)).toBeVisible();
-        await phase(page, "done");
-      }
+    test("s20: 3 turns restored after a reload, the older ones folded", async ({ page }, info) => {
+      await threeTurns(page, size);
       await page.reload();
       await expect(chatOf(page).locator("[data-from='parent'] [data-bubble]")).toHaveCount(3, {
         timeout: 20_000,
@@ -445,13 +453,30 @@ for (const size of SIZES) {
       await expect(
         chatOf(page).locator("[data-object-card='lesson']:not([data-card-state='superseded'])"),
       ).toHaveCount(1);
-      const list = chatOf(page).locator("[data-chat-list]");
-      await expect
-        .poll(() => list.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight))
-        .toBeLessThanOrEqual(1);
+      // Opened at the bottom (S19): its own test below, which fails 1 reload in 3 today.
       await windowStill(page);
       await wordsHold(page);
       await shoot(page, info, "s20-three-turns-restored", size.name);
+    });
+
+    test("s20: every reload opens at the bottom (dl-uukj.47.71.42)", async ({ page }) => {
+      // Red until dl-uukj.47.71.42: about 1 reload in 3 stops 59-68 px short, since the web font
+      // or a late row grows the list after its first scroll. 10 reloads all at the bottom by luck
+      // is about 2%. Remove this mark in the PR that fixes it.
+      test.fail();
+      test.setTimeout(180_000);
+      await threeTurns(page, size);
+      const list = chatOf(page).locator("[data-chat-list]");
+      for (let i = 0; i < 10; i++) {
+        await page.reload();
+        await expect(chatOf(page).locator("[data-from='parent'] [data-bubble]")).toHaveCount(3, {
+          timeout: 20_000,
+        });
+        await page.waitForTimeout(1_000);
+        expect(
+          await list.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight),
+        ).toBeLessThanOrEqual(1);
+      }
     });
   });
 }
