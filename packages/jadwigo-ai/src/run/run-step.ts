@@ -1714,6 +1714,16 @@ export interface FailedStep extends RunStepInput {
   read_ct: number;
 }
 
+/** How often a running step's visibility moves on: 3 beats fit in `STEP_VISIBILITY_S`. */
+const KEEP_ALIVE_MS = 20_000;
+
+function everyKeepAlive(beat: () => void): () => void {
+  const timer = setInterval(beat, KEEP_ALIVE_MS);
+  // A beat never holds the process open.
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
+
 /**
  * The consumer's loop, in-process: reads visible steps and runs each until none is visible. A step
  * that throws stays in the queue and comes back after its visibility timeout, as on pgmq; one that
@@ -1733,14 +1743,23 @@ export async function drain(
     onError?: (error: unknown, step: FailedStep) => void;
     /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
     onRead?: (run_id: RunId) => void;
+    /** Calls `beat` while a step runs, and answers how to stop. A test drives it by hand. */
+    keepAlive?: (beat: () => void) => () => void;
   } = {},
 ): Promise<readonly RunStepOutput[]> {
   const max = options.max_steps ?? 100;
+  const keepAlive = options.keepAlive ?? everyKeepAlive;
   const outputs: RunStepOutput[] = [];
   for (let reads = 0; reads < max; reads++) {
     const [queued] = await deps.queue.read(STEP_VISIBILITY_S, 1);
     if (!queued) break;
     options.onRead?.(queued.message.run_id);
+    // A healthy step can outlast its visibility: a model call with room to reason, or several edits
+    // in one response (dl-hin8.44). This host is alive, so the step stays hidden; if the host dies
+    // the beats stop and the step comes back. A beat that fails only risks that redelivery.
+    const stop = keepAlive(() => {
+      deps.queue.extend?.(queued.msg_id, STEP_VISIBILITY_S).catch(() => undefined);
+    });
     try {
       const input = queued.read_ct > 1 ? await claim(deps, queued) : queued.message;
       outputs.push(await runStep(input, deps));
@@ -1760,6 +1779,8 @@ export async function drain(
         (await failRun(deps, queued.message.run_id).catch(() => false))
       )
         await deps.queue.archive(queued.msg_id);
+    } finally {
+      stop();
     }
   }
   // A step that never came back to throw (its host died with it) is dead-lettered by the queue on
