@@ -486,6 +486,22 @@
   "play_paused_back": "Back to the lesson",
   "play_not_found": "This lesson is not here.",
   "play_link_incomplete": "This link is not complete. Ask a parent for a new one.",
+  "play_intro_yes": "Yes, I'm {name}",
+  "play_intro_not_me": "That's not me",
+  "play_intro_name": "What's your name?",
+  "play_intro_start": "Let's start",
+  "play_intro_anonymous": "Play without a name",
+  "play_intro_name_missing": "Type your name, or play without one.",
+  "play_intro_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} question",
+        "q_noun=other": "{n} questions"
+      }
+    }
+  ],
   "play_save": "Save your progress",
   "play_save_note": "For a grown-up: sign in, and this lesson stays on your child's account.",
   "parent_title": "Parent account",

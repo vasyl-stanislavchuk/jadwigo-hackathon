@@ -502,6 +502,24 @@
   "play_paused_back": "Wracam do lekcji",
   "play_not_found": "Tej lekcji tu nie ma.",
   "play_link_incomplete": "Ten link jest niepełny. Poproś rodzica o nowy.",
+  "play_intro_yes": "Tak, jestem {name}",
+  "play_intro_not_me": "To nie ja",
+  "play_intro_name": "Jak masz na imię?",
+  "play_intro_start": "Zaczynamy",
+  "play_intro_anonymous": "Zagraj bez imienia",
+  "play_intro_name_missing": "Napisz swoje imię albo zagraj bez imienia.",
+  "play_intro_questions": [
+    {
+      "declarations": ["input n", "local q_noun = n: plural"],
+      "selectors": ["q_noun"],
+      "match": {
+        "q_noun=one": "{n} zadanie",
+        "q_noun=few": "{n} zadania",
+        "q_noun=many": "{n} zadań",
+        "q_noun=other": "{n} zadania"
+      }
+    }
+  ],
   "play_save": "Zapisz postępy",
   "play_save_note": "Dla dorosłego: zaloguj się, a ta lekcja zostanie na koncie dziecka.",
   "parent_title": "Konto rodzica",

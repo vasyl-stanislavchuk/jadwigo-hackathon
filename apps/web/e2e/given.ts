@@ -109,3 +109,8 @@ export async function giveLesson(page: Page, lesson: unknown): Promise<string> {
   );
   return `/play/${given.assignment.id}?learner=${learner}`;
 }
+
+/** Past a given lesson's first screen, as the child the link names. */
+export async function confirmChild(page: Page): Promise<void> {
+  await page.locator("[data-intro-yes]").click();
+}
