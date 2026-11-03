@@ -109,7 +109,7 @@ const windowStill = async (page: Page) =>
 
 /** The open stage shows at most 3 lines (D3), and no sentence twice in a row (S2). */
 async function openStageHolds(page: Page): Promise<void> {
-  const open = spineOf(page).locator("[data-stage='active'] > [data-lines] > [data-line]");
+  const open = spineOf(page).locator("[data-spine-stage='active'] > [data-lines] > [data-line]");
   expect(await open.count()).toBeLessThanOrEqual(3);
   const said = await spineOf(page).locator("[data-line] [data-words]").allTextContents();
   for (let i = 1; i < said.length; i++) expect(said[i]).not.toBe(said[i - 1]);
@@ -181,9 +181,9 @@ for (const size of SIZES) {
       await page.clock.install();
       await open(page, "s03", size);
       await phase(page, "tool");
-      await expect(spineOf(page).locator("[data-stage='done']")).toHaveCount(1);
-      await expect(spineOf(page).locator("[data-stage='active']")).toHaveCount(1);
-      await expect(spineOf(page).locator("[data-stage='todo']")).toHaveCount(1);
+      await expect(spineOf(page).locator("[data-spine-stage='done']")).toHaveCount(1);
+      await expect(spineOf(page).locator("[data-spine-stage='active']")).toHaveCount(1);
+      await expect(spineOf(page).locator("[data-spine-stage='todo']")).toHaveCount(1);
       await openStageHolds(page);
       await wordsHold(page);
       await shoot(page, info, "s03-tool-running-plan", size.name);
@@ -232,7 +232,7 @@ for (const size of SIZES) {
       const row = chatOf(page).locator("[data-turn='current'] [data-summary-row]");
       await expect(row).toHaveCount(1);
       await expect(row).toHaveAttribute("aria-expanded", "false");
-      await expect(chatOf(page).locator("[data-turn='current'] [data-stage]")).toHaveCount(0);
+      await expect(chatOf(page).locator("[data-turn='current'] [data-spine-stage]")).toHaveCount(0);
       await wordsHold(page);
       // Focus stays in the composer when a turn ends (§3).
       await expect(composerOf(page)).toBeFocused();
@@ -242,7 +242,7 @@ for (const size of SIZES) {
       await page.keyboard.press("Enter");
       await expect(row).toHaveAttribute("aria-expanded", "true");
       await expect(
-        chatOf(page).locator("[data-turn='current'] [data-stage]").first(),
+        chatOf(page).locator("[data-turn='current'] [data-spine-stage]").first(),
       ).toBeVisible();
       await shoot(page, info, "s09-turn-expanded", size.name);
       await page.keyboard.press(" ");
@@ -251,7 +251,7 @@ for (const size of SIZES) {
       // A done stage row toggles on Enter too, with aria-expanded.
       await page.keyboard.press("Enter");
       const stage = chatOf(page).locator(
-        "[data-turn='current'] [data-stage='done'] [data-stage-row]",
+        "[data-turn='current'] [data-spine-stage='done'] [data-stage-row]",
       );
       await stage.first().focus();
       await expect(stage.first()).toHaveAttribute("aria-expanded", "false");
@@ -276,7 +276,7 @@ for (const size of SIZES) {
       test.fail();
       await atRetry(page, size);
       await expect(
-        spineOf(page).locator("[data-stage='active'] [data-line='retry']"),
+        spineOf(page).locator("[data-spine-stage='active'] [data-line='retry']"),
       ).toBeVisible();
     });
 
@@ -288,7 +288,7 @@ for (const size of SIZES) {
       const turn = chatOf(page).locator("[data-turn='current']");
       await expect(turn.locator("[data-line='skip']")).toHaveCount(0);
       await turn.locator("[data-summary-row]").click();
-      for (const row of await turn.locator("[data-stage='done'] [data-stage-row]").all())
+      for (const row of await turn.locator("[data-spine-stage='done'] [data-stage-row]").all())
         await row.click();
       await expect(turn.locator("[data-line='skip']").first()).toBeVisible();
       await wordsHold(page);
@@ -329,8 +329,8 @@ for (const size of SIZES) {
       // Red until dl-uukj.47.71.37. Remove this mark in the PR that fixes it.
       test.fail();
       await stopped(page, size);
-      await expect(spineOf(page).locator("[data-stage='stopped']")).toHaveCount(1);
-      await expect(spineOf(page).locator("[data-stage='failed']")).toHaveCount(0);
+      await expect(spineOf(page).locator("[data-spine-stage='stopped']")).toHaveCount(1);
+      await expect(spineOf(page).locator("[data-spine-stage='failed']")).toHaveCount(0);
     });
 
     test("s14: a turn stopped before any lesson says 'Zatrzymane.' and no lesson words", async ({
@@ -425,7 +425,7 @@ for (const size of SIZES) {
       await page.keyboard.press("Enter");
       await chatOf(page).locator("[data-queue] [data-send-now]").click();
       await expect(
-        spineOf(page).locator("[data-stage='active'] [data-line='steer']"),
+        spineOf(page).locator("[data-spine-stage='active'] [data-line='steer']"),
       ).toContainText("Dodaj jeszcze 2 zadania.");
     });
 

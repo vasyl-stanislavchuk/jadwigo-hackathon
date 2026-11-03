@@ -126,17 +126,21 @@ const TITLE =
 /**
  * The ready card's title, changed where it stands (dl-1eieq.16): a tap makes it a field, Enter or
  * leaving saves, Esc keeps it. The new words show at once; a refusal puts the old ones back and says
- * why under them.
+ * why under them. The top bar's breadcrumb names the lesson with the same field (`look="crumb"`).
  */
-function TitleEdit({
+export function TitleEdit({
   title,
   language,
   onRename,
+  look = "card",
 }: {
   title: string;
   language: Language;
   onRename: (title: string) => Promise<CopyKey | null>;
+  /** The card's heading, or the breadcrumb's last step in the top bar. */
+  look?: "card" | "crumb";
 }): ReactElement {
+  const crumb = look === "crumb";
   const say = (key: CopyKey, vars: Record<string, string> = {}) =>
     copy(language, key, vars, "adult");
   const [typing, setTyping] = useState<string | null>(null);
@@ -158,19 +162,24 @@ function TitleEdit({
     });
   };
   return (
-    <div className="col-start-2 flex min-w-0 flex-col gap-1">
+    <div
+      className={cn(
+        "flex min-w-0 flex-col gap-1",
+        crumb ? "relative max-w-[min(28rem,50vw)]" : "col-start-2",
+      )}
+    >
       {typing === null ? (
         <button
           type="button"
           aria-label={say("parent_title_edit", { title: shown })}
           className={cn(
-            TITLE,
+            crumb ? "min-w-0 truncate rounded-jw-small text-foreground" : TITLE,
             "group/title flex cursor-text items-center gap-1.5 text-left hover:underline focus-visible:outline-3 focus-visible:outline-jw-focus",
           )}
           onClick={() => setTyping(shown)}
-          data-card-title
+          {...(crumb ? { "data-crumb-title": true } : { "data-card-title": true })}
         >
-          <span className="min-w-0">{shown}</span>
+          <span className={cn("min-w-0", crumb && "truncate")}>{shown}</span>
           <PencilIcon
             aria-hidden
             className="size-3.5 shrink-0 text-jw-ink-soft opacity-0 group-hover/title:opacity-100 group-focus-visible/title:opacity-100 max-sm:opacity-100"
@@ -184,6 +193,7 @@ function TitleEdit({
           maxLength={TITLE_CHARS}
           value={typing}
           aria-label={say("parent_title_edit", { title: shown })}
+          className={crumb ? "h-8 min-h-8 w-[min(28rem,50vw)] font-medium" : undefined}
           onChange={(event) => setTyping(event.target.value)}
           onBlur={save}
           onKeyDown={(event) => {
@@ -194,7 +204,16 @@ function TitleEdit({
         />
       )}
       {problem !== null && (
-        <p role="status" className="text-jw-page-small text-jw-ink" data-card-title-problem>
+        <p
+          role="status"
+          className={cn(
+            "text-jw-page-small text-jw-ink",
+            // In the top bar the reason floats under the bar rather than growing it.
+            crumb &&
+              "absolute top-full left-0 mt-1 rounded-jw-small bg-background px-2 py-1 shadow-float",
+          )}
+          data-card-title-problem
+        >
           {say(problem)}
         </p>
       )}

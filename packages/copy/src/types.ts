@@ -775,6 +775,7 @@ export const COPY_KEYS = [
   "parent_list_score",
   "parent_expand_all",
   "parent_collapse_all",
+  "parent_show_answers",
   "parent_step_coming",
   "parent_step_kind_choose",
   "parent_step_kind_enter",
