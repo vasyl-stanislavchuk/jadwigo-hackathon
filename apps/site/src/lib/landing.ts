@@ -84,29 +84,14 @@ export const landingSchema = z.object({
     teaser: z.object({ text, link: text }),
   }),
   promises: z.object({ heading: text, items: z.array(item).min(1) }),
-  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside a made-up
-  // child's profile as the parent app shows it. Goals and skill dots, never a score or a percentage.
+  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside a screenshot
+  // of the parent app's child page (dl-w0b4.123).
   partner: z.object({
     heading: text,
     text,
     pic: text,
     // The parent app's child page, a screenshot with made-up names (dl-w0b4.123): its alt text.
     app: text,
-    child: z.object({ initial: text, name: text, sub: text }),
-    practising: text,
-    allDone: text,
-    nextUp: text,
-    states: z.object({ done: text, now: text, next: text }),
-    goals: z
-      .array(
-        z.object({
-          name: text,
-          skills: z.array(z.object({ name: text, state: z.enum(["done", "now", "next"]) })).min(1),
-        }),
-      )
-      .min(1),
-    nextLabel: text,
-    next: text,
   }),
   // The end of the landing page and /jak-to-dziala: one line for the parent and the sign-up.
   end: z.object({ text, button: text }),
