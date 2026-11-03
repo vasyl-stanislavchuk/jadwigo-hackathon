@@ -117,7 +117,9 @@ export function LessonActions({
   const quietGive = canGive ? null : (giveReason ?? t("parent_giving"));
   return (
     <div className="flex w-full flex-col gap-2" data-lesson-actions>
-      <div className="flex flex-wrap items-center gap-2">
+      {/* On a phone: Dla on its own row, then Daj lekcję full width and print, both 44 tall (chat
+          handoff §4.4, delta card-ready-390). */}
+      <div className="flex flex-wrap items-center gap-2 max-sm:flex-col max-sm:items-start">
         {forWhom ?? (
           <p className="text-jw-page-small text-jw-ink-soft" data-for-whom>
             {`${t("parent_for_whom")}: `}
@@ -126,9 +128,8 @@ export function LessonActions({
             </span>
           </p>
         )}
-        {/* Phone (§4.4): Dla on its own row, then Daj lekcję full width 44 and print 44. */}
-        <div className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:basis-full max-sm:flex-row-reverse max-sm:[&>:last-child]:flex-1">
-          <Quiet reason={printReason}>
+        <div className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full">
+          <Quiet reason={printReason} className="max-sm:order-2">
             <Button
               type="button"
               variant="outline"
@@ -143,14 +144,14 @@ export function LessonActions({
               <PrinterIcon aria-hidden className="size-4" />
             </Button>
           </Quiet>
-          <Quiet reason={quietGive}>
+          <Quiet reason={quietGive} className="max-sm:order-1 max-sm:flex-1">
             <Button
               type="button"
               // Quiet while it can't give (§4.4): stone fill, faint words, its reason as a tooltip.
               variant={quietGive === null ? "default" : "secondary"}
               size="control"
               className={cn(
-                "max-sm:h-11 max-sm:min-h-11 max-sm:w-full",
+                "max-sm:min-h-11 max-sm:w-full",
                 quietGive !== null && "text-jw-placeholder",
               )}
               onClick={give}
@@ -239,18 +240,30 @@ export function LessonActions({
  */
 function Quiet({
   reason,
+  className,
   children,
 }: {
   reason: string | null;
+  /** Where the control sits in the foot's row (its order on a phone). */
+  className?: string;
   children: ReactElement<{ "aria-label"?: string }>;
 }): ReactElement {
-  if (reason !== null) return <DisabledReason reason={reason}>{children}</DisabledReason>;
+  if (reason !== null)
+    return (
+      <DisabledReason reason={reason} {...(className === undefined ? {} : { className })}>
+        {children}
+      </DisabledReason>
+    );
   const name = children.props["aria-label"];
-  if (name === undefined) return children;
+  // A plain span carries the place in the row, as DisabledReason's does when it is quiet.
+  const placed = <span className={cn("inline-flex", className)}>{children}</span>;
+  if (name === undefined) return placed;
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent>{name}</TooltipContent>
-    </Tooltip>
+    <span className={cn("inline-flex", className)}>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent>{name}</TooltipContent>
+      </Tooltip>
+    </span>
   );
 }

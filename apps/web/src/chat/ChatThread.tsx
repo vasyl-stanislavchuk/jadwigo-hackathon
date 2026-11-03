@@ -60,18 +60,8 @@ const eventsOf = (turn: Turn): readonly RunEvent[] => turn.events ?? [];
  * The spine of one turn. The foot follows the page's own phase when the fold gives none: a stall
  * is only known to the page's clock, and a turn that ended badly always says so in its card (D7).
  */
-function spineFor(
-  turn: Turn,
-  phase: RunPhase | null,
-  now: number,
-  priorRevision: number | undefined,
-): Spine {
-  const spine = spineOf(
-    eventsOf(turn),
-    phase,
-    now,
-    priorRevision === undefined ? {} : { priorRevision },
-  );
+function spineFor(turn: Turn, phase: RunPhase | null, now: number): Spine {
+  const spine = spineOf(eventsOf(turn), phase, now);
   if (spine.foot !== undefined) return spine;
   if (spine.phase === "stalled") return { ...spine, foot: { kind: "stalled" } };
   if (spine.phase === "failed") return { ...spine, foot: { kind: "failed" } };
@@ -116,7 +106,7 @@ function retryOf(turn: Turn, resend: (text: string) => void): (() => void) | und
   return text === null ? undefined : () => resend(text);
 }
 
-export function parentTextOf(turn: Turn): string | null {
+function parentTextOf(turn: Turn): string | null {
   for (const item of turn.view.chat)
     if (item.kind === "message" && item.from === "parent") return item.text;
   return null;
@@ -345,12 +335,38 @@ function shownWidgets(turn: Turn, language: Language, context: LineContext) {
   });
 }
 
-/** Kopiuj szczegóły dla pomocy (S3): the turn's run log to the clipboard, then "Skopiowane". */
+/**
+ * What Kopiuj szczegóły dla pomocy copies (S3, dl-uukj.47.71.28): enough for support to find the
+ * run, and no learner data. The run id, its attempt and status, each error's type (with its verb and
+ * attempt), and each plan stage's place and status. Never a message, a tool's input or output, an
+ * answer, an error's own message (it can quote input), nor the plan's words (the model's prose may
+ * name the child). Only these fields are read, so nothing new in the log can leak in.
+ */
+function supportDetails(turn: Turn): string {
+  const events = eventsOf(turn);
+  const errors = events.flatMap((e) => {
+    if (e.type === "error") return [`${e.payload.error.type} (attempt ${e.payload.attempt})`];
+    if (e.type === "tool_result" && e.payload.error !== null)
+      return [`${e.payload.verb} ${e.payload.error.type}`];
+    return [];
+  });
+  const plan = events.findLast((e) => e.type === "plan");
+  const stages =
+    plan?.type === "plan" ? plan.payload.entries.map((s, i) => `${i + 1} ${s.status}`) : [];
+  return [
+    `run ${turn.run.id}`,
+    `attempt ${turn.run.attempt}`,
+    `status ${turn.view.status ?? turn.run.status}`,
+    `errors: ${errors.length === 0 ? "none" : errors.join(", ")}`,
+    `plan: ${stages.length === 0 ? "none" : stages.join(" · ")}`,
+  ].join("\n");
+}
+
+/** Kopiuj szczegóły dla pomocy: the support details to the parent's clipboard, then "Skopiowane". */
 function copyDetails(turn: Turn, language: Language): () => void {
   return () => {
-    const log = JSON.stringify({ run: turn.run.id, events: eventsOf(turn) }, null, 2);
     void navigator.clipboard
-      ?.writeText(log)
+      ?.writeText(supportDetails(turn))
       .then(() => showToast({ kind: "done", text: copy(language, "chat_copied", {}, "adult") }));
   };
 }
@@ -426,10 +442,7 @@ export function ChatThread({
   const turnEntries = (turn: Turn, index: number): ReactElement[] => {
     const last = index === turns.length - 1;
     const id = turn.run.id;
-    // The lesson's version before this turn: a stopped turn's foot names the one that stands (S15).
-    const prior =
-      Math.max(0, ...turns.slice(0, index).map((t) => t.view.lesson?.revision ?? 0)) || undefined;
-    const spine = spineFor(turn, last ? (phase ?? null) : null, now, prior);
+    const spine = spineFor(turn, last ? (phase ?? null) : null, now);
     const reply = replyOf(turn, spine);
     const entries: ReactElement[] = [];
     const at = Date.parse(turn.run.created_at);
