@@ -6,7 +6,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { must } from "./must.ts";
-import { plainTex, RichText } from "./RichText.tsx";
+import { plainTex } from "./plainTex.ts";
+import { RichText } from "./RichText.tsx";
 import { renderTex, TEX_MACROS } from "./richTextMacros.ts";
 
 afterEach(cleanup);
