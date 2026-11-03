@@ -4,7 +4,8 @@
 // stops before the question on a plan that destroys, and after one typed prod runs every step with
 // JW_RELEASE_CONFIRMED=prod, the api and its health check before the runner, the web, site and docs,
 // and one engine-smoke turn last (dl-5ssh.34.73, decision bead dl-hmvzn). The preview shows the
-// runner's path filter and auth.sh diff prod, and nothing ever runs auth.sh apply.
+// runner's path filter and auth.sh diff prod, and nothing ever runs auth.sh apply. It never seeds:
+// db-seed is not one of its steps (dl-5ssh.34.80).
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
@@ -264,7 +265,6 @@ describe("make release", { timeout: 60_000 }, () => {
       "auth.sh diff prod",
       "db-push ENV=prod token=prod",
       "db-role ENV=prod token=prod",
-      "db-seed ENV=prod token=prod",
       "terraform -chdir=infra/terraform apply",
       "api-deploy token=prod",
       expect.stringContaining("curl -s -o /dev/null"),
@@ -274,6 +274,7 @@ describe("make release", { timeout: 60_000 }, () => {
       "prod-status token=prod",
       "engine-smoke ENV=prod token=prod",
     ]);
+    expect(calls(s)).not.toContain("db-seed");
   });
 
   it("with no migrations and no plan changes, pushes nothing and applies nothing", () => {

@@ -259,7 +259,8 @@ endif
 ## ENV=prod runs only from your own terminal and asks you to type prod before it links. The seed runs
 ## under env -i: it sees PATH, HOME, USER, TMPDIR, PGPASSWORD and DATABASE_URL, no other secret. Safe to rerun:
 ## the same content publishes nothing new. It first waits up to LOGIN_WAIT seconds while the pooler
-## still refuses a password db-role just set.
+## still refuses a password db-role just set. make release never runs it (dl-5ssh.34.80): ENV=prod
+## is for a fresh prod only, and featured lessons reach prod by lesson-import ENV=prod FEATURED=1.
 db-seed:
 ifeq ($(ENV),)
 	bun run --cwd packages/lesson-import seed
