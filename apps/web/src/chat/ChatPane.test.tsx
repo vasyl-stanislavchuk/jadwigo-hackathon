@@ -262,13 +262,20 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
   });
 
   it("scrolls to the newest row without motion when the parent asks for less", () => {
-    const scroll = vi.fn();
-    Element.prototype.scrollIntoView = scroll;
+    // Only the list's own box moves, never the page around it (dl-uukj.47.68): scrollIntoView
+    // would scroll every scrollable ancestor too.
+    const intoView = vi.fn();
+    Element.prototype.scrollIntoView = intoView;
+    const scrollTo = vi.spyOn(HTMLElement.prototype, "scrollTo").mockImplementation(() => {});
     vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("reduce") }));
     try {
       pane({ turns: [turnOf("happy-turn")] });
-      expect(scroll).toHaveBeenCalledWith({ block: "end", behavior: "auto" });
+      const list = screen.getByRole("list", { name: "Wiadomości" });
+      expect(scrollTo.mock.contexts).toContain(list);
+      expect(scrollTo).toHaveBeenCalledWith({ top: list.scrollHeight, behavior: "auto" });
+      expect(intoView).not.toHaveBeenCalled();
     } finally {
+      scrollTo.mockRestore();
       vi.unstubAllGlobals();
     }
   });
