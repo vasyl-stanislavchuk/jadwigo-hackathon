@@ -98,7 +98,7 @@ describe("cardStatesOf (S7)", () => {
     expect(states[0]).toMatchObject({ version: 12, nextVersion: 13 });
   });
 
-  it("leaves the newest card living when a later turn holds only the parent's patch", () => {
+  it("leaves the newest card living, and not ready, when a later turn holds only the parent's patch", () => {
     const patched: RunEvent[] = parsed("happy-turn").map((e) =>
       e.type === "lesson_revision"
         ? ({ ...e, payload: { ...e.payload, revision: 3 } } as RunEvent)
@@ -106,6 +106,8 @@ describe("cardStatesOf (S7)", () => {
     );
     const onlyPatch = patched.filter((e) => e.type !== "tool_call" && e.type !== "tool_result");
     const states = cardStatesOf([upTo("happy-turn"), onlyPatch]);
-    expect(states.map((s) => s?.kind)).toEqual(["ready", undefined]);
+    // The lesson changed after its check, so the living card is fix, never ready (dl-uukj.47.71.15).
+    expect(states.map((s) => s?.kind)).toEqual(["fix", undefined]);
+    expect(states[0]).toMatchObject({ version: 2, findings: [] });
   });
 });

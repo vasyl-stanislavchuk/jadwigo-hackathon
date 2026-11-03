@@ -23,6 +23,11 @@ export interface CardContext {
   living?: boolean;
   /** A later turn is open, so Jadwigo is making the next version. */
   changing?: boolean;
+  /**
+   * A newer revision came after this card's, with no card of its own (a parent's patch in a later
+   * turn): the lesson changed after its check, so the card is never ready.
+   */
+  stale?: boolean;
 }
 
 const LEVEL_WORDS: Readonly<Record<string, Words>> = {
@@ -56,7 +61,8 @@ export function cardStateOf(
 
   const check = tools.findLast((t) => t.verb === "lesson_check");
   const read = check === undefined ? null : checkOf(check.output);
-  const rewritten = check === undefined || rewroteAfter(events, tools, check);
+  const rewritten =
+    check === undefined || context.stale === true || rewroteAfter(events, tools, check);
   const findings =
     read === null || rewritten
       ? []
@@ -100,6 +106,12 @@ export function cardStatesOf(runs: readonly (readonly RunEvent[])[]): (LessonCar
   const living = exact === -1 ? alone.findLastIndex((card) => card !== null) : exact;
   const openAt = views.findLastIndex((v) => v.turn_open);
   return runs.map((events, i) =>
-    alone[i] === null ? null : cardStateOf(events, { living: i === living, changing: openAt > i }),
+    alone[i] === null
+      ? null
+      : cardStateOf(events, {
+          living: i === living,
+          changing: openAt > i,
+          stale: i === living && exact === -1,
+        }),
   );
 }
