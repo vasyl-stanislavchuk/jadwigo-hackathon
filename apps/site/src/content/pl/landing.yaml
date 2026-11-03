@@ -122,39 +122,13 @@ promises:
     # Replaces "Bezpłatnie i bez reklam" (owner, 2026-11-01; draft).
     - title: Wydrukuj i sprawdź ze zdjęcia
       text: Każdą lekcję wydrukujesz dla dziecka. Gotową pracę albo pracę domową sfotografuj, a Jadwigo ją sprawdzi.
-# Direction 1a (owner, 2026-11-01; draft). Zosia is a made-up example child, never a real learner.
+# Direction 1a (owner, 2026-11-01; draft). The screenshot shows Marta, a made-up child, never a real learner.
 partner:
   heading: Nauka, przy której jesteś blisko.
   text: Dziecko ćwiczy w swoim tempie, a Ty widzisz, jak rośnie.
   pic: "Z doniczki na kredki wyrasta kiełek szybciej, niż dwór nadąża: Jadwiga podlewa go, stojąc na Linijce, Gumka ją przytrzymuje, a Ołówek zaznacza nową wysokość."
   # The screenshot of the app's child page beside it (dl-w0b4.123; draft): its alt text.
-  app: "Zrzut ekranu aplikacji Jadwigo: strona dziecka o imieniu Marta z zakładkami Przegląd, Umiejętności, Lekcje i Historia, celami i tygodniem po tygodniu."
-  child: { initial: Z, name: Zosia, sub: klasa 3 · z Jadwigo od września }
-  practising: "Ćwiczy:"
-  allDone: Umie wszystko.
-  nextUp: "Dalej:"
-  states: { done: umie, now: ćwiczy teraz, next: następne }
-  goals:
-    - name: Pieniądze i zakupy
-      skills:
-        - { name: Dodaje i odejmuje do 100, state: done }
-        - { name: Zamienia złote na grosze, state: done }
-        - { name: Liczy resztę z groszami, state: now }
-        - { name: Zadania z dwoma działaniami, state: next }
-    - name: "Czas: zegar i kalendarz"
-      skills:
-        - { name: Odczytuje godziny i minuty, state: done }
-        - { name: Upływ czasu w pełnych godzinach, state: done }
-        - { name: Upływ czasu z minutami, state: done }
-        - { name: Daty i tygodnie w kalendarzu, state: next }
-    - name: "Ortografia: ó, u, rz, ż"
-      skills:
-        - { name: Ó wymienne na o, state: done }
-        - { name: Rz po spółgłoskach, state: now }
-        - { name: Ż wymienne na g, z, s, state: next }
-        - { name: Wyrazy do zapamiętania, state: next }
-  nextLabel: "Następna lekcja:"
-  next: reszta z groszami i rz po spółgłoskach, w jednej lekcji.
+  app: "Zrzut ekranu aplikacji Jadwigo: strona dziecka o imieniu Marta. 2 cele, przy każdym to, co już umie, nad czym pracuje i co dalej, a pod nimi 2 tygodnie lekcji."
 end:
   text: Konto zakłada rodzic.
   button: Załóż konto
