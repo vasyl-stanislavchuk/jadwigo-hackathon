@@ -543,7 +543,10 @@ function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
         : prior?.type === "lesson_revision"
           ? verbOf.get(prior.payload.call_id)
           : undefined;
-    const afterResult = verb !== undefined && PLAN_STAGE_OF[verb] !== undefined;
+    // And movePlan never moves a stage already done (a repeat draft or search): after that result
+    // the engine writes no move either, so a plan right there is the settle.
+    const stage = verb === undefined ? undefined : PLAN_STAGE_OF[verb];
+    const afterResult = stage !== undefined && before?.[stage]?.status !== "done";
     const expected = before === null ? null : settled(before);
     const same =
       expected !== null &&

@@ -635,6 +635,21 @@ describe("the engine's own sequences", () => {
     expect(spine.stages.some((s) => s.summary?.copyKey === "chat_stage_failed_sum")).toBe(false);
   });
 
+  it("reads a settle right after a repeat staged verb's result as the settle: its stage was already done (the steward's input)", () => {
+    // A second lesson_draft: its stage is done, so movePlan writes no end move, and the settle follows.
+    const events = append(
+      start(),
+      ...searchedAndDrafted,
+      say("Układam jeszcze raz."),
+      call("call_7", "lesson_draft", { topic: "dodawanie" }),
+      result("call_7", "lesson_draft", { draft_id: "drf_2" }),
+      ...ending("cancelled", "done", "done", "failed"),
+    );
+    const spine = spineOf(events, null, 0);
+    expect(spine.stages.some((s) => s.status === "failed")).toBe(false);
+    expect(spine.stages.some((s) => s.summary?.copyKey === "chat_stage_failed_sum")).toBe(false);
+  });
+
   it("keeps the plan's own end move before a stop: a check that finished reads done (the steward's input)", () => {
     // A stop asked for while the check ran: runTool writes the result and the plan's end move, the
     // next step finds the cancel, and endTurn writes no settle, since every stage is done.
