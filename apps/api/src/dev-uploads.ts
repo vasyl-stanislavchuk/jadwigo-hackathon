@@ -45,6 +45,18 @@ export function pathOf(root: string, key: string): string {
 
 const metaOf = (path: string) => `${path}.meta.json`;
 
+/** The stored type and disposition; a missing or half-written meta file serves as plain bytes. */
+function metaFrom(raw: Buffer | undefined): Meta {
+  const fallback: Meta = { contentType: "application/octet-stream" };
+  if (raw === undefined) return fallback;
+  try {
+    const parsed = JSON.parse(raw.toString("utf8")) as Partial<Meta>;
+    return typeof parsed.contentType === "string" ? (parsed as Meta) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function sign(secret: string, ...parts: readonly string[]): string {
   return createHmac("sha256", secret).update(parts.join("\n")).digest("hex");
 }
@@ -128,7 +140,9 @@ export function fsUploads(dev: DevUploads, now: () => number = Date.now): Upload
       pathOf(root, key);
       const expires = String(Math.floor(now() / 1000) + expiresInS);
       const sig = sign(secret, "get", key, expires);
-      return `${baseUrl}${DEV_UPLOADS_PATH}/${key}?expires=${expires}&sig=${sig}`;
+      // Each segment encoded, so a key holding '#', '?' or '%' reaches its own GET whole.
+      const path = key.split("/").map(encodeURIComponent).join("/");
+      return `${baseUrl}${DEV_UPLOADS_PATH}/${path}?expires=${expires}&sig=${sig}`;
     },
   };
 }
@@ -225,7 +239,13 @@ export async function handleDevUpload(
   }
 
   if (request.method === "GET" && url.pathname.startsWith(`${DEV_UPLOADS_PATH}/`)) {
-    const key = decodeURIComponent(url.pathname.slice(DEV_UPLOADS_PATH.length + 1));
+    // A malformed escape (%zz) is refused like any bad link, never thrown (#774 review).
+    let key: string;
+    try {
+      key = decodeURIComponent(url.pathname.slice(DEV_UPLOADS_PATH.length + 1));
+    } catch {
+      return refused(400, "InvalidURI", "the key is not a valid URI path", cors);
+    }
     const expires = url.searchParams.get("expires") ?? "";
     const sig = url.searchParams.get("sig") ?? "";
     if (!same(sig, sign(dev.secret, "get", key, expires)) || Number(expires) < nowS)
@@ -245,10 +265,7 @@ export async function handleDevUpload(
     if (body === undefined)
       return refused(404, "NoSuchKey", "The specified key does not exist.", cors);
     const raw = await readOrUndefined(metaOf(path));
-    const meta: Meta =
-      raw === undefined
-        ? { contentType: "application/octet-stream" }
-        : JSON.parse(raw.toString("utf8"));
+    const meta = metaFrom(raw);
     return {
       status: 200,
       headers: {

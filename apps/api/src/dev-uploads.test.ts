@@ -92,6 +92,37 @@ describe("the uploads stand-in (dl-z5ja.11.19)", () => {
     await expect(bucket.presignPost("../x", "image/jpeg", 1, 600)).rejects.toThrow();
   });
 
+  it("refuses a malformed escape in a link instead of throwing (#774 review)", async () => {
+    const dev = devUploads(root, BASE, "made-up-secret");
+    const reply = await handleDevUpload(
+      dev,
+      new Request(`${BASE}${DEV_UPLOADS_PATH}/%zz?expires=1&sig=x`),
+      () => NOW,
+    );
+    expect(reply.status).toBe(400);
+    expect(String(reply.body)).toContain("<Code>InvalidURI</Code>");
+  });
+
+  it("serves a key with '#', '?' or '%' through its own signed link", async () => {
+    const dev = devUploads(root, BASE, "made-up-secret");
+    const bucket = fsUploads(dev, () => NOW);
+    const key = "pods/pod_made_up/attachments/a#b?c%41.jpg";
+    const form = await bucket.presignPost(key, "image/jpeg", BYTES.length, 600);
+    const posted = await handleDevUpload(
+      dev,
+      post(form.fields, new Blob([BYTES], { type: "image/jpeg" })),
+      () => NOW,
+    );
+    expect(posted.status).toBe(204);
+    const got = await handleDevUpload(
+      dev,
+      new Request(await bucket.presignGet(key, 300)),
+      () => NOW,
+    );
+    expect(got.status).toBe(200);
+    expect(got.body).toEqual(BYTES);
+  });
+
   it("gives CORS only to a page on this machine", async () => {
     const dev = devUploads(root, BASE, "made-up-secret");
     const preflight = (origin: string) =>

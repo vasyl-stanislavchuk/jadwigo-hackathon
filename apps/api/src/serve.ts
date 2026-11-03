@@ -69,9 +69,18 @@ createServer(async (req, res) => {
       if (v !== undefined) headers.set(k, Array.isArray(v) ? v.join(",") : v);
     const init: RequestInit = { method, headers };
     if (method !== "GET" && method !== "HEAD") init.body = new Uint8Array(Buffer.concat(chunks));
-    const out = await handleDevUpload(dev, new Request(target, init));
-    res.writeHead(out.status, out.headers);
-    res.end(out.body);
+    // A fault here answers 500 and is said once; it never ends the server (#774 review).
+    try {
+      const out = await handleDevUpload(dev, new Request(target, init));
+      res.writeHead(out.status, out.headers);
+      res.end(out.body);
+    } catch (error) {
+      process.stderr.write(
+        `api: ${DEV_UPLOADS_PATH} failed: ${error instanceof Error ? error.name : "error"}\n`,
+      );
+      res.writeHead(500, { "content-type": "text/plain" });
+      res.end("dev uploads failed");
+    }
     return;
   }
   const reply = await app.resolve(
