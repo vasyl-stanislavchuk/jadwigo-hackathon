@@ -46,3 +46,24 @@ test("the queen plays at the third right answer in a row in a given lesson", asy
   await answer(page, "6 + 6", "12");
   await expect(queen(page)).toHaveCount(0);
 });
+
+// dl-1eieq.3: the credit travels from the lesson question to the page and into lesson-kit's
+// QuestionCredit, which the instruction row draws.
+test("a borrowed question shows 'z Khan Academy', which opens its licence card; our own show none", async ({
+  page,
+}) => {
+  await page.goto(await giveLesson(page, LESSON));
+  const trigger = page.locator("[data-credit-trigger]");
+  await expect(page.locator("[data-step-shell]").getByText("7 + 5").first()).toBeVisible();
+  await expect(trigger).toHaveCount(0);
+  await answer(page, "7 + 5", "12");
+  await page.locator("[data-next]").click();
+
+  await expect(page.locator("[data-step-shell]").getByText("8 + 6").first()).toBeVisible();
+  await expect(trigger).toHaveText("z Khan Academy");
+  await trigger.click();
+  const card = page.locator("[data-credit-card]");
+  await expect(card).toBeVisible();
+  await expect(card.locator("[data-credit-licence]")).toContainText("CC BY-NC-SA 4.0");
+  await expect(card.locator("[data-credit-not-affiliated]")).toBeVisible();
+});

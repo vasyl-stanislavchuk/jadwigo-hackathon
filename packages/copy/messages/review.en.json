@@ -273,6 +273,7 @@
   "credit_title_alfik": false,
   "credit_label_alfik": false,
   "credit_not_affiliated_alfik": false,
+  "credit_notice_khan": false,
   "leave_title": true,
   "leave_where": true,
   "leave_stay": true,

@@ -121,6 +121,39 @@ describe("PlayScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
   });
 
+  // dl-1eieq.3: a borrowed question draws its credit in the instruction row; our own draw none.
+  it("draws 'z Khan Academy' on a borrowed question, and its card on a tap", async () => {
+    const borrowed = {
+      ...(question(1) as PageAttemptQuestion),
+      credit: {
+        source: "khan",
+        ref: "xmadeup0001",
+        licence: "cc-by-nc-sa-4.0",
+        original_lang: "en",
+        adapted: false,
+      },
+    };
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [borrowed]));
+    render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    const trigger = await screen.findByRole("button", { name: /^z Khan Academy/ });
+    expect(trigger.textContent).toBe("z Khan Academy");
+    await act(async () => fireEvent.click(trigger));
+    const card = document.querySelector("[data-credit-card]") as HTMLElement;
+    expect(card.hidden).toBe(false);
+    expect(card.textContent).toContain("CC BY-NC-SA 4.0");
+  });
+
+  it("draws no credit on our own question", async () => {
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", [question(1)]));
+    render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    expect(await screen.findAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+    expect(document.querySelector("[data-credit-trigger]")).toBeNull();
+  });
+
   it("starts as the child a play link names in ?learner= (dl-1u6fn.5)", async () => {
     const learner = "lrn_2h4m8gyw0fb1cvz2nkqw0px8fq";
     window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?learner=${learner}`);
