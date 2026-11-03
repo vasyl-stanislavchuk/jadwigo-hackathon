@@ -978,8 +978,8 @@ async function endUnchecked(
           agentMessage(
             w,
             languageOf(w.log, null) === "en"
-              ? "The lesson is still a draft: its current version has not passed validation. It is not ready to use."
-              : "Lekcja pozostaje szkicem: jej obecna wersja nie przeszła sprawdzenia. Nie jest jeszcze gotowa do użycia.",
+              ? "The lesson is still a draft: it has not passed its check, so it is not ready to use."
+              : "Lekcja jest jeszcze szkicem: nie przeszła sprawdzenia, więc nie jest gotowa do użycia.",
             await w.id("call", last.payload.call_no, "lesson-not-ready"),
           ),
         ]

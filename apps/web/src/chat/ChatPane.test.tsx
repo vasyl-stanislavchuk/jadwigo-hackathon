@@ -185,20 +185,13 @@ describe("the chat pane, one state per golden log", () => {
     const foot = document.querySelector("[data-foot='failed']") as HTMLElement;
     fireEvent.click(within(foot).getByRole("button", { name: "Kopiuj szczegóły dla pomocy" }));
     const copied = String(writeText.mock.calls.at(0)?.at(0));
-    const lines = copied.split("\n");
-    expect(lines[0]).toBe(`run ${turn.run.id}`);
-    expect(lines[1]).toBe("attempt 1");
-    expect(lines.map((l) => l.split(/[ :]/)[0])).toEqual([
-      "run",
-      "attempt",
-      "status",
-      "errors",
-      "plan",
+    expect(copied.split("\n")).toEqual([
+      `run ${turn.run.id}`,
+      "attempt 1",
+      `status ${turn.view.status}`,
+      "errors: question_types bank-busy, StepTimedOut (attempt 1), StepTimedOut (attempt 2), StepFailed (attempt 3)",
+      "plan: 1 done · 2 failed · 3 pending",
     ]);
-    expect(lines[3]).toMatch(
-      /^errors: (none|[\w -]+( \(attempt \d+\))?(, [\w -]+( \(attempt \d+\))?)*)$/,
-    );
-    expect(lines[4]).toMatch(/^plan: (none|\d+ \w+( · \d+ \w+)*)$/);
   });
 
   it("copies no learner data: no name, answer, message, tool output, error message or plan words (dl-uukj.47.71.28)", () => {
@@ -223,9 +216,13 @@ describe("the chat pane, one state per golden log", () => {
             },
           };
         case "error":
+          // A sentence where a code belongs: the contract types an error's type as any string.
           return {
             ...e,
-            payload: { ...e.payload, error: { ...e.payload.error, message: PLANTED } },
+            payload: {
+              ...e.payload,
+              error: { ...e.payload.error, type: PLANTED, message: PLANTED },
+            },
           };
         case "plan":
           return {
@@ -242,6 +239,7 @@ describe("the chat pane, one state per golden log", () => {
     fireEvent.click(within(foot).getByRole("button", { name: "Kopiuj szczegóły dla pomocy" }));
     const copied = String(writeText.mock.calls.at(0)?.at(0));
     expect(copied).toContain(`run ${turn.run.id}`);
+    expect(copied).toContain("other (attempt 3)");
     for (const word of ["Ola", "17", "jabłek", "answer", "{", '"'])
       expect(copied).not.toContain(word);
   });
