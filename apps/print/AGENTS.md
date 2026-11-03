@@ -22,6 +22,8 @@ refusal: raises Refused("bad_event") and writes nothing
 
 - The API invokes it with InvocationType Event and polls S3, so the return value is only for logs.
 - A PDF already there is not drawn again. An S3 error raises, so Lambda's retry tries again.
+- Every object it writes carries the tag `kind=print`; the uploads bucket expires tagged objects
+  after 30 days (`dl-1eieq.8.3`). The API tags the sheet it puts the same way.
 
 ## How a page is built
 

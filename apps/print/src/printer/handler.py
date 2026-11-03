@@ -7,6 +7,9 @@ and invokes this function with InvocationType Event, so nothing waits on the ans
     success: pods/<pod>/prints/<id>.pdf   with metadata pages=<n>
     failure: pods/<pod>/prints/<id>.error.json  {"code": invalid_sheet | render_failed}
 
+Every object here carries the tag kind=print (PRINT_TAG), which the uploads bucket's lifecycle
+rule expires after 30 days (modules/uploads): a print is a cache, made again from the lesson.
+
 The API polls for the PDF or the error file. A PDF that is already there is not drawn again. An
 event naming any other key raises Refused("bad_event") and writes nothing, so the function can
 only ever read one sheet and write that sheet's two answers, whatever the role allows. An S3 error
@@ -38,6 +41,9 @@ BAD_EVENT: Final = "bad_event"
 INVALID_SHEET: Final = "invalid_sheet"
 #: The layout failed, a picture off the allowlist included.
 RENDER_FAILED: Final = "render_failed"
+
+#: The tag on every print object: the uploads bucket expires what carries it (modules/uploads).
+PRINT_TAG: Final = "kind=print"
 
 # packages/contracts/src/ids.ts: a prefix, then 26 base32 characters of a uuid.
 POD_ID: Final = r"pod_[0-7][0-9a-hjkmnp-tv-z]{25}"
@@ -123,6 +129,7 @@ def _fail(s3: S3, request: Request, code: Code) -> dict[str, Any]:
         Key=request.error_key,
         Body=json.dumps({"code": code}).encode(),
         ContentType="application/json",
+        Tagging=PRINT_TAG,
     )
     _log(outcome="failed", code=code, print_id=request.print_id)
     return {"status": "failed", "code": code}
@@ -152,6 +159,7 @@ def print_sheet(request: Request, s3: S3) -> dict[str, Any]:
         Body=rendered.pdf,
         ContentType="application/pdf",
         Metadata={"pages": str(rendered.pages)},
+        Tagging=PRINT_TAG,
     )
     _log(
         outcome="printed",

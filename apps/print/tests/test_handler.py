@@ -39,6 +39,10 @@ def test_the_keys_sit_beside_the_sheet() -> None:
     assert request.error_key == f"pods/{POD}/prints/{PRINT_ID}.error.json"
 
 
+def _tags(s3, key: str) -> dict[str, str]:
+    return {t["Key"]: t["Value"] for t in s3.get_object_tagging(Bucket=BUCKET, Key=key)["TagSet"]}
+
+
 def _put(s3, body: bytes) -> None:
     s3.put_object(Bucket=BUCKET, Key=KEY, Body=body)
 
@@ -51,6 +55,7 @@ def test_a_sheet_with_a_key_gets_an_error_file(s3) -> None:
     assert out == {"status": "failed", "code": INVALID_SHEET}
     error = s3.get_object(Bucket=BUCKET, Key=f"pods/{POD}/prints/{PRINT_ID}.error.json")
     assert json.loads(error["Body"].read()) == {"code": INVALID_SHEET}
+    assert _tags(s3, f"pods/{POD}/prints/{PRINT_ID}.error.json") == {"kind": "print"}
 
 
 def test_a_stored_pdf_is_not_drawn_again(s3) -> None:
@@ -68,3 +73,4 @@ def test_a_sheet_becomes_a_pdf_beside_it(s3) -> None:
     assert pdf["ContentType"] == "application/pdf"
     assert pdf["Metadata"] == {"pages": str(out["pages"])}
     assert pdf["Body"].read().startswith(b"%PDF-")
+    assert _tags(s3, f"pods/{POD}/prints/{PRINT_ID}.pdf") == {"kind": "print"}, "the lifecycle rule expires it"
