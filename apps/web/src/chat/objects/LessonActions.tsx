@@ -24,6 +24,7 @@ import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import type { RunView } from "@jadwigo/core";
 import {
   Button,
+  cn,
   Dialog,
   DialogClose,
   DialogContent,
@@ -125,14 +126,15 @@ export function LessonActions({
             </span>
           </p>
         )}
-        <div className="ml-auto flex items-center gap-2">
+        {/* Phone (§4.4): Dla on its own row, then Daj lekcję full width 44 and print 44. */}
+        <div className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:basis-full max-sm:flex-row-reverse max-sm:[&>:last-child]:flex-1">
           <Quiet reason={printReason}>
             <Button
               type="button"
               variant="outline"
               size="icon"
               aria-label={t("parent_print")}
-              className="size-8 min-h-8 min-w-8"
+              className="size-8 min-h-8 min-w-8 max-sm:size-11 max-sm:min-h-11 max-sm:min-w-11"
               onClick={() => {
                 if (ready && lesson !== null) printNow();
               }}
@@ -147,7 +149,10 @@ export function LessonActions({
               // Quiet while it can't give (§4.4): stone fill, faint words, its reason as a tooltip.
               variant={quietGive === null ? "default" : "secondary"}
               size="control"
-              className={quietGive === null ? undefined : "text-jw-placeholder"}
+              className={cn(
+                "max-sm:h-11 max-sm:min-h-11 max-sm:w-full",
+                quietGive !== null && "text-jw-placeholder",
+              )}
               onClick={give}
               data-give
             >

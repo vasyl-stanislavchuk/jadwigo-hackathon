@@ -47,8 +47,18 @@ const phase = (page: Page, value: string, timeout = 20_000) =>
   expect(spineOf(page)).toHaveAttribute("data-spine", value, { timeout });
 
 async function shoot(page: Page, info: TestInfo, state: string, size: string): Promise<void> {
-  const body = await page.screenshot();
-  await info.attach(`${state}-${size}.png`, { body, contentType: "image/png" });
+  // Kept under test-results/ beside the run, for the PR's screenshots beside the handoff's PNGs.
+  // After every finite animation (a fold, a fade) has ended; the loader turns for ever.
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .every(
+        (a) => a.playState !== "running" || a.effect?.getComputedTiming().iterations === Infinity,
+      ),
+  );
+  const path = info.outputPath(`${state}-${size}.png`);
+  await page.screenshot({ path });
+  await info.attach(`${state}-${size}.png`, { path, contentType: "image/png" });
 }
 
 /** Every text node in the chat, outside the widgets (a widget may say what a result says). */
@@ -306,6 +316,22 @@ for (const size of SIZES) {
       await stopped(page, size);
       await expect(spineOf(page).locator("[data-stage='stopped']")).toHaveCount(1);
       await expect(spineOf(page).locator("[data-stage='failed']")).toHaveCount(0);
+    });
+
+    test("s14: a turn stopped before any lesson says 'Zatrzymane.' and no lesson words (dl-uukj.47.71.40)", async ({
+      page,
+    }) => {
+      // Red until dl-uukj.47.71.40. s03 holds the draft, so Esc stops a turn with no lesson yet.
+      // Remove this mark in the PR that fixes it.
+      test.fail();
+      await open(page, "s03", size);
+      await phase(page, "tool");
+      await composerOf(page).focus();
+      await page.keyboard.press("Escape");
+      await phase(page, "cancelled");
+      const foot = spineOf(page).locator("[data-foot='stopped']");
+      await expect(foot).toContainText("Zatrzymane.");
+      await expect(foot).not.toContainText(/lekcj/i);
     });
 
     test("s14: no reply under a turn stopped mid-call (dl-uukj.47.71.38)", async ({ page }) => {
