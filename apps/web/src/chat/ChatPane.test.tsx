@@ -258,18 +258,14 @@ describe("accessibility and recovery (dl-z5ja.28)", () => {
     expect(status().getAttribute("data-status")).toBe("completed");
   });
 
-  it("Spróbuj ponownie sends the failed turn's own words again", () => {
-    const turn = turnOf("happy-turn", (view) => {
-      view.status = "failed";
-    });
-    const first = turn.view.chat[0];
-    const words = first?.kind === "message" ? first.text : "";
-    const { onSend } = pane({ turns: [turn] });
-    const row = document.querySelector("[data-row='retry-turn']") as HTMLElement;
-    expect(row.textContent).toContain("Tej tury nie udało się dokończyć.");
+  it("a failed turn offers Spróbuj ponownie once, in its spine's foot, never a row above the composer (D7)", () => {
+    const turn = turnOf("failed-turn");
+    pane({ turns: [turn], phase: failedPhase(turn) });
+    const retries = screen.getAllByRole("button", { name: "Spróbuj ponownie" });
+    expect(retries).toHaveLength(1);
+    expect(retries[0]?.closest("[data-foot='failed']")).not.toBeNull();
+    expect(document.querySelector("[data-row='retry-turn']")).toBeNull();
     expect(live().textContent).toContain("Tej tury nie udało się dokończyć.");
-    fireEvent.click(within(row).getByRole("button", { name: "Spróbuj ponownie" }));
-    expect(onSend).toHaveBeenCalledWith(words);
   });
 
   it("a send that did not reach the server can go again, and the draft being typed stays", () => {
