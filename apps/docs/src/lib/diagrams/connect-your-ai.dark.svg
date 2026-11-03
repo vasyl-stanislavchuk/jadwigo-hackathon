@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 690 624" role="img" aria-labelledby="connect-your-ai-dark-title connect-your-ai-dark-desc">
+<title id="connect-your-ai-dark-title">Connect your AI: OAuth 2.1, then the remote MCP</title>
+<desc id="connect-your-ai-dark-desc">How a parent&#x27;s AI app signs in by OAuth 2.1 and then calls Jadwigo&#x27;s remote MCP tools.</desc>
+<defs><marker id="a-m-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9b4a7"/></marker><marker id="a-a-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#93b6ff"/></marker><marker id="a-l-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7aa6f0"/></marker></defs>
+<rect x="0" y="0" width="690" height="624" fill="#1d1e22"/>
+
+<rect x="20" y="24" width="140" height="44" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="90.0" y="50.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Parent&#x27;s AI app</text>
+<line x1="90" y1="68" x2="90" y2="608" stroke="#373941" stroke-width="1.5"/>
+<rect x="190" y="24" width="140" height="44" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="260.0" y="42.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Jadwigo API</text>
+<text x="260.0" y="56.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">/api/mcp</text>
+<line x1="260" y1="68" x2="260" y2="608" stroke="#373941" stroke-width="1.5"/>
+<rect x="360" y="24" width="140" height="44" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="430.0" y="42.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Supabase Auth</text>
+<text x="430.0" y="56.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">OAuth 2.1</text>
+<line x1="430" y1="68" x2="430" y2="608" stroke="#373941" stroke-width="1.5"/>
+<rect x="530" y="24" width="140" height="44" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
+<text x="600.0" y="50.0" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Parent</text>
+<line x1="600" y1="68" x2="600" y2="608" stroke="#373941" stroke-width="1.5"/>
+<polyline points="90,110 260,110" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<rect x="103.6" y="94" width="143" height="16" fill="#1d1e22"/>
+<text x="175" y="105" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">POST /API/MCP, NO TOKEN</text>
+<polyline points="260,154 90,154" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<rect x="114.8" y="138" width="120" height="16" fill="#1d1e22"/>
+<text x="175" y="149" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">401, METADATA NAMED</text>
+<polyline points="90,198 260,198" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<rect x="81.2" y="182" width="188" height="16" fill="#1d1e22"/>
+<text x="175" y="193" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">GET PROTECTED-RESOURCE METADATA</text>
+<polyline points="260,242 90,242" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<rect x="109.2" y="226" width="132" height="16" fill="#1d1e22"/>
+<text x="175" y="237" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">AUTHORIZATION_SERVERS</text>
+<polyline points="90,286 430,286" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<rect x="194.2" y="270" width="132" height="16" fill="#1d1e22"/>
+<text x="260" y="281" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">AUTHORIZATION REQUEST</text>
+<polyline points="430,330 600,330" fill="none" stroke="#93b6ff" stroke-width="1.2" marker-end="url(#a-a-dark)"/>
+<rect x="429.6" y="314" width="171" height="16" fill="#1d1e22"/>
+<text x="515" y="325" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">SIGN IN, THEN /OAUTH/CONSENT</text>
+<polyline points="600,374 430,374" fill="none" stroke="#93b6ff" stroke-width="1.2" marker-end="url(#a-a-dark)"/>
+<rect x="499.6" y="358" width="31" height="16" fill="#1d1e22"/>
+<text x="515" y="369" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">YES</text>
+<polyline points="430,418 90,418" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<rect x="174.6" y="402" width="171" height="16" fill="#1d1e22"/>
+<text x="260" y="413" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">ACCESS TOKEN, AT MOST 1 HOUR</text>
+<polyline points="90,462 260,462" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#a-l-dark)"/>
+<rect x="100.8" y="446" width="148" height="16" fill="#1d1e22"/>
+<text x="175" y="457" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">TOOLS/CALL, BEARER TOKEN</text>
+<polyline points="260,506 296,506 296,524 260,524" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<rect x="304.0" y="502" width="148" height="16" fill="#1d1e22"/>
+<text x="311.0" y="513" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">AUTHORIZE MEMBER, 1 UNIT</text>
+<polyline points="260,550 90,550" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
+<rect x="109.2" y="534" width="132" height="16" fill="#1d1e22"/>
+<text x="175" y="545" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" letter-spacing="0.5" fill="#918c83">RESULT, ONLY THIS POD</text>
+</svg>

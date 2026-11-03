@@ -26,6 +26,14 @@ describe("the pages", () => {
   it.each(pages)("%s links only to API reference pages that are built", (_path, text) => {
     expect(unknownApiLinks(text)).toEqual([]);
   });
+
+  it("the chat page names the lesson card's real actions, and no save", () => {
+    const chat = pages.find(([path]) => path.endsWith(join("features", "chat-and-workspace.md")));
+    expect(chat).toBeDefined();
+    expect(chat?.[1]).toContain("Daj lekcję");
+    expect(chat?.[1]).toContain("Drukuj");
+    expect(chat?.[1]).not.toContain("Zapisz na później\n(save");
+  });
 });
 
 describe("unknownApiPaths", () => {
@@ -40,6 +48,11 @@ describe("unknownApiPaths", () => {
 
   it("lets a version prefix and a docs link pass", () => {
     expect(unknownApiPaths("under `/api/v1/`, see [it](/api/operations/getme/)")).toEqual([]);
+  });
+
+  it("lets the remote MCP's path pass, outside ROUTES by design", () => {
+    expect(unknownApiPaths("at `https://app.jadwigo.pl/api/mcp`")).toEqual([]);
+    expect(unknownApiPaths("at `/api/mcp/nope`")).toEqual(["/api/mcp/nope"]);
   });
 
   it("reads a hero action's link as a docs link", () => {
