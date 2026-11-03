@@ -100,32 +100,37 @@ export function inWriteOrder(turns: readonly (readonly RunEvent[])[]): RunEvent[
   }
 }
 
+/** A conversation's checked lesson, compiled in memory and not yet written anywhere. */
+export interface CheckedLesson {
+  readonly compiled: ReturnType<typeof compileLessonFile>;
+  readonly fileId: string;
+  readonly revision: number;
+}
+
 /**
- * Publishes the conversation's checked lesson and assigns it in `pod`. Each revision is its own
- * lesson (`<file id>-r<revision>`), so a later revision never changes what an earlier assignment
- * plays, and giving the same revision to the same child again answers the same assignment: every
- * id is named, as the import names them. `NotFound` for a conversation or learner outside `pod`;
+ * The conversation's latest revision, if the latest lesson_check passed it and the same review
+ * still passes it now, compiled in `pod` and written nowhere: what `publishLesson` gives and what
+ * the print route prints (dl-1eieq.8.4). `NotFound` for a conversation outside `pod`;
  * `LessonNotPublishable` for no lesson, an unchecked or superseded revision, or more than
- * `LIMITS.questionsPerLesson` questions. The MCP's lesson_publish calls it (dl-1u6fn.11).
+ * `LIMITS.questionsPerLesson` questions.
  *
  * @public
  */
-export async function publishLesson(
+export async function checkedLesson(
   store: Store,
   pod: PodId,
-  give: PublishLesson,
-): Promise<LessonGiven> {
-  await store.getConversation(pod, give.conversation_id);
-  if (give.learner_id !== undefined && (await store.findLearnerPod(give.learner_id)) !== pod)
-    throw new ApiError(ErrorType.enum.NotFound, "no such learner");
+  conversationId: ConversationId,
+  wanted: number | undefined,
+): Promise<CheckedLesson> {
+  await store.getConversation(pod, conversationId);
 
   const turns: (readonly RunEvent[])[] = [];
-  for (const run of await store.listRuns(pod, give.conversation_id))
+  for (const run of await store.listRuns(pod, conversationId))
     turns.push(await store.listRunEvents(pod, run.id, 0));
   const revision = checkedRevision(inWriteOrder(turns));
   const number = revision.payload.revision;
-  if (give.revision !== undefined && give.revision !== number)
-    throw refuse(`revision ${give.revision} is not the latest: revision ${number} replaced it`);
+  if (wanted !== undefined && wanted !== number)
+    throw refuse(`revision ${wanted} is not the latest: revision ${number} replaced it`);
 
   // Read again here, from the revision itself, never from a stored flag (jadwigo-ai's review.ts):
   // the same review lesson_check runs, the harsh-word check included, so a revision the log's order
@@ -152,6 +157,34 @@ export async function publishLesson(
   } catch (e) {
     throw refuse(`the lesson does not compile: ${e instanceof Error ? e.message : String(e)}`);
   }
+  return { compiled, fileId: String(fileId), revision: number };
+}
+
+/**
+ * Publishes the conversation's checked lesson and assigns it in `pod`. Each revision is its own
+ * lesson (`<file id>-r<revision>`), so a later revision never changes what an earlier assignment
+ * plays, and giving the same revision to the same child again answers the same assignment: every
+ * id is named, as the import names them. `NotFound` for a conversation or learner outside `pod`;
+ * `LessonNotPublishable` for no lesson, an unchecked or superseded revision, or more than
+ * `LIMITS.questionsPerLesson` questions. The MCP's lesson_publish calls it (dl-1u6fn.11).
+ *
+ * @public
+ */
+export async function publishLesson(
+  store: Store,
+  pod: PodId,
+  give: PublishLesson,
+): Promise<LessonGiven> {
+  if (give.learner_id !== undefined) {
+    await store.getConversation(pod, give.conversation_id);
+    if ((await store.findLearnerPod(give.learner_id)) !== pod)
+      throw new ApiError(ErrorType.enum.NotFound, "no such learner");
+  }
+  const {
+    compiled,
+    fileId,
+    revision: number,
+  } = await checkedLesson(store, pod, give.conversation_id, give.revision);
 
   const lesson = await store.putLesson(pod, compiled.lesson);
   for (const { question } of compiled.questions) await store.putLessonQuestion(pod, question);

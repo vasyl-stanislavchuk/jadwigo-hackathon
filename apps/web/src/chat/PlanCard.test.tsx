@@ -27,7 +27,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ChatPane, type ChatPaneProps } from "./ChatPane.tsx";
 import type { Turn } from "./conversation.ts";
 import type { RunPhase } from "./phase.ts";
-import { sentenceOf, TOOL_ICON } from "./toolLine.ts";
+import { sentenceOf, TOOL_ICON } from "./spine/lines.ts";
 
 afterEach(cleanup);
 
