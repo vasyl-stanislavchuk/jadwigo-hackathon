@@ -282,8 +282,9 @@ function Revision({
           <h3 className="min-w-0 text-jw-page-h1 font-semibold break-words">{file.title}</h3>
         )}
         <div className="flex items-center gap-2">
-          <span className="text-jw-page-small text-muted-foreground">
-            {say("chat_lesson_revision", { n: lesson.revision })}
+          {/* The questions, never the version (lesson card delta C5). */}
+          <span className="text-jw-page-small text-muted-foreground tabular-nums" data-pane-count>
+            {say("card_count", { n: openable.length })}
           </span>
           {changed.size > 0 && onUndo && (
             <Button

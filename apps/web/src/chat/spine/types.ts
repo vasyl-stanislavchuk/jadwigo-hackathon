@@ -92,17 +92,28 @@ export interface TurnSpine {
 
 interface CardBase {
   lessonId: string;
+  /** For routing and "Otwórz tę wersję" only: never drawn (lesson card delta C5). */
   version: number;
   title: string;
 }
 
-/** The lesson card (S16): ready, needs fixing, being changed, or superseded by a newer version. */
+/** What the living card shows of the lesson: its questions and the first 3 prompts (delta C3). */
+interface CardContent {
+  count: number;
+  /** Up to 3 question prompts, as plain text, in lesson order. */
+  preview: readonly string[];
+}
+
+/**
+ * The lesson card (S16, delta C1-C5): ready, needs fixing, being changed (it keeps the current
+ * lesson and its actions), or superseded by a newer version.
+ */
 export type LessonCardState =
-  | (CardBase & { kind: "ready"; count: number; first: string })
-  | (CardBase & {
-      kind: "fix";
-      count: number;
-      findings: readonly { step: number; words: Words }[];
-    })
-  | (CardBase & { kind: "working"; nextVersion: number; count: number; first: string })
+  | (CardBase & CardContent & { kind: "ready" })
+  | (CardBase &
+      CardContent & {
+        kind: "fix";
+        findings: readonly { step: number; words: Words }[];
+      })
+  | (CardBase & CardContent & { kind: "working" })
   | (CardBase & { kind: "superseded" });
