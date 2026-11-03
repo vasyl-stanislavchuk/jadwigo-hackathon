@@ -388,7 +388,7 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   input.strings("names", false); // see NAMES_UNUSED
   const step = stepOf(file, step_id);
 
-  const refused = Object.keys(patch).filter((k) => k !== "say" && k !== "question");
+  const refused = Object.keys(patch).filter((k) => !["say", "question", "skill_ids"].includes(k));
   const question = patch["question"];
   if (question !== undefined && !isObject(question)) refused.push("question");
   if (isObject(question)) {
@@ -401,10 +401,20 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   if (refused.length > 0) {
     throw new VerbError(
       "edit",
-      `a patch sets say and question's data, key and help, not ${refused.join(", ")}; twin changes belong in question.help.twin, not question.family; nothing changed`,
+      `a patch sets say, skill_ids and question's data, key and help, not ${refused.join(", ")}; twin changes belong in question.help.twin, not question.family; nothing changed`,
     );
   }
 
+  const skills = patch["skill_ids"];
+  if (
+    skills !== undefined &&
+    (!Array.isArray(skills) || lessonSkillIds(skills as string[]).length !== skills.length)
+  ) {
+    throw new VerbError(
+      "edit",
+      "skill_ids is a list of skill ids, from curriculum_topics; nothing changed",
+    );
+  }
   const merged = mergePatch(step, patch) as Step;
   const helpPatch = isObject(question) && isObject(question["help"]) ? question["help"] : {};
   const edited = helpPatch["twin"] === undefined ? merged : inheritTwinFamily(merged);
@@ -468,6 +478,12 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
         ok: !findings.some((f) => f.level === "error"),
         step_id,
         findings,
+        // A copied item's skills describe the item as the bank had it (dl-hin8.49).
+        ...(change === "numbers" && patch["skill_ids"] === undefined
+          ? {
+              skills_note: `this step still counts as ${JSON.stringify(edited["skill_ids"] ?? [])}: if its numbers now practise another skill, pass patch.skill_ids, from curriculum_topics, or a child's answers will count for the wrong skill`,
+            }
+          : {}),
         card: card(edited),
         lesson_ok: checks.publishable,
       },

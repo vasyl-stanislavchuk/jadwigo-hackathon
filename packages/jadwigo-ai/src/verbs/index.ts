@@ -116,7 +116,7 @@ export const TOOLS: Readonly<Record<VerbName, MuseTool>> = {
   lesson_edit: {
     name: "lesson_edit",
     description:
-      "Adapt a copied question to the parent's request, or change one step by a JSON merge patch on the step as lesson_show returns it: say, and question's data, key and help. Changing say alone does not change the displayed task in question.data. Preserve the family's shapes: help.look and help.boost are {text}, help.almost and help.worked are arrays, and help.twin carries its own say, data and key. A change to a part the bank's copy has needs why, the parent's ask. Returns that step's findings and card.",
+      "Adapt a copied question to the parent's request, or change one step by a JSON merge patch on the step as lesson_show returns it: say, and question's data, key and help. Changing say alone does not change the displayed task in question.data. Preserve the family's shapes: help.look and help.boost are {text}, help.almost and help.worked are arrays, and help.twin carries its own say, data and key. A change to a part the bank's copy has needs why, the parent's ask. When new numbers practise another skill, set skill_ids too, from curriculum_topics: a child's answers count for those skills. Returns that step's findings and card.",
     parameters: params(
       {
         draft_id: str,
