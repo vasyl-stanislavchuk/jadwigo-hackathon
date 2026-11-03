@@ -985,7 +985,7 @@ describe("runStep and drain", () => {
     for (const call of t.muse.calls) {
       expect(call.instructions).toContain(CARD_RULE);
       // A new instructions text, a new cache key: no call reads a prefix cached without the rule.
-      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:5");
+      expect(call.prompt_cache_key).toBe("jadwigo-lesson-compose:6");
     }
     expect(CARD_RULE).toMatch(/never list or repeat the lesson's questions/);
   });
