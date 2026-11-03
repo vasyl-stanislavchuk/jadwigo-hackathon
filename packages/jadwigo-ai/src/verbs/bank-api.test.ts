@@ -434,3 +434,64 @@ describe("httpBankReads", () => {
     await expect(failure).rejects.not.toThrow("t0ken");
   });
 });
+
+describe("addition-within-10 gap over the HTTP bank seam (dl-n9fr.76)", () => {
+  it.each(["abstained", "empty"])("%s reads no set or body and drafts no lesson", async (state) => {
+    const paths: string[] = [];
+    const send = (async (url: URL) => {
+      paths.push(url.pathname);
+      return new Response(
+        JSON.stringify({ version: 1, arm: "C", rows: [], state: [{ arm: "C", state }] }),
+        { status: 200 },
+      );
+    }) as unknown as typeof fetch;
+    const bank = apiBank(
+      httpBankReads({ base: "https://bank.example.test", token: "test", fetch: send }),
+    );
+    const verbs = createVerbs({ bank });
+    await expect(
+      verbs.lesson_draft.run(contextFor(runId(), "gap"), {
+        request: "Lekcja: dodawanie do 10, 5 pytań, dla pierwszej klasy",
+        grade: "1",
+        names: [],
+        topic: "dodawanie do 10",
+        count: 5,
+      }),
+    ).rejects.toMatchObject({ type: "no-questions" });
+    expect(paths).toEqual([ROUTES.questionSearches.path]);
+  });
+
+  it("copies a verified arithmetic fixture through HTTP without changing data or keys", async () => {
+    const ids = IDS.slice(0, 5);
+    const bodies = Object.fromEntries(ids.map((id, i) => [id, body(id, i, 1)]));
+    const send = (async (url: URL) => {
+      const value =
+        url.pathname === ROUTES.questionSearches.path
+          ? { version: 1, rows: [row("set_add", 1)], state: [{ arm: "C", state: "ok" }] }
+          : url.pathname === ROUTES.questionSet.path.replace("{id}", "set_add")
+            ? page("set_add", ids)
+            : bodies[url.pathname.split("/").at(-1) ?? ""];
+      return new Response(JSON.stringify(value), { status: value === undefined ? 404 : 200 });
+    }) as unknown as typeof fetch;
+    const bank = apiBank(
+      httpBankReads({ base: "https://bank.example.test", token: "test", fetch: send }),
+    );
+    const effect = await createVerbs({ bank }).lesson_draft.run(contextFor(runId(), "arithmetic"), {
+      request: "Lekcja: dodawanie do 10, 5 pytań, dla pierwszej klasy",
+      grade: "1",
+      names: [],
+      topic: "dodawanie do 10",
+      count: 5,
+    });
+    const script = effect.lesson_file?.["script"] as
+      | { parts: { steps: { based_on: unknown; question: { data: unknown; key: unknown } }[] }[] }
+      | undefined;
+    const drawn = script?.parts[0]?.steps ?? [];
+    expect(drawn).toHaveLength(5);
+    for (const [i, question] of drawn.entries()) {
+      expect(question.based_on).toEqual({ question: `bank:${ids[i]}`, changes: [] });
+      expect(question.question.data).toEqual(bodies[ids[i] ?? ""]?.pl?.data);
+      expect(question.question.key).toEqual(bodies[ids[i] ?? ""]?.pl?.key);
+    }
+  });
+});

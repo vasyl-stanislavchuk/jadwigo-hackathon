@@ -1,8 +1,8 @@
 import type { PodId } from "@jadwigo/contracts";
 import { type RunEvent, RunId } from "@jadwigo/contracts/run";
-import type { MuseClient } from "@jadwigo/jadwigo-ai";
+import { apiBank, httpBankReads, type MuseClient } from "@jadwigo/jadwigo-ai";
 import type { Store } from "@jadwigo/store";
-import { apiDatabaseUrl, museConfig } from "./config.ts";
+import { apiDatabaseUrl, bankConfig, isLocalDatabaseUrl, museConfig } from "./config.ts";
 import { postgresEngineHost } from "./engine.ts";
 import { createHost } from "./host.ts";
 import { liveMuse, realRuntime } from "./muse.ts";
@@ -21,6 +21,8 @@ import { apiDeps, seed, usdOf } from "./seed.ts";
  * - `check <pod> <run_id> [seconds]`: waits up to that long (60 by default) for the turn to end,
  *   then prints the same summary. The deployed host's half.
  */
+
+const ADDITION_GAP_TEXT = "Lekcja: dodawanie do 10, 5 pytań, dla pierwszej klasy";
 
 const PARENT_TEXT = "Make a short practice lesson for grade 1: adding within 20. No names, please.";
 
@@ -67,7 +69,11 @@ async function waitFor(store: Store, pod: PodId, run: RunId, seconds: number) {
 
 async function main(argv: readonly string[]): Promise<boolean> {
   const [command, a, b, c] = argv;
-  const deps = apiDeps(apiDatabaseUrl());
+  const url = apiDatabaseUrl();
+  if (command === "local" && a === "--addition-gap" && !isLocalDatabaseUrl(url)) {
+    throw new Error("--addition-gap seeds and drains a local jadwigo database only");
+  }
+  const deps = apiDeps(url);
   try {
     if (command === "seed") {
       out(JSON.stringify(await seed(deps, PARENT_TEXT)));
@@ -79,10 +85,17 @@ async function main(argv: readonly string[]): Promise<boolean> {
     }
     if (command === "local") {
       const dry = a === "--dry";
+      const additionGap = a === "--addition-gap";
       const thrown: string[] = [];
       const config = dry ? null : await museConfig();
       const model = config ? liveMuse(config, realRuntime) : new ProbeMuse();
-      const seeded = await seed(deps, PARENT_TEXT);
+      const bank = additionGap ? await bankConfig() : undefined;
+      if (additionGap && bank === undefined) {
+        throw new Error(
+          "--addition-gap requires JADWIGO_API_URL and JADWIGO_BANK_READ_TOKEN: no fixture fallback",
+        );
+      }
+      const seeded = await seed(deps, additionGap ? ADDITION_GAP_TEXT : PARENT_TEXT);
       // A step that threw anywhere, not only in the model, fails the smoke too.
       const host = postgresEngineHost(
         apiDatabaseUrl(),
@@ -92,6 +105,9 @@ async function main(argv: readonly string[]): Promise<boolean> {
           else console.warn(line);
         },
         config?.tier ?? "contributor",
+        undefined,
+        undefined,
+        bank === undefined ? undefined : apiBank(httpBankReads(bank)),
       );
       const started = performance.now();
       try {
@@ -103,9 +119,28 @@ async function main(argv: readonly string[]): Promise<boolean> {
         `engine-smoke: ${dry ? "dry, scripted model" : "live, HttpMuse"}, ${Math.round(performance.now() - started)} ms`,
       );
       const events = await deps.store.listRunEvents(seeded.pod, seeded.run_id, 0);
-      return summary(seeded.run_id, events, thrown);
+      const ok = summary(seeded.run_id, events, thrown);
+      if (additionGap) {
+        const gap = events.some(
+          (event) =>
+            event.type === "tool_result" &&
+            event.payload.verb === "lesson_draft" &&
+            event.payload.error?.type === "no-questions",
+        );
+        const drafted = events.some((event) => event.type === "lesson_revision");
+        const edited = events.some(
+          (event) => event.type === "tool_call" && event.payload.verb === "lesson_edit",
+        );
+        out(
+          `addition-gap: explicit gap ${gap}, lesson created ${drafted}, numbers edited ${edited}`,
+        );
+        return ok && gap && !drafted && !edited;
+      }
+      return ok;
     }
-    throw new Error("usage: smoke.ts local [--dry] | seed | check <pod> <run_id> [seconds]");
+    throw new Error(
+      "usage: smoke.ts local [--dry | --addition-gap] | seed | check <pod> <run_id> [seconds]",
+    );
   } finally {
     await deps.close();
   }
