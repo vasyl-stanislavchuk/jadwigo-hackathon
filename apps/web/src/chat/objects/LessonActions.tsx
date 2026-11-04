@@ -1,6 +1,7 @@
 /**
  * The lesson's actions in the foot of the living lesson card, and again in the foot of its preview
- * (dl-1eieq.1; chat handoff dl-uukj.47.71 §4.4): Dla · the print icon · Daj lekcję. What the
+ * (dl-1eieq.1; chat handoff dl-uukj.47.71 §4.4): Dla, then print · (once given) Kopiuj link · Daj
+ * lekcję or Otwórz w nowej karcie (owner, 2026-11-04, dl-1eieq.7.3). What the
  * workspace's footer held before #740 (dl-z5ja.108.1.1), moved into the chat (decision
  * 2026-11-02-the-parent-app-is-chat-first-account-in-the-top-bar-lesson-on-de, dl-hz9ks):
  *
@@ -15,8 +16,12 @@
  *   Daj lekcję / Daj lekcję · {imię}   the one primary. Until it can give, it is quiet with its
  *              reason as a tooltip (DS S5, `DisabledReason`), never `disabled`. It gives
  *              the lesson (POST /api/v1/conversations/{id}/lessons), to that child or to nobody in
- *              particular, and shows its one link to copy or open (decision
- *              2026-11-03-a-play-link-opens-on-a-first-screen-title-and-question-count-the).
+ *              particular (decision
+ *              2026-11-03-a-play-link-opens-on-a-first-screen-title-and-question-count-the). It
+ *              opens nothing by itself: it spins while giving, then becomes the link that opens
+ *              the lesson in a new tab.
+ *   Kopiuj link   once given, for sending the lesson to another device. If the browser refuses the
+ *              clipboard, the link shows in a field below to select by hand.
  *
  * No "Zapisz na później": every lesson is already in Lekcje (owner, 2026-11-03).
  */
@@ -29,12 +34,13 @@ import {
   cn,
   DisabledReason,
   Input,
+  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@jadwigo/ui";
 import { CheckIcon, CopyIcon, ExternalLinkIcon, PrinterIcon } from "lucide-react";
-import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactElement, type ReactNode, useEffect, useState } from "react";
 
 /** Where giving the lesson stands: nothing yet, on its way, given, or refused with its reason. */
 export type GiveState =
@@ -102,7 +108,7 @@ export function LessonActions({
   const [printed, setPrinted] = useState<PrintState>({ kind: "idle" });
   const printNow = (): void => {
     if (!ready || lesson === null || print === undefined || printed.kind === "preparing") return;
-    // The PDF's tab opens inside the click, as Daj lekcję's does, so no popup blocker stops it.
+    // The PDF's tab opens inside the click, so no popup blocker stops it.
     const opened = window.open("about:blank", "_blank");
     setPrinted({ kind: "preparing" });
     print().then(
@@ -126,37 +132,12 @@ export function LessonActions({
     );
   };
   const busy = given.kind === "giving";
-  // A link is for one child and one revision (LessonWorkspace resets `given` when either changes),
-  // so once given a second press would only make the same link again: it goes quiet until then.
-  const done = given.kind === "given";
-  const canGive = ready && !busy && !done && onGive !== undefined;
-  // Daj lekcję opens the lesson's tab at once, inside the click so no popup blocker stops it, and
-  // sends it to the link when the give lands (design review 2026-11-03); a refusal closes it.
-  const tab = useRef<Window | null>(null);
+  const canGive = ready && !busy && onGive !== undefined;
   const give = (): void => {
-    if (!canGive) return;
-    tab.current = window.open("about:blank", "_blank");
-    onGive();
+    if (canGive) onGive();
   };
-  const givenHref = given.kind === "given" ? given.href : null;
-  const settled = given.kind === "given" || given.kind === "refused";
-  useEffect(() => {
-    const opened = tab.current;
-    if (opened === null || !settled) return;
-    tab.current = null;
-    if (givenHref === null) {
-      opened.close();
-      return;
-    }
-    // The lesson's tab gets no hold on the chat, as rel="noopener" gives the link (where the
-    // browser allows it; happy-dom's tab has only a getter).
-    try {
-      opened.opener = null;
-    } catch {
-      // Left as it is.
-    }
-    opened.location.href = new URL(givenHref, window.location.origin).href;
-  }, [givenHref, settled]);
+  // The link the clipboard refused, shown to select by hand; a new link starts clean.
+  const [uncopied, setUncopied] = useState<string | null>(null);
   const giveReason = !ready
     ? t("parent_give_reason")
     : onGive === undefined
@@ -169,16 +150,12 @@ export function LessonActions({
       : print === undefined
         ? t("parent_give_unavailable")
         : null;
-  const givenReason = !done
-    ? null
-    : given.name === null
-      ? t("parent_given_anyone")
-      : t("parent_given_child", { name: given.name });
-  const quietGive = canGive ? null : (giveReason ?? givenReason ?? t("parent_giving"));
+  // While giving it stays the primary, with its spinner; quiet only when it can't give at all.
+  const quietGive = busy || canGive ? null : giveReason;
   return (
     <div className="flex w-full flex-col" data-lesson-actions>
-      {/* On a phone: Dla on its own row, then Daj lekcję full width and print, both 44 tall (chat
-          handoff §4.4, delta card-ready-390). */}
+      {/* On a phone: Dla on its own row, then print and the rest, all 44 tall (chat handoff §4.4,
+          delta card-ready-390); once given, the wide link to the lesson takes a row of its own. */}
       <div className="flex flex-wrap items-center gap-2 max-sm:flex-col max-sm:items-start">
         {forWhom ?? (
           <p className="text-jw-page-small text-jw-ink-soft" data-for-whom>
@@ -188,11 +165,8 @@ export function LessonActions({
             </span>
           </p>
         )}
-        <div className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full">
-          {given.kind === "given" && (
-            <GivenLink language={language} href={given.href} className="max-sm:order-3" />
-          )}
-          <Quiet reason={printReason} className="max-sm:order-2">
+        <div className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full max-sm:flex-wrap">
+          <Quiet reason={printReason}>
             <Button
               type="button"
               variant="outline"
@@ -208,15 +182,22 @@ export function LessonActions({
             </Button>
           </Quiet>
           {given.kind === "given" ? (
-            // Once given, the one primary opens the lesson again (its tab may be closed).
-            <Button asChild size="control" className="max-sm:order-1 max-sm:min-h-11 max-sm:flex-1">
-              <a href={given.href} target="_blank" rel="noopener" data-given-link>
-                {t("parent_given_open")}
-                <ExternalLinkIcon aria-hidden className="size-4" />
-              </a>
-            </Button>
+            <>
+              <CopyLink
+                language={language}
+                href={given.href}
+                onRefused={setUncopied}
+                className="max-sm:flex-1"
+              />
+              <Button asChild size="control" className="max-sm:min-h-11 max-sm:w-full">
+                <a href={given.href} target="_blank" rel="noopener" data-given-link>
+                  {t("parent_given_open")}
+                  <ExternalLinkIcon aria-hidden className="size-4" />
+                </a>
+              </Button>
+            </>
           ) : (
-            <Quiet reason={quietGive} className="max-sm:order-1 max-sm:flex-1">
+            <Quiet reason={quietGive} className="max-sm:flex-1">
               <Button
                 type="button"
                 // Quiet while it can't give (§4.4): stone fill, faint words, its reason as a tooltip.
@@ -227,8 +208,12 @@ export function LessonActions({
                   quietGive !== null && "text-jw-placeholder",
                 )}
                 onClick={give}
+                aria-busy={busy}
                 data-give
               >
+                {busy && (
+                  <Spinner aria-hidden label={t("parent_giving")} className="size-4 text-current" />
+                )}
                 {child === null
                   ? t("parent_give")
                   : t("parent_give_child", { name: child.first_name })}
@@ -237,13 +222,24 @@ export function LessonActions({
           )}
         </div>
       </div>
+      {given.kind === "given" && uncopied === given.href && (
+        <Input
+          kind="text"
+          readOnly
+          value={new URL(given.href, window.location.origin).href}
+          aria-label={t("parent_given_link")}
+          className="mt-2 h-8 min-h-8 w-full text-jw-page-small"
+          onFocus={(event) => event.currentTarget.select()}
+          data-given-url
+        />
+      )}
       <div
         role="status"
         // Who the link is for is said to a screen reader; the row shows the link itself.
         // Empty, it takes no room, so the row stays centred in a foot (design review 2026-11-03).
         className={cn(
           "text-jw-page-small text-jw-ink not-empty:mt-2",
-          given.kind === "given" && "sr-only",
+          (given.kind === "given" || given.kind === "giving") && "sr-only",
         )}
         data-give-state={given.kind}
       >
@@ -265,26 +261,24 @@ export function LessonActions({
   );
 }
 
-/** How long "Skopiowano" stands before the button says "Kopiuj" again. */
+/** How long "Skopiowano" stands before the button says "Kopiuj link" again. */
 const COPIED_MS = 2000;
 
-/**
- * The lesson's one link, in the actions' row: a short field to copy from, its copy icon inside it
- * turning to a green tick once copied. Copying is the point, not reading it, so the field is short.
- */
-function GivenLink({
+/** Copies the lesson's link, for the parent to send it to another device. */
+function CopyLink({
   language,
   href,
+  onRefused,
   className,
 }: {
   language: Language;
   href: string;
-  /** Its place in the row (its order on a phone). */
+  /** The browser refused the clipboard (no permission, no secure page). */
+  onRefused: (href: string) => void;
+  /** Its place in the row on a phone. */
   className?: string;
 }): ReactElement {
-  const t = (key: CopyKey, vars: Record<string, string> = {}): string =>
-    copy(language, key, vars, "adult");
-  const url = new URL(href, window.location.origin).href;
+  const t = (key: CopyKey): string => copy(language, key, {}, "adult");
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -292,50 +286,32 @@ function GivenLink({
     return () => clearTimeout(timer);
   }, [copied]);
   return (
-    <div className={cn("flex items-center", className)} data-given>
-      <div>
-        <div className="relative w-44 max-sm:w-full">
-          <Input
-            kind="text"
-            readOnly
-            value={url}
-            aria-label={t("parent_given_link")}
-            className="h-8 min-h-8 w-full pr-9 text-jw-page-small"
-            onFocus={(event) => event.currentTarget.select()}
-            data-given-url
-          />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={t(copied ? "parent_given_copied" : "parent_given_copy")}
-                className="absolute top-1/2 right-0.5 size-7 min-h-7 min-w-7 -translate-y-1/2"
-                onClick={() => {
-                  // Refused (no permission, no secure page): the field is there to select by hand.
-                  navigator.clipboard.writeText(url).then(
-                    () => setCopied(true),
-                    () => undefined,
-                  );
-                }}
-                data-given-copy
-                data-copied={copied}
-              >
-                {copied ? (
-                  <CheckIcon aria-hidden className="size-4 text-jw-right-ink" />
-                ) : (
-                  <CopyIcon aria-hidden className="size-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {t(copied ? "parent_given_copied" : "parent_given_copy")}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="control"
+          className={cn("max-sm:min-h-11", className)}
+          onClick={() => {
+            navigator.clipboard.writeText(new URL(href, window.location.origin).href).then(
+              () => setCopied(true),
+              () => onRefused(href),
+            );
+          }}
+          data-given-copy
+          data-copied={copied}
+        >
+          {copied ? (
+            <CheckIcon aria-hidden className="size-4 text-jw-right-ink" />
+          ) : (
+            <CopyIcon aria-hidden className="size-4" />
+          )}
+          {t(copied ? "parent_given_copied" : "parent_given_copy")}
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{t("parent_given_share")}</TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Open the lesson" |
+* | "Open in a new tab" |
 *
 * @param {Parent_Given_OpenInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

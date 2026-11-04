@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LessonActions, PrintFailed } from "./LessonActions.tsx";
 
 afterEach(cleanup);
-// Daj lekcję opens a tab; a unit test opens none (no network).
+// Drukuj opens a tab; a unit test opens none (no network).
 beforeEach(() => {
   vi.spyOn(window, "open").mockReturnValue(null);
 });
@@ -119,11 +119,20 @@ describe("giving and printing only a checked lesson (steward on #747)", () => {
     expect(document.querySelector("[data-give-state='given']")?.textContent).toContain(
       "Lekcja czeka na: Ola.",
     );
-    expect((document.querySelector("[data-given-url]") as HTMLInputElement).value).toBe(url);
-    const open = screen.getByRole("link", { name: "Otwórz lekcję" });
+    expect(document.querySelector("[data-given-url]")).toBeNull();
+    expect(document.querySelector("[data-give]")).toBeNull();
+    const open = screen.getByRole("link", { name: "Otwórz w nowej karcie" });
     expect(open.getAttribute("href")).toBe("/play/asg_x?learner=lrn_y");
     expect(open.getAttribute("target")).toBe("_blank");
-    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Kopiuj" })));
+    // Left to right: print, copy, open.
+    const order = [
+      ...document.querySelectorAll("[data-print], [data-given-copy], [data-given-link]"),
+    ];
+    expect(
+      order.map((e) => e.hasAttribute("data-print") || e.hasAttribute("data-given-copy")),
+    ).toEqual([true, true, false]);
+    expect(order[0]?.hasAttribute("data-print")).toBe(true);
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Kopiuj link" })));
     expect(writeText).toHaveBeenCalledExactlyOnceWith(url);
     expect(screen.getByRole("button", { name: "Skopiowano" })).toBeTruthy();
     cleanup();
@@ -140,8 +149,39 @@ describe("giving and printing only a checked lesson (steward on #747)", () => {
     cleanup();
     const props = footer({ child: ola, given: { kind: "giving" } });
     expect(document.querySelector("[data-give-state]")?.textContent).toBe("Daję lekcję…");
+    // Still the primary, spinning, and a second press does nothing.
+    expect(give().getAttribute("aria-busy")).toBe("true");
+    expect(give().getAttribute("aria-disabled")).toBeNull();
+    expect(give().querySelector("[data-slot='spinner']")).not.toBeNull();
     fireEvent.click(give());
     expect(props.onGive).not.toHaveBeenCalled();
+  });
+
+  it("opens no tab by itself: not on the press, and not when the give lands", async () => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    open.mockClear();
+    const props = { language: "pl" as const, ready: true, child: null, onGive: vi.fn(), lesson };
+    const { rerender } = render(<LessonActions {...props} />);
+    await act(async () => fireEvent.click(give()));
+    expect(props.onGive).toHaveBeenCalledTimes(1);
+    rerender(<LessonActions {...props} given={{ kind: "giving" }} />);
+    rerender(
+      <LessonActions {...props} given={{ kind: "given", name: null, href: "/play/asg_x" }} />,
+    );
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it("shows the link to select by hand when the browser refuses the clipboard", async () => {
+    const writeText = vi.fn(async () => {
+      throw new Error("denied");
+    });
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    footer({ given: { kind: "given", name: null, href: "/play/asg_x" } });
+    expect(document.querySelector("[data-given-url]")).toBeNull();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Kopiuj link" })));
+    expect((document.querySelector("[data-given-url]") as HTMLInputElement).value).toBe(
+      `${window.location.origin}/play/asg_x`,
+    );
   });
 });
 

@@ -15,7 +15,7 @@ async function box(locator: Locator) {
   return found;
 }
 
-test("390: Dla on its own row, then Daj lekcję full width and print, 44 tall; the chevron by the prompts", async ({
+test("390: Dla on its own row, then print and a wide Daj lekcję, 44 tall; the chevron by the prompts", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -30,10 +30,10 @@ test("390: Dla on its own row, then Daj lekcję full width and print, 44 tall; t
   ]);
   // Dla stands above the buttons' row.
   expect(dla.y + dla.height).toBeLessThanOrEqual(give.y + 1);
-  // Daj lekcję first and wide, print after it, both at least 44 tall.
+  // Print leftmost, then Daj lekcję wide, both at least 44 tall.
   expect(give.height).toBeGreaterThanOrEqual(43.5);
   expect(print.height).toBeGreaterThanOrEqual(43.5);
-  expect(give.x).toBeLessThan(print.x);
+  expect(print.x).toBeLessThan(give.x);
   expect(give.width).toBeGreaterThan(foot.width * 0.6);
   // The open control sits below the title's row, at the right of the prompts.
   const [open, title, prompts] = await Promise.all([
