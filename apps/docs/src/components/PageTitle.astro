@@ -38,7 +38,8 @@ const prs = entry && "prs" in entry.data ? (entry.data.prs ?? []) : [];
     </svg>
   </button>
 </div>
-{status && <Status status={status} asOf={asOf} prs={prs} />}
+{/* Built is the default, so only a page about the future wears a badge. */}
+{status && status !== "live" && <Status status={status} asOf={asOf} prs={prs} />}
 
 <style>
   .jw-page-title {
