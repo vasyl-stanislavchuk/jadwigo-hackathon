@@ -67,7 +67,7 @@
     "@jadwigo/store": "workspace:*",
     "@modelcontextprotocol/server": "2.4.0",
     "@react-email/components": "1.0.12",
-    "@react-email/render": "2.1.1",
+    "@react-email/render": "2.2.0",
     "react": "catalog:",
     "react-dom": "catalog:",
     "standardwebhooks": "1.1.1",
