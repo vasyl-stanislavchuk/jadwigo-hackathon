@@ -806,6 +806,7 @@ export const COPY_KEYS = [
   "parent_given_copy",
   "parent_given_copied",
   "parent_given_open",
+  "parent_given_share",
   // the one cookie banner, the same on the site and in the app (dl-w0b4.118, decision dl-376c8)
   "consent_title",
   "consent_text",

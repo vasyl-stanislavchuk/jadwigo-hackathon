@@ -130,9 +130,16 @@ test("1440: Daj lekcję from the widget gives the lesson as one link to copy or 
   await expect(card).toBeVisible({ timeout: 20_000 });
   // Bez dziecka: no dialog, the link at once. The playground's give answers a made-up assignment.
   await card.locator("[data-give]").click();
-  await expect(card.locator("[data-given-url]")).toHaveValue(/\/play\/asg_/);
   await expect(card.locator("[data-given-link]")).toHaveAttribute("href", /^\/play\/asg_/);
-  await expect(card.locator("[data-given-copy]")).toBeVisible();
+  // Print, then copy, then the link: and no tab opened by itself.
+  const [print, copied, open] = await Promise.all([
+    card.locator("[data-print]").boundingBox(),
+    card.locator("[data-given-copy]").boundingBox(),
+    card.locator("[data-given-link]").boundingBox(),
+  ]);
+  expect(print?.x ?? 0).toBeLessThan(copied?.x ?? 0);
+  expect(copied?.x ?? 0).toBeLessThan(open?.x ?? 0);
+  expect(page.context().pages()).toHaveLength(1);
 });
 
 // The turn that ends in the lesson-ready card scrolls only the message list (dl-uukj.47.68): the

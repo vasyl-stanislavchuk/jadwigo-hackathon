@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Copy" |
+* | "Copy link" |
 *
 * @param {Parent_Given_CopyInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const parent_given_copy = /** @type {((inputs?: Parent_Given_CopyInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Parent_Given_CopyInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Copy")
-	return /** @type {LocalizedString} */ ("Kopiuj")
+	if (locale === "en") return /** @type {LocalizedString} */ ("Copy link")
+	return /** @type {LocalizedString} */ ("Kopiuj link")
 });

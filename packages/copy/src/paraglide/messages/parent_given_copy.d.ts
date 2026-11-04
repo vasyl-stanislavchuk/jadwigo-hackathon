@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Copy" |
+* | "Copy link" |
 *
 * @param {Parent_Given_CopyInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

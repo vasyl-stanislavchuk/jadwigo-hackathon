@@ -923,6 +923,7 @@
   "parent_given_copy": false,
   "parent_given_copied": false,
   "parent_given_open": false,
+  "parent_given_share": false,
   "email_subject_signup": false,
   "email_subject_magiclink": false,
   "email_subject_email_change": false,

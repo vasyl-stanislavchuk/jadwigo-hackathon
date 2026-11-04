@@ -568,7 +568,7 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
     expect(document.querySelector("[data-give-state='given']")?.textContent).toContain(
       "Lekcja czeka na: Ola.",
     );
-    expect(screen.getByRole("link", { name: "Otwórz lekcję" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Otwórz w nowej karcie" }).getAttribute("href")).toBe(
       `/play/${ASSIGNMENT}?learner=${ola.id}`,
     );
   });
@@ -577,7 +577,7 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
     const giveLesson = vi.fn(async () => ({ assignment: { id: ASSIGNMENT } }));
     await giving(giveLesson, null);
     expect(giveLesson).toHaveBeenCalledWith(CONVERSATION, { revision: SHOWN_REVISION });
-    expect(screen.getByRole("link", { name: "Otwórz lekcję" }).getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "Otwórz w nowej karcie" }).getAttribute("href")).toBe(
       `/play/${ASSIGNMENT}`,
     );
     expect(window.location.pathname).not.toContain("/play/");
@@ -586,9 +586,9 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
   it("takes the link away when the Dla child changes", async () => {
     const giveLesson = vi.fn(async () => ({ assignment: { id: ASSIGNMENT } }));
     const { rerender } = await giving(giveLesson);
-    expect(document.querySelector("[data-given]")).not.toBeNull();
+    expect(document.querySelector("[data-given-link]")).not.toBeNull();
     await act(async () => rerender(workspace(null)));
-    expect(document.querySelector("[data-given]")).toBeNull();
+    expect(document.querySelector("[data-given-link]")).toBeNull();
   });
 
   it("ignores a reply still on its way once the Dla child changed", async () => {
@@ -602,7 +602,7 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
     const { rerender } = await giving(giveLesson);
     await act(async () => rerender(workspace(null)));
     await act(async () => answer({ assignment: { id: ASSIGNMENT } }));
-    expect(document.querySelector("[data-given]")).toBeNull();
+    expect(document.querySelector("[data-given-link]")).toBeNull();
   });
 
   it("words a refusal: a lesson changed since its check, and any other failure", async () => {
