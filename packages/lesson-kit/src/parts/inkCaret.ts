@@ -9,6 +9,12 @@
  * without a wrapper. While letters are selected it stands at the selection's moving end, beside the
  * selection's fill, so a focused field always shows it (dl-uukj.29.99). It hides on a read-only
  * field. A textarea keeps the native caret: its lines wrap.
+ *
+ * A coarse pointer (a phone, a tablet) keeps the native caret too, in --jw-focus (foundation.css):
+ * the bar is fixed to the window, and iOS pans the page under it as its keyboard opens without a
+ * scroll or resize the bar hears, so it blinked above the field or between a sentence's words
+ * (decision dl-xvtqp, dl-uukj.29.169). Read at each focus, so a laptop with a touch screen follows
+ * the pointer in use.
  */
 
 /** The x of the caret inside the field's content box: where the text starts by its alignment,
@@ -52,8 +58,11 @@ const FONT = [
 const WIDTH = 3;
 const BREATH = "jw-caret 1.2s ease-in-out infinite";
 
+const coarse = (): boolean =>
+  typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+
 function inkField(el: Element | null): HTMLInputElement | null {
-  if (!(el instanceof HTMLInputElement)) return null;
+  if (!(el instanceof HTMLInputElement) || coarse()) return null;
   if (!TYPED.has(el.getAttribute("type") ?? "") || el.readOnly || el.disabled) return null;
   return el.closest("[data-lesson-theme='zeszyt']") ? el : null;
 }
