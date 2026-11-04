@@ -594,13 +594,20 @@ export function movePlanPort(
 
 /**
  * Whether a refused call was made good later: the same verb on the same step went through, or a
- * lesson check passed. Another step's edit going through fixes nothing.
+ * lesson check the model asked for passed. Another step's edit going through fixes nothing, and
+ * neither does the engine's own check when a turn ends: it says the lesson is valid, not that a
+ * refused edit was made (dl-uukj.47.71.48).
  */
 function fixedLater(call: Call, all: readonly Call[]): boolean {
   const failedAt = call.result?.seq ?? 0;
   return all.some((c) => {
     if (c.result === undefined || c.result.failed || c.result.seq <= failedAt) return false;
-    if (c.verb === "lesson_check" && checkOf(c.result.output)?.publishable === true) return true;
+    if (
+      c.verb === "lesson_check" &&
+      !c.call_id.startsWith("auto_check_") &&
+      checkOf(c.result.output)?.publishable === true
+    )
+      return true;
     return c.verb === call.verb && c.input["step_id"] === call.input["step_id"];
   });
 }

@@ -854,6 +854,93 @@ describe("runStep and drain", () => {
     });
   });
 
+  describe("a step that throws (dl-hin8.51)", () => {
+    /** A model that throws `fails` times, then answers. */
+    async function throwing(fails: number) {
+      const t = await setup([{ text: "Done." }]);
+      const inner = t.deps.muse;
+      let calls = 0;
+      const deps: EngineDeps = {
+        ...t.deps,
+        muse: {
+          respond: (request) => {
+            calls += 1;
+            return calls <= fails ? Promise.reject(new Error("made up")) : inner.respond(request);
+          },
+        },
+      };
+      const slept: number[] = [];
+      const retry = {
+        after_s: [5, 20],
+        sleep: (ms: number) => {
+          slept.push(ms);
+          t.tick(ms);
+          return Promise.resolve();
+        },
+      };
+      const run = await t.say("Go.");
+      return { t, deps, retry, run, slept };
+    }
+
+    it("comes back in seconds, in the same drain", async () => {
+      const { t, deps, retry, run, slept } = await throwing(1);
+      await drain(deps, { retry });
+      expect(slept).toEqual([5_000]);
+      expect((await t.run(run)).status).toBe("completed");
+    });
+
+    it("waits longer the second time, and stops at its last read", async () => {
+      const { t, deps, retry, run, slept } = await throwing(3);
+      await drain(deps, { retry });
+      expect(slept).toEqual([5_000, 20_000]);
+      expect((await t.run(run)).status).toBe("failed");
+    });
+
+    it("stops its beats before the wait, so one cannot hide it again", async () => {
+      const { t, deps, retry, run } = await throwing(1);
+      let beat: (() => void) | null = null;
+      await drain(deps, {
+        keepAlive: (b) => {
+          beat = b;
+          return () => {
+            beat = null;
+          };
+        },
+        retry: {
+          ...retry,
+          sleep: (ms) => {
+            (beat as (() => void) | null)?.();
+            return retry.sleep(ms);
+          },
+        },
+      });
+      expect((await t.run(run)).status).toBe("completed");
+    });
+
+    it("does not wait when its drain is out of time", async () => {
+      const { deps, retry, slept } = await throwing(1);
+      // True for the read, false when the throw asks whether to wait, and false for the next read.
+      let asked = 0;
+      const outputs = await drain(deps, {
+        retry,
+        keep_going: () => {
+          asked += 1;
+          return asked === 1;
+        },
+      });
+      expect(asked).toBe(3);
+      expect(outputs).toEqual([]);
+      expect(slept).toEqual([]);
+    });
+
+    it("waits out its visibility when the host passes no retry", async () => {
+      const { t, deps, run, slept } = await throwing(1);
+      await drain(deps);
+      expect(slept).toEqual([]);
+      expect((await t.run(run)).status).not.toBe("completed");
+    });
+  });
+
   it("says how long a fresh step sat ready, and no wait for a redelivery (dl-hin8.52)", async () => {
     const t = await setup([{ text: "Done." }]);
     await t.say("Go.");
