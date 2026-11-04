@@ -582,6 +582,21 @@ describe("the help note", () => {
     rerender(shell({ ladder: { help: card(false), ask: null, refused: false } }));
     expect(container.querySelector("[data-help-blank]")).toBeNull();
   });
+
+  // dl-uukj.63: the api releases rung 3 as worked lines with no card and no hints; the note drew
+  // nothing, so after a miss the child asked for help and got an empty note.
+  it("draws an api rung's worked lines and its blank when the rung has no card", () => {
+    const almost = {
+      ...released(3),
+      hints: null,
+      worked: ["sz – k – o – ł – a", "Wyraz szkoła ma 5 głosek."],
+      blank: true,
+    };
+    const { container } = render(shell({ ladder: { help: almost, ask: null, refused: false } }));
+    const note = must(container.querySelector("[data-help-cards]"));
+    expect(note.textContent).toContain("sz – k – o – ł – a");
+    expect(container.querySelector("[data-help-blank]")).not.toBeNull();
+  });
 });
 
 describe("the top bar and the pause sheet", () => {

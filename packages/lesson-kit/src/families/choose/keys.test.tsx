@@ -1,7 +1,7 @@
 /**
  * Options, one answer and several (paper-behaviour README §3.3, dl-uukj.29.61): one test per row of
  * the table. A tap picks and nothing checks or scrolls; the picked one stays picked with one answer
- * and switches with several; 1 to 4 pick, with badges on the first four only; the arrows move the
+ * and switches with several; each digit picks its option, every option wearing its badge; the arrows move the
  * focus and the pick together; Space picks; Enter checks, or with nothing picked takes the focus to
  * the first option; after a miss the mark and the band stay until another pick, and the focus comes
  * back to the pick after every check. Invented items only.
@@ -150,13 +150,15 @@ describe("§3.3 tap and click", () => {
 });
 
 describe("§3.3 keys", () => {
-  it("1 to 4 pick that option and take the focus to it; the badges stop at 4", () => {
+  it("each digit picks its option and takes the focus to it; every option wears its badge", () => {
     draw(one);
+    // dl-uukj.59: past 4 options the badges go on, so the 5th is never bare.
     expect([...document.querySelectorAll("[data-key-badge]")].map((b) => b.textContent)).toEqual([
       "1",
       "2",
       "3",
       "4",
+      "5",
     ]);
     fireEvent.keyDown(document.body, { key: "3" });
     expect(must(radios()[2]).checked).toBe(true);
@@ -165,7 +167,10 @@ describe("§3.3 keys", () => {
     fireEvent.keyDown(must(radios()[2]), { key: "2" });
     expect(must(radios()[1]).checked).toBe(true);
     fireEvent.keyDown(document.body, { key: "5" });
-    expect(must(radios()[4]).checked).toBe(false);
+    expect(must(radios()[4]).checked).toBe(true);
+    // A digit past the last option picks nothing.
+    fireEvent.keyDown(document.body, { key: "6" });
+    expect(must(radios()[4]).checked).toBe(true);
   });
 
   it("↑ and ↓ move the focus and the pick together, wrapping, over an option help took away", () => {

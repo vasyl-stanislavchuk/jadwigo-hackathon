@@ -270,6 +270,24 @@ describe("DropZones: tap a card, then a group", () => {
     expect(onPlace).toHaveBeenLastCalledWith("4", TRAY);
   });
 
+  // dl-uukj.62: the second tap lands anywhere in the group's box, not only on its title, and a
+  // tap on a card inside a group picks that card rather than placing the held one there.
+  it("takes the second tap anywhere in the group's box", () => {
+    const onPlace = vi.fn();
+    const { container } = render(<Zones onPlace={onPlace} />);
+    const odd = must(
+      [...container.querySelectorAll("[data-drop-zone]")].find((z) =>
+        z.textContent?.includes("odd"),
+      ),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "9" }), { detail: 0 });
+    fireEvent.click(must(odd.lastElementChild), { detail: 0 });
+    expect(onPlace).toHaveBeenLastCalledWith("9", "odd");
+    fireEvent.click(screen.getByRole("button", { name: "4" }), { detail: 0 });
+    fireEvent.click(screen.getByRole("button", { name: "9" }), { detail: 0 });
+    expect(onPlace).toHaveBeenCalledTimes(1);
+  });
+
   it("a group tapped with no card picked does nothing", () => {
     const onPlace = vi.fn();
     render(<Zones onPlace={onPlace} />);

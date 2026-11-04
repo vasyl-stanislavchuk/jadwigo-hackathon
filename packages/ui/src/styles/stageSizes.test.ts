@@ -38,6 +38,20 @@ describe("sizes per answer kind", () => {
     expect(grid).toContain("auto-fill");
   });
 
+  it("lays a grid of 1, 2, or more than 4 options out in 2 columns at any width (dl-uukj.59)", () => {
+    const two = STAGE.slice(STAGE.indexOf(".kid-choice-grid:not(:has(> :nth-child(3))),"));
+    expect(two).toMatch(
+      /^\.kid-choice-grid:not\(:has\(> :nth-child\(3\)\)\),\s*\.kid-choice-grid:has\(> :nth-child\(5\)\) \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/,
+    );
+  });
+
+  it("lays a grid of 3 out in 3 columns from 40.25rem of its own width, and in 1 below", () => {
+    const three = rule(".kid-choice-grid:has(> :nth-child(3):last-child)");
+    expect(three).toContain("calc(33.333% - var(--kid-choice-gap))");
+    expect(three).toContain("calc((40.25rem - 100%) * 999)");
+    expect(three).toContain("auto-fill");
+  });
+
   it("puts a grid's key badge at the tile's side from 19.75rem, as it does for two", () => {
     const side = STAGE.slice(STAGE.indexOf("@container kid-choices (min-width: 19.75rem)"));
     expect(side).toMatch(
