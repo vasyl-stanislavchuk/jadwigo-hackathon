@@ -445,7 +445,7 @@ api-bundle:
 	rm -f $(API_BUNDLE)
 	bun build apps/api/src/index.ts --target=node --format=esm --minify \
 	  --banner='import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' \
-	  --outfile $(API_BUNDLE)
+	  --sourcemap=linked --outdir $(dir $(API_BUNDLE)) --entry-naming $(notdir $(API_BUNDLE))
 	@printf 'api-bundle: %s, %s bytes\n' $(API_BUNDLE) "$$(wc -c < $(API_BUNDLE) | tr -d ' ')"
 
 ## api-invoke: the bundle, invoked in a fresh Node with an API Gateway v2 event for GET /api/health;
@@ -472,7 +472,7 @@ NODE_BANNER := import { createRequire } from "node:module"; const require = crea
 EDGE_BANNER := $(NODE_BANNER) import { Buffer as __Buffer } from "node:buffer"; import __process from "node:process"; globalThis.Buffer ??= __Buffer; globalThis.process ??= __process; globalThis.global ??= globalThis;
 runner-bundle:
 	rm -f $(RUNNER_HOST) $(RUNNER_LAMBDA) $(RUNNER_EDGE)
-	bun build apps/runner/src/index.ts --target=node --format=esm --minify --banner='$(NODE_BANNER)' --outfile $(RUNNER_HOST)
+	bun build apps/runner/src/index.ts --target=node --format=esm --minify --banner='$(NODE_BANNER)' --sourcemap=linked --outdir $(dir $(RUNNER_HOST)) --entry-naming $(notdir $(RUNNER_HOST))
 	bun build apps/runner/src/probe-lambda.ts --target=node --format=esm --minify --banner='$(NODE_BANNER)' --outfile $(RUNNER_LAMBDA)
 	bun build apps/runner/src/probe-edge.ts --target=node --format=esm --minify --banner='$(EDGE_BANNER)' --outfile $(RUNNER_EDGE)
 	@printf 'runner-bundle: %s, %s bytes\n' $(RUNNER_HOST) "$$(wc -c < $(RUNNER_HOST) | tr -d ' ')"
