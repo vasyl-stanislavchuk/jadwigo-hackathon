@@ -9,6 +9,12 @@
 import { expect, type Page, test } from "@playwright/test";
 import { agreeToAi } from "./consent.ts";
 
+/**
+ * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
+ * place, as the bulb gives way to it (dl-uukj.65).
+ */
+const DONT_KNOW = "[data-dont-know], [data-move-on]";
+
 /** Plays equal-groups: 2 × 5 right on the first try, "Not sure yet" to every other question. */
 async function play(page: Page): Promise<void> {
   await page.goto("/");
@@ -25,8 +31,8 @@ async function play(page: Page): Promise<void> {
     await expect(page.locator("[data-bulb]").or(results)).toBeVisible();
     if (await results.isVisible()) return;
     await page.locator("[data-bulb]").click();
-    await page.locator("[data-dont-know]").click();
-    await expect(page.locator("[data-dont-know]")).toBeHidden();
+    await page.locator(DONT_KNOW).first().click();
+    await expect(page.locator(DONT_KNOW).first()).toBeHidden();
   }
   await expect(results).toBeVisible();
 }
