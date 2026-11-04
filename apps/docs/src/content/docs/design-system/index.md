@@ -76,5 +76,5 @@ place to see a part move.
 ## Next
 
 - [Tokens](/design-system/tokens/): every primitive, role and alias, with its value.
-- [Primitives](/design-system/primitives/): the components every screen builds on, and when to use each.
+- [Primitives](/design-system/primitives/): the components every screen builds on, and their rules.
 - [Question types](/design-system/question-types/): every interaction family and its types.
