@@ -1,5 +1,5 @@
 import { RunStepInput } from "@jadwigo/contracts/run";
-import type { HostReport } from "./host.ts";
+import { type HostReport, wordless } from "./host.ts";
 
 /**
  * How the host is invoked (dl-z5ja.20). Both callers only wake it; the queue is what it works from:
@@ -19,29 +19,37 @@ import type { HostReport } from "./host.ts";
 export function createRunnerHandler(
   host: () => Promise<HostReport>,
   log: (line: string) => void,
+  report: (error: unknown) => Promise<void> = () => Promise.resolve(),
 ): (event: unknown) => Promise<HostReport> {
   return async (event) => {
     const poke = RunStepInput.safeParse(event);
-    const report = await host();
+    let drained: HostReport;
+    try {
+      drained = await host();
+    } catch (error) {
+      // The host could not open or drain: the Lambda still fails, as the Errors alarm expects.
+      await report(wordless(error));
+      throw error;
+    }
     log(
       JSON.stringify({
         runner: "drained",
         poked: poke.success ? poke.data.run_id : null,
-        cold: report.cold,
-        steps: report.steps,
-        outcomes: report.outcomes,
-        events: report.events,
-        wall_ms: report.wall_ms,
-        cpu_ms: report.cpu_ms,
-        oldest_ready_step_age_s: report.stuck?.oldest_ready_step_age_s ?? null,
-        runs_past_deadline: report.stuck?.runs_past_deadline.length ?? 0,
-        failed: report.failed.map((f) => f.run_id),
-        dead_letters: report.dead_letters,
-        max_wait_s: report.max_wait_s,
-        runs: report.runs,
-        refused: report.refused,
+        cold: drained.cold,
+        steps: drained.steps,
+        outcomes: drained.outcomes,
+        events: drained.events,
+        wall_ms: drained.wall_ms,
+        cpu_ms: drained.cpu_ms,
+        oldest_ready_step_age_s: drained.stuck?.oldest_ready_step_age_s ?? null,
+        runs_past_deadline: drained.stuck?.runs_past_deadline.length ?? 0,
+        failed: drained.failed.map((f) => f.run_id),
+        dead_letters: drained.dead_letters,
+        max_wait_s: drained.max_wait_s,
+        runs: drained.runs,
+        refused: drained.refused,
       }),
     );
-    return report;
+    return drained;
   };
 }

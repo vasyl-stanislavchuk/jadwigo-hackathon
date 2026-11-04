@@ -139,7 +139,7 @@ auth-apply:
 # runs one turn against it. runner-rollback VERSION=<n> points `live` back; runner-status reads it.
 RUNNER_ZIP := ../apps/runner/dist/runner.zip
 RUNNER_ENTRY := $(abspath ../apps/runner/dist/index.mjs)
-RUNNER_PATHS := apps/runner packages/jadwigo-ai packages/store packages/contracts packages/core packages/lesson-import bun.lock
+RUNNER_PATHS := apps/runner packages/analytics packages/config packages/jadwigo-ai packages/store packages/contracts packages/core packages/lesson-import bun.lock
 
 runner-deploy:
 	@$(NOT_FROM_AGENT)

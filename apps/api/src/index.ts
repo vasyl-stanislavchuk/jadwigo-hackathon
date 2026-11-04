@@ -1,3 +1,4 @@
+import { type ReportError, serverErrorReporter } from "@jadwigo/analytics/server";
 import { createPostgresStore, type Store } from "@jadwigo/store";
 import { type AppDeps, createApp } from "./app.ts";
 import { s3Uploads, type UploadsBucket } from "./attachments.ts";
@@ -9,6 +10,7 @@ import {
   mcpAuthorizationServer,
   mcpResourceUrl,
   mediaUrl,
+  posthogKey,
 } from "./config.ts";
 import { lambdaMail, type MailDeps } from "./mail/hook.ts";
 import { lambdaPoke, type PokeStepHost } from "./poke.ts";
@@ -70,6 +72,7 @@ export function createHandler(
   uploads: UploadsBucket = s3Uploads(),
   mail: MailDeps | undefined = lambdaMail(),
   print: AppDeps["print"] = { bucket: s3Prints(), start: lambdaPrint(), media: mediaUrl() },
+  report: ReportError = serverErrorReporter({ key: posthogKey(), surface: "api" }),
 ) {
   let store: Promise<Store> | undefined;
   let failed = false;
@@ -96,10 +99,17 @@ export function createHandler(
 
   const mcp = { resourceUrl: mcpResourceUrl(), authorizationServer: mcpAuthorizationServer() };
   return (event: unknown, context: Context) =>
-    createApp(open(), { authenticate, bank, bucket, poke, uploads, mail, mcp, print }).resolve(
-      event,
-      context,
-    );
+    createApp(open(), {
+      authenticate,
+      bank,
+      bucket,
+      poke,
+      uploads,
+      mail,
+      mcp,
+      print,
+      report,
+    }).resolve(event, context);
 }
 
 /** The Lambda entry (`index.handler` in the bundle `make api-bundle` writes). */

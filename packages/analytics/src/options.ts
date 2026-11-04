@@ -6,8 +6,9 @@
  */
 import { posthogHosts } from "@jadwigo/config";
 import type { PostHogConfig } from "posthog-js";
-import { beforeSendFor, cutPath, maskAttribute } from "./before-send.ts";
+import { beforeSendFor, maskAttribute } from "./before-send.ts";
 import type { Surface } from "./catalog.ts";
+import { cutPath } from "./scrub.ts";
 
 export function posthogOptions(surface: Surface): Partial<PostHogConfig> {
   return {
@@ -24,7 +25,12 @@ export function posthogOptions(surface: Surface): Partial<PostHogConfig> {
     rageclick: false,
     capture_dead_clicks: false,
     capture_heatmaps: false,
-    capture_exceptions: false,
+    // Uncaught errors, scrubbed in before_send (dl-w0b4.148). A console.error can hold any text.
+    capture_exceptions: {
+      capture_unhandled_errors: true,
+      capture_unhandled_rejections: true,
+      capture_console_errors: false,
+    },
     capture_performance: false,
     disable_surveys: true,
     disable_product_tours: true,

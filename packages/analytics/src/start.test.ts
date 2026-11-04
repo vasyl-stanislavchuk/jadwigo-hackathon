@@ -90,7 +90,11 @@ describe("posthogOptions", () => {
       cross_subdomain_cookie: true,
       person_profiles: "never",
       autocapture: false,
-      capture_exceptions: false,
+      capture_exceptions: {
+        capture_unhandled_errors: true,
+        capture_unhandled_rejections: true,
+        capture_console_errors: false,
+      },
       respect_dnt: false,
       disable_capture_url_hashes: true,
     });

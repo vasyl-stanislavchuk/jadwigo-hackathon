@@ -62,6 +62,11 @@ export function port(): number {
   return apiPort(process.env);
 }
 
+/** PostHog's public project key, where errors are reported (dl-5ssh.158). Unset, none are. */
+export function posthogKey(): string | undefined {
+  return process.env["JW_POSTHOG_KEY"]?.trim() || undefined;
+}
+
 /**
  * Where the token routes' keys are: Supabase's JWKS, `https://<ref>.supabase.co/auth/v1/.well-known/jwks.json`.
  * Unset, the local server and the Lambda accept no token unless API Gateway's authorizer verified
