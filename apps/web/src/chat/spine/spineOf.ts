@@ -161,7 +161,7 @@ export function spineOf(
   const startedAt = first === undefined ? now : at(first);
 
   // Walk the log: the plan's stages and visits, where each call and line lands.
-  let entries: { text: string; status: string }[] = [];
+  let entries: { text: string }[] = [];
   const visits: number[] = [];
   /** The stage being worked on: the last one a call or the plan entered. */
   let current: number | null = null;
@@ -181,15 +181,19 @@ export function spineOf(
     for (const p of placed) if (p.stage === NEXT) p.stage = stage;
     for (const m of agent) if (m.stage === NEXT) m.stage = stage;
   };
-  /** Work moves to `stage`: a visit when it was not the stage being worked on (D1). */
-  /** Stages the plan marked done since work last entered them. */
-  const settled = new Set<number>();
   /**
-   * Work enters `stage`. A new visit (D1, "drugi raz") when work comes back to it from another
-   * stage, or after it settled done; consecutive work in one stage is one visit.
+   * Stages whose own verb (PLAN_STAGE_OF) went through since work last entered them, by that verb:
+   * finished, as the engine marks a stage done then. Read from the calls, never the plan's statuses.
    */
-  const enter = (stage: number): void => {
-    if (current !== stage || settled.has(stage)) {
+  const settled = new Map<number, VerbName>();
+  /**
+   * Work enters `stage` with `verb`. A new visit (D1, "drugi raz") when work comes back to it from
+   * another stage, or when other work resumes it once it finished (s06: an edit after the check).
+   * Consecutive work in one stage is one visit, the same verb again included (a second search).
+   */
+  const enter = (stage: number, verb: VerbName): void => {
+    const finishedBy = settled.get(stage);
+    if (current !== stage || (finishedBy !== undefined && finishedBy !== verb)) {
       visits[stage] = (visits[stage] ?? 0) + 1;
       current = stage;
     }
@@ -197,41 +201,33 @@ export function spineOf(
     place(stage);
   };
   /**
-   * The stage work is on between calls: the one worked on, or, once it is done, the plan's next
-   * stage still pending, which the stages run in order to (jadwigo-ai plan.ts).
+   * The stage work is on between calls: the one worked on, or, once it finished, the next stage
+   * work has not reached, since the plan's stages run in order (jadwigo-ai plan.ts).
    */
   const openStage = (): number | null => {
-    if (current === null || entries[current]?.status !== "done") return current;
-    const pending = entries.findIndex((e) => e.status === "pending");
-    return pending === -1 ? current : pending;
+    if (current === null || !settled.has(current)) return current;
+    const next = entries.findIndex((_, i) => i > (current ?? 0) && (visits[i] ?? 0) === 0);
+    return next === -1 ? current : next;
   };
   /** Where a line said now lands: the call at work's stage, else the next call's. */
   const stageNow = (): number => {
     if (entries.length === 0) return LOOSE;
     return running() && current !== null ? current : NEXT;
   };
-  const settles = settlesIn(log);
 
   for (const e of log) {
     switch (e.type) {
       case "plan": {
-        if (settles.has(e.seq)) break;
-        const next = e.payload.entries;
-        const started = next.findIndex(
-          (entry, i) => entry.status === "in_progress" && entries[i]?.status !== "in_progress",
-        );
+        // Which stages there are and their names only: what ended comes from the calls
+        // (dl-uukj.47.71.49), so the engine's end-of-turn settle never marks a stage.
         const first = entries.length === 0;
-        next.forEach((entry, i) => {
-          if (entry.status === "done" && entries[i]?.status !== "done") settled.add(i);
-        });
-        entries = next.map((entry) => ({ text: entry.text, status: entry.status }));
-        if (started !== -1) enter(started);
+        entries = e.payload.entries.map((entry) => ({ text: entry.text }));
         // Calls made before the turn had a plan take their stage now, as they would have then.
         if (first)
           for (const c of calls.values()) {
             if (c.stage !== LOOSE) continue;
             const own = STAGE_OF[c.verb] ?? current ?? 0;
-            if (current === null) enter(own);
+            if (current === null) enter(own, c.verb);
             c.stage = own;
             c.visit = visits[own] ?? 0;
           }
@@ -242,7 +238,7 @@ export function spineOf(
         // A verb with a stage enters it; any other joins the stage work is on, resuming it as its
         // next visit when it settled done (s06: edits after a check open the check again).
         const own = STAGE_OF[e.payload.verb] ?? (running() ? current : openStage());
-        if (own !== null && own !== undefined && entries.length > 0) enter(own);
+        if (own !== null && own !== undefined && entries.length > 0) enter(own, e.payload.verb);
         const stage = entries.length === 0 ? LOOSE : (own ?? NEXT);
         calls.set(e.payload.call_id, {
           call_id: e.payload.call_id,
@@ -259,6 +255,8 @@ export function spineOf(
         const call = calls.get(e.payload.call_id);
         if (call === undefined || call.result !== undefined) break;
         call.result = { seq: e.seq, output: e.payload.output, failed: e.payload.error !== null };
+        if (e.payload.error === null && PLAN_STAGE_OF[call.verb] === call.stage)
+          settled.set(call.stage, call.verb);
         const steps = e.payload.output?.["steps"];
         if (call.verb === "lesson_show" && Array.isArray(steps))
           reads.push({ seq: e.seq, ids: steps.filter((s): s is string => typeof s === "string") });
@@ -439,18 +437,30 @@ export function spineOf(
 
   const ordered = placed.sort((a, b) => a.seq - b.seq);
   const staged = entries.length >= MIN_STAGES;
+  // Each stage's mark, from the calls (dl-uukj.47.71.49).
+  const furthest = visits.reduce((far, n, i) => ((n ?? 0) > 0 ? i : far), -1);
+  const finishedHere = here >= 0 && settled.has(here) && !stillRunning;
+  const mark: Marks = {
+    here,
+    phase: kind,
+    reached: (i) => (visits[i] ?? 0) > 0 || i < furthest,
+    // A failed turn: the stage being worked on failed, finished or not (D7); once it had finished,
+    // the next one, which never got going.
+    failedAt: !finishedHere
+      ? here
+      : (() => {
+          const next = entries.findIndex((_, i) => i > here && (visits[i] ?? 0) === 0);
+          return next === -1 ? here : next;
+        })(),
+    // A stopped turn: the stage being worked on, unless its verb had finished there (S15).
+    stoppedAt: here >= 0 && (visits[here] ?? 0) > 0 && !finishedHere ? here : -1,
+  };
   const stages: Stage[] = staged
     ? entries.map((entry, i) => {
         const lines = ordered
           .filter((p) => p.stage === i || (i === 0 && p.stage === LOOSE))
           .map((p) => p.line);
-        const status = stageStatus(
-          entry.status,
-          i === here,
-          (visits[i] ?? 0) > 0,
-          stillRunning,
-          kind,
-        );
+        const status = stageStatus(i, mark);
         return {
           id: String(i),
           name: entry.text,
@@ -462,23 +472,6 @@ export function spineOf(
       })
     : [];
   const looseLines = staged ? [] : [...ordered.map((p) => p.line), ...tail];
-
-  // A failed turn whose plan never said which stage failed: the open one did, or, when the last
-  // stage that ran had finished, the next one, which never got going.
-  if (staged && kind === "failed" && !stages.some((s) => s.status === "failed")) {
-    const at =
-      stages[here]?.status === "done"
-        ? stages.findIndex((s, i) => i > here && s.status === "todo")
-        : here;
-    const open = stages[at];
-    if (open !== undefined) {
-      stages[at] = {
-        ...open,
-        status: "failed",
-        summary: { copyKey: "chat_stage_failed_sum", values: { n: Math.max(1, tries) } },
-      };
-    }
-  }
 
   const title = agent.find((m) => m !== reply && titleOf(m.text) !== "");
   const foot = footOf(kind, Math.max(1, tries), revisions);
@@ -496,100 +489,6 @@ export function spineOf(
     ...(foot ? { foot } : {}),
     ...(reply ? { reply: reply.text } : {}),
   };
-}
-
-/**
- * The engine's settle, as jadwigo-ai plan.ts `settlePlan` writes it: every stage not done reads
- * failed, or nothing when every stage is already done or failed.
- */
-function settled(entries: readonly { status: string }[]): string[] | null {
-  if (entries.every((e) => e.status === "done" || e.status === "failed")) return null;
-  return entries.map((e) => (e.status === "done" ? "done" : "failed"));
-}
-
-/**
- * The seqs of the plan events that are the engine's end-of-turn settle (dl-uukj.47.71.37). The
- * settle says nothing about the stages, so the fold reads the plan before it. A plan event is one
- * only when all 3 hold: it comes right before the turn's end status (`endTurn` writes them
- * together); it is exactly `settlePlan` of the plan before it; and it is not the end move a result
- * comes with, which `runTool` writes right after the result or its revision, as the engine's
- * `movePlan` makes it (`movePlanPort` asks the same). The last keeps a check that failed and was
- * then stopped (done, done, failed, no settle written) failed, since by content alone it is the
- * settle of (done, done, in_progress); and it lets a settle that follows a repeat draft or search,
- * whose stage was already done and so has no end move, be read as the settle.
- *
- * Depends on the engine's write order: `runTool` in packages/jadwigo-ai/src/run/run-step.ts appends
- * a verb's result, its revision and its plan end move together in one unit, so nothing comes between
- * them. If that order changes, so must this. Once `settlePlan` leaves unreached stages pending
- * rather than failed (dl-hin8.32), only a stage under way changes at the end, and this can simplify.
- */
-function settlesIn(log: readonly RunEvent[]): ReadonlySet<number> {
-  const found = new Set<number>();
-  // What each call was, and whether it failed: the end move runTool writes depends on both.
-  const verbOf = new Map(
-    log.flatMap((e) =>
-      e.type === "tool_call" ? [[e.payload.call_id, e.payload.verb] as const] : [],
-    ),
-  );
-  let before: readonly { status: string }[] | null = null;
-  log.forEach((e, i) => {
-    if (e.type !== "plan") return;
-    const next = log[i + 1];
-    const prior = log[i - 1];
-    const atEnd =
-      next?.type === "status" && ["completed", "failed", "cancelled"].includes(next.payload.status);
-    // The result (or its revision) right before this event, and how it ended.
-    const ended =
-      prior?.type === "tool_result"
-        ? { verb: prior.payload.verb, failed: prior.payload.error !== null }
-        : prior?.type === "lesson_revision"
-          ? { verb: verbOf.get(prior.payload.call_id), failed: false }
-          : null;
-    // Is this event that result's own end move? Exactly when the engine's movePlan, run on the plan
-    // before it, makes one and makes this one. A verb with no stage, or a stage already done (a
-    // repeat draft or search), makes none, so a settle may follow its result straight away.
-    const move =
-      ended?.verb === undefined
-        ? null
-        : movePlanPort(before, ended.verb, ended.failed ? "failed" : "done");
-    const endMove = move !== null && sameStatuses(move, e.payload.entries);
-    const expected = before === null ? null : settled(before);
-    const isSettle = expected !== null && sameStatuses(expected, e.payload.entries);
-    if (atEnd && isSettle && !endMove) found.add(e.seq);
-    before = e.payload.entries;
-  });
-  return found;
-}
-
-/** Whether 2 plans have the same statuses, entry by entry. */
-function sameStatuses(
-  statuses: readonly string[],
-  entries: readonly { status: string }[],
-): boolean {
-  return statuses.length === entries.length && entries.every((e, k) => e.status === statuses[k]);
-}
-
-/**
- * The engine's movePlan, ported exactly: packages/jadwigo-ai/src/run/plan.ts `movePlan`. The
- * statuses with `verb`'s stage moved to `status`, or null when nothing changes: no plan, a verb
- * outside PLAN_STAGE_OF, or the stage already there. A stage once done stays done; a draft moves a
- * search still pending to done. `movePlan.test.ts` runs this and the engine's over the same inputs,
- * so a change to the engine fails it.
- */
-export function movePlanPort(
-  entries: readonly { status: string }[] | null,
-  verb: VerbName,
-  status: "pending" | "in_progress" | "done" | "failed",
-): string[] | null {
-  const stage = PLAN_STAGE_OF[verb];
-  if (entries === null || stage === undefined) return null;
-  const next = entries.map((e) => e.status);
-  const at = next[stage];
-  if (at === undefined) return null;
-  if (at === "done") return null;
-  next[stage] = status;
-  if (stage === 1 && next[0] === "pending") next[0] = "done";
-  return next.every((s, i) => s === entries[i]?.status) ? null : next;
 }
 
 /**
@@ -655,39 +554,35 @@ function nowLine(
   return { kind: "now", ...plainWords(running.verb, running.input), startedAt: running.at };
 }
 
+/** What a stage's mark is read from: the open stage, the turn's phase, and where work got. */
+interface Marks {
+  here: number;
+  phase: SpinePhase;
+  /** Work reached the stage: it ran there, or a later stage ran (a draft-first turn's search). */
+  reached: (stage: number) => boolean;
+  failedAt: number;
+  stoppedAt: number;
+}
+
 /**
- * A stage's mark (§4.1). The stage being worked on takes the turn's phase; one left for another is
- * done once it ran, since the engine never re-opens it, and todo when it never did. A stage reads
- * failed only when its verb failed: the engine's settle is never read (S15, dl-uukj.47.71.37).
+ * A stage's mark (§4.1), from the calls, never the plan's statuses (dl-uukj.47.71.49). A stage work
+ * reached is done; one it never reached is todo. While the turn runs, the open stage is active, or
+ * waiting on the parent. A failed turn marks the stage being worked on failed (D7); a stopped turn
+ * marks it stopped (S15), unless its verb had already finished there.
  */
-function stageStatus(
-  plan: string,
-  open: boolean,
-  visited: boolean,
-  running: boolean,
-  phase: SpinePhase,
-): StageStatus {
-  if (!open) {
-    if (plan === "failed") return "failed";
-    if (plan === "done") return "done";
-    return visited ? "done" : "todo";
-  }
-  switch (phase) {
+function stageStatus(i: number, m: Marks): StageStatus {
+  const left: StageStatus = m.reached(i) ? "done" : "todo";
+  switch (m.phase) {
     case "done":
-      return "done";
-    case "cancelled":
-      if (running || plan === "in_progress") return "stopped";
-      if (plan === "failed") return "failed";
-      if (plan === "done") return "done";
-      // Work had entered it (a read before its verb ran): stopped there.
-      return visited ? "stopped" : "todo";
+      return left;
     case "failed":
-      if (plan === "done" && !running) return "done";
-      return visited || plan === "in_progress" ? "failed" : "todo";
+      return i === m.failedAt ? "failed" : left;
+    case "cancelled":
+      return i === m.stoppedAt ? "stopped" : left;
     case "awaiting_input":
-      return "waiting";
+      return i === m.here ? "waiting" : left;
     default:
-      return "active";
+      return i === m.here ? "active" : left;
   }
 }
 
