@@ -1484,6 +1484,31 @@ describe("on a phone in a lesson the answer sits in the page", () => {
     </div>
   );
 
+  // Decision dl-6ihrv, dl-uukj.29.174: the phone's own keyboard has the Polish letters.
+  const letters = (
+    <>
+      <input aria-label="answer" data-field="a" />
+      <Tools kind="letters">
+        <div data-letters>ą ć ę</div>
+      </Tools>
+    </>
+  );
+
+  it("on a touch phone draws no letter row, and no dock or fold arrow for it", () => {
+    const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);
+    expect(container.querySelector("[data-letters]")).toBeNull();
+    // With no tool on the step the dock, its fold arrow inside it, stays hidden.
+    const dock = container.querySelector<HTMLElement>("[data-tools-dock]");
+    expect(dock === null || dock.hidden).toBe(true);
+    expect(container.querySelector('[data-area="answer"] [data-fold]')).toBeNull();
+  });
+
+  it("with a mouse still docks the letter row above the footer", () => {
+    const { container } = render(lesson({ answer: letters }));
+    const dock = must(container.querySelector<HTMLElement>("[data-tools-dock]"));
+    expect(dock.querySelector("[data-letters]")).not.toBeNull();
+  });
+
   it("keeps the fields in the page and docks only the keypad above the footer", () => {
     const { container } = render(lesson());
     const answer = must(container.querySelector<HTMLElement>('[data-area="answer"]'));
