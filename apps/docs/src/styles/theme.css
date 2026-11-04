@@ -1,7 +1,8 @@
-/* The docs wear the app's design system (decision
- * jadwigo-platform/notes/2026-10-30-docs-jadwigo-pl-wears-the-app-s-design-system-in-andika-day-and,
- * dl-5ssh.90.30): Andika for body and headings, code in the system mono, the day roles in light and
- * the night roles in dark.
+/* The docs read like the parent app: the adult audience of the app's design system (owner,
+ * 2026-11-04, dl-5ssh.90.53.19). Geist for body and headings, Geist Mono for code, the adult type
+ * scale (body 17, h1 28, h2 22), 1px lines, corners 6 and 10, and flat controls with no pressed edge.
+ * The colours stay Zeszyt's day and night roles: the app's adult layer is light only, and the docs
+ * keep a dark theme.
  *
  * Every colour here is a Zeszyt role, --jw-* from @jadwigo/ui foundation.css, never a literal:
  * src/theme.test.ts fails a hex, an rgb() or hsl(), or a --jw-* name foundation.css does not set, and
@@ -10,13 +11,25 @@
  * is written once and serves both themes.
  *
  * Starlight's own rules sit in cascade layers, and these do not, so a plain :root wins over its
- * :root[data-theme="light"]. The rest are notebook touches, calm enough for developer docs: the
- * card's radius, 2px lines, a hard edge under a button, and no blurred shadow anywhere. */
+ * :root[data-theme="light"]. */
 
 :root {
-  --sl-font: var(--jw-font);
-  /* Code keeps Starlight's system mono. @jadwigo/ui's --font-mono, the same stack, sits in
-     * tokens.css, which the package does not export. */
+  --sl-font: var(--jw-font-adult);
+  --sl-font-mono: var(--jw-font-mono);
+
+  /* The adult shape (foundation.css's [data-audience="adult"]), without its light-only colours. */
+  --jw-border: 1px;
+  --jw-press: 0px;
+  --jw-radius-control: 0.375rem;
+  --jw-radius-card: 0.625rem;
+  --jw-radius-small: 0.25rem;
+
+  /* The adult type scale: body 17, h1 28, h2 22. */
+  --sl-text-body: 1.0625rem;
+  --sl-text-h1: 1.75rem;
+  --sl-text-h2: 1.375rem;
+  --sl-text-h3: 1.125rem;
+  --sl-text-h4: 1.0625rem;
 
   /* Starlight's grey scale runs from the strongest text (white) to the page (black) in both
      * themes, so the roles go in once. */
@@ -99,7 +112,7 @@
   color: var(--jw-pick-ink);
 }
 
-/* Cards and the boxes like them: the card's radius and a 2px line. */
+/* Cards and the boxes like them: the card's radius and a 1px line. */
 .sl-link-card,
 .card,
 .pagination-links a,
@@ -118,13 +131,12 @@
   border-radius: var(--jw-radius-small);
 }
 
-/* A button is drawn as @jadwigo/ui draws one (foundation.css, button.tsx): bold Andika, the control
- * radius, a fill that runs to its edge, standing on a 4px edge it sinks into when pressed. */
+/* A button is drawn as the parent app draws one: medium Geist, the control radius, flat. */
 .sl-link-button {
   border: var(--jw-border) solid transparent;
   border-radius: var(--jw-radius-control);
   background-clip: border-box;
-  font-weight: var(--jw-weight-strong);
+  font-weight: 500;
   transition: transform var(--jw-dur-fast) var(--jw-ease-out);
   /* Starlight grows a button to body size on a wide screen; a docs button stays small at every width. */
   font-size: var(--sl-text-sm);
@@ -150,7 +162,7 @@
   box-shadow: 0 var(--jw-press) 0 var(--jw-act-edge);
 }
 
-/* Anything else is paper with a quiet 2px line, on an edge of the same line. */
+/* Anything else is paper with a quiet 1px line. */
 .sl-link-button.secondary {
   background-color: var(--jw-card);
   border-color: var(--jw-line);

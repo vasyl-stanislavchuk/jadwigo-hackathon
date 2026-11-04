@@ -1,13 +1,27 @@
 ---
 title: Experiments
-description: Seven experiments on Meta Muse that show the vision working, on invented learners only.
+description: Seven runs on Meta's Muse models that test the vision on invented learners, each with its cost and what failed.
 ---
 
-These experiments are for a judge who would rather see a run than a promise: each one states what
-it shows, how it ran, what it cost and what came out, on invented learners only. This page is
-being written for the 4 November demo.
+Each experiment asks one question about the vision and answers it with a run, not a promise. All
+7 used invented learners, invented homework or invented answers. No real child's data went in.
+
+Read the verdict column first. 4 runs found the idea works, with a catch each, and 3 found where
+it does not work yet. Each page states its setup, result, what failed and cost, from the call ledger.
+
+## Every experiment
+
+| Run | Question | Result | Cost | Verdict |
+| --- | --- | --- | --- | --- |
+| [E1](/experiments/e1/) | Can code turn practice into what a child knows? | 12 invented learners over 21 days come out clearly different. 79 of 120 skill rows get flagged, too many. | $0, no model | Works, over-flags |
+| [E2](/experiments/e2/) | Can the next lesson be drawn from that? | 11 of 12 learners got a lesson, 1 got none. Fit rated 2.39 of 5. | $0.09 | Not yet |
+| [E3](/experiments/e3/) | Can a model write the parent's report from code's facts? | Judges rated accuracy 4.8 of 5, but 1 of 12 reports passed the code check. | $0.16 | Not yet |
+| [E4](/experiments/e4/) | What did indexing the bank with Meta models cost? | $10.28 across 3,253 calls. A new set costs about $0.018 to enrich. | $10.28 | Works |
+| [E5](/experiments/e5/) | Does the bank's search test catch a worse index? | It blocks the newer index, which declines fewer questions it should decline. | $0.08 | Gate works, index blocked |
+| [E6](/experiments/e6/) | What does one lesson cost, photo to play? | 2 of 3 worksheets became lessons in about 40 seconds for $0.0024 each. 1 of the 2 drafts fails to compile. The spelling one got nothing and no error. | $0.005 | Partly |
+| [E7](/experiments/e7/) | Can a model judge a child's own words? | 2 models agreed with the team's labels on about 95% of 80 invented answers. | $0.02 | Works, on invented answers |
 
 ## Next
 
 - [E1: learner knowledge on a cohort](/experiments/e1/): the first run.
-- [Vision](/vision/): what each run seeds.
+- [Vision](/vision/): what each run is for.
