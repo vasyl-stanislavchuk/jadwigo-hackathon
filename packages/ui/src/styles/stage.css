@@ -133,17 +133,11 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
   line-height: 1.3;
 }
 
-/* The prompt card: the question, its picture and its clips. The quietest raised surface. */
+/* The question, its picture and its clips, unboxed on the page: only what a child taps or types
+ * into is boxed, so the question never reads as one more option (decision dl-xvtqp,
+ * dl-uukj.29.168). The attribute stays: the scroll and no-jump rules find the question by it. */
 [data-prompt-card] {
-  background-color: var(--card);
-  color: var(--card-foreground);
-  border: 0.125rem solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: calc(var(--spacing) * 5);
-}
-
-.kid-step-shell:is([data-frame="phone"], [data-frame="phone-sideways"]) [data-prompt-card] {
-  padding: calc(var(--spacing) * 4);
+  color: var(--foreground);
 }
 
 /* ---- The answer: the docked tools and the fold (lesson-frame README §2-3, Enter addendum 4) ---- */

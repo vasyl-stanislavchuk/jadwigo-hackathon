@@ -34,7 +34,11 @@ export const ROLE_GROUPS: readonly { title: string; lead: string; roles: readonl
           "Options, tiles, keys and fields: white on the white page, told apart by their line.",
         ink: "ink",
       },
-      { name: "prompt-card", means: "The card that holds the question.", ink: "ink" },
+      {
+        name: "prompt-card",
+        means: "Reserved for the solution's sheet: the question itself stands unboxed on the page.",
+        ink: "ink",
+      },
       { name: "ink-soft", means: "Quiet words: small print, the link actions." },
       {
         name: "placeholder",
@@ -108,8 +112,8 @@ export const ZONES: readonly { title: string; what: string; size: string }[] = [
     size: "22 px, 20 px on a phone",
   },
   {
-    title: "Prompt card",
-    what: "The question: numbers, a sentence, a picture. Listen on the right.",
+    title: "Question",
+    what: "The question: numbers, a sentence, a picture, unboxed on the page so it never reads as an option. Listen on the right.",
     size: "32 px, 28 px on a phone",
   },
   {

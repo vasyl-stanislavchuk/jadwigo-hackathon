@@ -176,7 +176,8 @@ function Face({
           {item.letter}
         </span>
       )}
-      <span className="flex flex-col">
+      {/* A word longer than its tile breaks, hyphenated in the question's language (dl-uukj.29.168). */}
+      <span className="flex min-w-0 flex-col break-words hyphens-auto">
         {item.content}
         {item.note && !edge && (
           <span className="text-base font-normal" {...words}>
@@ -406,7 +407,9 @@ export function ChoiceGroup({
             className={cn(
               look(item, on, shown),
               "cursor-pointer select-none",
-              !isCentred(shown) && "text-left",
+              // A tile with a checkbox starts at its left, so the boxes stand in one column and a
+              // long word wraps inside the tile instead of pushing the box out (dl-uukj.29.168).
+              "justify-start text-left",
             )}
             onPointerDown={handlers.onPointerDown}
             onClick={handlers.onClick}

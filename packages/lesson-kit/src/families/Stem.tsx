@@ -114,7 +114,7 @@ export function Stem({
             className={
               ONE_FORMULA.test(question)
                 ? "text-center text-jw-math font-bold"
-                : "text-kid-answer font-semibold"
+                : "text-kid-say font-semibold"
             }
           />
         ) : (
