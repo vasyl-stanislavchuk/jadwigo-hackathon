@@ -31,5 +31,5 @@ from their own [connected AI app](/features/connect-your-ai/) reaches the child 
 
 ## Next
 
-- [The player and its question families](/features/player-and-families/): what the child plays.
+- [Player and question families](/features/player-and-families/): what the child plays.
 - [Connect your AI](/features/connect-your-ai/): giving a lesson from the parent's own AI app.

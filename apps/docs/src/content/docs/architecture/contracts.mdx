@@ -11,7 +11,7 @@ else, these docs included, is built from it or checked against it.
 
 <Diagram name="contracts" caption="One table feeds the code, and the same table feeds these docs." />
 
-## The code
+## Code
 
 - **The API** looks up each route in the table and parses the request and its own reply against
   the route's schemas. A handler never trusts its input.
@@ -21,7 +21,7 @@ else, these docs included, is built from it or checked against it.
   puts the JWT check on the parent routes. A check fails the build when that list and `ROUTES`
   differ, so a new route can't slip past its limits.
 
-## The docs
+## Docs
 
 The OpenAPI document is generated from the table and kept as a snapshot, and a test fails when
 the two differ. So a contract change always shows in review. The docs build copies the snapshot

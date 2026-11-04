@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 176" role="img" aria-labelledby="story-timeline-light-title story-timeline-light-desc">
 <title id="story-timeline-light-title">Jadwigo in 10 days</title>
-<desc id="story-timeline-light-desc">From the first commit on 26 October to demo day on 4 November: the board, the first lesson from the bank, the dream, English lessons, the chat-first parent app, the demo cut and demo day.</desc>
+<desc id="story-timeline-light-desc">From the first commit on 26 October to demo day on 4 November: the board, the first lesson from the bank, the dream, English lessons, the chat-first parent app, the demo cut, and demo day, when the whole class practises for tomorrow's test.</desc>
 <defs><marker id="story-timeline-light-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#5a6b85"/></marker><marker id="story-timeline-light-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#2941f3"/></marker><marker id="story-timeline-light-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#0f7f76"/></marker><marker id="story-timeline-light-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#5a6b85" stroke-width="1.2"/></marker></defs>
 <line x1="48" y1="88" x2="912" y2="88" stroke="#667997" stroke-width="1.2"/>
 <circle cx="80" cy="88" r="5" fill="#ffffff" stroke="#5a6b85" stroke-width="1.2"/>
@@ -24,4 +24,6 @@
 <text x="740" y="138" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Demo cut: the parent's path</text>
 <text x="872" y="52" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.06em" fill="#2941f3">11-04</text>
 <text x="872" y="70" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Demo day</text>
+<text x="944" y="112" text-anchor="end" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="11" fill="#5a6b85">The whole class practises</text>
+<text x="944" y="126" text-anchor="end" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="11" fill="#5a6b85">for tomorrow's test</text>
 </svg>

@@ -31,7 +31,7 @@ it is on [What's next](/next/).
 
 ## For children
 
-- **[The player](/features/player-and-families/).** One question at a time, in 7 kinds of
+- **[Player](/features/player-and-families/).** One question at a time, in 7 kinds of
   interaction, with a short celebration after 3 right answers in a row.
 - **Lesson review.** After a lesson, the child looks back at each question, their answer and the
   right one.
@@ -45,7 +45,7 @@ Every answer a child gives is kept as evidence, and Jadwigo turns it into what t
   attention, and a date when it's due again. No model computes a level.
 - **Goals.** A parent sets goals in their own words, each tied to the skills it needs. Each goal
   shows what's going well, what needs attention and what comes next.
-- **The learner panel.** The parent sees each goal's 3 lists, the last 4 weeks of practice and the
+- **Learner panel.** The parent sees each goal's 3 lists, the last 4 weeks of practice and the
   newest report, in words, never as a score or a percentage.
 - **Reports.** Code writes a digest of what moved. A model writes the parent's words from it, and a
   proposal changes nothing until the parent accepts it.
@@ -57,19 +57,19 @@ yet. That is [the learning loop](/vision/learning-loop/).
 
 ## Content
 
-- **[The question bank](/features/question-bank/).** Khan Academy maths for grades 1 to 4 and
+- **[Question bank](/features/question-bank/).** Khan Academy maths for grades 1 to 4 and
   Alfik Matematyczny, in Polish and English, searchable, with only lesson-ready questions offered.
 - **Credits.** Every borrowed question shows its source and licence.
 - **Featured lessons.** A few lessons anyone can play, shown on jadwigo.pl.
 
 ## For developers and agents
 
-- **[The API](/guides/introduction/)**, versioned, with an OpenAPI document and a typed
+- **[API](/guides/introduction/)**, versioned, with an OpenAPI document and a typed
   [TypeScript client](/typescript/).
 - **[Two MCP servers](/mcp/):** a local one for lesson authors and a remote one for a parent's AI.
-- **[The AI engine](/architecture/ai-engine/).** Each chat turn runs as steps on Meta's Muse
+- **[AI engine](/architecture/ai-engine/).** Each chat turn runs as steps on Meta's Muse
   models, with a daily spending cap per family.
-- **[The design system](/design-system/)** in 2 looks: a notebook look for children and a calm one
+- **[Design system](/design-system/)** in 2 looks: a notebook look for children and a calm one
   for parents.
 - **jadwigo.pl**, the marketing site in Polish and English, and **these docs**, built from the code.
 
@@ -77,4 +77,4 @@ yet. That is [the learning loop](/vision/learning-loop/).
 
 - [What's next](/next/): the vision, and the experiments behind it.
 - [How it is built](/architecture/): the system, from one page to the details.
-- [The story](/story/): how it got here in 10 days.
+- [Story](/story/): how it got here in 10 days.

@@ -16,7 +16,7 @@ to register each one, how an agent drafts a lesson, and every tool the local ser
 
 The table under "Every server" puts the 2 side by side.
 
-## The local server
+## Local server
 
 `jw mcp serve` speaks MCP on stdio. Each tool calls the same function as a `jw` command, so a
 tool's JSON is that command's `--json` output. A call that fails comes back as a tool error. Its
@@ -123,7 +123,7 @@ error. A refused item is fixed at its source, on the command line. `jw question 
 what is ready, waiting and refused in each language, by cause. `jw question refusals` lists the
 shapes, the converter's refusals among them. `jw question flag` pulls one item.
 
-## The remote server
+## Remote server
 
 `https://app.jadwigo.pl/api/mcp` is how a parent's own AI app, such as claude.ai, ChatGPT or Muse,
 makes lessons in Jadwigo. It's on `main` and not yet live on prod.

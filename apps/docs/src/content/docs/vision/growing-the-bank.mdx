@@ -11,7 +11,7 @@ import Diagram from "../../../components/Diagram.astro";
 The question bank grows by reading a new set of questions, having Meta models enrich it for
 search, and letting it in only when the search test still passes.
 
-<Diagram name="bank-pipeline" caption="The slice flow, from a source library to a gated index." />
+<Diagram name="bank-pipeline" caption="Build the index, then test search before a child sees it." />
 
 ## How it works
 
@@ -20,8 +20,7 @@ search, and letting it in only when the search test still passes.
 A reader turns each source library into the bank's own set pages. A Meta model then writes topics,
 keywords and a summary for each set and question, so search can find them. A model writes only
 under its own field, names itself on every field, and quotes the source for every claim. Code
-drops a claim whose quote isn't in the source. [E4](/experiments/e4/) priced this at about $0.018
-a set.
+drops a claim whose quote isn't in the source. [E4](/experiments/e4/) ran these steps on 143 sets.
 
 ### Test before use
 
@@ -33,7 +32,7 @@ the index runs against those needs, and a gate blocks it when a score drops past
 ### Licence first
 
 Nothing is indexed before its licence is settled. Khan Academy's licence is CC BY-NC-SA 4.0, and
-the owner ruled on it and on Alfik Matematyczny's terms first. A third library needs the same
+Vasyl ruled on it and on Alfik Matematyczny's terms first. A third library needs the same
 ruling and its own credit line.
 
 ## Limits

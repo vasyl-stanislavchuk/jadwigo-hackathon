@@ -1,26 +1,26 @@
 ---
 title: Building with agents
-description: 880 commits in 10 days, by AI agents working in parallel under checks one person set, and what that person did.
+description: Almost 900 commits in 10 days, by AI agents working in parallel under checks Vasyl set, and what he did.
 ---
 
 import Diagram from "../../../components/Diagram.astro";
 
-Jadwigo's `main` branch took 880 commits in 10 days, from the first commit on 26 October 2026 to
-the demo on 4 November. 874 of them are pull requests, each squash-merged as 1 commit. AI agents
-wrote the code, many at once, each in its own worktree. Muse, Codex and Claude Code each built part
-of it.
+Jadwigo's `main` branch took almost 900 commits in 10 days, from the first commit on 26 October 2026
+to the demo on 4 November. Nearly all of them are pull requests, each squash-merged as 1 commit. AI
+agents wrote the code, many at once, each in its own worktree. Muse, Codex and Claude Code each
+built part of it.
 
 ## Who did what
 
-The owner, one person, made the product decisions, wrote and approved the plans, and set the
-checks. The owner also ran every paid or outward step: each deploy, each Terraform apply, each
+Vasyl, one person, made the product decisions, wrote and approved the plans, and set the checks.
+He also ran every paid or outward step: each deploy, each Terraform apply, each
 publish. A merge deploys nothing, and no agent can deploy.
 
 The agents did the rest. A lead agent splits a plan into issues, and builder agents take one issue
 each. An issue is a brief: what to read, the paths it owns, the tests it must not change, what
 done looks like, and when to stop and ask.
 
-## The loop
+## PR loop
 
 <Diagram name="pr-loop" caption="Every change takes the same road to main." />
 
@@ -30,7 +30,7 @@ code being written. GitHub merges the pull request once both checks are green. A
 back to the agent that wrote the code. The builder never reviews its own work: a builder reporting
 green is a claim, and a reviewer's re-run is the evidence.
 
-## The guard
+## Guard
 
 The guard is a script that runs before every command an agent types in Claude Code, and refuses
 the ones only a person should run. It blocks a force-push, a push to `main`, skipping the commit
@@ -51,5 +51,5 @@ CI and the reviewers, apply to every pull request whoever wrote it.
 
 ## Next
 
-- [The story](/story/): the decisions those agents worked under.
+- [Story](/story/): the decisions those agents worked under.
 - [Monorepo](/architecture/monorepo/): the layout the agents share.

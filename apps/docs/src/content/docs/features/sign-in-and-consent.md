@@ -11,7 +11,7 @@ about a family leaves Jadwigo without the parent's yes.
 
 ## How it works
 
-### The parent signs in
+### Parent sign-in
 
 A parent signs in with a 6-digit code sent by email, or with Google or Facebook. The token is
 checked before any of Jadwigo's code runs. A child never signs in: a
