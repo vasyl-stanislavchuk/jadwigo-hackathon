@@ -224,7 +224,7 @@ Each fence has a test that plants a violation (`tools/src/*.test.ts`, `.claude/h
    (`*.test.tsx`, Vitest's `dom` project in happy-dom). Anything that needs those is a `*.int.test.ts`.
 7. **Contract snapshots** fail on drift. Update them with `vitest -u` on purpose and say so in the PR.
 8. **No bank in git:** no question pages, Khan items, SQLite, bank media or files over 1 MB.
-9. **Pre-commit** runs Biome and gitleaks. Never commit a family member's name.
+9. **Pre-commit** runs Biome and gitleaks. Never commit a family member's name outside `apps/site`; there, only with their consent.
 10. **Ports** come from md's environment (`tools/src/ports.ts`).
 11. **Docs:** worklog layout, drop sources, research outcome blocks, workflow links and the PR
     body each have a check in `tools/src/`.
