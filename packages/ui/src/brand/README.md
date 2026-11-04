@@ -10,7 +10,8 @@ Imported as `@jadwigo/ui/brand/<file>`.
 | `crown.svg` | The crown alone, 40 by 26, with its ink outline. |
 | `favicon.svg` | The app icon: a blue square with 25% corners and the yellow crown 62% wide. |
 | `favicon-16.svg` | The same at 16 px: the crown 69% wide with a thicker line, so it still reads. |
-| `queen.mov`, `queen.webm` | Jadwiga flies in, gives a thumbs-up and vanishes: a 4 s clip with alpha, no sound. Safari takes the HEVC `.mov`, the others the VP9 `.webm`, so list the `.mov` first. The app plays it on a right answer (`apps/web/src/play/Queen.tsx`), the landing page on its hero question (`apps/site/src/components/HeroQuestion.astro`). |
+| `queen.mov`, `queen.webm` | Jadwiga flies in, gives a thumbs-up and vanishes: a 4 s clip with alpha, no sound. Safari takes the HEVC `.mov`, the others the VP9 `.webm`, so list the `.mov` first. The app plays it, or Pani Iwona, after 3 clean right answers in a row (`apps/web/src/play/Queen.tsx`), the landing page on its hero question (`apps/site/src/components/HeroQuestion.astro`). |
+| `iwona-pl.mov`, `iwona-pl.webm`, `iwona-en.mov`, `iwona-en.webm` | Pani Iwona's celebration: she says "Brawo!" (`pl`) or "Well done!" (`en`), the praise drawn into the clip, so the page adds no caption. 960 by 600 (8:5), 4 s at 60 fps, alpha, no sound; HEVC `.mov` for Safari, VP9 `.webm` for the others, `.mov` listed first. The app picks the clip by the page's language, never the lesson's (`apps/web/src/play/Queen.tsx`). These are the downsized delivery encodes of the owner-approved v4 (1280 by 800 masters, outside the repo, lowered 40 stage px by frame 189); the bundle `jadwigo-art/handoff/iwona-celebration-v4` holds the masters, `manifest.json` and `SHA256SUMS`. |
 | `icons.json` | The hashes of the two favicon SVGs the PNGs were rendered from. |
 
 ## Colours

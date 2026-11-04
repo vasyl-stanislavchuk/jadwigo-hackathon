@@ -1,0 +1,10 @@
+flowchart LR
+  K["Khan Academy: exercises and items, read in place"] --> P["Set pages: one page per exercise, source fields kept"]
+  A["Alfik Matematyczny: contest tasks by grade and skill"] --> P
+  P --> E["Muse enrichment: 3 drafts, a critic, code checks every quote"]
+  E --> I["Index: OpenAI embeddings, about 13 vectors a set"]
+  I --> S["Search: hybrid arm C with a Voyage rerank"]
+  N["Needs from the curriculum, never from Khan titles"] --> G["Golden sets: pooled, labelled 3 times, split tune and holdout"]
+  G --> T["The gate: recall, nDCG and abstaining held to the baseline"]
+  S --> T
+  T --> L["Lessons drawn from the bank"]

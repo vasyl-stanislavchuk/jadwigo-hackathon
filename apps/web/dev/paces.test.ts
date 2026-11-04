@@ -146,17 +146,21 @@ describe("the dev engine's paces (dl-uukj.47.71.7)", () => {
     expect(edits).toEqual([false, true]);
   });
 
-  it("s12-dropped: an edit refused once and never tried again, with only the engine's own check after it", async () => {
+  it("s12-dropped: an edit refused and never tried again, and no check passes after it", async () => {
     const p = await play("s12-dropped");
     const events = await p.until(ended);
     const edits = resultsOf(events, "lesson_edit").map((e) =>
-      e.type === "tool_result" ? e.payload.error === null : null,
+      e.type === "tool_result" ? [e.payload.error === null, e.payload.call_id] : null,
     );
-    expect(edits).toEqual([false]);
-    const checks = resultsOf(events, "lesson_check").map((e) =>
-      e.type === "tool_result" ? e.payload.call_id : null,
-    );
-    expect(checks).toEqual([expect.stringMatching(/^auto_check_/)]);
+    // s01's edit is refused, s02's goes through; nothing edits s01 again.
+    expect(edits.map((e) => e?.[0])).toEqual([false, true]);
+    // The engine may check the lesson by itself (#858); no check after the refusal passes.
+    const passed = resultsOf(events, "lesson_check").filter((e) => {
+      if (e.type !== "tool_result") return false;
+      const view = e.payload.view?.data as { publishable?: boolean } | undefined;
+      return view?.publishable === true;
+    });
+    expect(passed).toEqual([]);
   });
 
   it("s13: the turn ends failed", async () => {

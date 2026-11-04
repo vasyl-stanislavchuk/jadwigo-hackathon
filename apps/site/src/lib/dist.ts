@@ -59,3 +59,49 @@ export function pathPageChecks(
   }
   return { must, mustNot };
 }
+
+/** A built page: its path under dist/ and its HTML. */
+export interface BuiltPage {
+  file: string;
+  html: string;
+}
+
+/** What a shared link previews from, on every page (dl-w0b4.128). */
+const SHARE_TAGS = [
+  'name="description"',
+  'rel="canonical"',
+  'property="og:title"',
+  'property="og:description"',
+  'property="og:image"',
+  'name="twitter:card"',
+] as const;
+
+const titleOf = (html: string): string | undefined =>
+  /<title[^>]*>([^<]*)<\/title>/.exec(html)?.[1];
+const descriptionOf = (html: string): string | undefined =>
+  /<meta name="description" content="([^"]*)"/.exec(html)?.[1];
+
+/**
+ * Each page's share tags, and a title and a description no other page has, so a search result or
+ * a pasted link says which page it is. A 404 page is left out: nothing links to it.
+ */
+export function shareProblems(pages: readonly BuiltPage[]): string[] {
+  const shown = pages.filter((p) => !/(^|\/)404\.html$/.test(p.file));
+  const problems = shown.flatMap((p) =>
+    SHARE_TAGS.filter((tag) => !p.html.includes(tag)).map((tag) => `dist/${p.file} lacks ${tag}`),
+  );
+  for (const [what, of] of [
+    ["title", titleOf],
+    ["description", descriptionOf],
+  ] as const) {
+    const seen = new Map<string, string>();
+    for (const p of shown) {
+      const value = of(p.html);
+      if (value === undefined) continue;
+      const other = seen.get(value);
+      if (other === undefined) seen.set(value, p.file);
+      else problems.push(`dist/${p.file} has the same ${what} as dist/${other}: ${value}`);
+    }
+  }
+  return problems;
+}
