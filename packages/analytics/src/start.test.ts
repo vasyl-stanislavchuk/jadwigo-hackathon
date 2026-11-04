@@ -5,6 +5,7 @@ import {
   consentStatus,
   type Load,
   rejectConsent,
+  reportError,
   resetAnalyticsForTests,
   startAnalytics,
   track,
@@ -16,6 +17,7 @@ function double() {
   const client = {
     init: vi.fn(),
     capture: vi.fn(),
+    captureException: vi.fn(),
     opt_in_capturing: vi.fn(),
     opt_out_capturing: vi.fn(),
     get_explicit_consent_status: vi.fn((): "pending" | "granted" | "denied" => "pending"),
@@ -104,5 +106,35 @@ describe("posthogOptions", () => {
       recordHeaders: false,
       recordBody: false,
     });
+  });
+
+  it("reports a caught error with its source", async () => {
+    const failure = new Error("crash");
+    const { client, load } = double();
+    await startAnalytics("phc_key", "app", load);
+    reportError(failure, "error_boundary");
+    expect(client.captureException).toHaveBeenCalledTimes(1);
+    expect(client.captureException).toHaveBeenCalledWith(failure, { source: "error_boundary" });
+  });
+
+  // dl-uukj.69: a crash in the app's first render comes before the SDK's dynamic import resolves.
+  it("holds an error reported before the start, and sends it once, when it starts", async () => {
+    const failure = new Error("first render");
+    reportError(failure, "error_boundary");
+    const { client, load } = double();
+    await startAnalytics("phc_key", "app", load);
+    expect(client.captureException).toHaveBeenCalledTimes(1);
+    expect(client.captureException).toHaveBeenCalledWith(failure, { source: "error_boundary" });
+    await startAnalytics("phc_key", "app", load);
+    expect(client.captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds at most 10 early errors, and sends none without a key", async () => {
+    for (let i = 0; i < 12; i++) reportError(new Error(`e${i}`), "error_boundary");
+    const { client, load } = double();
+    await startAnalytics(null, "app", load);
+    expect(load).not.toHaveBeenCalled();
+    await startAnalytics("phc_key", "app", load);
+    expect(client.captureException).toHaveBeenCalledTimes(10);
   });
 });

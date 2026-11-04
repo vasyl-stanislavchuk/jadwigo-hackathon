@@ -158,3 +158,23 @@ export function scrubExceptionList(list: unknown): Record<string, unknown>[] | n
   if (!Array.isArray(list)) return null;
   return list.filter(isRecord).map(scrubException);
 }
+
+/** Not our bug and nothing to act on: a harmless browser notice, or a script of another origin. */
+const NOISE_MESSAGE = /^(ResizeObserver loop|Script error\.?$)/;
+const EXTENSION_FILE = /^(chrome|moz|safari|safari-web|ms-browser)-extension:\/\//;
+
+/** An exception that would only bury real issues: browser noise, or a visitor's extension. */
+export function isNoise(list: unknown): boolean {
+  if (!Array.isArray(list)) return false;
+  return list.filter(isRecord).some((exception) => {
+    if (typeof exception["value"] === "string" && NOISE_MESSAGE.test(exception["value"]))
+      return true;
+    const stack = exception["stacktrace"];
+    if (!isRecord(stack) || !Array.isArray(stack["frames"])) return false;
+    return stack["frames"]
+      .filter(isRecord)
+      .some(
+        (frame) => typeof frame["filename"] === "string" && EXTENSION_FILE.test(frame["filename"]),
+      );
+  });
+}
