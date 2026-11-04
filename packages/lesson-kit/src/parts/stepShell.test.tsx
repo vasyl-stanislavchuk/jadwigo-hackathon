@@ -1518,23 +1518,39 @@ describe("on a phone in a lesson the answer sits in the page", () => {
     expect(container.querySelector("[data-letters]")).not.toBeNull();
   });
 
-  it("does not take the iPhone's own keys for a hardware keyboard while iOS pans the page", () => {
-    const viewport = Object.assign(new EventTarget(), {
-      height: 844 - 300,
-      offsetTop: 290,
-      width: 390,
-    });
+  /** A visual viewport that opens tall, then the system keyboard comes up: on iOS the page pans
+   * under it (offsetTop), on Android Chrome the window shrinks with it (resizes-content). */
+  const keyboardComesUp = (system: "ios" | "android") => {
+    const tall = window.innerHeight;
+    const viewport = Object.assign(new EventTarget(), { height: tall, offsetTop: 0, width: 390 });
     const was = Object.getOwnPropertyDescriptor(window, "visualViewport");
+    const inner = Object.getOwnPropertyDescriptor(window, "innerHeight");
     Object.defineProperty(window, "visualViewport", { configurable: true, value: viewport });
-    try {
-      const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);
-      fireEvent.keyDown(screen.getByRole("textbox", { name: "answer" }), { key: "a" });
-      expect(container.querySelector("[data-letters]")).toBeNull();
-    } finally {
+    const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);
+    act(() => {
+      viewport.height = tall - 300;
+      if (system === "ios") viewport.offsetTop = 290;
+      else Object.defineProperty(window, "innerHeight", { configurable: true, value: tall - 300 });
+      viewport.dispatchEvent(new Event("resize"));
+    });
+    const restore = () => {
       if (was) Object.defineProperty(window, "visualViewport", was);
       else delete (window as { visualViewport?: unknown }).visualViewport;
-    }
-  });
+      if (inner) Object.defineProperty(window, "innerHeight", inner);
+    };
+    return { container, restore };
+  };
+
+  for (const system of ["ios", "android"] as const)
+    it(`does not take the phone's own keys for a hardware keyboard (${system})`, () => {
+      const { container, restore } = keyboardComesUp(system);
+      try {
+        fireEvent.keyDown(screen.getByRole("textbox", { name: "answer" }), { key: "a" });
+        expect(container.querySelector("[data-letters]")).toBeNull();
+      } finally {
+        restore();
+      }
+    });
 
   it("does not take the on-screen keys for a hardware keyboard", () => {
     const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);

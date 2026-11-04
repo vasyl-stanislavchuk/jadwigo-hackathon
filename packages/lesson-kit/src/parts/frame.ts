@@ -114,10 +114,31 @@ const SYSTEM_KEYBOARD_MIN = 120;
  * Keyboard or a Bluetooth one hides the on-screen keyboard, and its Option layer has no Polish
  * letters, so the child still needs the letter row. Either a fine pointer is attached (a trackpad
  * or a mouse: `any-pointer: fine`), or a key typed a character into a field while no system
- * keyboard covered the window. Android's on-screen keys send "Unidentified" (keyCode 229) and
- * iOS's arrive with its keyboard up, so neither counts. Once seen it holds for the page. Under
- * `data-input-touch` (the page says touch) only a typed key counts.
+ * keyboard was up. A system keyboard is up when the visual viewport is more than 120 px shorter
+ * than the tallest it has been at this width: that holds on iOS, which pans the page under its
+ * keyboard (so `offsetTop` says nothing), and on Android Chrome, whose page shrinks with it
+ * (`interactive-widget=resizes-content`, so `innerHeight` says nothing). Keyed by width, so a
+ * turn of the phone is not taken for a keyboard. Android's on-screen keys mostly send
+ * "Unidentified" (keyCode 229) too. Once seen it holds for the page. Under `data-input-touch`
+ * (the page says touch) only a typed key counts.
  */
+/** The tallest the visual viewport has been on this page, by the window's width. */
+const tallest = new Map<number, number>();
+
+/** The visual viewport's height now, after noting it as the tallest at this width if it is. */
+function viewportHeight(): number {
+  const height = window.visualViewport?.height ?? window.innerHeight;
+  const width = Math.round(window.innerWidth);
+  tallest.set(width, Math.max(tallest.get(width) ?? 0, height));
+  return height;
+}
+
+/** Whether a system keyboard is up now: the viewport is well short of its tallest at this width. */
+function systemKeyboardUp(): boolean {
+  const height = viewportHeight();
+  return (tallest.get(Math.round(window.innerWidth)) ?? height) - height > SYSTEM_KEYBOARD_MIN;
+}
+
 export function useHardwareKeyboard(ref: RefObject<HTMLElement>): boolean {
   const [hardware, setHardware] = useState(false);
   useLayoutEffect(() => {
@@ -137,19 +158,23 @@ export function useHardwareKeyboard(ref: RefObject<HTMLElement>): boolean {
       }
       const target = event.target;
       if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
-      // The room the visual viewport leaves, not keyboardInset: iOS pans the page under its
-      // keyboard (offsetTop grows), which shrinks the inset while the keyboard is still up.
-      const viewport = window.visualViewport;
-      if (viewport && window.innerHeight - viewport.height > SYSTEM_KEYBOARD_MIN) return;
+      if (systemKeyboardUp()) return;
       root.dataset[HARDWARE] = "";
       read();
     };
+    // The page opens with no keyboard up: its height then is the tallest to measure against.
+    const note = (): void => {
+      viewportHeight();
+    };
+    note();
     read();
     pointer?.addEventListener?.("change", read);
     document.addEventListener("keydown", typed, true);
+    window.visualViewport?.addEventListener("resize", note);
     return () => {
       pointer?.removeEventListener?.("change", read);
       document.removeEventListener("keydown", typed, true);
+      window.visualViewport?.removeEventListener("resize", note);
     };
   }, [ref]);
   return hardware;
