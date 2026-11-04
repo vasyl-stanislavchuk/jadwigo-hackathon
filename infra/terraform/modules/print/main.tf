@@ -111,7 +111,11 @@ resource "aws_lambda_function" "print" {
   reserved_concurrent_executions = var.reserved_concurrency
 
   environment {
-    variables = { UPLOADS_BUCKET = var.uploads_bucket_name }
+    variables = merge(
+      { UPLOADS_BUCKET = var.uploads_bucket_name },
+      # Where a failure is reported (dl-5ssh.160); absent, none is.
+      var.posthog_key == "" ? {} : { JW_POSTHOG_KEY = var.posthog_key },
+    )
   }
 
   logging_config {

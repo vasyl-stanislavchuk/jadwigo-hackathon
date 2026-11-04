@@ -9,6 +9,7 @@ dependencies = [
   "jinja2==3.1.6", # the sheet template and one macro per question type (src/printer/templates/)
   "pydantic==2.14.1", # the PrintSheet models, extra="forbid" like the contract (src/printer/sheet.py)
   "boto3==1.43.120", # the S3 get and puts in the uploads bucket (src/printer/handler.py)
+  "posthog==7.75.11", # reports an unexpected failure, its type and stack only (src/printer/report.py)
 ]
 
 [dependency-groups]

@@ -5,9 +5,9 @@ description: Jadwigo at 2 zoom levels, who uses it and what it leans on, then th
 
 import Diagram from "../../../components/Diagram.astro";
 
-Jadwigo is one web app, one API and an AI engine, in AWS in Frankfurt. This page shows it at 2
-zoom levels: first who uses it and what it leans on, then the containers a request moves through.
-The pages after it zoom in further.
+Jadwigo is one web app, one API and an AI engine, and all of it is serverless. This page shows it
+at 2 zoom levels: first who uses it and what it leans on, then the containers a request moves
+through. The pages after it zoom in further.
 
 ## Context
 
@@ -46,6 +46,22 @@ lessons are made from, and Jadwigo searches it and reads each question's body.
 
 A merge to `main` deploys nothing. The owner deploys each part by hand, and applies the Terraform
 by hand too.
+
+## Serverless
+
+No server of Jadwigo's own runs between requests. The compute is 5 Lambda functions, the web app
+and the sites are static files behind CloudFront, and Supabase runs Postgres and sign-in as a
+managed service. Lambda bills per request, so a quiet hour costs next to nothing, and a busy one
+scales without anyone adding a machine.
+
+- **One function per kind of work.** The API answers requests, and the runner does the AI's
+  steps. The converter turns a PDF, DOCX or HEIC into pages, print renders a lesson's PDF, and
+  bank search finds questions.
+- **Slow work leaves the request.** The API writes a chat turn's step to a queue in Postgres, in
+  the same transaction as the message, and pokes the runner. A schedule pokes it once a minute
+  too, so no step waits on a lost poke.
+- **No machine to patch.** A deploy uploads new function code and static files, and Terraform
+  holds the rest.
 
 ## Next
 
