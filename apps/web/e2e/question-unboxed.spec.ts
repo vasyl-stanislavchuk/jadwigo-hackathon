@@ -66,6 +66,8 @@ test("Choose, multi-select: the question is unboxed, each tile holds its checkbo
     expect(d.words).not.toBeNull();
     if (d.box === null || d.words === null) continue;
     expect(d.box.left).toBeGreaterThanOrEqual(d.tile.left);
+    // Sticky to the tile's left: past its padding (and on a laptop the key badge), never centred.
+    expect(d.box.left - d.tile.left).toBeLessThanOrEqual(72);
     expect(d.words.right).toBeLessThanOrEqual(d.tile.right + 0.5);
     expect(d.scroll).toBeLessThanOrEqual(0);
   }

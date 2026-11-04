@@ -380,6 +380,13 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
     top: 50%;
     margin-top: -1rem;
   }
+
+  /* A checkbox tile starts at its left (ChoiceGroup.tsx): its box stands 12 after the badge, the
+   * same in every tile of the grid, and the word runs to the right edge (dl-uukj.29.168). */
+  .kid-step-shell[data-frame="laptop"]
+    [data-option][role="checkbox"]:is([data-badge-at="side-2"], [data-badge-at="side-4"]) {
+    padding-inline: 4rem 1.25rem;
+  }
 }
 
 /* The letter row (Enter addendum 3.6): on a laptop one row of ten 56 × 56 keys under the field,
