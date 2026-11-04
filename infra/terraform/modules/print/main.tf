@@ -2,7 +2,7 @@
 # invokes with InvocationType Event and S3 keys. It reads a sheet at pods/<pod>/prints/<id>.json and
 # writes <id>.pdf or <id>.error.json beside it, each tagged kind=print. It has no URL, no trigger and
 # no resource policy: only a role granted lambda:InvokeFunction on it (the api's, modules/app) can
-# call it.
+# call it. Its reserved concurrency caps the renders at once (var.reserved_concurrency).
 #
 # The ECR repo comes first. With image_tag blank, that is all this module makes, so the first apply
 # needs no image; the owner then pushes one (`make -C apps/print image image-check push`), sets
@@ -105,6 +105,10 @@ resource "aws_lambda_function" "print" {
   architectures = ["arm64"]
   memory_size   = var.memory_size
   timeout       = var.timeout
+
+  # A cap on the renders at once, so a flood of public starts queues (dl-1eieq.8.16). It is taken
+  # from the account's unreserved concurrency, which must stay at 100 or more.
+  reserved_concurrent_executions = var.reserved_concurrency
 
   environment {
     variables = { UPLOADS_BUCKET = var.uploads_bucket_name }
