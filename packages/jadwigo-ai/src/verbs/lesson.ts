@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 import { ID_PREFIXES, PROPOSED_SKILL_MARK, SkillId, toolView, uuidOf } from "@jadwigo/contracts";
 import type { ToolView } from "@jadwigo/contracts/run";
+import { catalogue } from "@jadwigo/core";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import type { BankLanguage, BankPort, BankQuery } from "./bank.ts";
 import { Input, isObject, type Json, mergePatch } from "./input.ts";
@@ -406,14 +407,27 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   }
 
   const skills = patch["skill_ids"];
-  if (
-    skills !== undefined &&
-    (!Array.isArray(skills) || lessonSkillIds(skills as string[]).length !== skills.length)
-  ) {
-    throw new VerbError(
-      "edit",
-      "skill_ids is a list of skill ids, from curriculum_topics; nothing changed",
-    );
+  if (skills !== undefined) {
+    // Every element a string first: lessonSkillIds reads each as one, and a number thrown there is
+    // a fault the step retries with the same input, not a refusal the model corrects.
+    if (
+      !Array.isArray(skills) ||
+      !skills.every((id): id is string => typeof id === "string") ||
+      lessonSkillIds(skills).length !== skills.length
+    ) {
+      throw new VerbError(
+        "edit",
+        "skill_ids is a list of skill ids, from curriculum_topics; nothing changed",
+      );
+    }
+    // A child's answers count for these skills, so each is one the curriculum holds.
+    const unknown = lessonSkillIds(skills).filter((id) => !curriculumSkills().has(id));
+    if (unknown.length > 0) {
+      throw new VerbError(
+        "edit",
+        `skill_ids names skills the curriculum does not hold: ${unknown.join(", ")}; take them from curriculum_topics; nothing changed`,
+      );
+    }
   }
   const merged = mergePatch(step, patch) as Step;
   const helpPatch = isObject(question) && isObject(question["help"]) ? question["help"] : {};
@@ -541,6 +555,13 @@ export async function questionTypes(bank: BankPort, raw: Json): Promise<VerbEffe
   const types = (await bank.types(grade, language)).map((t) => ({ ...t }));
   const view = toolView("question_types", { grade, language, types });
   return { output: { grade, language, types }, view };
+}
+
+let known: ReadonlySet<string> | null = null;
+/** The curriculum's skill codes and their aliases, read once from the catalogue's seed. */
+function curriculumSkills(): ReadonlySet<string> {
+  known ??= new Set(catalogue().skills.flatMap((skill) => [skill.code, ...(skill.aliases ?? [])]));
+  return known;
 }
 
 /**

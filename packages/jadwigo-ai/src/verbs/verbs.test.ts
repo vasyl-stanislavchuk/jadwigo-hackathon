@@ -258,8 +258,10 @@ describe("a rewritten question's skill (dl-hin8.49)", () => {
   };
 
   it("takes new skills in the patch, and they reach the step", async () => {
-    const effect = await edit({ say: "Ile to 49 : 7?", skill_ids: ["maths.division.by-7"] });
-    expect(stepsOf(effect.lesson_file)[0]).toMatchObject({ skill_ids: ["maths.division.by-7"] });
+    const effect = await edit({ say: "Ile to 49 : 7?", skill_ids: ["maths.division.divide-by-7"] });
+    expect(stepsOf(effect.lesson_file)[0]).toMatchObject({
+      skill_ids: ["maths.division.divide-by-7"],
+    });
     expect(effect.output).not.toHaveProperty("skills_note");
   });
 
@@ -270,6 +272,18 @@ describe("a rewritten question's skill (dl-hin8.49)", () => {
 
   it("refuses a skill id that does not parse", async () => {
     await expect(edit({ skill_ids: ["Not An Id"] })).rejects.toMatchObject({ type: "edit" });
+  });
+
+  it("refuses a skill_ids element that is not a string, as an edit the model corrects", async () => {
+    for (const bad of [7, null, {}])
+      await expect(edit({ skill_ids: [bad] })).rejects.toMatchObject({ type: "edit" });
+  });
+
+  it("refuses a well-formed skill the curriculum does not hold", async () => {
+    await expect(edit({ skill_ids: ["maths.made.up"] })).rejects.toMatchObject({
+      type: "edit",
+      message: expect.stringContaining("maths.made.up"),
+    });
   });
 });
 
