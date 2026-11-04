@@ -682,10 +682,11 @@ export function StepShell({
       folded: at === "tray" && folded,
       ended,
       docked,
+      touch,
       dock,
       register,
     }),
-    [frame, at, folded, ended, docked, dock, register],
+    [frame, at, folded, ended, docked, touch, dock, register],
   );
   // Once the step ends the tools are gone and their space is kept (rule 12): the answer holds the
   // tallest it has been on this step, and the solution fills that space.

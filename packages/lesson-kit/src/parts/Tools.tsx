@@ -17,6 +17,10 @@
  * - Once the step ends (right, or the solution) the tools are not drawn. The frame keeps their
  *   space, so nothing moves, and the solution fills it.
  *
+ * - On a touch device the Polish letter row is never drawn, docked or in place, and never
+ *   registered, so no dock or fold arrow stands for it: the child types with the system keyboard,
+ *   which has the Polish letters (decision dl-6ihrv, dl-uukj.29.174).
+ *
  * Outside a step frame (a part shown on its own) the tools are drawn as they are.
  */
 
@@ -35,6 +39,8 @@ export interface TrayValue {
   ended: boolean;
   /** Whether the tools are docked above the footer (a phone or an upright tablet in a lesson). */
   docked: boolean;
+  /** A touch device (frame.ts useTouch): the system keyboard types, so the letter row is gone. */
+  touch: boolean;
   /** The dock, where they are drawn then; null until it is in the page. */
   dock: HTMLElement | null;
   /** Tell the frame a kind of tool is on the step; returns the undo. */
@@ -52,7 +58,10 @@ export function Tools({
 }): JSX.Element | null {
   const tray = useContext(Tray);
   const register = tray?.register;
-  useLayoutEffect(() => register?.(kind), [register, kind]);
+  // On touch the system keyboard has the Polish letters: no row, and no dock kept for it.
+  const gone = tray?.touch === true && kind === "letters";
+  useLayoutEffect(() => (gone ? undefined : register?.(kind)), [register, kind, gone]);
+  if (gone) return null;
   if (tray === null) return <>{children}</>;
   if (tray.ended) return null;
   if (tray.docked)
