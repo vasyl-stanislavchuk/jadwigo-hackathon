@@ -52,18 +52,16 @@ export const pageSchema = z.object({
   /** The collage's name for a screen reader. */
   photosLabel: z.string().min(1).optional(),
   /**
-   * O nas's film and docs link (dl-w0b4.42). With no `file`, the player's place shows `label`. `file`
+   * O nas's film and docs link (dl-w0b4.42). `cta` is the button that opens the film in a modal. `file`
    * names the film in the site bucket's about-photos/, never in git, as the photos do.
    */
   video: z
     .object({
       heading: z.string().min(1),
-      label: z.string().min(1),
+      cta: z.string().min(1),
+      close: z.string().min(1),
       docs: z.string().min(1),
-      file: z
-        .string()
-        .regex(/^[a-z0-9-]+\.mp4$/)
-        .optional(),
+      file: z.string().regex(/^[a-z0-9-]+\.mp4$/),
     })
     .optional(),
   link: z

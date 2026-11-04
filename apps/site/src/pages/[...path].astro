@@ -6,8 +6,8 @@
 import { type CollectionEntry, getCollection, render } from "astro:content";
 import { hosts } from "@jadwigo/config";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
+import FilmModal from "../components/FilmModal.astro";
 import PhotoCollage from "../components/PhotoCollage.astro";
-import Pic from "../components/Pic.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { languageOf, servedLanguages } from "../lib/i18n.ts";
@@ -44,21 +44,16 @@ const story = (entry.rendered?.html ?? "").replace(
         <div class="words">
           <h1>{heading}</h1>
           <Fragment set:html={story} />
-          {link && <a class="link" href={`${link.href}/`}>{link.label}</a>}
+          <div class="actions">
+            {video && <FilmModal words={video} />}
+            {link && <a class="link" href={`${link.href}/`}>{link.label}</a>}
+          </div>
+          {video && (
+            <p class="docs">{video.docs} <a href={`https://${docsHost}/`}>{docsHost}</a></p>
+          )}
         </div>
         <PhotoCollage photos={photos} label={photosLabel} />
       </section>
-      {video && (
-        <section class="film wrap" aria-labelledby="film-title">
-          <h2 id="film-title">{video.heading}</h2>
-          {video.file ? (
-            <video class="player" controls preload="metadata" playsinline src={`/about-photos/${video.file}`} poster="/about-photos/film-poster.webp" aria-label={video.heading}></video>
-          ) : (
-            <Pic label={video.label} screen ratio="16 / 9" class="player" />
-          )}
-          <p>{video.docs} <a href={`https://${docsHost}/`}>{docsHost}</a></p>
-        </section>
-      )}
     </Base>
   ) : (
     <Base page={entry.data} path={entry.data.path ?? "/"} prose>
@@ -89,9 +84,6 @@ const story = (entry.rendered?.html ?? "").replace(
   @media (prefers-reduced-motion: reduce) {
     .about .word-logo .crown, .about .word-logo:hover .crown { transition: none; transform: none; }
   }
-  .film { margin-top: clamp(2.5rem, 6vw, 4rem); }
-  .film h2 { font-size: 1.75rem; }
-  .film .player { display: block; width: 100%; max-width: 48rem; margin-top: 1rem; border-radius: var(--jw-radius-card); }
-  .film p { margin-top: 1rem; font-size: 1.125rem; }
-  .about .link { display: inline-block; margin-top: 1.5rem; font-weight: 700; }
+  .about .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.5rem; margin-top: 1.5rem; }
+  .about .link { font-weight: 700; }
 </style>

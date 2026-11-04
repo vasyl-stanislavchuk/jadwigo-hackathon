@@ -1,0 +1,47 @@
+---
+// The hackathon film behind a button on O nas (dl-w0b4.42): the button opens a modal that plays it, and
+// closing stops it. The page fetches no video until then. The film lives in the site bucket's
+// about-photos/, never in git. Without a script the button is a link to the file itself.
+interface Props {
+  words: { heading: string; cta: string; close: string; file: string };
+}
+
+const { words } = Astro.props;
+const src = `/about-photos/${words.file}`;
+---
+
+<a class="btn" href={src} data-film-open>{words.cta}</a>
+
+<dialog class="film" aria-label={words.heading} data-film>
+  <button type="button" class="close" data-film-close aria-label={words.close}>×</button>
+  <video controls preload="none" playsinline src={src} poster="/about-photos/film-poster.webp" aria-label={words.heading}></video>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>("[data-film]");
+  const video = dialog?.querySelector("video");
+  if (dialog && video) {
+    document.querySelector("[data-film-open]")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      dialog.showModal();
+      void video.play().catch(() => {});
+    });
+    dialog.querySelector("[data-film-close]")?.addEventListener("click", () => dialog.close());
+    // A click on the backdrop lands on the dialog itself.
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener("close", () => video.pause());
+  }
+</script>
+
+<style>
+  .film { width: min(64rem, calc(100vw - 2rem)); max-height: calc(100dvh - 2rem); padding: 0; overflow: visible; background: none; border: 0; }
+  .film::backdrop { background: color-mix(in srgb, var(--jw-ink) 80%, transparent); }
+  .film video { display: block; width: 100%; max-height: calc(100dvh - 5.5rem); border-radius: var(--jw-radius-card); background: var(--jw-ink); }
+  .close {
+    display: block; width: 2.75rem; height: 2.75rem; margin: 0 0 0.5rem auto; background: var(--jw-card); border: 1px solid var(--jw-line);
+    border-radius: var(--jw-radius-control); color: var(--jw-ink); font-size: 1.5rem; line-height: 1; cursor: pointer;
+  }
+  .close:hover { background: var(--jw-hover-strong); }
+</style>
