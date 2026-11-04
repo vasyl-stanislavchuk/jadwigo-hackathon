@@ -15,9 +15,10 @@ PostHog for the site and the app: the event catalogue, the one init config, cons
   the question it answers. `catalog.test.ts` refuses a key that could carry a learner's data
   (name, email, learner, child, parent, answer, score, age, token, an id) and any free string.
   A boolean named `has_*` or `is_*` is allowed: it carries one bit.
-- Nothing is captured until the visitor answers the banner (`cookieless_mode: "on_reject"`).
-  `acceptConsent()` turns on storage and session replay; `rejectConsent()` counts the visit
-  cookieless. There are no person profiles and no `identify`.
+- Every visitor is opted in from the first page (the owner's call on 2026-11-04, `dl-w0b4.129`,
+  superseding `dl-376c8`'s consent gate until the privacy pages are rewritten): `startAnalytics`
+  opts in a browser that has not answered, so the banner never shows. A browser whose cookie says
+  no stays out; `rejectConsent()` opts out. There are no person profiles and no `identify`.
 - Replay masks every input. Text on screen is recorded, by the owner's decision. Wrap anything
   else that must never be recorded in the `ph-no-capture` class.
 - `before_send` cuts ids, queries and hashes out of every URL, drops `title`, exceptions and person

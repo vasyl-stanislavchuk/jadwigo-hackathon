@@ -1,7 +1,8 @@
 /**
- * The one PostHog configuration the site and the app share (decision dl-376c8): EU cloud, nothing
- * captured until the visitor answers the banner (`cookieless_mode: "on_reject"`), no person
- * profiles, no autocapture, and session replay with every input masked.
+ * The one PostHog configuration the site and the app share (decision dl-376c8): EU cloud, no person
+ * profiles, no autocapture, and session replay with every input masked. Every visitor is opted in
+ * from the first page (the owner's call on 2026-11-04, dl-w0b4.129): startAnalytics opts in a
+ * browser that has not answered, and only a browser that said no stays out.
  */
 import { posthogHosts } from "@jadwigo/config";
 import type { PostHogConfig } from "posthog-js";
@@ -13,13 +14,12 @@ export function posthogOptions(surface: Surface): Partial<PostHogConfig> {
     api_host: posthogHosts.ingest,
     ui_host: posthogHosts.ui,
     defaults: "2025-05-24",
-    cookieless_mode: "on_reject",
     cross_subdomain_cookie: true,
     // The answer to the banner is a cookie on .jadwigo.pl, not localStorage, so a yes or a no on
     // jadwigo.pl holds on app.jadwigo.pl and the visitor is asked once (dl-w0b4.118).
     opt_out_capturing_persistence_type: "cookie",
     person_profiles: "never",
-    respect_dnt: true,
+    respect_dnt: false,
     autocapture: false,
     rageclick: false,
     capture_dead_clicks: false,

@@ -197,7 +197,7 @@ export interface Merge {
   added: Set<number>;
   hints: Set<number>;
   changed: Set<number>;
-  /** An edit whose steps could not be placed in the lesson. */
+  /** An edit with no lesson revision to place its steps in: it reads as the verb's plain words. */
   unplaced: boolean;
   title: string;
   count: number | null;
@@ -259,7 +259,9 @@ export function mergeCall(merge: Merge, call: DoneCall): void {
       merge.title = lessonFacts(call.wrote).title;
       for (const id of ids) {
         const at = positionOf(call.wrote, id);
-        if (at === null) merge.unplaced = true;
+        // A step that is no question (a narration line) has no number: it is left out of the list,
+        // which names only the questions changed (dl-uukj.47.71.44).
+        if (at === null) continue;
         else if (call.known.size > 0 && !call.known.has(id)) merge.added.add(at);
         else if (onlyHelpChanged(call.before, call.wrote, id)) merge.hints.add(at);
         else merge.changed.add(at);
