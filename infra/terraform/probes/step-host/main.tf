@@ -4,7 +4,7 @@
 # `make step-probe HOST=lambda ENV=dev`, and destroys it once dl-z5ja.5's numbers are recorded:
 # `make -C infra probe-step-host-destroy`. Its state is beside prod's, under its own key.
 terraform {
-  required_version = "1.17.0"
+  required_version = "1.17.1"
 
   required_providers {
     aws = {
