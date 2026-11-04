@@ -529,7 +529,7 @@ async function checkAndCopy(
 }
 
 /** No such key: a 404, or a 403 since the role has no `s3:ListBucket`. */
-function missing(error: unknown): boolean {
+export function missing(error: unknown): boolean {
   if (typeof error !== "object" || error === null) return false;
   const e = error as { name?: unknown; $metadata?: { httpStatusCode?: unknown } };
   return (

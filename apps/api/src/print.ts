@@ -20,6 +20,7 @@ import {
 } from "@jadwigo/contracts";
 import { buildPrintSheet, LessonNotPrintable, type PrintInput } from "@jadwigo/lesson-kit/paper";
 import type { Store } from "@jadwigo/store";
+import { missing } from "./attachments.ts";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
 import { printFunction, type ReadParameter, readSsm, uploadsBucket } from "./config.ts";
@@ -265,8 +266,6 @@ export function s3Prints(
     });
     return name;
   };
-  const missing = (e: unknown) =>
-    e instanceof Error && (e.name === "NotFound" || e.name === "NoSuchKey");
   return {
     name: bucket,
     async has(key) {

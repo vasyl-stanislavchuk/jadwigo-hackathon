@@ -1,6 +1,7 @@
 // The print routes (dl-1eieq.8.4) on InMemoryStore, with a bucket in memory and a fake print Lambda.
 import { randomUUID } from "node:crypto";
 import type { InvokeCommand } from "@aws-sdk/client-lambda";
+import type { S3Client } from "@aws-sdk/client-s3";
 import {
   AssignmentId,
   type ErrorEnvelope,
@@ -20,7 +21,7 @@ import { InMemoryRunQueue } from "@jadwigo/jadwigo-ai";
 import { InMemoryStore, type LessonVersionWithQuestions } from "@jadwigo/store";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
-import { lambdaPrint, type PrintBucket, printMediaSrc } from "./print.ts";
+import { lambdaPrint, type PrintBucket, printMediaSrc, s3Prints } from "./print.ts";
 import { pathOf, seeded } from "./testing/client.ts";
 import { bearerOf, signToken } from "./testing/token.ts";
 
@@ -363,5 +364,18 @@ describe("starting the print Lambda", () => {
 
   it("is not set up without PRINT_FUNCTION", () => {
     expect(lambdaPrint(undefined)).toBeUndefined();
+  });
+});
+
+describe("s3Prints", () => {
+  it("reads a 403 as no such key: the api role has no s3:ListBucket (dl-1eieq.8.23)", async () => {
+    const denied = Object.assign(new Error("Forbidden"), {
+      name: "Forbidden",
+      $metadata: { httpStatusCode: 403 },
+    });
+    const client = { send: () => Promise.reject(denied) } as unknown as S3Client;
+    const bucket = s3Prints(client, async () => "jadwigo-uploads-test");
+    expect(await bucket.has("pods/p/prints/x.pdf")).toBe(false);
+    expect(await bucket.text("pods/p/prints/x.error.json")).toBeUndefined();
   });
 });
