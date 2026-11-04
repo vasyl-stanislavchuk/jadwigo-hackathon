@@ -152,6 +152,21 @@ describe.each(ORDERS)("in %s", (_order, order) => {
       }
     });
 
+    it("draws s06 at seq 54: Sprawdzanie lekcji's second visit, the fixes in it, the check again at work", () => {
+      // The wave plan's s06 state (dl-uukj.47.71.49): the first check found 2 things, the fixes at
+      // seq 41 and 47 opened the check stage's second visit, and the second check runs now.
+      const events = upTo("long-turn", 54);
+      const spine = spineOf(events, null, lastAt(events));
+      expect(spine.stages.map((s) => [s.name, s.status, s.visit])).toEqual([
+        ["Szukanie zadań w banku", "done", 1],
+        ["Układanie lekcji", "done", 1],
+        ["Sprawdzanie lekcji", "active", 2],
+      ]);
+      const open = spine.stages[2]?.lines ?? [];
+      expect(open.some(isEdit)).toBe(true);
+      expect(open.at(-1)?.kind).toBe("now");
+    });
+
     it("re-checks at seq 70: each fix after a check opens its next visit (s06, D1)", () => {
       const events = upTo("long-turn", 70);
       const spine = spineOf(events, null, lastAt(events));
