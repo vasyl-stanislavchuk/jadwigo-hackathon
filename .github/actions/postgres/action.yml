@@ -19,15 +19,18 @@ runs:
       shell: bash
       run: |
         sudo install -d /usr/share/postgresql-common/pgdg
-        sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        # GitHub's runners often lose this download mid-transfer, curl (35) or (56) (dl-5ssh.137): retry
+        # every error, with a pause, before the job fails.
+        sudo curl -fsS --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 20 --max-time 60 \
+          -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
         # The PGDG signing key, checked by fingerprint before apt trusts it.
         gpg --show-keys --with-colons /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
           | grep -q '^fpr:::::::::B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8:$' \
           || { echo "::error::the PGDG key's fingerprint is not B97B0AFCAA1A47F044F244A07FCC7D46ACCC4CF8"; exit 1; }
         echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
           | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
-        sudo apt-get update -qq
-        sudo apt-get install -y -qq postgresql-17 postgresql-17-pgtap libtap-parser-sourcehandler-pgtap-perl
+        sudo apt-get update -qq -o Acquire::Retries=5
+        sudo apt-get install -y -qq -o Acquire::Retries=5 postgresql-17 postgresql-17-pgtap libtap-parser-sourcehandler-pgtap-perl
     - name: Start 17 on port 5433
       shell: bash
       run: |

@@ -150,7 +150,7 @@ pgmq:
 	@dir="$$(psql "$(DATABASE_URL)" -Atc "select setting from pg_config where name = 'SHAREDIR'")/extension"; \
 	if [ -f "$$dir/pgmq--$(PGMQ_VERSION).sql" ]; then echo "pgmq $(PGMQ_VERSION) is already in $$dir"; exit 0; fi; \
 	tmp="$$(mktemp -d)"; trap 'rm -rf "$$tmp"' EXIT; src="$$tmp/pgmq-$(PGMQ_VERSION)/pgmq-extension"; \
-	curl -fsSL -o "$$tmp/pgmq.tar.gz" "https://github.com/pgmq/pgmq/archive/refs/tags/v$(PGMQ_VERSION).tar.gz" || exit 1; \
+	curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 -o "$$tmp/pgmq.tar.gz" "https://github.com/pgmq/pgmq/archive/refs/tags/v$(PGMQ_VERSION).tar.gz" || exit 1; \
 	echo "$(PGMQ_SHA256)  $$tmp/pgmq.tar.gz" | shasum -a 256 -c - >/dev/null || { echo "pgmq: the tarball's sha256 is not $(PGMQ_SHA256)"; exit 1; }; \
 	tar -xzf "$$tmp/pgmq.tar.gz" -C "$$tmp" || exit 1; \
 	$(SUDO) install -m 644 "$$src/pgmq.control" "$$dir/pgmq.control" && \
