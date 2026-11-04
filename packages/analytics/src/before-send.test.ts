@@ -85,6 +85,13 @@ describe("beforeSend", () => {
     expect(beforeSend(event("$exception", { $exception_list: list }))).not.toBeNull();
   });
 
+  it("drops a level the SDKs do not send", () => {
+    const sent = beforeSend(
+      event("$exception", { $exception_list: [{ type: "Error" }], $exception_level: "Ala" }),
+    );
+    expect(sent?.properties).not.toHaveProperty("$exception_level");
+  });
+
   it("sends an exception scrubbed, with its other keys gone and its URLs cut", () => {
     const sent = beforeSend(
       event("$exception", {
