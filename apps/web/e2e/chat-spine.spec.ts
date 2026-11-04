@@ -461,7 +461,7 @@ for (const size of SIZES) {
       await expect(
         chatOf(page).locator("[data-object-card='lesson']:not([data-card-state='superseded'])"),
       ).toHaveCount(1);
-      // Opened at the bottom (S19): its own test below, which fails 1 reload in 3 today.
+      // Opened at the bottom (S19): its own test below, over 10 reloads.
       await windowStill(page);
       await wordsHold(page);
       await shoot(page, info, "s20-three-turns-restored", size.name);
@@ -496,7 +496,8 @@ async function cardDeltaHolds(page: Page, card: Locator): Promise<void> {
   const count = Number(/\d+/.exec(facts)?.[0] ?? "0");
   expect(count).toBeGreaterThan(0);
   const more = card.locator("[data-card-more]");
-  if (count > 3) await expect(more).toHaveText(`+${count - 3} więcej`);
+  // "+{n} więcej" counts what the prompts above it do not show (LessonCard, #836).
+  if (count > shown) await expect(more).toHaveText(`+${count - shown} więcej`);
   else await expect(more).toHaveCount(0);
   // The tag is the only place the card's state is written (C4).
   const words = await card.evaluate((el) => {
@@ -523,6 +524,110 @@ async function cardDeltaHolds(page: Page, card: Locator): Promise<void> {
     );
   expect(shadowed).toEqual(["lesson"]);
 }
+
+/**
+ * Watches the current turn's spine row for the turn-end fold (foldMotion.ts): the height
+ * transitions it is given, as their CSS text.
+ */
+async function watchFold(page: Page): Promise<() => Promise<string[]>> {
+  await page.evaluate(() => {
+    const seen: string[] = [];
+    (window as unknown as { __folds: string[] }).__folds = seen;
+    new MutationObserver((records) => {
+      for (const r of records) {
+        const el = r.target as HTMLElement;
+        if (el.matches("[data-chat-row][data-turn]") && el.style.transition.includes("height"))
+          seen.push(el.style.transition);
+      }
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["style"] });
+  });
+  return () => page.evaluate(() => [...(window as unknown as { __folds: string[] }).__folds]);
+}
+
+for (const size of SIZES) {
+  test(`at ${size.name}: with motion allowed, the turn-end fold eases its height 240 ms`, async ({
+    page,
+  }) => {
+    // §6: the card collapses to the summary row 240 ms ease-out, anchored to its top.
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await open(page, "s07", size);
+    // Watched from the page's first rows: a scripted verb answers at once, so the turn is in
+    // "tool" too briefly to wait for.
+    const folds = await watchFold(page);
+    await phase(page, "done");
+    // The row's inline height is written a few times as it folds; each says 240 ms.
+    await expect.poll(async () => (await folds()).length).toBeGreaterThan(0);
+    for (const fold of await folds()) expect(fold).toContain("height 240ms");
+  });
+
+  test(`at ${size.name}: under reduced motion, the turn ends as the summary row at once`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await open(page, "s07", size);
+    // Watched from the page's first rows: a scripted verb answers at once, so the turn is in
+    // "tool" too briefly to wait for.
+    const folds = await watchFold(page);
+    await phase(page, "done");
+    await expect(chatOf(page).locator("[data-turn='current'] [data-summary-row]")).toBeVisible();
+    await page.waitForTimeout(400);
+    expect(await folds()).toEqual([]);
+  });
+}
+
+/** s06 at 390, held on its second check, with the lesson card in. */
+async function phoneMidway(page: Page): Promise<void> {
+  // Held on the second check (dev/paces.ts), so the same stages carry the same summaries each run.
+  await atSecondCheck(page, SIZES[1]);
+  await expect(spineOf(page).locator("[data-stage-note]").first()).toBeVisible();
+}
+
+async function box(l: Locator) {
+  const b = await l.boundingBox();
+  if (b === null) throw new Error("not laid out");
+  return b;
+}
+
+test("D8 at 390: the header's time sits under its title", async ({ page }) => {
+  await phoneMidway(page);
+  const title = await box(spineOf(page).locator("[data-spine-header] [data-title]"));
+  const meta = await box(spineOf(page).locator("[data-spine-header] [data-meta]"));
+  expect(meta.y).toBeGreaterThanOrEqual(title.y + title.height - 1);
+});
+
+test("D8 at 390: the spine and the lesson card take the thread's full width", async ({ page }) => {
+  await phoneMidway(page);
+  const inner = await chatOf(page)
+    .locator("[data-chat-list]")
+    .evaluate((el) => {
+      const s = getComputedStyle(el);
+      return el.clientWidth - Number.parseFloat(s.paddingLeft) - Number.parseFloat(s.paddingRight);
+    });
+  for (const [name, card] of [
+    ["spine", spineOf(page)],
+    ["lesson card", cardOf(page)],
+  ] as const)
+    expect((await box(card)).width, `${name} width`).toBeGreaterThanOrEqual(inner - 1);
+});
+
+test("D8 at 390: each stage summary sits under its stage name", async ({ page }) => {
+  // s09 at 390: the long turn done, its summary row opened, so every stage carries its summary.
+  await open(page, "s09", SIZES[1]);
+  await phase(page, "done");
+  await chatOf(page).locator("[data-turn='current'] [data-summary-row]").click();
+  const notes = chatOf(page).locator("[data-turn='current'] [data-stage-row] [data-stage-note]");
+  await expect(notes.first()).toBeVisible();
+  let checked = 0;
+  for (const note of await notes.all()) {
+    // A second visit's "drugi raz" is no summary: D1 puts it beside the name.
+    if (/^(drugi|trzeci|czwarty|piąty) raz$/.test(((await note.textContent()) ?? "").trim()))
+      continue;
+    const name = await box(note.locator("xpath=preceding-sibling::span[1]"));
+    expect((await box(note)).y).toBeGreaterThanOrEqual(name.y + name.height - 1);
+    checked++;
+  }
+  expect(checked).toBeGreaterThan(0);
+});
 
 test("the composer shows exactly one focus ring", async ({ page }) => {
   await open(page, "s15", SIZES[0]);
