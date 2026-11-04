@@ -1810,8 +1810,12 @@ export async function drain(
     max_steps?: number;
     keep_going?: () => boolean;
     onError?: (error: unknown, step: FailedStep) => void;
-    /** Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35). */
-    onRead?: (run_id: RunId) => void;
+    /**
+     * Told each step's run as it is read, so a host can name the runs it worked (dl-hin8.35), and how
+     * long a fresh step sat ready with nobody on it, in seconds: a run's idle time (dl-hin8.52). A
+     * redelivered step has been read before, so it names no wait.
+     */
+    onRead?: (run_id: RunId, waited_s: number | null) => void;
     /** Calls `beat` while a step runs, and answers how to stop. A test drives it by hand. */
     keepAlive?: (beat: () => void) => () => void;
   } = {},
@@ -1823,7 +1827,8 @@ export async function drain(
     if (options.keep_going?.() === false) break;
     const [queued] = await deps.queue.read(STEP_VISIBILITY_S, 1);
     if (!queued) break;
-    options.onRead?.(queued.message.run_id);
+    const waited_ms = deps.now().getTime() - Date.parse(queued.enqueued_at);
+    options.onRead?.(queued.message.run_id, queued.read_ct === 1 ? waited_ms / 1000 : null);
     // A healthy step can outlast its visibility: a model call with room to reason, or several edits
     // in one response (dl-hin8.44). This host is alive, so the step stays hidden; if the host dies
     // the beats stop and the step comes back. A beat that fails only risks that redelivery.

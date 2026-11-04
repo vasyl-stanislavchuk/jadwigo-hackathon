@@ -1,8 +1,8 @@
 /**
  * The preview over the chat (dl-1eieq.1; decision 2026-11-03-the-lesson-opens-in-a-preview-modal-
  * from-an-expand-button-on-the): what the chat opens, the lesson from its card's expand button or a
- * thing a citation or a widget names, shown in a modal so the chat stays the one view. On a laptop
- * it is a wide box over a scrim; on a phone it fills the screen. Its body scrolls between the title
+ * thing a citation or a widget names, shown in a modal so the chat stays the one view. It fills the
+ * screen on every size, so the lesson shows whole (design review 2026-11-03). Its body scrolls between the title
  * and the actions, and closing it (X, Escape, the scrim) leaves the chat exactly where it was, the
  * focus back on the button that opened it.
  *
@@ -50,7 +50,8 @@ export function PreviewDialog({
     >
       <DialogContent
         title={title}
-        className="max-h-[calc(100dvh-4rem)] max-w-5xl gap-3 p-0 max-lg:top-0 max-lg:right-0 max-lg:bottom-0 max-lg:left-0 max-lg:max-h-none max-lg:max-w-none max-lg:translate-y-0 max-lg:rounded-none max-lg:border-0 [&>div:first-child]:px-6 [&>div:first-child]:pt-5 [&>div:first-child]:pr-14"
+        // The whole screen on every size, so the lesson renders at its full width and height.
+        className="inset-0 top-0 max-h-none max-w-none translate-y-0 gap-0 rounded-none border-0 p-0 [&>div:first-child]:border-b-jw [&>div:first-child]:border-jw-line [&>div:first-child]:px-6 [&>div:first-child]:pt-5 [&>div:first-child]:pr-14 [&>div:first-child]:pb-4"
         data-preview-dialog
         onCloseAutoFocus={(event) => {
           const back = opener.current;
@@ -79,11 +80,14 @@ export function PreviewDialog({
             {copy(language, "lesson_pane_band", {}, "adult")}
           </p>
         )}
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4" data-preview-body>
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-4 pb-4" data-preview-body>
           {children}
         </div>
         {actions !== undefined && (
-          <div className="shrink-0 border-t-jw border-jw-line px-6 py-3" data-preview-actions>
+          <div
+            className="flex min-h-16 shrink-0 items-center border-t-jw border-jw-line px-6 py-3"
+            data-preview-actions
+          >
             {actions}
           </div>
         )}

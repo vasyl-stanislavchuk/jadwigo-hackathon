@@ -864,6 +864,21 @@ describe("runStep and drain", () => {
     expect(said).toContain("more than one question type");
   });
 
+  it("says how long a fresh step sat ready, and no wait for a redelivery (dl-hin8.52)", async () => {
+    const t = await setup([{ text: "Done." }]);
+    await t.say("Go.");
+    t.tick(7_000);
+    const waits: (number | null)[] = [];
+    const failing: EngineDeps = {
+      ...t.deps,
+      muse: { respond: () => Promise.reject(new Error("made up")) },
+    };
+    await drain(failing, { onRead: (_run, waited) => waits.push(waited) });
+    t.tick(STEP_VISIBILITY_S * 1000);
+    await drain(t.deps, { onRead: (_run, waited) => waits.push(waited) });
+    expect(waits).toEqual([7, null]);
+  });
+
   it("copies a verb's view into its tool_result, as lesson_check's findings", async () => {
     // lesson_check names the run's draft, known once the parent has spoken.
     const check: Record<string, unknown> = { help: {}, names: [] };

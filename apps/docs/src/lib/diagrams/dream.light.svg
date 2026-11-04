@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 176" role="img" aria-labelledby="dream-light-title dream-light-desc">
+<title id="dream-light-title">The dream</title>
+<desc id="dream-light-desc">Code digests the evidence since the last report, AI writes only the narrative, and the parent decides.</desc>
+<defs><marker id="a-dream-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#50535c"/></marker></defs>
+<rect x="0" y="0" width="960" height="176" fill="#ffffff"/>
+<line x1="232" y1="88" x2="260" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-dream-light)"/>
+<line x1="464" y1="88" x2="492" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-dream-light)"/>
+<line x1="696" y1="88" x2="724" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-dream-light)"/>
+<rect x="28" y="56" width="204" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="130" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Evidence</text>
+<text x="130" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">since the last report</text>
+<rect x="260" y="56" width="204" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="362" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Digest by code</text>
+<text x="362" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">counts, moves, mistakes</text>
+<rect x="492" y="56" width="204" height="64" rx="6" fill="#dce8fb" stroke="#3a5fa8" stroke-width="1.5"/>
+<text x="594" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Narrative by AI</text>
+<text x="594" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">short, kind, citing</text>
+<rect x="724" y="56" width="204" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="826" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">The parent decides</text>
+<text x="826" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">proposals change nothing alone</text>
+</svg>

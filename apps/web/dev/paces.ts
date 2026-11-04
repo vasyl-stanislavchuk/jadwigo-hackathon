@@ -149,9 +149,12 @@ const editFixed = (words: Words): ScriptedReply[] => [
 ];
 
 /**
- * An edit refused once that the model then drops (s12-dropped): nothing fixes it and no check
- * passes after it, so it shows chat_line_failed_generic after the turn. Words only after the
- * refusal: the engine asks again when a turn ends on an unchecked lesson.
+ * An edit refused once that the model then drops (s12-dropped): nothing fixes it, so it shows
+ * chat_line_failed_generic after the turn. The engine checks the lesson by itself when the turn
+ * ends (#858), and a check that passes after a refusal counts as its fix (spineOf fixedLater); so
+ * an edit of another step that goes through after it leaves a harsh word in step s02, and that
+ * check fails. Words only after: the engine asks again when a turn ends on a lesson that did not
+ * pass.
  */
 const editDropped = (words: Words): ScriptedReply[] => [
   { tool_calls: [draft(words)], cost_usd: 0.02 },
@@ -160,6 +163,8 @@ const editDropped = (words: Words): ScriptedReply[] => [
     tool_calls: [edit("s01", "Policz na palcach.")],
     cost_usd: 0.02,
   },
+  // Another step's edit going through fixes nothing (spineOf fixedLater).
+  { tool_calls: [edit("s02", "Źle! Policz jeszcze raz.")], cost_usd: 0.02 },
   ...Array.from({ length: FOLLOW_UPS }, () => ({
     text: "Zostawiam to zadanie bez zmian.",
     cost_usd: 0.01,

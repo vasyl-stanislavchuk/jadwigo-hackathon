@@ -14,6 +14,7 @@ const REPORT: HostReport = {
   stuck: { oldest_ready_step_age_s: null, runs_past_deadline: [] },
   failed: [],
   dead_letters: 0,
+  max_wait_s: 1.5,
   runs: [],
   refused: [],
 };
@@ -39,6 +40,7 @@ describe("the runner's Lambda handler", () => {
       steps: 2,
       outcomes: ["continue", "turn_complete"],
       runs_past_deadline: 0,
+      max_wait_s: 1.5,
     });
   });
 

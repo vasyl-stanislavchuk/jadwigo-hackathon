@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contactPlaceholder, parsePathPage, pathPageChecks } from "./dist.ts";
+import { contactPlaceholder, parsePathPage, pathPageChecks, shareProblems } from "./dist.ts";
 import { assertReviewed, type Page, servedPathPages } from "./seo.ts";
 
 const landing = {
@@ -98,5 +98,45 @@ describe("parsePathPage", () => {
     expect(
       parsePathPage("---\ntitle: Jadwigo\nheading: Jadwigo\nreviewed: true\n---\n\nWkrótce\n"),
     ).toBeNull();
+  });
+});
+
+describe("shareProblems", () => {
+  const html = (title: string, description: string, extra = ""): string =>
+    `<title>${title}</title><meta name="description" content="${description}" />` +
+    '<link rel="canonical" href="https://jadwigo.pl/" /><meta property="og:title" content="x" />' +
+    '<meta property="og:description" content="x" /><meta property="og:image" content="x" />' +
+    `<meta name="twitter:card" content="summary" />${extra}`;
+
+  it("passes pages that each carry the tags and their own title and description", () => {
+    expect(
+      shareProblems([
+        { file: "index.html", html: html("Jadwigo", "A") },
+        { file: "o-nas/index.html", html: html("O nas · Jadwigo", "B") },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("names a page missing a tag, and a title or description another page has", () => {
+    expect(
+      shareProblems([
+        { file: "index.html", html: html("Jadwigo", "A") },
+        { file: "a/index.html", html: html("Jadwigo", "A").replace('property="og:image"', "") },
+      ]),
+    ).toEqual([
+      'dist/a/index.html lacks property="og:image"',
+      "dist/a/index.html has the same title as dist/index.html: Jadwigo",
+      "dist/a/index.html has the same description as dist/index.html: A",
+    ]);
+  });
+
+  it("leaves the 404 pages out", () => {
+    expect(
+      shareProblems([
+        { file: "index.html", html: html("Jadwigo", "A") },
+        { file: "404.html", html: "<title>Jadwigo</title>" },
+        { file: "en/404.html", html: "<title>Jadwigo</title>" },
+      ]),
+    ).toEqual([]);
   });
 });
