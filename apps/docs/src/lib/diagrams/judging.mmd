@@ -1,0 +1,7 @@
+flowchart LR
+  T["Criteria first: written before the child answers"] --> A["The child's answer in their own words"]
+  A --> C["Code check: empty or under the soft minimum"]
+  C -->|yes| M["Ask for a little more"]
+  C -->|no| U["Kept unjudged for the tutor"]
+  U --> J["AI judge: one verdict per criterion, with a reason"]
+  J --> F["Feedback the child reads: short, kind, one next step"]
