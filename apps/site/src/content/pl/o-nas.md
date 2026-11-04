@@ -13,7 +13,7 @@ photosLabel: Zdjęcia naszej rodziny
 link: { href: /lekcje, label: Zagraj lekcję }
 ---
 
-Korzystamy z Jadwigo z własnym synem. Od ponad 15 lat jestem inżynierem, a w pracy kieruję setkami agentów AI. Wciąż mnie zaskakują, dlatego nic, co przygotują, nie trafia do dziecka bez sprawdzenia.
+Korzystamy z Jadwigo z własnym synem.
 
 Mamy 2 szalonych chłopaków 🛴, niedawno przeprowadziliśmy się do Polski i nie mamy tu dziadków. Kiedy praca domowa nie idzie, zostajemy z tym sami, wieczorem. U Davida to mnożenie i ortografia.
 

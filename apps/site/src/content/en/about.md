@@ -14,7 +14,7 @@ photosLabel: Our family's photos
 link: { href: /en/lessons, label: Play a lesson }
 ---
 
-We use Jadwigo with our own son. I've been an engineer for more than 15 years, and at work I run hundreds of AI agents. They still surprise me, so nothing they make reaches a child unchecked.
+We use Jadwigo with our own son.
 
 We have 2 crazy boys 🛴, we recently moved to Poland, and there are no grandparents here. When homework goes badly, it's on us, in the evening. For David, it's multiplication and Polish spelling.
 
