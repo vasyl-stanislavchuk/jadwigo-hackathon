@@ -47,7 +47,7 @@ steps:
       text: On a tablet or a computer, or printed on paper. A hint is there when they need it, and they can stop when they've had enough.
     - who: You
       title: You see where to help
-      text: You see every question, every try and every mistake in plain words. Jadwigo builds the next lesson from what was hard. When you want to sit down with your child, Jadwigo suggests where to start.
+      text: "On your child's page you see what they can do now, what they're working on and what comes next, with every question and every try in plain words. Jadwigo builds the next lesson from what was hard."
   request:
     ask: Multiplication homework. Mixes up 7 × 8 and 6 × 9.
     lines: [Reading the homework…, Looking for questions on 7 × 8 and 6 × 9…, Checking the lesson…, Ready]
@@ -64,7 +64,6 @@ steps:
       - { value: 3, label: with a hint }
     nextLabel: "Next lesson:"
     next: multiplying by 7 by splitting it into 5 and 2.
-    screencast: "screencast · the child's page: goals, skills, the last lesson question by question"
 # /en/jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft), the twin of pl's ai. Like the rest of the
 # site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
 # and the privacy page say the rest. Jadwigo AI's lines carry no person and no gender.
@@ -112,16 +111,19 @@ ai:
 promises:
   heading: What you get
   items:
-    - title: No points, timers or leaderboards
-      text: Your child learns at their own pace. Nobody rushes them.
+    - title: A lesson from one photo
+      text: Send a photo of the homework. A few minutes later, a lesson made for your child is waiting.
     - title: Every question has a source
       text: From Alfik Matematyczny and Khan Academy, always with the source named.
-    - title: Print it, and Jadwigo checks the photo
-      text: Print any lesson for your child. Take a photo of the finished work or the homework, and Jadwigo checks it.
+    - title: 29 question types
+      text: Jadwigo chooses what fits your child, so you never have to pick.
+    - title: On a screen or on paper
+      text: One link with no login, or a printed sheet. No points, timers or leaderboards.
 # Direction 1a (draft). Its story shows Tymek, a made-up child, never a real learner.
 partner:
   heading: Learning with you close by
   text: Your child practices at their own pace. On your child's page you see each goal, with what they can do now, what they're working on and what comes next.
+  pic: "A sprout grows out of the pencil pot faster than the court can keep up: Jadwiga waters it from the top of Linijka, Gumka holds her steady and Ołówek marks the new height."
   # Tymek's short story beside it (dl-w0b4.143; draft), replacing the screenshot of Marta's page. Tymek is
   # a made-up child from the demo film. The labels are the app's own (packages/copy parent_goal_*,
   # parent_new_lesson_child, parent_child_grade).

@@ -60,7 +60,6 @@ export const landingSchema = z.object({
       counts: z.array(z.object({ value: z.int().min(0), label: text })).length(3),
       nextLabel: text,
       next: text,
-      screencast: text,
     }),
   }),
   // /jadwigo-ai (dl-w0b4.114; owner's call jadwigo-marketing/calls/2026-11-02-jadwigo-ai-gets-a-marketing-page):
@@ -82,11 +81,12 @@ export const landingSchema = z.object({
     teaser: z.object({ text, link: text }),
   }),
   promises: z.object({ heading: text, items: z.array(item).min(1) }),
-  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to. Beside it, Tymek's
-  // short story (dl-w0b4.143), which replaced the screenshot of the child page (dl-w0b4.123).
+  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside the sprout. `story` is
+  // Tymek, a made-up child from the demo film, in /jak-to-dziala's step 3 (dl-w0b4.143, dl-w0b4.153).
   partner: z.object({
     heading: text,
     text,
+    pic: text,
     // Tymek, a made-up child from the demo film: his child page in the app's own lists, its new-lesson
     // button, and the sheet it makes. `alt` tells the whole loop, for a reader who can't see it.
     story: z.object({

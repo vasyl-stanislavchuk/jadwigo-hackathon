@@ -48,7 +48,7 @@ steps:
       text: Na tablecie, na komputerze albo wydrukowaną na kartce. Podpowiedź jest pod ręką, a skończyć można w każdej chwili.
     - who: Ty
       title: Wiesz, gdzie pomóc
-      text: Widzisz każde pytanie, każdą próbę i każdą pomyłkę, opisane zwykłymi słowami. Następną lekcję Jadwigo zaczyna od tego, co było trudne. Gdy chcesz usiąść z dzieckiem, Jadwigo podpowie, od czego zacząć.
+      text: "Na stronie dziecka widzisz, co już umie, nad czym pracuje i co dalej, a przy tym każde pytanie i każdą próbę, opisane zwykłymi słowami. Następną lekcję Jadwigo zaczyna od tego, co było trudne."
   request:
     ask: Praca domowa z mnożenia. Myli 7 × 8 z 6 × 9.
     lines: [Czytanie pracy domowej…, Szukanie pytań o 7 × 8 i 6 × 9…, Sprawdzanie lekcji…, Gotowe]
@@ -65,7 +65,6 @@ steps:
       - { value: 3, label: z podpowiedzią }
     nextLabel: "Następna lekcja:"
     next: mnożenie przez 7 z rozkładem na 5 i 2.
-    screencast: "screencast · strona dziecka: cele, umiejętności, ostatnia lekcja pytanie po pytaniu"
 # /jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft for the native review). Like the rest of the
 # site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
 # and the privacy page say the rest. Jadwigo AI's lines carry no person and no gender.
@@ -113,17 +112,19 @@ ai:
 promises:
   heading: Co dostajecie
   items:
-    - title: Bez punktów, zegarów i rankingów
-      text: Dziecko uczy się we własnym tempie. Nikt go nie pogania.
+    - title: Lekcja z jednego zdjęcia
+      text: Wyślij zdjęcie pracy domowej. Po kilku minutach czeka lekcja ułożona dla Twojego dziecka.
     - title: Zadania ze źródłem
       text: Z Alfika Matematycznego i Khan Academy, zawsze z podanym źródłem.
-    # Replaces "Bezpłatnie i bez reklam" (owner, 2026-11-01; draft).
-    - title: Wydrukuj, a Jadwigo sprawdzi ze zdjęcia
-      text: Każdą lekcję wydrukujesz dla dziecka. Gotową pracę albo pracę domową sfotografuj, a Jadwigo ją sprawdzi.
+    - title: 29 typów pytań
+      text: Jadwigo wybiera to, co pasuje do dziecka, więc Ty nie musisz.
+    - title: Na ekranie albo na kartce
+      text: Jeden link bez logowania albo wydruk. Bez punktów, minutników i rankingów.
 # Direction 1a (owner, 2026-11-01; draft). Its story shows Tymek, a made-up child, never a real learner.
 partner:
   heading: Nauka, przy której jesteś blisko
   text: Dziecko ćwiczy w swoim tempie. Na stronie dziecka widzisz każdy cel, a przy nim to, co już umie, nad czym pracuje i co dalej.
+  pic: "Z doniczki na kredki wyrasta kiełek szybciej, niż dwór nadąża: Jadwiga podlewa go, stojąc na Linijce, Gumka ją przytrzymuje, a Ołówek zaznacza nową wysokość."
   # Tymek's short story beside it (dl-w0b4.143; draft), replacing the screenshot of Marta's page. Tymek is
   # a made-up child from the demo film. The labels are the app's own (packages/copy parent_goal_*,
   # parent_new_lesson_child, parent_child_grade); the skills are catalogue skills (row-2/5/10 and row-7,
