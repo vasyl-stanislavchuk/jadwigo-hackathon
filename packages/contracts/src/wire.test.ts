@@ -348,6 +348,11 @@ describe("a borrowed question's credit (dl-1eieq.6.2)", () => {
     });
   });
 
+  it("does not credit a twin that names its own source to its question's", () => {
+    const own = { question: "authored:twin-of-s02", changes: [] };
+    expect(pageCredit({ credit: null, based_on: own }, { credit })).toBeNull();
+  });
+
   it("shows no credit for our own question or its twin", () => {
     expect(pageCredit({ credit: null, based_on: null })).toBeNull();
     expect(pageCredit({ credit: null, based_on: null }, { credit: null })).toBeNull();

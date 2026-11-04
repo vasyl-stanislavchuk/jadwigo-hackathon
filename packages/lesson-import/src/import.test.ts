@@ -178,6 +178,33 @@ describe("compiling a lesson file", () => {
     expect(byStep.get("s05t")?.credit).toBeNull();
   });
 
+  it("leaves a twin that names its own source, or has no source to name, as written", () => {
+    const raw = file("equal-groups");
+    const elsewhere = {
+      source: "elsewhere",
+      ref: "made-up-1",
+      licence: "cc-by-4.0",
+      original_lang: "pl",
+      checked: "2026-11-04",
+    };
+    // s02: a non-Khan credit with no based_on; s05: its twin says where it came from.
+    Object.assign(step(raw, "s02"), { credit: elsewhere, based_on: null });
+    step(raw, "s05")["credit"] = { ...elsewhere, ref: "made-up-2" };
+    const s05twin = (step(raw, "s05")["question"] as { help: { twin: Record<string, unknown> } })
+      .help.twin;
+    s05twin["based_on"] = { question: "authored:made-up-twin", changes: [] };
+    const compiled = compileLessonFile(raw);
+    const byStep = new Map(compiled.questions.map((q) => [q.step_id, q.question]));
+    expect(byStep.get("s02t")?.credit).toBeNull();
+    expect(byStep.get("s05t")?.credit).toBeNull();
+    expect(byStep.get("s05t")?.based_on?.question).toBe("authored:made-up-twin");
+    // The page still credits s02's twin to s02, adapted; s05's twin is its own.
+    const s02t = byStep.get("s02t") ?? { credit: null, based_on: null };
+    expect(pageCredit(s02t, byStep.get("s02"))).toMatchObject({ ref: "made-up-1", adapted: true });
+    const s05t = byStep.get("s05t") ?? { credit: null, based_on: null };
+    expect(pageCredit(s05t, byStep.get("s05"))).toBeNull();
+  });
+
   it("refuses a twin's credit the contract does not take, naming the step", () => {
     const raw = file("equal-groups");
     const twin = (step(raw, "s02")["question"] as { help: { twin: Record<string, unknown> } }).help

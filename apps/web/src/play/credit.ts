@@ -6,7 +6,8 @@
  * never the item's (source-credit README §4.2).
  *
  * A source or a licence this file does not know shows nothing rather than a credit with its words
- * guessed. Our own and bank questions carry no credit (decision
+ * guessed. The page sends a known source's licence as its id (`creditLicence` in
+ * packages/contracts), so a licence stored as a sentence still shows the source's card. Our own and bank questions carry no credit (decision
  * `2026-10-27-a-lesson-question-s-credit-is-source-ref-url-licence-original-la`), and Khan's keep
  * their card (decision `2026-10-29-parents-never-see-khan-s-level-names-khan-questions-keep-their-c`).
  */

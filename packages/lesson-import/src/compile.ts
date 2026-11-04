@@ -205,28 +205,30 @@ function withId(
 const TWIN_WRITTEN = "a twin written from this question";
 
 /**
- * A twin's credit and based_on (dl-1eieq.6.2, decision `dl-0qsjc`): its own when it has a credit;
- * else its question's credit, with a `wording` change on the question's source, so the page and the
- * paper say it was adapted. A question with no credit leaves its twin as written.
+ * A twin's credit and based_on (dl-1eieq.6.2, decision `dl-0qsjc`). A twin with a credit, or with a
+ * based_on naming its own source (a `bank:` or `authored:` question), keeps what it has. A twin with
+ * neither was written from its question: it takes that question's credit, with a `wording` change on
+ * the question's source, so the page and the paper say it was adapted. When no source can be named
+ * (a credit with no based_on, not from Khan), it stays as written, and the page still shows its
+ * question's credit, adapted (`pageCredit`'s `original`).
  */
 function twinCredence(
   basedOn: BasedOn | null,
   credit: Credit | null,
   question: Pick<NewLessonQuestion, "credit" | "based_on">,
 ): { based_on: BasedOn | null; credit: Credit | null } {
-  if (credit !== null || question.credit === null) return { based_on: basedOn, credit };
+  const as = { based_on: basedOn, credit };
+  if (credit !== null || basedOn !== null || question.credit === null) return as;
   const { credit: from } = question;
   const source =
-    basedOn?.question ??
-    question.based_on?.question ??
-    (from.source === "khan" ? `khan:${from.ref}` : null);
-  const written = { change: "wording" as const, why: TWIN_WRITTEN, reviewed: false };
+    question.based_on?.question ?? (from.source === "khan" ? `khan:${from.ref}` : null);
+  if (source === null) return as;
   return {
     credit: from,
-    based_on:
-      source === null
-        ? null
-        : { question: source, changes: [...(basedOn?.changes ?? []), written] },
+    based_on: {
+      question: source,
+      changes: [{ change: "wording", why: TWIN_WRITTEN, reviewed: false }],
+    },
   };
 }
 

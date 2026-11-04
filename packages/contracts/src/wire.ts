@@ -180,13 +180,15 @@ export function creditLicence(credit: Pick<Credit, "source" | "licence">): strin
  * A lesson question's credit as the page sees it, or null for our own and bank questions. A twin
  * with no credit of its own that was written from a credited question (`original`, the question
  * its `twin_of` names) shows that question's credit, adapted (dl-1eieq.6.2): the model rewrote it.
- * A twin with its own credit, a sibling taken from the bank, keeps its own.
+ * A twin with its own credit, a sibling taken from the bank, keeps its own, and a twin whose
+ * based_on names its own source (`bank:`, `authored:`) is not credited to its question's.
  */
 export function pageCredit(
   question: Pick<LessonQuestion, "credit" | "based_on">,
   original?: Pick<LessonQuestion, "credit"> | null,
 ): PageCredit | null {
-  const inherited = question.credit === null ? (original?.credit ?? null) : null;
+  const inherited =
+    question.credit === null && question.based_on === null ? (original?.credit ?? null) : null;
   const credit = question.credit ?? inherited;
   if (credit === null) return null;
   return {
