@@ -74,7 +74,8 @@ approved final art enters the app.
 | **Zoja** | A hero. Dreamy; she glides and loops. | Two round buns; paper-plane wings folded from notebook paper |
 | **Marko** | A hero. A cheerful joker who waves hello in 2 languages. | A pointed hat folded from white paper; a wide blue cape |
 
-Jadwiga is named after Queen Jadwiga, and "Jadwigo!" is the Polish way of calling her. A teacher
+Jadwiga is named after Queen Jadwiga. The name Jadwigo is a play on words: Jadwiga, the queen, and
+go, moving: moving forward and growing under her warm wings. A teacher
 character may join the class later, but only with the teacher's written consent.
 
 ## Next
