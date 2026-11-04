@@ -96,9 +96,8 @@ for (const [width, height] of [
     await expect(preview.locator("[data-preview-actions] [data-give]")).toBeVisible();
     await expect(preview.locator("[data-preview-actions] [data-print]")).toBeVisible();
     const box = await preview.boundingBox();
-    // A wide box over the chat on a laptop; the whole screen on a phone.
-    if (width < 1024) expect(box && box.width === width && box.height === height).toBe(true);
-    else expect(box && box.width > 900 && box.width < width).toBe(true);
+    // The whole screen on every size, so the lesson shows whole (design review 2026-11-03).
+    expect(box && box.width === width && box.height === height).toBe(true);
 
     // A reload keeps the preview open: ?open names it.
     await page.reload();

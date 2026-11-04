@@ -31,8 +31,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@jadwigo/ui";
-import { PrinterIcon } from "lucide-react";
-import { type ReactElement, type ReactNode, useEffect, useState } from "react";
+import { CheckIcon, CopyIcon, ExternalLinkIcon, PrinterIcon } from "lucide-react";
+import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
 import { LessonPrint, printLesson } from "./LessonPrint.tsx";
 
 /** Where giving the lesson stands: nothing yet, on its way, given, or refused with its reason. */
@@ -91,10 +91,37 @@ export function LessonActions({
     printLesson(print);
   };
   const busy = given.kind === "giving";
-  const canGive = ready && !busy && onGive !== undefined;
+  // A link is for one child and one revision (LessonWorkspace resets `given` when either changes),
+  // so once given a second press would only make the same link again: it goes quiet until then.
+  const done = given.kind === "given";
+  const canGive = ready && !busy && !done && onGive !== undefined;
+  // Daj lekcję opens the lesson's tab at once, inside the click so no popup blocker stops it, and
+  // sends it to the link when the give lands (design review 2026-11-03); a refusal closes it.
+  const tab = useRef<Window | null>(null);
   const give = (): void => {
-    if (canGive) onGive();
+    if (!canGive) return;
+    tab.current = window.open("about:blank", "_blank");
+    onGive();
   };
+  const givenHref = given.kind === "given" ? given.href : null;
+  const settled = given.kind === "given" || given.kind === "refused";
+  useEffect(() => {
+    const opened = tab.current;
+    if (opened === null || !settled) return;
+    tab.current = null;
+    if (givenHref === null) {
+      opened.close();
+      return;
+    }
+    // The lesson's tab gets no hold on the chat, as rel="noopener" gives the link (where the
+    // browser allows it; happy-dom's tab has only a getter).
+    try {
+      opened.opener = null;
+    } catch {
+      // Left as it is.
+    }
+    opened.location.href = new URL(givenHref, window.location.origin).href;
+  }, [givenHref, settled]);
   const giveReason = !ready
     ? t("parent_give_reason")
     : onGive === undefined
@@ -102,9 +129,14 @@ export function LessonActions({
       : null;
   // Printing waits for the same check as giving.
   const printReason = ready && lesson !== null ? null : t("parent_give_reason");
-  const quietGive = canGive ? null : (giveReason ?? t("parent_giving"));
+  const givenReason = !done
+    ? null
+    : given.name === null
+      ? t("parent_given_anyone")
+      : t("parent_given_child", { name: given.name });
+  const quietGive = canGive ? null : (giveReason ?? givenReason ?? t("parent_giving"));
   return (
-    <div className="flex w-full flex-col gap-2" data-lesson-actions>
+    <div className="flex w-full flex-col" data-lesson-actions>
       {/* On a phone: Dla on its own row, then Daj lekcję full width and print, both 44 tall (chat
           handoff §4.4, delta card-ready-390). */}
       <div className="flex flex-wrap items-center gap-2 max-sm:flex-col max-sm:items-start">
@@ -117,6 +149,9 @@ export function LessonActions({
           </p>
         )}
         <div className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full">
+          {given.kind === "given" && (
+            <GivenLink language={language} href={given.href} className="max-sm:order-3" />
+          )}
           <Quiet reason={printReason} className="max-sm:order-2">
             <Button
               type="button"
@@ -132,32 +167,52 @@ export function LessonActions({
               <PrinterIcon aria-hidden className="size-4" />
             </Button>
           </Quiet>
-          <Quiet reason={quietGive} className="max-sm:order-1 max-sm:flex-1">
-            <Button
-              type="button"
-              // Quiet while it can't give (§4.4): stone fill, faint words, its reason as a tooltip.
-              variant={quietGive === null ? "default" : "secondary"}
-              size="control"
-              className={cn(
-                "max-sm:min-h-11 max-sm:w-full",
-                quietGive !== null && "text-jw-placeholder",
-              )}
-              onClick={give}
-              data-give
-            >
-              {child === null
-                ? t("parent_give")
-                : t("parent_give_child", { name: child.first_name })}
+          {given.kind === "given" ? (
+            // Once given, the one primary opens the lesson again (its tab may be closed).
+            <Button asChild size="control" className="max-sm:order-1 max-sm:min-h-11 max-sm:flex-1">
+              <a href={given.href} target="_blank" rel="noopener" data-given-link>
+                {t("parent_given_open")}
+                <ExternalLinkIcon aria-hidden className="size-4" />
+              </a>
             </Button>
-          </Quiet>
+          ) : (
+            <Quiet reason={quietGive} className="max-sm:order-1 max-sm:flex-1">
+              <Button
+                type="button"
+                // Quiet while it can't give (§4.4): stone fill, faint words, its reason as a tooltip.
+                variant={quietGive === null ? "default" : "secondary"}
+                size="control"
+                className={cn(
+                  "max-sm:min-h-11 max-sm:w-full",
+                  quietGive !== null && "text-jw-placeholder",
+                )}
+                onClick={give}
+                data-give
+              >
+                {child === null
+                  ? t("parent_give")
+                  : t("parent_give_child", { name: child.first_name })}
+              </Button>
+            </Quiet>
+          )}
         </div>
       </div>
-      <div role="status" className="text-jw-page-small text-jw-ink" data-give-state={given.kind}>
+      <div
+        role="status"
+        // Who the link is for is said to a screen reader; the row shows the link itself.
+        // Empty, it takes no room, so the row stays centred in a foot (design review 2026-11-03).
+        className={cn(
+          "text-jw-page-small text-jw-ink not-empty:mt-2",
+          given.kind === "given" && "sr-only",
+        )}
+        data-give-state={given.kind}
+      >
         {given.kind === "giving" && t("parent_giving")}
         {given.kind === "refused" && t(REFUSED[given.reason])}
-        {given.kind === "given" && (
-          <GivenLink language={language} name={given.name} href={given.href} />
-        )}
+        {given.kind === "given" &&
+          (given.name === null
+            ? t("parent_given_anyone")
+            : t("parent_given_child", { name: given.name }))}
       </div>
       {printing && lesson !== null && <LessonPrint language={language} lesson={lesson} />}
     </div>
@@ -168,17 +223,18 @@ export function LessonActions({
 const COPIED_MS = 2000;
 
 /**
- * The lesson's one link: what the parent sends or opens. It opens in a new tab, whose empty
- * sessionStorage starts the child's own attempt, and the chat stays where it was.
+ * The lesson's one link, in the actions' row: a short field to copy from, its copy icon inside it
+ * turning to a green tick once copied. Copying is the point, not reading it, so the field is short.
  */
 function GivenLink({
   language,
-  name,
   href,
+  className,
 }: {
   language: Language;
-  name: string | null;
   href: string;
+  /** Its place in the row (its order on a phone). */
+  className?: string;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string> = {}): string =>
     copy(language, key, vars, "adult");
@@ -190,38 +246,48 @@ function GivenLink({
     return () => clearTimeout(timer);
   }, [copied]);
   return (
-    <div className="flex flex-col gap-2" data-given>
-      <p>{name === null ? t("parent_given_anyone") : t("parent_given_child", { name })}</p>
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
-          kind="text"
-          readOnly
-          value={url}
-          aria-label={t("parent_given_link")}
-          className="min-w-0 flex-1 basis-56"
-          onFocus={(event) => event.currentTarget.select()}
-          data-given-url
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="control"
-          onClick={() => {
-            // Refused (no permission, no secure page): the field is there to select by hand.
-            navigator.clipboard.writeText(url).then(
-              () => setCopied(true),
-              () => undefined,
-            );
-          }}
-          data-given-copy
-        >
-          {t(copied ? "parent_given_copied" : "parent_given_copy")}
-        </Button>
-        <Button asChild size="control">
-          <a href={href} target="_blank" rel="noopener" data-given-link>
-            {t("parent_given_open")}
-          </a>
-        </Button>
+    <div className={cn("flex items-center", className)} data-given>
+      <div>
+        <div className="relative w-44 max-sm:w-full">
+          <Input
+            kind="text"
+            readOnly
+            value={url}
+            aria-label={t("parent_given_link")}
+            className="h-8 min-h-8 w-full pr-9 text-jw-page-small"
+            onFocus={(event) => event.currentTarget.select()}
+            data-given-url
+          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t(copied ? "parent_given_copied" : "parent_given_copy")}
+                className="absolute top-1/2 right-0.5 size-7 min-h-7 min-w-7 -translate-y-1/2"
+                onClick={() => {
+                  // Refused (no permission, no secure page): the field is there to select by hand.
+                  navigator.clipboard.writeText(url).then(
+                    () => setCopied(true),
+                    () => undefined,
+                  );
+                }}
+                data-given-copy
+                data-copied={copied}
+              >
+                {copied ? (
+                  <CheckIcon aria-hidden className="size-4 text-jw-right-ink" />
+                ) : (
+                  <CopyIcon aria-hidden className="size-4" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t(copied ? "parent_given_copied" : "parent_given_copy")}
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </div>
   );

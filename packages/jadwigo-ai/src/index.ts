@@ -38,6 +38,8 @@ export type {
   ConvertRefusal,
 } from "./run/attachments.ts";
 export { lessonValidationIssue } from "./run/lesson-validation.ts";
+/** The plan's stage move, for the chat's port of it to be checked against (dl-uukj.47.71.36). */
+export { movePlan } from "./run/plan.ts";
 export {
   type AcceptMessage,
   acceptMessage,

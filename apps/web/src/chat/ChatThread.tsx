@@ -27,6 +27,7 @@ import { recapOf } from "./ChooseForm.tsx";
 import "./chat.css";
 import { type ReadAttachment, ThreadAttachments } from "./attachments/ThreadAttachments.tsx";
 import { isOpen, type Turn } from "./conversation.ts";
+import { useFoldAtEnd } from "./foldMotion.ts";
 import { JadwigoAiMark } from "./JadwigoAiMark.tsx";
 import { CitationChips } from "./objects/CitationChips.tsx";
 import { LessonCard, wroteLesson } from "./objects/LessonCard.tsx";
@@ -79,17 +80,16 @@ const queuedSpine = (since: number): Spine => ({
 });
 
 /**
- * The turn's reply (D4): the fold's, else, once the turn ended, its last agent message. While the
- * turn runs, Jadwigo's sentences are the spine's now line, never prose.
+ * The turn's reply (D4), as the fold says it: its last agent message with no tool call after it,
+ * once the turn ended. A turn stopped or failed mid-call has none: its last sentence stays a line in
+ * its stage (§2 item 5, dl-uukj.47.71.38). While the turn runs, Jadwigo's sentences are the now line.
  */
 function replyOf(turn: Turn, spine: Spine): Message | null {
+  if (spine.reply === undefined) return null;
   const agent = turn.view.chat.filter(
     (i): i is Message => i.kind === "message" && i.from === "agent",
   );
-  if (spine.reply !== undefined)
-    return agent.findLast((m) => m.text === spine.reply) ?? { ...messageStub, text: spine.reply };
-  if (isOpen(turn)) return null;
-  return agent.at(-1) ?? null;
+  return agent.findLast((m) => m.text === spine.reply) ?? { ...messageStub, text: spine.reply };
 }
 
 const messageStub: Message = { kind: "message", seq: 0, from: "agent", text: "", attachments: [] };
@@ -114,6 +114,36 @@ function parentTextOf(turn: Turn): string | null {
 /** Whether the parent asked the system for less motion. */
 export const lessMotion = (): boolean =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
+/**
+ * A turn's spine row: the card while it runs, the summary row once it is done. It enters with a
+ * fade and folds to the summary over 240 ms (§6, chat.css and foldMotion.ts), neither under
+ * reduced motion.
+ */
+function SpineRow({
+  done,
+  last,
+  still,
+  children,
+}: {
+  done: boolean;
+  last: boolean;
+  still: boolean;
+  children: ReactNode;
+}): ReactElement {
+  const ref = useFoldAtEnd<HTMLLIElement>(done);
+  return (
+    <li
+      ref={ref}
+      className="flex flex-col"
+      data-chat-row
+      data-turn={last ? "current" : "older"}
+      {...(still ? {} : { "data-enter": "" })}
+    >
+      {children}
+    </li>
+  );
+}
 
 /** Smooth unless the parent asked the system for less motion. */
 const scrollBehavior = (): ScrollBehavior => (lessMotion() ? "auto" : "smooth");
@@ -193,7 +223,7 @@ function dayWords(at: number, now: number, language: Language): string {
 function AiHeader({ language }: { language: Language }): ReactElement {
   return (
     <p
-      className="mb-1 flex items-center gap-2 text-jw-page-small font-bold text-jw-ink"
+      className="mb-1 flex items-center gap-1.5 text-jw-page-small font-bold text-jw-ink"
       data-ai-header
     >
       <JadwigoAiMark />
@@ -503,13 +533,7 @@ export function ChatThread({
       noLesson: !turns.slice(0, index + 1).some((t) => t.view.lesson !== null),
     };
     entries.push(
-      <li
-        key={`${id}-spine`}
-        className="flex flex-col"
-        data-chat-row
-        data-turn={last ? "current" : "older"}
-        {...(still ? {} : { "data-enter": "" })}
-      >
+      <SpineRow key={`${id}-spine`} done={done} last={last} still={still}>
         <AiHeader language={language} />
         {done ? (
           <TurnSummary
@@ -529,7 +553,7 @@ export function ChatThread({
         ) : (
           <TurnSpine spine={spine} now={now} language={language} actions={actions} />
         )}
-      </li>,
+      </SpineRow>,
     );
     for (const item of turn.view.chat)
       if (item.kind === "approval" || item.kind === "steer")
@@ -625,6 +649,21 @@ export function ChatThread({
           </>
         )}
       </ol>
+      {/* A soft fade over the list's foot while there is more below, so the thread reads as going
+          on under the composer instead of ending at a hard edge. */}
+      {away && (
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute bottom-0 h-16 bg-linear-to-t from-background from-15% via-background/70 to-transparent",
+            // The list reaches past the pane's padding on the parent page; so does its fade.
+            parent ? "-inset-x-3" : "inset-x-0",
+            // A soft shadow line on the composer's edge: the thread goes on under it.
+            "after:absolute after:inset-x-0 after:bottom-0 after:h-px after:shadow-float",
+          )}
+          data-thread-fade
+        />
+      )}
       {away && (
         <Button
           variant="outline"

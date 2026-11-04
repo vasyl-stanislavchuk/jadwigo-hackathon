@@ -1,38 +1,38 @@
-/* A chat row enters with Zeszyt's fade (dl-uukj.47.28), only when the system allows motion. The
- * pane also leaves data-enter off every row under prefers-reduced-motion (ChatPane.tsx), so nothing
- * moves there whichever way the page is read. */
+/* The chat's motion (handoff dl-uukj.47.71 §6), only when the system allows it. Under
+ * prefers-reduced-motion nothing here runs: rows, lines, the reply and the card appear at once,
+ * the now line's words swap, the loader is a still arc (TurnSpine's motion-safe:animate-spin) and
+ * the seconds still count. The pane also leaves data-enter off every row there (ChatPane.tsx), and
+ * the turn-end fold (foldMotion.ts) and the Collapsible's 200 ms (packages/ui) skip it too.
+ * Nothing moves sideways; nothing bounces or shakes. */
 @media (prefers-reduced-motion: no-preference) {
-  [data-chat-row][data-enter] {
-    animation: jw-fade-in var(--jw-dur-band) var(--jw-ease-out) both;
+  /* The spine appears at send: a fade, 160 ms ease-out. */
+  [data-chat-row][data-enter],
+  [data-chat-row][data-pending-spine] {
+    animation: jw-fade-in 160ms var(--jw-ease-out) both;
   }
-}
 
-/* The activity line's words shimmer while Jadwigo AI is at work (dl-uukj.47.29), only when the
- * system allows motion; the pane leaves data-shimmer off under prefers-reduced-motion too. */
-@media (prefers-reduced-motion: no-preference) {
-  [data-activity] [data-shimmer] {
-    background-image: linear-gradient(
-      90deg,
-      var(--jw-ink-soft) 0%,
-      var(--jw-ink-soft) 40%,
-      var(--jw-ink) 50%,
-      var(--jw-ink-soft) 60%,
-      var(--jw-ink-soft) 100%
-    );
-    background-size: 300% 100%;
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    animation: jw-chat-shimmer 2.4s linear infinite;
+  /* A line lands in its stage: a fade, 160 ms. The now line's words are keyed by what they say
+   * (TurnSpine.tsx), so a new sentence fades in over the old one's place in 120 ms, one line
+   * high. */
+  [data-spine] [data-line] {
+    animation: jw-fade-in 160ms var(--jw-ease-out) both;
   }
-}
+  [data-spine] [data-line="now"] [data-words] {
+    animation: jw-fade-in 120ms var(--jw-ease-out) both;
+  }
 
-@keyframes jw-chat-shimmer {
-  from {
-    background-position: 100% 0;
+  /* The turn ends: the card folds to its summary row (foldMotion.ts, 240 ms), the reply fades in
+   * 160 ms after 80 ms, the lesson card fades 160 ms. */
+  [data-chat-row]:has(> [data-reply="current"]) {
+    animation: jw-fade-in 160ms var(--jw-ease-out) 80ms both;
   }
-  to {
-    background-position: 0% 0;
+  [data-chat-row]:has([data-object-card="lesson"]) {
+    animation: jw-fade-in 160ms var(--jw-ease-out) both;
+  }
+
+  /* An old card becomes the one-line superseded row: 200 ms. */
+  [data-object-card="lesson"][data-card-state="superseded"] {
+    animation: jw-fade-in 200ms var(--jw-ease-out) both;
   }
 }
 
