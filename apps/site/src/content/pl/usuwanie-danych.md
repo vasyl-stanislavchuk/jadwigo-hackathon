@@ -9,7 +9,8 @@ draftNote: Wersja robocza. Ten tekst czeka na przegląd prawnika i może się je
 reviewed: true
 ---
 
-Rodzic może w każdej chwili poprosić o usunięcie swojego konta w Jadwigo i danych z nim powiązanych. Dotyczy to też konta, do którego loguje się przez Google albo Facebooka.
+Rodzic może w każdej chwili poprosić o usunięcie swojego konta w Jadwigo i danych z nim powiązanych.
+Dotyczy to też konta, do którego loguje się przez Google albo Facebooka.
 
 ## Jak poprosić
 
@@ -19,8 +20,11 @@ Rodzic może w każdej chwili poprosić o usunięcie swojego konta w Jadwigo i d
 
 ## Co dzieje się dalej
 
-1. Potwierdzimy, że dostaliśmy prośbę. Jeśli e-mail przyjdzie z innego adresu niż ten na koncie, poprosimy o potwierdzenie z adresu konta.
-2. Usuniemy konto i dane z nim powiązane. W Supabase usuniemy adres e-mail i połączenie z kontem Google lub Facebook. W Jadwigo usuniemy dane dzieci, ich odpowiedzi i postępy w lekcjach oraz rozmowy z Jadwigo AI.
+1. Potwierdzimy, że dostaliśmy prośbę. Jeśli e-mail przyjdzie z innego adresu niż ten na koncie,
+   poprosimy o potwierdzenie z adresu konta.
+2. Usuniemy konto i dane z nim powiązane. W Supabase usuniemy adres e-mail i połączenie z kontem
+   Google lub Facebook. W Jadwigo usuniemy dane dzieci, ich odpowiedzi i postępy w lekcjach oraz
+   rozmowy z Jadwigo AI.
 3. Napiszemy, gdy dane zostaną usunięte. Zrobimy to najpóźniej w ciągu miesiąca od otrzymania prośby.
 
 Dane, które przez Jadwigo AI trafiły już do firmy Meta, firma Meta przechowuje na własnych zasadach.
@@ -31,9 +35,11 @@ Usuniętego konta nie da się przywrócić. Później można założyć nowe.
 
 Rodzic może też odebrać Jadwigo dostęp do swojego konta:
 
-- Google: w [ustawieniach konta Google](https://myaccount.google.com/connections), na liście aplikacji połączonych z kontem.
+- Google: w [ustawieniach konta Google](https://myaccount.google.com/connections), na liście aplikacji
+  połączonych z kontem.
 - Facebook: w menu Ustawienia i prywatność, Ustawienia, Aplikacje i witryny.
 
-Samo odłączenie nie usuwa danych, które Jadwigo już ma. Żeby je usunąć, wystarczy napisać do nas, jak wyżej.
+Samo odłączenie nie usuwa danych, które Jadwigo już ma. Żeby je usunąć, wystarczy napisać do nas, jak
+wyżej.
 
 [Prywatność](/prywatnosc/)

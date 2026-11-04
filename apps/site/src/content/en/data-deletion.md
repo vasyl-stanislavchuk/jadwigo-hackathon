@@ -9,7 +9,8 @@ draftNote: Draft. This text is waiting for a lawyer's review and may still chang
 reviewed: true
 ---
 
-You can ask at any time for your Jadwigo account and the data linked to it to be deleted. This includes an account you sign in to with Google or Facebook.
+You can ask at any time for your Jadwigo account and the data linked to it to be deleted. This
+includes an account you sign in to with Google or Facebook.
 
 ## How to ask
 
@@ -19,8 +20,11 @@ You can ask at any time for your Jadwigo account and the data linked to it to be
 
 ## What happens next
 
-1. We confirm that we have your request. If you write from another address, we ask you to confirm from the one on the account.
-2. We delete the account and the data linked to it. In Supabase, we delete the email address and the link to your Google or Facebook account. In Jadwigo, we delete your children's data, their answers and progress in lessons, and your conversations with Jadwigo AI.
+1. We confirm that we have your request. If you write from an address other than the one on the
+   account, we ask you to confirm from the account's address.
+2. We delete the account and the data linked to it. In Supabase, we delete the email address and the
+   link to your Google or Facebook account. In Jadwigo, we delete your children's data, their answers
+   and progress in lessons, and your conversations with Jadwigo AI.
 3. We write to you once the data is deleted, no later than 1 month after we receive your request.
 
 Jadwigo AI may already have sent some of the data to Meta. Meta keeps that data under Meta's own terms.
@@ -31,7 +35,8 @@ A deleted account can't be restored. You can set up a new one later.
 
 You can also remove Jadwigo's access to your account:
 
-- Google: in your [Google account settings](https://myaccount.google.com/connections), in the list of apps connected to your account.
+- Google: in your [Google account settings](https://myaccount.google.com/connections), in the list of
+  apps connected to your account.
 - Facebook: under Settings and privacy, Settings, Apps and websites.
 
 Disconnecting alone doesn't delete the data Jadwigo already has. To delete it, write to us as above.
