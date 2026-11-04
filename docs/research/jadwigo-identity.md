@@ -75,6 +75,8 @@ Each register writes the same 6 lines. They are a landing headline, a parent's c
 
 ## 3. The name story and a character
 
+> **Superseded (2026-11-04).** The name is a play on words: Jadwiga, the queen, and go, moving: moving forward and growing under her warm wings. It is not a call: don't use the vocative stories below (`dl-w0b4.138`).
+
 Jadwigo is named after a school's patron, Queen Jadwiga. In Polish you call a Jadwiga "Jadwigo!", and in English the name reads as "Jadwiga, go!". The facts each story rests on:
 - She was crowned "King" of Poland in Kraków on 16 October 1384 ([Wikipedia](https://en.wikipedia.org/wiki/Jadwiga_of_Poland), [Britannica](https://www.britannica.com/biography/Jadwiga)).
 - The sale of her jewellery helped restore the Kraków Academy, whose charter was issued on 26 July 1400, a year after her death.

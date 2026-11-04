@@ -1,8 +1,10 @@
 /**
  * Part: cards the learner puts into groups (dl-w3.37.11), for the Group family: sorting into two or
  * more groups, and matching pairs (a group that takes one card). Three ways, each giving the same
- * placement: drag a card onto a group, tap a card and then a group, or do that tap-tap from a
- * keyboard (every card and every group is a button). Tapping the tray puts a picked card back.
+ * placement: drag a card onto a group, tap a card and then a group (anywhere in its box, dl-uukj.62),
+ * or do that tap-tap from a keyboard (every card and every group is a button). Tapping the tray puts
+ * a picked card back. A tapped card glides to its new place (a view transition), and jumps under
+ * reduced motion or where the browser has none.
  * Each placement is announced in a polite live region.
  *
  * Behaviour, not judgement: the caller holds the placement, each card's tone and the step's tone,
@@ -26,6 +28,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { copy } from "@jadwigo/copy";
 import { cn } from "@jadwigo/ui";
 import { type ReactNode, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import type { Clock, Instant } from "../stage/clock.ts";
 import { type PressModality, press } from "../stage/press.ts";
 import type { Language } from "../stage/types.ts";
@@ -57,6 +60,15 @@ export interface Zone {
 }
 
 export const TRAY = "__tray__";
+
+/** A tap placement as a view transition, so the card glides from where it was to its group: the
+ * browser draws the move from each card's `view-transition-name`. Straight away under reduced
+ * motion, and where the browser has no view transitions. */
+function glide(update: () => void): void {
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+  if (reduced || typeof document.startViewTransition !== "function") update();
+  else document.startViewTransition(() => flushSync(update));
+}
 
 const CARD =
   "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] rounded-xl border-2 px-4 py-2 text-[length:var(--kid-answer-size)] font-semibold flex items-center justify-center gap-2 bg-card touch-none select-none cursor-grab";
@@ -100,7 +112,10 @@ function Card({
       data-tone={card.tone}
       data-help-given={card.given ? "true" : undefined}
       data-help-focus={card.focus ? "true" : undefined}
-      style={{ transform: CSS.Translate.toString(transform) }}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        viewTransitionName: `jw-card-${card.id}`,
+      }}
       className={cn(CARD, isDragging && "z-10 opacity-80", look, card.focus && FOCUS_CLASS)}
       onPointerDown={(event) => {
         listeners?.["onPointerDown"]?.(event);
@@ -137,24 +152,35 @@ function Place({
 }): JSX.Element {
   const { setNodeRef, isOver } = useDroppable({ id });
   const tap = press(clock, onTap);
+  // A card's own tap picks it; any other tap in the box, its button's included (a keyboard's
+  // Enter clicks it), places the picked card here.
+  const onCard = (target: EventTarget): boolean =>
+    target instanceof Element && target.closest("button[aria-pressed]") !== null;
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: the box widens the tap; its button is the control the keyboard and a screen reader use
+    // biome-ignore lint/a11y/useKeyWithClickEvents: the button inside takes the keys, and its click bubbles here
     <div
       ref={setNodeRef}
       data-help-focus={focus ? "true" : undefined}
+      data-drop-zone
       className={cn(
         "flex flex-col gap-2 rounded-2xl border-2 border-dashed p-3",
-        isOver || active ? "border-primary bg-primary/5" : "border-border",
+        isOver || active ? "cursor-pointer border-primary bg-primary/5" : "border-border",
         focus && FOCUS_CLASS,
         className,
       )}
+      onPointerDown={(event) => {
+        if (!onCard(event.target)) tap.onPointerDown(event);
+      }}
+      onClick={(event) => {
+        if (!onCard(event.target)) tap.onClick(event);
+      }}
     >
       <button
         type="button"
         data-drop-target
         className="min-h-[var(--kid-tap-min)] rounded-lg text-left text-xl font-semibold"
         aria-label={label}
-        onPointerDown={tap.onPointerDown}
-        onClick={tap.onClick}
       >
         {content ?? label}
       </button>
@@ -216,8 +242,14 @@ export function DropZones({
   const tapPlace = (to: string) => (at: Instant, modality: PressModality) => {
     if (tap.picked === null || locked) return;
     const [card = "", from = ""] = tap.picked.split("@");
-    place(card, from, to, at, modality);
-    tap.clear();
+    if (to === from) {
+      tap.clear();
+      return;
+    }
+    glide(() => {
+      place(card, from, to, at, modality);
+      tap.clear();
+    });
   };
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {

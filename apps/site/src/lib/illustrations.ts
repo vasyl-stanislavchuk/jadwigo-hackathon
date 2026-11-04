@@ -11,6 +11,11 @@ import cardG2a from "../assets/illustrations/card-g2a.webp";
 import cardG2b from "../assets/illustrations/card-g2b.webp";
 import cardG3a from "../assets/illustrations/card-g3a.webp";
 import cardG3b from "../assets/illustrations/card-g3b.webp";
+import cardPl3CzesciMowy from "../assets/illustrations/card-pl3-czesci-mowy.webp";
+import cardPl3Czytanie from "../assets/illustrations/card-pl3-czytanie.webp";
+import cardPl3Gloski from "../assets/illustrations/card-pl3-gloski.webp";
+import cardPl3Ortografia from "../assets/illustrations/card-pl3-ortografia.webp";
+import cardPl3Zdanie from "../assets/illustrations/card-pl3-zdanie.webp";
 import eyesClosed from "../assets/illustrations/eyes-closed.webp";
 import hero from "../assets/illustrations/hero.webp";
 import howStep2 from "../assets/illustrations/how-step2.webp";
@@ -31,9 +36,21 @@ export const slotArt = { hero, partner, partnerGrow, howTop, howStep2 } satisfie
 export const blinkEyes = eyesClosed;
 
 // A featured lesson's card picture, keyed by its lesson id because titles change (dl-5ssh.4.42): one
-// picture per pl/en pair, so the Polish lesson and its English twin show the same scene. `alt` names
-// its words under `lessons.row.pics`. A lesson with no picture keeps the grey slot.
-export type CardArt = "cukier" | "nalesnik" | "skoki" | "mierzenie" | "czekolada" | "spacer";
+// picture per pl/en pair, so the Polish lesson and its English twin show the same scene, and one per
+// Polish-only lesson, which has no twin (dl-w0b4.137). `alt` names its words under
+// `lessons.row.pics`. A lesson with no picture keeps the grey slot.
+export type CardArt =
+  | "cukier"
+  | "nalesnik"
+  | "skoki"
+  | "mierzenie"
+  | "czekolada"
+  | "spacer"
+  | "pl3_czytanie"
+  | "pl3_gloski"
+  | "pl3_czesci_mowy"
+  | "pl3_zdanie"
+  | "pl3_ortografia";
 const pairs: readonly [string, string, ImageMetadata, CardArt][] = [
   // grade 1: Dodajemy i odejmujemy do 20 / Adding and taking away to 20
   ["les_40jwhmppkbb5vvag7rc27xrn1x", "les_0pdpkegvywbn1vvqzeyhcwvxsm", cardG1a, "cukier"],
@@ -48,12 +65,29 @@ const pairs: readonly [string, string, ImageMetadata, CardArt][] = [
   // grade 3: Zegar i wykresy / Clocks and graphs
   ["les_4ymyms965aakxtbz0k3t8kr2py", "les_1a5was8kx4byw9rtw2x6yqh6eh", cardG3b, "spacer"],
 ];
-const cards = new Map<LessonId, { src: ImageMetadata; alt: CardArt }>(
-  pairs.flatMap(([pl, en, src, alt]) => [
+// The grade-3 Polish lessons (dl-n9fr.80): Polish only, so one lesson id each.
+const singles: readonly [string, ImageMetadata, CardArt][] = [
+  // Czytam ze zrozumieniem: Spacer w deszczu
+  ["les_023x6dyc9dbb79g206p9pd6j7c", cardPl3Czytanie, "pl3_czytanie"],
+  // Litery, głoski, sylaby i alfabet
+  ["les_7h3fzt6v0yb6sr0r6ks039kptj", cardPl3Gloski, "pl3_gloski"],
+  // Rzeczownik, przymiotnik, czasownik i rodzina wyrazów
+  ["les_35dzxscf7hbagsbt3kfdfmm40z", cardPl3CzesciMowy, "pl3_czesci_mowy"],
+  // Zdania: rozsypanka, rozwijanie i pytania
+  ["les_6hqetrmeg0bqktxa1vqh53c5d0", cardPl3Zdanie, "pl3_zdanie"],
+  // Ortografia, zaproszenie, życzenia i adres
+  ["les_4tgxbakxsha3rb1httn8rsm4p8", cardPl3Ortografia, "pl3_ortografia"],
+];
+const cards = new Map<LessonId, { src: ImageMetadata; alt: CardArt }>([
+  ...pairs.flatMap(([pl, en, src, alt]): [LessonId, { src: ImageMetadata; alt: CardArt }][] => [
     [LessonId.parse(pl), { src, alt }],
     [LessonId.parse(en), { src, alt }],
   ]),
-);
+  ...singles.map(([id, src, alt]): [LessonId, { src: ImageMetadata; alt: CardArt }] => [
+    LessonId.parse(id),
+    { src, alt },
+  ]),
+]);
 
 export function cardArt(lesson: FeaturedLesson): { src: ImageMetadata; alt: CardArt } | undefined {
   return cards.get(lesson.lesson_id);

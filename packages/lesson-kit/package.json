@@ -31,7 +31,7 @@
     "katex": "draws the TeX in question text (src/parts/RichText.tsx)",
     "lucide-react": "the icons the parts draw: the status marks, the drag handle, the play clip, the credit link",
     "react": "the stage, parts and family views in src/**/*.tsx",
-    "react-dom": "React's renderer, which @testing-library/react renders the components with",
+    "react-dom": "flushSync, so a tapped card's view transition sees it placed (parts/DropZones.tsx); also the renderer @testing-library/react uses",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"
   },

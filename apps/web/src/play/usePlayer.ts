@@ -127,6 +127,34 @@ function startOnce(
 }
 
 /**
+ * A preview attempt opened at planned question `n` (`?q=`, dl-uukj.60): each question before it is
+ * skipped, so nothing is recorded for a child and the tab's own attempt is left alone. A twin is
+ * asked only through help, so with nothing but skips the open seq is the plan position.
+ */
+async function startAt(
+  client: AttemptClient,
+  assignmentId: AssignmentId,
+  n: number,
+): Promise<AttemptSnapshot> {
+  let snapshot = await client.startAttempt(assignmentId, { mode: "preview" });
+  while (snapshot.open_seq !== null && snapshot.open_seq < n) {
+    const now = new Date().toISOString();
+    await client.answer(snapshot.attempt.id, {
+      kind: "skip",
+      skip_reason: "asked_to_skip",
+      event_id: EventId.parse(uuid()),
+      seq: snapshot.open_seq,
+      try_no: 1,
+      latency_ms: 0,
+      asked_at: now,
+      answered_at: now,
+    });
+    snapshot = await client.getAttempt(snapshot.attempt.id);
+  }
+  return snapshot;
+}
+
+/**
  * `learner` is the child a play link names (`?learner=`, dl-1u6fn.5): an assignment for a pod's
  * learners starts only with one, and the attempt is that child's from its start. `playerName` is
  * what a player typed on the first screen (IntroScreen), kept on an attempt with no learner.
@@ -136,6 +164,8 @@ export function usePlayer(
   client?: AttemptClient,
   learner: LearnerId | null = null,
   playerName: string | null = null,
+  /** `?q=`: open a fresh preview at this planned question (startAt). */
+  jumpTo: number | null = null,
 ): Player {
   const api = useMemo(() => client ?? createClient({ base: "" }), [client]);
   const [state, dispatch] = useReducer(runner, initialRunner);
@@ -203,23 +233,25 @@ export function usePlayer(
       untilAnswered(() => startOnce(api, assignmentId, learner, playerName), isLive);
     const stored = storedAttempt.get(assignmentId, learner);
     const load =
-      stored === null
-        ? start()
-        : untilAnswered(() => api.getAttempt(stored), isLive).then(
-            // Another child's attempt is never resumed: this link starts its own.
-            (snapshot) => {
-              if ((snapshot.attempt.learner_id ?? null) === learner) return snapshot;
-              storedAttempt.clear(assignmentId, learner);
-              return start();
-            },
-            (error: unknown) => {
-              if (isApiError(error) && error.status === 404) {
+      jumpTo !== null
+        ? startAt(api, assignmentId, jumpTo)
+        : stored === null
+          ? start()
+          : untilAnswered(() => api.getAttempt(stored), isLive).then(
+              // Another child's attempt is never resumed: this link starts its own.
+              (snapshot) => {
+                if ((snapshot.attempt.learner_id ?? null) === learner) return snapshot;
                 storedAttempt.clear(assignmentId, learner);
                 return start();
-              }
-              throw error;
-            },
-          );
+              },
+              (error: unknown) => {
+                if (isApiError(error) && error.status === 404) {
+                  storedAttempt.clear(assignmentId, learner);
+                  return start();
+                }
+                throw error;
+              },
+            );
     load
       .then((snapshot) => {
         if (live) take(snapshot);
@@ -235,7 +267,7 @@ export function usePlayer(
     return () => {
       live = false;
     };
-  }, [api, assignmentId, learner, playerName, take]);
+  }, [api, assignmentId, learner, playerName, jumpTo, take]);
 
   // A new question on screen: its clock starts now. A miss keeps the question, and its clock.
   useEffect(() => {

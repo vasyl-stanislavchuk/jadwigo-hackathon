@@ -47,6 +47,11 @@ const SPACING = [
   "jw-shell-strip",
   "jw-shell-band",
   "jw-shell-box",
+  "jw-loading-art-large",
+  "jw-loading-art-large-min",
+  "jw-loading-art-small",
+  "jw-loading-page",
+  "jw-loading-block",
   "jw-dialog",
 ];
 const twMerge = extendTailwindMerge({

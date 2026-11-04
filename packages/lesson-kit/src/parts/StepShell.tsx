@@ -774,15 +774,19 @@ export function StepShell({
   const bulbPress: PressHandlers | null = ended ? null : ask ? ask.press : null;
   const wayOut: PressHandlers | null = ended || ask ? null : (leaving?.press ?? null);
   // A rung the api writes itself (look again, a smaller step) has its card and no hints: the card is
-  // the note's one card, or the note opened empty (owner 2026-10-29, dl-uukj.29.154).
+  // the note's one card, or the note opened empty (owner 2026-10-29, dl-uukj.29.154). Rung 3 comes
+  // as worked lines with no card (the almost-there, its last line blank): the lines are its card,
+  // or the note opened empty after a miss (dl-uukj.63).
+  const lines = help?.worked ?? [];
   const written: PageHintCard[] =
     (help?.hints?.length ?? 0) > 0
       ? (help?.hints ?? [])
-      : help?.card
+      : help?.card || lines.length > 0
         ? [
             {
-              text: help.card.text,
-              ...(help.card.picture === undefined ? {} : { picture: help.card.picture }),
+              text: help?.card?.text ?? "",
+              ...(help?.card?.picture === undefined ? {} : { picture: help.card.picture }),
+              ...(lines.length > 0 ? { lines, blank: help?.blank === true } : {}),
             },
           ]
         : [];
@@ -1038,14 +1042,16 @@ export function StepShell({
           )}
         </div>
         <div data-area="help" className="flex flex-col gap-4">
-          {open && !ended && (
+          {/* A step that ended on its solution keeps the note above it, with nothing left to press
+              (owner 2026-11-04, dl-uukj.64): the help the child had stays beside the answer. */}
+          {open && (!ended || verdict === "solution") && (
             <HelpLadder
               language={language}
               cards={cards}
               of={help?.hintsTotal ?? (help?.more ? null : cards.length)}
-              more={help !== null && ask ? ask.press : null}
-              dontKnow={leaving?.press ?? null}
-              refused={ladder?.refused === true}
+              more={!ended && help !== null && ask ? ask.press : null}
+              dontKnow={ended ? null : (leaving?.press ?? null)}
+              refused={!ended && ladder?.refused === true}
             />
           )}
           {hint && !workedSolution && help === null && !ended && (

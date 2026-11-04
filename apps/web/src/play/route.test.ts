@@ -1,6 +1,6 @@
 import { AssignmentId } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import { playPath, playRoute, reviewPath } from "./route.ts";
+import { playPath, playQuestion, playRoute, reviewPath } from "./route.ts";
 
 describe("playRoute", () => {
   it("reads the assignment from /play/<id>", () => {
@@ -32,5 +32,14 @@ describe("playRoute", () => {
     expect(playRoute("/play/not-an-id/review/1")).toEqual({ assignmentId: null });
     expect(playRoute(`/play/${id}/review`)).toBeNull();
     expect(playRoute(`/play/${id}/review/1/more`)).toBeNull();
+  });
+});
+
+describe("playQuestion", () => {
+  it("reads ?q= as a whole number above 0, and nothing else (dl-uukj.60)", () => {
+    expect(playQuestion(new URLSearchParams("q=7&lang=pl"))).toBe(7);
+    for (const q of ["", "q=0", "q=01", "q=1.5", "q=abc", "q=-2"]) {
+      expect(playQuestion(new URLSearchParams(q))).toBeNull();
+    }
   });
 });

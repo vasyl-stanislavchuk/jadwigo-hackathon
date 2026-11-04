@@ -10,7 +10,7 @@
 import type { ParentClient } from "@jadwigo/api-client";
 import type { Learner, LearnerAttempts } from "@jadwigo/contracts";
 import { copy, type Language } from "@jadwigo/copy";
-import { Card, CardContent, Link, Spinner } from "@jadwigo/ui";
+import { Card, CardContent, Link, Loading } from "@jadwigo/ui";
 import { type ReactElement, useEffect, useState } from "react";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
@@ -48,7 +48,9 @@ export function LearnerOverview({
         language={language}
         since={learner.created_at}
       />
-      {attempts === null && <Spinner label={copy(language, "loading", {}, CATEGORY)} />}
+      {attempts === null && (
+        <Loading size="block" character="gumka" label={copy(language, "loading", {}, CATEGORY)} />
+      )}
       {attempts === "failed" && <Failed language={language} />}
       {Array.isArray(attempts) && attempts.length === 0 && (
         <p className="text-jw-ink-soft" data-overview-empty>

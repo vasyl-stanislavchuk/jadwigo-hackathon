@@ -139,6 +139,57 @@ describe("PlayScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
   });
 
+  // dl-7wlo.44: while the attempt starts, one status in the page's words with Ołówek, decorative;
+  // the question replaces it the moment it arrives, with no wait for the drawing.
+  it("waits with Ołówek while the attempt starts, then shows the question at once", async () => {
+    let start: (s: AttemptSnapshot) => void = () => undefined;
+    const startAttempt = vi.fn(
+      () =>
+        new Promise<AttemptSnapshot>((resolve) => {
+          start = resolve;
+        }),
+    );
+    const { container } = render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    await vi.waitFor(() => expect(startAttempt).toHaveBeenCalledTimes(1));
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status", { name: "Chwileczkę…" })).toBeTruthy();
+    const art = container.querySelector("[data-slot=loading] img");
+    expect(art?.getAttribute("data-character")).toBe("olowek");
+    expect(art?.getAttribute("alt")).toBe("");
+    await act(async () => start(snapshot(FRESH, "in_progress", [question(1)])));
+    expect(screen.getAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+    expect(container.querySelector("[data-slot=loading]")).toBeNull();
+  });
+
+  // dl-uukj.60: ?q=3 opens a fresh preview at planned question 3, the two before it skipped, and
+  // leaves the tab's own attempt where it was.
+  it("opens a preview at the question ?q= names, skipping the ones before it", async () => {
+    storedAttempt.set(ASSIGNMENT, ATTEMPT, null);
+    window.history.replaceState(null, "", `${playPath(ASSIGNMENT)}?q=3`);
+    const asked = [question(1), question(2), question(3)];
+    let open = 1;
+    const startAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", asked.slice(0, 1)));
+    const answer = vi.fn(async (_id: AttemptId, body: AttemptAnswerRequest) => {
+      expect(body).toMatchObject({ kind: "skip", skip_reason: "asked_to_skip", seq: open });
+      open += 1;
+      return {} as AttemptAnswerResult;
+    });
+    const getAttempt = vi.fn(async () => snapshot(FRESH, "in_progress", asked.slice(0, open)));
+    render(
+      <PlayScreen
+        assignmentId={ASSIGNMENT}
+        language="pl"
+        client={client({ startAttempt, answer, getAttempt })}
+      />,
+    );
+    expect(await screen.findAllByText("Ile to jest dwa razy pięć? (3)")).not.toHaveLength(0);
+    expect(startAttempt).toHaveBeenCalledWith(ASSIGNMENT, { mode: "preview" });
+    expect(answer).toHaveBeenCalledTimes(2);
+    expect(storedAttempt.get(ASSIGNMENT)).toBe(ATTEMPT);
+  });
+
   // dl-1eieq.3: a borrowed question draws its credit in the instruction row; our own draw none.
   it("draws 'z Khan Academy' on a borrowed question, and its card on a tap", async () => {
     const borrowed = {

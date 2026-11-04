@@ -7,6 +7,8 @@ when: 2026-10-27T22:00:00Z
 
 # Name story
 
+> **Superseded (2026-11-04).** The name is a play on words: Jadwiga, the queen, and go, moving: moving forward and growing under her warm wings. It is not a call: don't use the vocative stories below (`dl-w0b4.138`).
+
 Jadwigo is named after the patron of our son's school, Queen Jadwiga. In Polish you call a Jadwiga "Jadwigo!", and in English the name reads as "Jadwiga, go!". A name story is the line or two on jadwigo.pl that explains the word.
 
 Each story rests on these facts:
