@@ -135,7 +135,8 @@ export function LetterRow({
     const input = field();
     if (at === null || input === null) return;
     typed.current = null;
-    input.focus();
+    // Without a scroll: iOS would pan the page again on every letter (dl-uukj.29.170).
+    input.focus({ preventScroll: true });
     input.setSelectionRange(at.caret, at.caret);
     popLetter(input, at.caret, at.letter, motion);
   });

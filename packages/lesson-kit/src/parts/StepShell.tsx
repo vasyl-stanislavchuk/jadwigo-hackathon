@@ -55,6 +55,7 @@ import { ArrowDown, ChevronDown, ChevronUp, X } from "lucide-react";
 import {
   createContext,
   type ReactNode,
+  type RefObject,
   useCallback,
   useContext,
   useEffect,
@@ -414,32 +415,70 @@ function useTrayHeight(el: HTMLElement | null, docked: boolean): number {
   return height;
 }
 
+/** A keyboard smaller than this is no system keyboard (a browser's own bar coming and going). */
+const KEYBOARD_MIN = 120;
+/** How long the dock follows the visual viewport after it moves: iOS reports the keyboard while it
+ * is still sliding, and pans the page after it. */
+const KEYBOARD_SETTLE_MS = 600;
+
 /** On a touch phone in a lesson, while the system keyboard is up, the docked tools (the letter
- * row) ride on top of it (rule 18): how far the keyboard covers the window, from the visual viewport, also set as
- * --kid-keyboard for styles/stage.css. 0 while it is down. */
-function useKeyboardInset(on: boolean): number {
-  const [inset, setInset] = useState(0);
+ * row) ride on top of it (rule 18): whether it is up, from the visual viewport. How far it covers
+ * the window is written straight to --kid-keyboard (styles/stage.css) on every frame the viewport
+ * moves, never through a render, so the row keeps to the keyboard's top while iOS slides it in and
+ * pans the page (dl-uukj.29.170). Once the keyboard settles, the focused field in `shell` is shown
+ * again between the top bar and the row: iOS's own scroll leaves it just above the keyboard, under
+ * the row. */
+function useKeyboardInset(on: boolean, shell: RefObject<HTMLElement | null>): boolean {
+  const [up, setUp] = useState(false);
   useEffect(() => {
     const viewport = typeof window === "undefined" ? undefined : window.visualViewport;
-    if (!on || !viewport) return setInset(0);
-    const read = (): void => setInset(keyboardInset(window.innerHeight, viewport));
-    read();
+    const root = document.documentElement;
+    if (!on || !viewport) {
+      setUp(false);
+      return;
+    }
+    let shown = 0;
+    let frame = 0;
+    let until = 0;
+    const write = (): number => {
+      const inset = keyboardInset(window.innerHeight, viewport);
+      if (inset > 0) root.style.setProperty("--kid-keyboard", `${inset}px`);
+      else root.style.removeProperty("--kid-keyboard");
+      setUp(inset > KEYBOARD_MIN);
+      return inset;
+    };
+    const settle = (inset: number): void => {
+      if (inset <= KEYBOARD_MIN || Math.abs(inset - shown) <= 40) return;
+      shown = inset;
+      const field = document.activeElement;
+      if (field instanceof HTMLElement && shell.current?.contains(field)) scrollToShow(field);
+    };
+    const follow = (): void => {
+      const inset = write();
+      if (performance.now() < until) frame = requestAnimationFrame(follow);
+      else {
+        frame = 0;
+        settle(inset);
+        if (inset <= KEYBOARD_MIN) shown = 0;
+      }
+    };
+    const read = (): void => {
+      write();
+      until = performance.now() + KEYBOARD_SETTLE_MS;
+      if (frame === 0 && typeof requestAnimationFrame !== "undefined")
+        frame = requestAnimationFrame(follow);
+    };
+    write();
     viewport.addEventListener("resize", read);
     viewport.addEventListener("scroll", read);
     return () => {
       viewport.removeEventListener("resize", read);
       viewport.removeEventListener("scroll", read);
-    };
-  }, [on]);
-  useEffect(() => {
-    if (inset === 0) return;
-    const root = document.documentElement;
-    root.style.setProperty("--kid-keyboard", `${inset}px`);
-    return () => {
+      if (frame !== 0) cancelAnimationFrame(frame);
       root.style.removeProperty("--kid-keyboard");
     };
-  }, [inset]);
-  return inset;
+  }, [on, shell]);
+  return up;
 }
 
 /** Behind close: the lesson waits. "Wróć do lekcji" goes back to the same question. */
@@ -573,8 +612,7 @@ export function StepShell({
   const docked = progress !== null && at === "tray";
   const [dock, setDock] = useState<HTMLElement | null>(null);
   const [dockBox, setDockBox] = useState<HTMLElement | null>(null);
-  // A keyboard smaller than this is no system keyboard (a browser's own bar coming and going).
-  const keyboard = useKeyboardInset(docked && touch) > 120;
+  const keyboard = useKeyboardInset(docked && touch, shellRef);
   const [paused, setPaused] = useState(false);
   // After a check on a step with no fields, the marked part comes into view above the band
   // (§3.7); a step with fields scrolls to the first marked field as the focus moves there.
