@@ -21,7 +21,7 @@
  * answers AiConsentMissing puts the consent screen in the chat until the parent agrees.
  */
 
-import { ApiError, type ParentClient } from "@jadwigo/api-client";
+import { ApiError, type ParentClient, TransientError, waitForPrint } from "@jadwigo/api-client";
 import type { ConversationId, Learner, LearnerId } from "@jadwigo/contracts";
 import { type CopyKey, copy, type Language } from "@jadwigo/copy";
 import { type ReactElement, useEffect, useRef, useState } from "react";
@@ -31,7 +31,7 @@ import { ChatPane } from "../../chat/ChatPane.tsx";
 import { ConsentScreen, giveConsent } from "../../chat/ConsentScreen.tsx";
 import { addedSteps, LessonPane } from "../../chat/LessonPane.tsx";
 import { lessonSummary, useLessonWiring } from "../../chat/lessonWiring.ts";
-import { type GiveState, LessonActions } from "../../chat/objects/LessonActions.tsx";
+import { type GiveState, LessonActions, PrintFailed } from "../../chat/objects/LessonActions.tsx";
 import { lessonChanging } from "../../chat/objects/LessonCard.tsx";
 import { type ObjectRef, sameObject } from "../../chat/objects/ref.ts";
 import { ObjectPanel, objectHeading, type PanelPage } from "../../chat/objects/registry.tsx";
@@ -194,6 +194,25 @@ export function LessonWorkspace({
     }
   };
 
+  // Drukuj (dl-1eieq.8.11): the PDF of the revision the parent sees, made on the server. A route
+  // that is not set up answers 502 PrintUnavailable, which the client throws as a TransientError.
+  const printPdf = async (): Promise<string> => {
+    const client = engine.print ?? null;
+    if (client === null) throw new PrintFailed("unavailable");
+    let status: Awaited<ReturnType<typeof waitForPrint>>;
+    try {
+      status = await waitForPrint(
+        client,
+        conversation,
+        shownRevision === undefined ? {} : { revision: shownRevision },
+      );
+    } catch (error) {
+      throw new PrintFailed(error instanceof TransientError ? "unavailable" : "failed");
+    }
+    if (status.status === "ready") return status.url;
+    throw new PrintFailed(status.status === "pending" ? "slow" : "failed");
+  };
+
   // A new title from the card (dl-1eieq.16): the route checks it, so the lesson stays ready. Its
   // revision comes back through the conversation's own read.
   const renameLesson = async (title: string): Promise<CopyKey | null> => {
@@ -251,6 +270,7 @@ export function LessonWorkspace({
         />
       }
       given={given}
+      {...((engine.print ?? null) === null ? {} : { print: printPdf })}
       {...(engine.give === null
         ? {}
         : {
