@@ -2,7 +2,7 @@
 
 A learning app for children in the first school grades, in Polish and English. A parent photographs a homework page, and Jadwigo builds a lesson from a credited question bank. The child plays it from a link, with no sign-in.
 
-Built in 10 days, from 2026-10-26 to 2026-11-04, by Vasyl and AI agents. On demo day a whole class used it to practise for a test.
+Built in 10 days, from 2026-10-26 to 2026-11-04, by Vasyl and AI agents. On demo day, 2026-11-04, a whole class plays its lessons to practise for the next day's test ([Story](https://docs.jadwigo.pl/story/)).
 
 ## Try it
 
@@ -61,7 +61,7 @@ Everyone who appears in the docs, on the site or in Jadwigo's videos gave their 
 TypeScript with bun workspaces and Turborepo, plus a uv project for the `jw` CLI. Apps live in `apps/`, shared code in `packages/`, Terraform in `infra/` and migrations in `supabase/`.
 
 ```sh
-mise install                       # Node 24, bun, uv, gitleaks
+mise install                       # Node 24, bun, uv, gitleaks, supabase, terraform, mprocs
 bun install --frozen-lockfile
 make check                         # lint, typecheck and test what changed
 ```
