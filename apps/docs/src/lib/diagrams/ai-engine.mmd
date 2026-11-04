@@ -1,0 +1,14 @@
+flowchart LR
+  queue[("Step queue<br/>pgmq agent_step")]
+  loop["Step loop<br/>1 step, 1 model call"]
+  guarded["GuardedMuse<br/>spend cap, ledger row"]
+  muse["Meta Muse<br/>/v1/responses"]
+  verbs["Verb groups<br/>lesson, bank, learner, review"]
+  events[("Run events<br/>the log is the draft")]
+  page["Chat and lesson<br/>folded on the page"]
+  queue -- "1 step" --> loop
+  loop -- input --> guarded
+  guarded -- "1 call" --> muse
+  loop -- "verb calls" --> verbs
+  verbs -- effects --> events
+  events -- read --> page

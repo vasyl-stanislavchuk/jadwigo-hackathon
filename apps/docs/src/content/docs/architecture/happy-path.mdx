@@ -1,0 +1,39 @@
+---
+title: The happy path
+description: One photo of a worksheet becomes a checked lesson, a play link and a child playing it, step by step.
+---
+
+import Diagram from "../../../components/Diagram.astro";
+
+A parent photographs a worksheet and asks for practice like it, and a child ends up playing a
+checked lesson from a link. This page follows that one path through the containers.
+
+<Diagram name="happy-path" caption="Photo, chat run, checked lesson, play link, child playing." />
+
+## Photo and message
+
+The web app asks the API for an upload form, and the browser sends the photo straight to a
+private S3 bucket. The photo never passes through the Lambda. The parent's message then names the
+photo, and the API writes the message, a new run and its first queued step in one transaction. It
+answers at once, before the model has said anything, and pokes the runner with an async invoke.
+
+## Chat run
+
+The runner reads the step and makes 1 call to Meta Muse, with the photo, the parent's words and
+the lesson verbs as tools. The model calls `lesson_draft`, which searches the question bank and
+copies whole questions in as a starting point. It adapts them with `lesson_edit` when the photo
+asks for other numbers. `lesson_check` then runs in code, at no model cost. A lesson the check
+fails is repaired and checked again, and the model may not call it ready until the check passes.
+Every effect is a run event, and the web app reads the events as they land.
+
+## Play link and play
+
+The parent presses Give. The API publishes the lesson only when the latest revision passed its
+check, and answers with an assignment. Its link is `/play/<assignment id>`. Holding the link is
+the access, so the child needs no login. The child's browser starts an attempt and sends one
+answer at a time, and the API grades each one in code.
+
+## Next
+
+- [The AI engine](/architecture/ai-engine/): what happens inside the runner's step.
+- [Share and play](/features/share-and-play/): the same path as the parent and child see it.

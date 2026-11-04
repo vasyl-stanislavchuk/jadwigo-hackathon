@@ -44,9 +44,10 @@ export const SIDEBAR: readonly SidebarGroup[] = [
     label: "How it is built",
     items: [
       "architecture",
-      "architecture/monorepo",
-      "architecture/contracts",
+      "architecture/happy-path",
       "architecture/ai-engine",
+      "architecture/contracts",
+      "architecture/monorepo",
       "architecture/building-with-agents",
     ],
   },

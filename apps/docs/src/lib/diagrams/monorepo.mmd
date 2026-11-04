@@ -1,66 +1,29 @@
-flowchart LR
-  subgraph apps [Apps]
+flowchart TB
+  subgraph apps [Apps: nothing imports them]
     api
     web
+    runner
+    converter
+    print
     site
     docs
-    runner
   end
-  subgraph packages [Packages]
-    analytics
-    api_client["api-client"]
-    bank
-    config
-    contracts
-    copy
-    core
+  subgraph domain [Domain packages]
     jadwigo_ai["jadwigo-ai"]
     lesson_import["lesson-import"]
     lesson_kit["lesson-kit"]
     store
+    core
+    bank
+    api_client["api-client"]
+    analytics
     ui
+    copy
+    config
   end
-  api --> contracts
-  api --> copy
-  api --> core
-  api --> jadwigo_ai
-  api --> store
-  web --> analytics
-  web --> api_client
-  web --> config
-  web --> contracts
-  web --> copy
-  web --> core
-  web --> jadwigo_ai
-  web --> lesson_import
-  web --> lesson_kit
-  web --> store
-  web --> ui
-  site --> analytics
-  site --> config
-  site --> contracts
-  site --> copy
-  site --> ui
-  docs --> config
-  docs --> contracts
-  docs --> lesson_kit
-  docs --> ui
-  runner --> contracts
-  runner --> jadwigo_ai
-  runner --> store
-  analytics --> config
-  api_client --> contracts
-  bank --> api_client
-  bank --> contracts
-  core --> contracts
-  jadwigo_ai --> contracts
-  jadwigo_ai --> core
-  jadwigo_ai --> lesson_import
-  jadwigo_ai --> store
-  lesson_import --> contracts
-  lesson_import --> core
-  lesson_import --> store
-  lesson_kit --> contracts
-  lesson_kit --> copy
-  lesson_kit --> ui
-  store --> contracts
+  subgraph bottom [The bottom]
+    contracts
+  end
+  apps -- import --> domain
+  domain -- import --> bottom
+  apps -- import --> bottom

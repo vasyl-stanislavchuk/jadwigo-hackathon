@@ -1,17 +1,17 @@
 sequenceDiagram
   participant W as Web app
-  participant API as API Lambda
-  participant PG as Postgres, pgmq agent_step
-  participant R as Runner Lambda, jadwigo_runner
+  participant A as API Lambda
+  participant P as Postgres, pgmq agent_step
+  participant R as Runner, jadwigo_runner role
   participant M as Meta Muse, /v1/responses
-  W->>API: POST a chat message, photos attached
-  API->>PG: 1 transaction: message, run, pgmq.send
-  API-->>W: 201, the run
-  API-)R: async invoke, live alias, 0 retries
-  R->>PG: read agent_step
-  R->>M: 1 step: the prompt and the lesson verbs
-  M-->>R: verb calls, then words for the parent
-  R->>PG: run events, fenced on the attempt
-  R->>PG: archive the step
-  W->>API: poll the conversation
-  API-->>W: events folded into chat and lesson
+  W->>A: a message, photos attached
+  A->>P: 1 transaction: run, step
+  A-->>W: 201, the run
+  A-)R: async invoke, 0 retries
+  R->>P: read the step
+  R->>M: prompt and verbs
+  M-->>R: verb calls, then words
+  R->>P: run events, fenced
+  R->>P: archive the step
+  W->>A: poll the conversation
+  A-->>W: events, folded
