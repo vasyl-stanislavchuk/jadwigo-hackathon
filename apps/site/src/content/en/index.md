@@ -1,7 +1,9 @@
 ---
-title: "Jadwigo: learning with your child in grades 1–3, math and Polish"
-description: Short math and Polish lessons for grades 1–3, played with your child in the browser. No points, timers or ads.
+title: "Jadwigo: math and Polish lessons for grades 1–3"
+description: Show Jadwigo the homework or write what your child is learning. You get a short math or Polish lesson for grades 1–3, and you see where to help.
 heading: "Stay close to your child's learning"
 lang: en
+ogImage: /og.png
+ogImageAlt: A parent and child over a homework notebook, with little Queen Jadwiga and her pencil-case court beside them, under the Jadwigo crown wordmark.
 reviewed: true
 ---

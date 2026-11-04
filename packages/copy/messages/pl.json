@@ -1,7 +1,7 @@
 {
   "$schema": "https://inlang.com/schema/inlang-message-format",
   "site_404_title": "Nie ma takiej strony · Jadwigo",
-  "site_404_heading": "Tej strony tu nie ma.",
+  "site_404_heading": "Tej strony tu nie ma",
   "site_404_home": "Wróć na stronę główną",
   "site_language_name": "Polski",
   "site_switch_label": "Język strony",

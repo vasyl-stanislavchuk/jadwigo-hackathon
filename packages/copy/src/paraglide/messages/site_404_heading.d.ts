@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "This page isn't here." |
+* | "This page isn't here" |
 *
 * @param {Site_404_HeadingInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

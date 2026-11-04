@@ -23,7 +23,7 @@ hero:
       again: Play the question again
 # Under the lessons, one line for the parent.
 after:
-  text: After each lesson you see what went well and what to practice next.
+  text: What your child found hard, and what needs more attention.
 # Every page in the header, in order, each its own page.
 links:
   - { href: /en/lessons, label: Lessons }
@@ -33,32 +33,29 @@ links:
 # /en/how-it-works in direction 1a (design handoff "landing 3", 2026-11-01; draft), in US English.
 steps:
   title: How Jadwigo works
-  description: You write what your child practices at school, your child plays a short lesson, and you know what they can do and what they're working on.
+  description: Show Jadwigo the homework or write what your child is learning. Your child plays a short lesson, and you see where to help.
   heading: How it works
-  # The landing page's line under "How it works" (dl-w0b4.123; draft).
-  lead: Your part takes a few minutes, and below you can answer a question the way your child sees it.
   intro: You don't need to sit beside your child for the whole lesson. A few minutes are enough to know what they can do and where they struggle.
   pic: Jadwiga opens a huge notebook while Gumka, Ołówek and Linijka get the table ready.
   items:
     - who: You
-      title: Write what your child practices at school.
-      text: Jadwigo builds a lesson from questions with a source. You see it before your child does.
+      title: Show what your child is learning
+      text: Send a photo of the homework, or write where your child gets stuck. Jadwigo builds a short lesson from it.
     - who: Your child
-      title: Your child plays a short lesson.
-      text: A hint waits beside them. They can make a mistake, ask for more or stop for today.
+      title: Your child plays the lesson
+      text: On a tablet or a computer, or printed on paper. A hint is there when they need it, and they can stop when they've had enough.
     - who: You
-      title: You know what your child can do now, and what they're still working on.
-      text: You see every question, try and mistake in plain words. Jadwigo builds the next lesson from what was hard. And when you want to sit down together over something hard, it suggests where to start.
+      title: You see where to help
+      text: You see every question, every try and every mistake in plain words. Jadwigo builds the next lesson from what was hard. When you want to sit down with your child, Jadwigo suggests where to start.
   request:
     ask: Making change, like in the workbook. Mixes up dollars and cents.
     lines: [Looking for change questions with cents…, Checking the lesson…, Ready]
-    soon: "Coming soon: a photo of the workbook instead of a description."
     screencast: screencast · the parent types in the chat, the lesson builds on the right, “Show my child”
   card:
     say: A ticket costs $4.50. You pay $10. How much change?
     choices: ["$5.50", "$6.50", "$5"]
     hint: From $4.50 to $5 is 50 cents. How much from $5 to $10?
-    pic: The child plays on a tablet with the parent nearby; Linijka holds up a yellow help note.
+    pic: The child plays on a tablet with the parent nearby. Linijka holds up a yellow help note.
   record:
     counts:
       - { value: 8, label: questions }
@@ -71,13 +68,13 @@ steps:
 # site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
 # and the privacy page say the rest. Jadwigo AI's lines carry no person and no gender.
 ai:
-  title: "Jadwigo AI: a lesson built from what you write"
+  title: "Jadwigo AI: a lesson built from your photo or your words"
   description: Jadwigo AI reads what your child practices at school, finds questions in the question bank and builds a lesson. You check it before your child sees it.
   heading: Jadwigo AI
-  intro: Jadwigo AI builds a lesson from what you write. It takes its questions from the question bank, each with its source. You see the finished lesson first, and your child gets it only when you give it to them.
+  intro: Jadwigo AI builds a lesson from a photo you send or from what you write. It takes its questions from the question bank, each with its source. You see the finished lesson first, and your child gets it only when you give it to them.
   steps:
     - title: Reads your request
-      text: You write in plain words what your child practices at school, for example “Making change, like in the workbook. Mixes up dollars and cents.” Jadwigo AI also reads what Jadwigo already knows about your child, such as their grade, their goals and the mistakes from recent lessons.
+      text: You send a photo of the homework. You can also write in plain words what your child practices at school, for example “Making change, like in the workbook. Mixes up dollars and cents.” Jadwigo AI also reads what Jadwigo already knows about your child, such as their grade, their goals and the mistakes from recent lessons.
     - title: Searches the question bank
       text: It looks for questions that fit your request and what your child can already do. Every question names its source, such as Alfik Matematyczny or Khan Academy.
     - title: Builds and checks the lesson
@@ -97,11 +94,11 @@ ai:
   never:
     heading: What Jadwigo AI never does
     items:
-      - title: It never talks to your child.
+      - title: It never talks to your child
         text: Your child sees only the lesson, meaning the questions, the hints and their own answers. Only you talk to Jadwigo AI.
-      - title: It never gives your child anything without you.
+      - title: It never gives your child anything without you
         text: The lesson waits with you until you check it and give it to your child.
-      - title: It never grades your child.
+      - title: It never grades your child
         text: It gives no points or levels and never compares your child with other children. It tells you what went well and what to practice next.
   check:
     heading: You check it, then you give it
@@ -109,7 +106,7 @@ ai:
     wrong: Jadwigo AI can make mistakes. That's why the last word is yours.
   # The line under the landing page's lessons and under /en/how-it-works's intro that links this page.
   teaser:
-    text: Jadwigo AI builds the lesson from what you write.
+    text: Jadwigo AI builds the lesson from your photo or your words.
     link: What Jadwigo AI does
 promises:
   heading: What you get
@@ -118,17 +115,17 @@ promises:
       text: Your child learns at their own pace. Nobody rushes them.
     - title: Every question has a source
       text: From Alfik Matematyczny and Khan Academy, always with the source named.
-    - title: Print it, check it from a photo
+    - title: Print it, and Jadwigo checks the photo
       text: Print any lesson for your child. Take a photo of the finished work or the homework, and Jadwigo checks it.
 # Direction 1a (draft). The screenshot shows Marta, a made-up child, never a real learner.
 partner:
-  heading: Learning with you close by.
-  text: Your child practices at their own pace, and you see them grow.
+  heading: Learning with you close by
+  text: Your child practices at their own pace. On your child's page you see each goal, with what they can do now, what they're working on and what comes next.
   # The screenshot of the app's child page beside it (dl-w0b4.123; draft): its alt text.
   app: "A screenshot of the Jadwigo app: the page of a child named Marta. 2 goals, each with what she can do now, what she is working on and what comes next, and 2 weeks of lessons below them."
   pic: "A sprout grows out of the pencil pot faster than the court can keep up: Jadwiga waters it from the top of Linijka, Gumka holds her steady and Ołówek marks the new height."
 end:
-  text: A parent creates the account.
+  text: A parent creates the account
   button: Create an account
 lessons:
   title: Lessons to start with · Jadwigo
@@ -147,7 +144,7 @@ lessons:
   row:
     heading: Play without signing in
     # Under the heading, to the parent (dl-w0b4.123; draft).
-    text: "Give your child one of these lessons: it opens right in the browser, no account needed."
+    text: Give your child one of these lessons. It opens right in the browser, with no account needed.
     gradeLabel: Grade
     pic: illustration
     pics:
@@ -188,8 +185,8 @@ compare:
       jadwigo: builds the lesson from this child's goals and their last lesson
       source: https://support.khanacademy.org/hc/en-us/articles/360030753412
     - app: Duolingo
-      around: a daily habit, streaks and points; on the free plan each exercise uses up energy, and the paid plan lifts the limit
-      jadwigo: no streaks, points or limits; your child stops when they say that's enough for today
+      around: a daily habit, streaks and points. On the free plan each exercise uses up energy, and the paid plan lifts the limit
+      jadwigo: no streaks, points or limits. Your child stops when they say that's enough for today
       source: https://www.sec.gov/Archives/edgar/data/1562088/000156208825000165/q2fy25duolingo6-30x25share.htm
     - app: Kahoot
       around: a quiz a whole group plays at once

@@ -12,7 +12,10 @@ export const pageSchema = z.object({
   title: z.string().min(1),
   description: z.string().min(1),
   heading: z.string().min(1),
+  /** The share picture under public/, 1200x630 (tools/src/og-image.ts renders /og.png). */
   ogImage: z.string().startsWith("/").optional(),
+  /** What the share picture shows, for og:image:alt and twitter:image:alt. The site's name when left out. */
+  ogImageAlt: z.string().min(1).optional(),
   /** The words of the page's one link to the app (appUrl), when it has one. */
   play: z.string().min(1).optional(),
   reviewed: z.boolean(),
@@ -91,8 +94,12 @@ export function headTags(page: Page, path: string): HeadTag[] {
     const image = `${origin}${page.ogImage}`;
     tags.push(
       { kind: "property", property: "og:image", content: image },
+      { kind: "property", property: "og:image:width", content: "1200" },
+      { kind: "property", property: "og:image:height", content: "630" },
+      { kind: "property", property: "og:image:alt", content: page.ogImageAlt ?? siteName },
       { kind: "meta", name: "twitter:card", content: "summary_large_image" },
       { kind: "meta", name: "twitter:image", content: image },
+      { kind: "meta", name: "twitter:image:alt", content: page.ogImageAlt ?? siteName },
     );
   } else {
     // No picture of its own (the 1200x630 card is dl-w0b4.74's): the app icon, with the small card,
