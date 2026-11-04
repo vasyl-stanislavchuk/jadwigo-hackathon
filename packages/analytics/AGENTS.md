@@ -5,8 +5,9 @@ PostHog for the site and the app: the event catalogue, the one init config, cons
 
 - **Not here:** the consent banner's words (`packages/copy`) and its markup (each app's own).
 - **Owner:** the marketing workstream (`docs/workstreams/marketing.md`). **Filled by:** `dl-w0b4.13`.
-- **Imports:** `config`, and `posthog-js`, which nothing else in the repo imports.
-- **Public surface:** `src/index.ts`. Other files are private to this package.
+- **Imports:** `config`, `posthog-js` and `posthog-node`, which nothing else in the repo imports.
+- **Public surface:** `src/index.ts` for browsers, `src/server.ts` (`@jadwigo/analytics/server`) for
+  the Lambdas. Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test --filter=./packages/analytics`
 
 ## Rules here

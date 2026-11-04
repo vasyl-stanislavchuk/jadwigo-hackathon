@@ -186,6 +186,26 @@ describe("the step host", () => {
     expect(JSON.stringify(report.refused)).not.toContain("quoted");
   });
 
+  it("reports a step that threw, and still drains", async () => {
+    const usage = { input_tokens: 0, output_tokens: 0, cached_tokens: 0 };
+    const failure = new MuseFailed("quoting a prompt", 0, usage, null, "max_output_tokens");
+    const t = await setup({ respond: () => Promise.reject(failure) });
+    await t.say("one");
+    const reported: unknown[] = [];
+    const report = await createHost(
+      () =>
+        Promise.resolve({
+          ...t.deps(),
+          report: async (error: unknown) => {
+            reported.push(error);
+          },
+        }),
+      fakeMeter(),
+    )();
+    expect(report.failed.length).toBeGreaterThan(0);
+    expect(reported).toEqual(report.failed.map(() => failure));
+  });
+
   it("logs a failed model call's code and never its words", async () => {
     const usage = { input_tokens: 0, output_tokens: 0, cached_tokens: 0 };
     const t = await setup({

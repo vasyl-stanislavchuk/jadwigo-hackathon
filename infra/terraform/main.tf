@@ -73,6 +73,8 @@ module "print" {
 module "app" {
   source = "./modules/app"
 
+  posthog_key = var.posthog_key
+
   providers = {
     aws           = aws
     aws.us_east_1 = aws.us_east_1
@@ -242,12 +244,12 @@ module "runner" {
   # the read token the api checks; the role reads that one parameter.
   read_params = [module.app.bank_read_token_param_arn]
 
-  environment_variables = {
+  environment_variables = merge(var.posthog_key == "" ? {} : { JW_POSTHOG_KEY = var.posthog_key }, {
     JADWIGO_API_URL            = "https://${var.app_domain}"
     BANK_READ_TOKEN_PARAM      = module.app.bank_read_token_param
     JADWIGO_MUSE_KEY_PARAM     = "/jadwigo/${var.environment}/muse-api-key"
     JADWIGO_MUSE_CAP_USD       = var.runner_muse_cap_usd
     JADWIGO_MUSE_TIER          = var.runner_muse_tier
     JADWIGO_MUSE_PRIVATE_MODEL = var.runner_muse_private_model
-  }
+  })
 }

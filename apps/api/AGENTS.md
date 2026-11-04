@@ -4,7 +4,7 @@ The one Lambda: a router, `authorize()` and the routes, with an entry per functi
 
 - **Not here:** Business rules (they go in `packages/core`) and SQL (it goes behind `packages/store`).
 - **Owner:** the platform workstream (`docs/workstreams/platform.md`). **Filled by:** `dl-5ssh.2` deploys it; the routes come with their contracts.
-- **Imports:** packages: `contracts`, `core`, `store`, `config`, `jadwigo-ai`, `lesson-import` (`src/give.ts` compiles a lesson revision, dl-5ssh.136), `lesson-kit` (`src/print.ts` builds the print sheet through `@jadwigo/lesson-kit/paper`, dl-1eieq.8.4), and `copy` for the auth mail's words (`src/mail/`, dl-liwi.33). Never another app.
+- **Imports:** packages: `analytics` (`/server`: reports a failing route, `dl-5ssh.158`), `contracts`, `core`, `store`, `config`, `jadwigo-ai`, `lesson-import` (`src/give.ts` compiles a lesson revision, dl-5ssh.136), `lesson-kit` (`src/print.ts` builds the print sheet through `@jadwigo/lesson-kit/paper`, dl-1eieq.8.4), and `copy` for the auth mail's words (`src/mail/`, dl-liwi.33). Never another app.
 - **Public surface:** `src/index.ts`. Other files are private to this package.
 - **Test:** `bunx turbo run lint typecheck test --filter=./apps/api`
 

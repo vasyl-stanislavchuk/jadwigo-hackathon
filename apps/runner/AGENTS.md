@@ -7,7 +7,7 @@ from `@jadwigo/jadwigo-ai`, as `jadwigo_runner`. Its own release target, apart f
   `packages/jadwigo-ai`), SQL (`packages/store`, `supabase/migrations`), the routes (`apps/api`).
 - **Owner:** the ai-workflows workstream. **Filled by:** `dl-z5ja.5` (the probe: both hosts, scripted
   model), `dl-z5ja.20` (the host itself, its invocation path, `make engine-smoke`).
-- **Imports:** packages: `contracts`, `jadwigo-ai`, `store`. Never another app.
+- **Imports:** packages: `analytics` (`/server`: reports a failing host or step, `dl-5ssh.158`), `contracts`, `jadwigo-ai`, `store`. Never another app.
 - **Entries:** `src/index.ts` (`index.handler`, the step host: `HttpMuse` in `GuardedMuse`),
   `src/probe-lambda.ts` (`probe-lambda.handler`, the probe's 2nd Lambda) and `src/probe-edge.ts`
   (served by `supabase/functions/agent-step/index.ts`), all bundled by `make runner-bundle`.

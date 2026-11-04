@@ -51,6 +51,8 @@ export interface HostDeps {
   dead_letters?: () => Promise<number>;
   /** Where a stuck queue is reported. Ids only: never a message, a name or a payload. */
   warn: (line: string) => void;
+  /** Where a step that threw is reported, scrubbed (dl-5ssh.158). Never throws. */
+  report?: (error: unknown) => Promise<void>;
 }
 
 export interface HostReport {
@@ -108,6 +110,7 @@ export function createHost(
       throw error;
     }
     const failed: FailedStep[] = [];
+    const reports: Promise<void>[] = [];
     const runs = new Set<RunId>();
     let max_wait_s: number | null = null;
     const refused = new Map<string, RefusalCount>();
@@ -126,6 +129,7 @@ export function createHost(
       onError: (error, step) => {
         failed.push(step);
         host.warn(failure(error, step));
+        if (host.report) reports.push(host.report(error));
       },
       onRead: (run_id, waited_s) => {
         runs.add(run_id);
@@ -133,6 +137,7 @@ export function createHost(
       },
       ...(host.retry === undefined ? {} : { retry: host.retry }),
     });
+    await Promise.all(reports);
     const stuck = host.stuck ? await host.stuck() : null;
     if (stuck) reportStuck(stuck, host.warn);
     const dead_letters = host.dead_letters ? await host.dead_letters() : null;

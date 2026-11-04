@@ -90,4 +90,18 @@ describe("the runner's Lambda handler", () => {
 
     await expect(handler({})).rejects.toThrow("no database");
   });
+
+  it("reports a host that fails, and still fails the Lambda", async () => {
+    const failure = new Error("no database");
+    const reported: unknown[] = [];
+    const handler = createRunnerHandler(
+      () => Promise.reject(failure),
+      () => {},
+      async (error) => {
+        reported.push(error);
+      },
+    );
+    await expect(handler({})).rejects.toBe(failure);
+    expect(reported).toEqual([failure]);
+  });
 });

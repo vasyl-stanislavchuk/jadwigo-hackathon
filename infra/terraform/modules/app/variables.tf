@@ -102,6 +102,12 @@ variable "print_function_arn" {
   default     = ""
 }
 
+variable "posthog_key" {
+  description = "PostHog's public project key, where the api reports errors (dl-5ssh.158). The browser holds the same key, so it is no secret; blank reports nothing"
+  type        = string
+  default     = ""
+}
+
 variable "runner_alias_arn" {
   description = "The step host's live alias ARN (the root's module.runner.live_alias_arn, dl-z5ja.20). The api pokes it after a message's unit commits (dl-z5ja.88); blank gives the api no invoke grant and no poke"
   type        = string
