@@ -4,12 +4,18 @@
  * here is a no-op.
  */
 import type { PostHog } from "posthog-js";
+import type { ErrorSource } from "./before-send.ts";
 import type { EventName, PropsOf, Surface } from "./catalog.ts";
 import { posthogOptions } from "./options.ts";
 
 type Client = Pick<
   PostHog,
-  "init" | "capture" | "opt_in_capturing" | "opt_out_capturing" | "get_explicit_consent_status"
+  | "init"
+  | "capture"
+  | "captureException"
+  | "opt_in_capturing"
+  | "opt_out_capturing"
+  | "get_explicit_consent_status"
 >;
 
 /** Loads the SDK; a test passes a double. */
@@ -55,6 +61,12 @@ export function rejectConsent(): void {
 /** Sends one catalogued event with its typed properties. */
 export function track<E extends EventName>(event: E, props: PropsOf<E>): void {
   client?.capture(event, props);
+}
+
+/** Reports an error our code caught, such as a crash an error boundary stopped. It leaves through
+ * before_send, scrubbed like an uncaught one. */
+export function reportError(error: unknown, source: ErrorSource): void {
+  client?.captureException(error, { source });
 }
 
 /** Forgets the started client, for tests. */

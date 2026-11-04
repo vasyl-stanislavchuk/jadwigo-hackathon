@@ -5,6 +5,7 @@ import {
   consentStatus,
   type Load,
   rejectConsent,
+  reportError,
   resetAnalyticsForTests,
   startAnalytics,
   track,
@@ -16,6 +17,7 @@ function double() {
   const client = {
     init: vi.fn(),
     capture: vi.fn(),
+    captureException: vi.fn(),
     opt_in_capturing: vi.fn(),
     opt_out_capturing: vi.fn(),
     get_explicit_consent_status: vi.fn((): "pending" | "granted" | "denied" => "pending"),
@@ -104,5 +106,15 @@ describe("posthogOptions", () => {
       recordHeaders: false,
       recordBody: false,
     });
+  });
+
+  it("reports a caught error with its source, and does nothing before it starts", async () => {
+    const failure = new Error("crash");
+    reportError(failure, "error_boundary");
+    const { client, load } = double();
+    await startAnalytics("phc_key", "app", load);
+    reportError(failure, "error_boundary");
+    expect(client.captureException).toHaveBeenCalledTimes(1);
+    expect(client.captureException).toHaveBeenCalledWith(failure, { source: "error_boundary" });
   });
 });

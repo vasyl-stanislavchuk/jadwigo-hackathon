@@ -6,7 +6,7 @@
  */
 import type { CaptureResult } from "posthog-js";
 import { CATALOG, isEventName, type PropSpec, type Surface } from "./catalog.ts";
-import { cutPath, ID_ANYWHERE, scrubExceptionList } from "./scrub.ts";
+import { cutPath, ID_ANYWHERE, isNoise, scrubExceptionList } from "./scrub.ts";
 
 /** PostHog events we never send: identity calls carry a person. */
 const DROPPED_SYSTEM_EVENTS = new Set([
@@ -102,9 +102,14 @@ function ownProps(
   return out;
 }
 
-/** An exception's scrubbed list and level, with PostHog's other `$` keys and nothing else: every
- * other `$exception_*` (a person URL, a raw message) is dropped. No list, no event. */
+/** Where a caught error was reported from (`reportError`). */
+export const ERROR_SOURCES = ["error_boundary"] as const;
+export type ErrorSource = (typeof ERROR_SOURCES)[number];
+
+/** An exception's scrubbed list and level, its known source, and PostHog's other `$` keys: every
+ * other `$exception_*` (a person URL, a raw message) is dropped. No list or noise, no event. */
 function exceptionProps(props: Record<string, unknown>): Record<string, unknown> | null {
+  if (isNoise(props["$exception_list"])) return null;
   const list = scrubExceptionList(props["$exception_list"]);
   const kept = ownProps({}, props);
   if (list === null || kept === null) return null;
@@ -115,6 +120,8 @@ function exceptionProps(props: Record<string, unknown>): Record<string, unknown>
   out["$exception_list"] = list;
   if (typeof props["$exception_level"] === "string")
     out["$exception_level"] = props["$exception_level"];
+  const source = ERROR_SOURCES.find((known) => known === props["source"]);
+  if (source !== undefined) out["source"] = source;
   return out;
 }
 

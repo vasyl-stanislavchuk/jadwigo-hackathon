@@ -28,4 +28,5 @@ PostHog for the site and the app: the event catalogue, the one init config, cons
   (`src/scrub.ts`, the owner's 2026-11-04 decision, `dl-9tuku`,
   `jadwigo-hackathon/notes/2026-11-04-posthog-error-tracking-runs-on-web-site-api-and-runner-with-scru`).
   Scrubbing works on patterns, so never write a learner's name into an error of our own.
+  Browser noise and visitors' extensions are dropped, and a caught error goes through `reportError`.
 - Without a key, `startAnalytics` loads nothing, so tests and local dev stay off the network.
