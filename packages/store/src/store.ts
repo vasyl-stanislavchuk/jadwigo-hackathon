@@ -324,6 +324,7 @@ export interface Store extends RunStore, AttachmentStore {
 
   // Who it goes to
 
+  /** Writes the assignment once; a put of one that is there changes only its identity (dl-5ssh.156). */
   putAssignment(pod: PodId, assignment: NewAssignment): Promise<Assignment>;
   getAssignment(pod: PodId, id: AssignmentId): Promise<Assignment>;
   /**

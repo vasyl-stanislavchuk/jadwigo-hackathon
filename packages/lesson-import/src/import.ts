@@ -25,7 +25,7 @@ function sameList(
 /**
  * Imports one exported lesson file into a pod (Jadwigo's own by default) through the Store: the
  * pod, the lesson, every lesson question, a new published version when the list differs from the
- * latest one, and the featured assignment (audience `anyone`, identity `none`), which serves the
+ * latest one, and the featured assignment (audience `anyone`, identity `type`, dl-5ssh.156), which serves the
  * latest version. Every write is idempotent by id, so a re-import with the same content writes
  * nothing new.
  */

@@ -325,7 +325,7 @@ describe("importing a lesson file", () => {
     expect(result.assignment).toMatchObject({
       id: featuredAssignmentId("equal-groups"),
       audience: "anyone",
-      identity: "none",
+      identity: "type",
       lesson_version_id: null,
     });
     const { version, questions } = await store.getLessonVersion(pod, result.version.id);
