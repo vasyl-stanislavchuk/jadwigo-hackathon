@@ -29,6 +29,12 @@ const POOL = { max: 1, connectionTimeoutMillis: 5000 } as const;
 const MAX_DRAIN_MS = 230_000;
 
 /**
+ * How long a thrown step waits before this invoke tries it again, by its read (dl-hin8.51). Short
+ * enough that a parent sees no stall, long enough that an outage of a few seconds passes.
+ */
+const RETRY_AFTER_S = [5, 20] as const;
+
+/**
  * The engine on Postgres as `jadwigo_runner`: the store sets `app.pod_id` per unit after
  * `authorizeRun`, and the queue reads, hides, archives and dead-letters `agent_step`. The verbs read
  * the bank they are given (the real one through the API in the Lambda, dl-1u6fn.4; the fixture in a
@@ -76,6 +82,10 @@ export function postgresEngineHost(
   return {
     engine,
     max_drain_ms: MAX_DRAIN_MS,
+    retry: {
+      after_s: RETRY_AFTER_S,
+      sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    },
     stuck: () => queue.stuck(),
     dead_letters: async () => (await queue.deadLetters()).length,
     warn,
