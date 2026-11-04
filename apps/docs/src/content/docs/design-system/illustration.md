@@ -77,8 +77,8 @@ approved final art enters the app.
 Jadwiga is named after Queen Jadwiga. The name Jadwigo is a play on words: Jadwiga, the queen, and
 go, moving: moving forward and growing under her warm wings.
 
-Pani Iwona, the class's real teacher, joined the cast with her consent. After 3 right answers in
-a row, a short video plays: the queen gives a thumbs-up, or Pani Iwona says "Brawo!".
+The class's real teacher joined the cast with her consent. After 3 right answers in a row, a short
+video plays: the queen gives a thumbs-up, or the teacher says "Brawo!".
 
 ## Next
 
