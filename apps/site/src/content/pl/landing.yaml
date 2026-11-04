@@ -81,6 +81,7 @@ ai:
   chat:
     alt: "Okno rozmowy, a na nim królowa i jej dwór z piórnika. Rodzic wysyła zdjęcie sprawdzonej pracy domowej Tymka z matematyki i pyta, co mu nie poszło. Aplikacja odpowiada, że 38 z 42 działań jest dobrze, wymienia 4 do poprawy i proponuje lekcję. Rodzic się zgadza i dostaje link do lekcji dla Tymka."
     caption: Przykład z wymyślonym dzieckiem, Tymkiem.
+    step: Wiadomość
     ask: To dzisiejsza praca domowa Tymka z matematyki, sprawdzona przez nauczycielkę. Widzisz, co mu nie poszło? Ułóż krótką lekcję właśnie z tego.
     found: "Tymek ma dobrze 38 z 42 działań. Do poprawy są 4:"
     columns: [Mnożenie, Dzielenie]

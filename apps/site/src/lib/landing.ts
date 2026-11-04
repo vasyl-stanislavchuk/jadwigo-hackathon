@@ -76,6 +76,7 @@ export const landingSchema = z.object({
     chat: z.object({
       alt: text,
       caption: text,
+      step: text,
       ask: text,
       found: text,
       columns: z.array(text).length(2),
