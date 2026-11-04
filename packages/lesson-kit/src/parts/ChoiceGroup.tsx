@@ -7,11 +7,11 @@
  *   StepFrame.
  * - Several: a group of checkboxes, each a button with role="checkbox".
  *
- * - Number keys (`numberKeys`, paper-behaviour README §3.3): the first four options wear a key badge,
- *   1 to 4, drawn only on a keyboard frame (styles/stage.css), and that key picks the option and
- *   takes the focus to it. A to E is a numbered list on screen (Choose addendum 2.2, decision
- *   dl-n501): its badges and keys go to 5, it has no letters and no A to E keys, and only paper
- *   (ChoiceStatic `paper`) still prints the letters.
+ * - Number keys (`numberKeys`, paper-behaviour README §3.3): every option wears a key badge, 1 to 9
+ *   (the digit keys), drawn only on a keyboard frame (styles/stage.css), and that key picks the
+ *   option and takes the focus to it; an option past the 9th has none (dl-uukj.59: 6 question words
+ *   left 5 and 6 bare). A to E is a numbered list on screen (Choose addendum 2.2, decision dl-n501):
+ *   it has no letters and no A to E keys, and only paper (ChoiceStatic `paper`) still prints them.
  * - Centred tiles (`grid`, `binary`, addendum 1.5 and 1.6): the tried word and the solution's eye
  *   and word sit on the tile's top edge, and on a laptop the badge is absolute at the tile's left,
  *   or in its top-left corner for a dot array, so the answer stays centred.
@@ -72,7 +72,7 @@ const LAYOUT: Record<ChoiceLayout, string> = {
   list: "flex flex-col gap-[var(--kid-choice-gap)]",
   lettered: "flex flex-col gap-[var(--kid-choice-gap)]",
   // Two columns, or four where each tile holds its key badge at its side: .kid-choice-grid in
-  // styles/stage.css decides by the grid's own width, not the window's.
+  // styles/stage.css decides by the grid's own width, not the window's. Past 4 options, always two.
   grid: "kid-choice-grid grid grid-cols-2 gap-[var(--kid-choice-gap)]",
   binary: "grid grid-cols-2 gap-[var(--kid-choice-gap)]",
 };
@@ -81,8 +81,8 @@ const LAYOUT: Record<ChoiceLayout, string> = {
 const CELL =
   "min-h-[var(--kid-tap-min)] min-w-[var(--kid-tap-min)] rounded-xl border-2 px-4 py-3 text-[length:var(--kid-answer-size)] font-semibold flex items-center gap-3 transition-colors duration-[var(--jw-dur-mark,120ms)]";
 
-/** The number keys and their badges stop at 4 (§3.3), and at 5 for A to E (addendum 2.2). */
-const keysFor = (layout: ChoiceLayout): number => (layout === "lettered" ? 5 : 4);
+/** The number keys and their badges: one per option, as far as the digit keys go (dl-uukj.59). */
+const MAX_KEYS = 9;
 
 /** What takes the focus for an option: a radio's sr-only input, a checkbox, a token. */
 const FOCUSABLE =
@@ -295,12 +295,12 @@ export function ChoiceGroup({
   clock: Clock;
   /** One: the option picked. Several: the option switched on or off. */
   onToggle(id: string, at: Instant, modality: PressModality): void;
-  /** The key badges 1 to 4, and those keys pick (§3.3). */
+  /** The key badges 1 to 9, and those keys pick (§3.3, dl-uukj.59). */
   numberKeys?: boolean | undefined;
   className?: string | undefined;
 }): JSX.Element {
   const keys = numberKeys;
-  const max = keysFor(layout);
+  const max = MAX_KEYS;
   const shown = onScreen(layout);
   const group = useRef<HTMLDivElement>(null);
   const live = useRef({ items, locked, onToggle });
@@ -445,7 +445,7 @@ export function ChoiceStatic({
   // Paper keeps the letters of A to E (addendum 2.2); the screen draws it as a list.
   const drawn = paper ? layout : onScreen(layout);
   const badge = (i: number): number | undefined =>
-    numberKeys && !paper && i < keysFor(layout) ? i + 1 : undefined;
+    numberKeys && !paper && i < MAX_KEYS ? i + 1 : undefined;
   return (
     <ul aria-label={label} className={cn(LAYOUT[drawn], className)}>
       {items.map((item, i) => (
@@ -456,7 +456,7 @@ export function ChoiceStatic({
           data-tone={item.tone}
           data-solution={item.solution ? "" : undefined}
           data-still-option={paper ? undefined : ""}
-          {...(paper ? {} : badgeAt(item, drawn, i < keysFor(layout) ? i + 1 : undefined))}
+          {...(paper ? {} : badgeAt(item, drawn, i < MAX_KEYS ? i + 1 : undefined))}
           className={
             paper
               ? cn(CELL, "border-current bg-transparent")

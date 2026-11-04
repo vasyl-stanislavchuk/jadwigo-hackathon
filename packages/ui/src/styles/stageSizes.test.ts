@@ -38,6 +38,12 @@ describe("sizes per answer kind", () => {
     expect(grid).toContain("auto-fill");
   });
 
+  it("lays a grid of more than four out in 2 columns at any width (dl-uukj.59)", () => {
+    expect(rule(".kid-choice-grid:has(> :nth-child(5))")).toContain(
+      "grid-template-columns: repeat(2, minmax(0, 1fr))",
+    );
+  });
+
   it("puts a grid's key badge at the tile's side from 19.75rem, as it does for two", () => {
     const side = STAGE.slice(STAGE.indexOf("@container kid-choices (min-width: 19.75rem)"));
     expect(side).toMatch(

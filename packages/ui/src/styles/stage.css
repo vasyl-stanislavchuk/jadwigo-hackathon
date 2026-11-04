@@ -332,6 +332,12 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
     );
 }
 
+/* More than 4 options never stand 4 in a row, so a 5th or 6th never hangs alone under them and a
+ * two-word option keeps a wide tile (dl-uukj.59): two columns at any width. */
+.kid-choice-grid:has(> :nth-child(5)) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 /* In a centred tile (grid, binary) the badge leaves the flow, so the answer stays centred (Choose
  * addendum 1.6). A tile wide enough (about 152px, so the answer keeps 40px clear between the
  * badges' room) takes it at its side: absolute at left 20, centred on the tile's height, the content
