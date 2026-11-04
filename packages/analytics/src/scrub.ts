@@ -34,19 +34,38 @@ export function cutPath(value: string): string {
   return /^[a-z]+:\/\//i.test(value) ? `${url.origin}${path}` : path;
 }
 
+/** The severities the SDKs send. */
+const LEVELS = new Set(["fatal", "error", "warning", "log", "info", "debug"]);
+
+export function isExceptionLevel(value: unknown): value is string {
+  return typeof value === "string" && LEVELS.has(value);
+}
+
 /** The longest message that leaves. */
 const MESSAGE_CHARS = 200;
 
-/** A quoted run, to its closing quote or the end. An apostrophe inside a word (`doesn't`) opens
- * nothing. Double quotes come first, so a JSON message (a ZodError's) loses its values whole. */
-const QUOTED = /"[^"]*(?:"|$)|`[^`]*(?:`|$)|(?<![\p{L}\p{N}])'[^']*(?:'|$)/gu;
+/** Read at most this much: a very long message is cut before any pattern walks it. */
+const READ_CHARS = 2000;
+
+/**
+ * A quoted run, to its closing quote or the end. A backslash escapes the next character, so a JSON
+ * body's `"flagged: \\"Zosia\\""` goes whole. Typographic quotes count: Polish writes „kot”. An
+ * apostrophe inside a word (`doesn't`) opens nothing.
+ */
+const QUOTED =
+  /"(?:\\.|[^"\\])*(?:"|$)|`(?:\\.|[^`\\])*(?:`|$)|(?<![\p{L}\p{N}])'(?:\\.|[^'\\])*(?:'|$)|„[^”“"]*(?:[”“"]|$)|“[^”]*(?:”|$)|‘[^’]*(?:’|$)|«[^»]*(?:»|$)|‹[^›]*(?:›|$)/gu;
 const URLS = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'`<>)]+/gi;
 const EMAILS = /[^\s"'`<>()]+@[^\s"'`<>()]+/g;
 const LONG_NUMBERS = /\d{4,}/g;
 
+/** The SDKs' words for a thrown value that is no Error: what follows is the value, or its keys. */
+const SDK_VALUE = /\bcaptured\b[^:]*:.*$/is;
+
 /** A message with what could be a person's taken out, at most 200 characters. */
 export function scrubMessage(message: string): string {
   return message
+    .slice(0, READ_CHARS)
+    .replace(SDK_VALUE, 'captured: "…"')
     .replace(QUOTED, '"…"')
     .replace(URLS, (url) => cutPath(url))
     .replace(EMAILS, ":email")
@@ -55,8 +74,16 @@ export function scrubMessage(message: string): string {
     .slice(0, MESSAGE_CHARS);
 }
 
+/** A class name that says it is an error. A thrown `{ name: "Zosia" }` would otherwise be a type. */
+const ERROR_TYPE = /^(?:[A-Z][A-Za-z0-9]*)?(?:Error|Exception|Failed|Rejection)$/;
+
+export function scrubType(type: string): string {
+  return ERROR_TYPE.test(type) ? type : "Error";
+}
+
 /** A frame's file: a web URL or a path is cut, and anything else loses its query and hash. */
 function cutFilename(filename: string): string {
+  if (/^data:/i.test(filename)) return "data:";
   if (/^https?:\/\//i.test(filename) || filename.startsWith("/")) return cutPath(filename);
   return filename.split(/[?#]/)[0] ?? "";
 }
@@ -105,12 +132,18 @@ function scrubFrame(frame: Record<string, unknown>): Record<string, unknown> {
   return out;
 }
 
+/** What a thrown string or object says instead of itself: its text is whatever the code threw,
+ * with no shape a pattern could know, so none of it leaves. The SDKs mark these `synthetic`. */
+export const THROWN_VALUE = "A value that is not an Error was thrown";
+
 function scrubException(exception: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
-  if (typeof exception["type"] === "string") out["type"] = scrubMessage(exception["type"]);
-  if (typeof exception["value"] === "string") out["value"] = scrubMessage(exception["value"]);
-  if (isRecord(exception["mechanism"]))
-    out["mechanism"] = pick(exception["mechanism"], MECHANISM_KEYS);
+  const mechanism = exception["mechanism"];
+  const thrownValue = isRecord(mechanism) && mechanism["synthetic"] === true;
+  if (typeof exception["type"] === "string") out["type"] = scrubType(exception["type"]);
+  if (typeof exception["value"] === "string")
+    out["value"] = thrownValue ? THROWN_VALUE : scrubMessage(exception["value"]);
+  if (isRecord(mechanism)) out["mechanism"] = pick(mechanism, MECHANISM_KEYS);
   const stack = exception["stacktrace"];
   if (isRecord(stack) && Array.isArray(stack["frames"]))
     out["stacktrace"] = {
