@@ -166,7 +166,7 @@ describe("runner", () => {
     expect(runner(state, { type: "answered", result: result({ seq: 1 }) })).toBe(state);
   });
 
-  it("shows a released rung, refuses quietly, and moves to the twin on rung 4", () => {
+  it("shows a released rung, refuses quietly, and on rung 4 waits on the solution for Dalej", () => {
     const released = {
       rung: 1,
       card: { text: "Two groups of five." },
@@ -203,8 +203,13 @@ describe("runner", () => {
         next: twin,
       }),
     });
-    expect(four.seq).toBe(2);
-    expect(four.help?.rung).toBe(4);
+    // dl-uukj.64: the step stays on its solution until Dalej, and the twin opens clean.
+    expect(four.seq).toBe(1);
+    expect(four.phase).toBe("feedback");
+    expect(four.workedSolution).toEqual(["2 × 5 = 10"]);
+    const after = runner(four, { type: "advance" });
+    expect(after.seq).toBe(2);
+    expect(after.help).toBeNull();
   });
 
   it("shows nothing to answer on a finished attempt", () => {

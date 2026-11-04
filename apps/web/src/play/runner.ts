@@ -255,13 +255,18 @@ export function runner(state: RunnerState, action: RunnerAction): RunnerState {
         ended: result.ended,
       }));
       if (result.ended === null) return { ...state, questions, help, helpRefused: false };
-      // Rung 4 ended the question and asked its twin: the twin comes at once, with the worked
-      // lines still in the help note above it.
-      const moved = runner(
-        { ...state, questions, next: nextOf(result.next, "in_progress") },
-        { type: "advance" },
-      );
-      return { ...moved, help };
+      // Rung 4 ended the question and asked its twin: the step stays on its worked solution until
+      // the child presses Dalej, and the twin then opens clean (owner 2026-11-04, dl-uukj.64).
+      return {
+        ...state,
+        questions,
+        help,
+        helpRefused: false,
+        phase: "feedback",
+        feedback: movedOn(result.ended),
+        workedSolution: result.released.worked,
+        next: nextOf(result.next, "in_progress"),
+      };
     }
     case "advance": {
       if (state.next === null) return state;
