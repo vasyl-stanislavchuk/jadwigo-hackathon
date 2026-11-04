@@ -16,7 +16,7 @@ link: { href: /en/lessons, label: Play a lesson }
 
 We use Jadwigo with our own son. I've been an engineer for more than 15 years, and at work I run hundreds of AI agents. They still surprise me, so nothing they make reaches a child unchecked.
 
-We have 2 crazy boys, we recently moved to Poland, and there are no grandparents here. When homework goes badly, it's on us, in the evening. For David, it's multiplication and Polish spelling.
+We have 2 crazy boys 🛴, we recently moved to Poland, and there are no grandparents here. When homework goes badly, it's on us, in the evening. For David, it's multiplication and Polish spelling.
 
 ## Why Jadwigo
 
@@ -28,6 +28,8 @@ The questions come from a question bank, each with its source. You see the lesso
 
 It's a play on words: Jadwiga, the queen and a school's patron, and "go", moving. Moving forward and growing under her warm wings.
 
+In her will she left her jewels to restore the Kraków Academy, today's Jagiellonian University. She gave her jewels to learning. We give our evenings.
+
 ## What's next
 
-First David's class, then his school. Then maybe you.
+First David's class, then his school. Then maybe you ;)
