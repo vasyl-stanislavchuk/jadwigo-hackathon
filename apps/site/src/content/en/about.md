@@ -11,7 +11,7 @@ photos:
   - { file: photo-3, width: 1280, height: 1678, alt: "David and his little brother riding scooters on a sidewalk." }
   - { file: photo-1, width: 1280, height: 1090, alt: "Our family of 4 at a café table outdoors: mom and dad standing, the 2 boys on chairs, dad with his thumb up." }
 photosLabel: Our family's photos
-video: { heading: Hackathon film, label: The film goes here soon, docs: "How it is built:" }
+video: { heading: Hackathon film, label: The film goes here soon, docs: "How it is built:", file: film.mp4 }
 link: { href: /en/lessons, label: Play a lesson }
 ---
 
