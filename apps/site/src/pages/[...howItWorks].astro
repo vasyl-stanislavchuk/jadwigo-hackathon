@@ -56,7 +56,7 @@ const [one, two, three] = s.items;
           <ul>{s.request.lines.map((l) => <li>{l}</li>)}</ul>
         </blockquote>
       </div>
-      <Pic label={s.request.screencast} screen ratio="16 / 10" class="side-pic" />
+      <Pic label={s.request.screencast} clip={{ src: "/about-photos/how-request.mp4", poster: "/about-photos/how-request-poster.webp" }} class="side-pic" />
     </li>
 
     <li class="step flip">

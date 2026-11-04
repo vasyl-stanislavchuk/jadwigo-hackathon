@@ -49,13 +49,13 @@ steps:
       title: You see where to help
       text: You see every question, every try and every mistake in plain words. Jadwigo builds the next lesson from what was hard. When you want to sit down with your child, Jadwigo suggests where to start.
   request:
-    ask: Making change, like in the workbook. Mixes up dollars and cents.
-    lines: [Looking for change questions with cents…, Checking the lesson…, Ready]
-    screencast: screencast · the parent types in the chat, the lesson builds on the right, “Show my child”
+    ask: Multiplication homework. Mixes up 7 × 8 and 6 × 9.
+    lines: [Reading the homework…, Looking for questions on 7 × 8 and 6 × 9…, Checking the lesson…, Ready]
+    screencast: "Screencast: a parent adds a photo of the homework and asks for a lesson. The lesson arrives in the chat, ready to give to the child."
   card:
-    say: A ticket costs $4.50. You pay $10. How much change?
-    choices: ["$5.50", "$6.50", "$5"]
-    hint: From $4.50 to $5 is 50 cents. How much from $5 to $10?
+    say: A box holds 7 rows of 8 pencils. How many pencils are in the box?
+    choices: ["54", "56", "64"]
+    hint: 5 rows are 40 pencils. Add 2 more rows.
     pic: The child plays on a tablet with the parent nearby. Linijka holds up a yellow help note.
   record:
     counts:
@@ -63,7 +63,7 @@ steps:
       - { value: 5, label: on the first try }
       - { value: 3, label: with a hint }
     nextLabel: "Next lesson:"
-    next: counting up to the next dollar, then change from $20.
+    next: multiplying by 7 by splitting it into 5 and 2.
     screencast: "screencast · the child's page: goals, skills, the last lesson question by question"
 # /en/jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft), the twin of pl's ai. Like the rest of the
 # site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app

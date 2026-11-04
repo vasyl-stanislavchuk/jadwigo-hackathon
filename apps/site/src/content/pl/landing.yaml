@@ -50,13 +50,13 @@ steps:
       title: Wiesz, gdzie pomóc
       text: Widzisz każde pytanie, każdą próbę i każdą pomyłkę, opisane zwykłymi słowami. Następną lekcję Jadwigo zaczyna od tego, co było trudne. Gdy chcesz usiąść z dzieckiem, Jadwigo podpowie, od czego zacząć.
   request:
-    ask: Zadania o wydawaniu reszty, tak jak w zeszycie. Myli złote z groszami.
-    lines: [Szukanie zadań o reszcie z groszami…, Sprawdzanie lekcji…, Gotowe]
-    screencast: screencast · rodzic pisze w czacie, lekcja układa się po prawej, „Pokaż dziecku”
+    ask: Praca domowa z mnożenia. Myli 7 × 8 z 6 × 9.
+    lines: [Czytanie pracy domowej…, Szukanie pytań o 7 × 8 i 6 × 9…, Sprawdzanie lekcji…, Gotowe]
+    screencast: "Nagranie ekranu: rodzic dodaje zdjęcie pracy domowej i prosi o lekcję. Lekcja pojawia się w rozmowie, gotowa do dania dziecku."
   card:
-    say: Bilet kosztuje 14 zł 50 gr. Płacisz 20 zł. Ile reszty?
-    choices: ["5 zł 50 gr", "6 zł 50 gr", "5 zł"]
-    hint: Od 14 zł 50 gr do 15 zł brakuje 50 gr. Ile od 15 zł do 20 zł?
+    say: W pudełku jest 7 rzędów po 8 ołówków. Ile ołówków jest w pudełku?
+    choices: ["54", "56", "64"]
+    hint: 5 rzędów to 40 ołówków. Dodaj jeszcze 2 rzędy.
     pic: Dziecko gra na tablecie, rodzic jest obok. Linijka trzyma żółtą karteczkę z podpowiedzią.
   record:
     counts:
@@ -64,8 +64,7 @@ steps:
       - { value: 5, label: od razu }
       - { value: 3, label: z podpowiedzią }
     nextLabel: "Następna lekcja:"
-    # The next lesson moves to the next banknote up: 20 zł in the card, then 50 zł (en: $10, then $20, dl-w0b4.106).
-    next: dopełnianie do pełnego złotego, potem reszta z 50 zł.
+    next: mnożenie przez 7 z rozkładem na 5 i 2.
     screencast: "screencast · strona dziecka: cele, umiejętności, ostatnia lekcja pytanie po pytaniu"
 # /jadwigo-ai (dl-w0b4.114; owner's call of 2026-11-02, draft for the native review). Like the rest of the
 # site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
