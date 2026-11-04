@@ -18,6 +18,25 @@ const CLI = "@posthog/cli@0.18.12";
 /** Runs the CLI with these arguments and answers its exit code. A test passes a double. */
 export type RunCli = (args: readonly string[], env: Readonly<Record<string, string>>) => number;
 
+/** A stalled CLI counts as a failed upload: a release does not wait on it for longer than this. */
+const TIMEOUT_MS = 5 * 60 * 1000;
+
+/**
+ * How the CLI runs: npx fetches it at release time, so it gets only what it needs, and none of the
+ * owner's AWS credentials or anything else in their shell (dl-5ssh.165).
+ */
+export function spawnOptions(
+  env: Readonly<Record<string, string>>,
+  parent: Readonly<Record<string, string | undefined>>,
+) {
+  const kept: Record<string, string> = { ...env };
+  for (const name of ["PATH", "HOME"]) {
+    const value = parent[name];
+    if (value !== undefined) kept[name] = value;
+  }
+  return { env: kept, stdio: "inherit", timeout: TIMEOUT_MS } as const;
+}
+
 function deleteMaps(dir: string): number {
   const maps = readdirSync(dir, { recursive: true, encoding: "utf8" }).filter((file) =>
     file.endsWith(".map"),
@@ -48,9 +67,7 @@ if (import.meta.main) {
     process.exit(1);
   }
   const run: RunCli = (args, env) =>
-    spawnSync("npx", ["-y", CLI, ...args], {
-      env: { ...process.env, ...env },
-      stdio: "inherit",
-    }).status ?? 1;
+    // A timeout leaves no status, which counts as failed.
+    spawnSync("npx", ["-y", CLI, ...args], spawnOptions(env, process.env)).status ?? 1;
   console.log(uploadSourcemaps(dir, process.env["POSTHOG_CLI_API_KEY"]?.trim(), run));
 }
