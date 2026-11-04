@@ -154,8 +154,8 @@ export function LessonActions({
   const quietGive = busy || canGive ? null : giveReason;
   return (
     <div className="flex w-full flex-col" data-lesson-actions>
-      {/* On a phone: Dla on its own row, then print and the rest, all 44 tall (chat handoff §4.4,
-          delta card-ready-390); once given, the wide link to the lesson takes a row of its own. */}
+      {/* On a phone: Dla on its own row, then print and the rest in one row, all 44 tall (chat handoff
+          §4.4, delta card-ready-390); once given, Kopiuj link is its icon, so the link fits. */}
       <div className="flex flex-wrap items-center gap-2 max-sm:flex-col max-sm:items-start">
         {forWhom ?? (
           <p className="text-jw-page-small text-jw-ink-soft" data-for-whom>
@@ -165,7 +165,7 @@ export function LessonActions({
             </span>
           </p>
         )}
-        <div className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full max-sm:flex-wrap">
+        <div className="ml-auto flex items-center gap-2 max-sm:ml-0 max-sm:w-full">
           <Quiet reason={printReason}>
             <Button
               type="button"
@@ -183,13 +183,12 @@ export function LessonActions({
           </Quiet>
           {given.kind === "given" ? (
             <>
-              <CopyLink
-                language={language}
-                href={given.href}
-                onRefused={setUncopied}
-                className="max-sm:flex-1"
-              />
-              <Button asChild size="control" className="max-sm:min-h-11 max-sm:w-full">
+              <CopyLink language={language} href={given.href} onRefused={setUncopied} />
+              <Button
+                asChild
+                size="control"
+                className="max-sm:min-h-11 max-sm:min-w-0 max-sm:flex-1"
+              >
                 <a href={given.href} target="_blank" rel="noopener" data-given-link>
                   {t("parent_given_open")}
                   <ExternalLinkIcon aria-hidden className="size-4" />
@@ -269,14 +268,11 @@ function CopyLink({
   language,
   href,
   onRefused,
-  className,
 }: {
   language: Language;
   href: string;
   /** The browser refused the clipboard (no permission, no secure page). */
   onRefused: (href: string) => void;
-  /** Its place in the row on a phone. */
-  className?: string;
 }): ReactElement {
   const t = (key: CopyKey): string => copy(language, key, {}, "adult");
   const [copied, setCopied] = useState(false);
@@ -292,7 +288,8 @@ function CopyLink({
           type="button"
           variant="outline"
           size="control"
-          className={cn("max-sm:min-h-11", className)}
+          // On a phone its icon alone, and its words for a screen reader: the row holds all three.
+          className="max-sm:size-11 max-sm:min-h-11 max-sm:min-w-11 max-sm:shrink-0 max-sm:px-0"
           onClick={() => {
             navigator.clipboard.writeText(new URL(href, window.location.origin).href).then(
               () => setCopied(true),
@@ -307,7 +304,9 @@ function CopyLink({
           ) : (
             <CopyIcon aria-hidden className="size-4" />
           )}
-          {t(copied ? "parent_given_copied" : "parent_given_copy")}
+          <span className="max-sm:sr-only">
+            {t(copied ? "parent_given_copied" : "parent_given_copy")}
+          </span>
         </Button>
       </TooltipTrigger>
       <TooltipContent>{t("parent_given_share")}</TooltipContent>

@@ -45,6 +45,33 @@ test("390: Dla on its own row, then print and a wide Daj lekcję, 44 tall; the c
   expect(open.x).toBeGreaterThan(prompts.x + prompts.width - 1);
 });
 
+test("390: once given, print, the copy icon and the link share one row, all 44 tall", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/playground/workspace");
+  const card = cardOf(page);
+  await expect(card).toBeVisible({ timeout: 20_000 });
+  await card.locator("[data-give]").click();
+  await expect(card.locator("[data-given-link]")).toBeVisible();
+  const [print, copied, open, foot] = await Promise.all([
+    box(card.locator("[data-print]")),
+    box(card.locator("[data-given-copy]")),
+    box(card.locator("[data-given-link]")),
+    box(card.locator("[data-card-actions]")),
+  ]);
+  expect(print.x + print.width).toBeLessThanOrEqual(copied.x);
+  expect(copied.x + copied.width).toBeLessThanOrEqual(open.x);
+  for (const part of [print, copied, open]) {
+    expect(part.height).toBeGreaterThanOrEqual(43.5);
+    expect(Math.abs(part.y + part.height / 2 - (print.y + print.height / 2))).toBeLessThan(2);
+  }
+  expect(open.x + open.width).toBeLessThanOrEqual(foot.x + foot.width);
+  // The link's words stay on one line, not squeezed by the row.
+  await expect(card.locator("[data-given-link]")).toHaveCSS("white-space", "nowrap");
+  expect(page.context().pages()).toHaveLength(1);
+});
+
 test("1440: the foot is one row and the open button sits beside the tag", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/playground/workspace");
