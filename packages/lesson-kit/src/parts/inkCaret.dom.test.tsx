@@ -138,4 +138,24 @@ describe("the ink caret on a page", () => {
     expect(bar().style.display).toBe("none");
     el.remove();
   });
+
+  it("leaves a coarse pointer the native caret: no bar, the field's own caret colour (dl-uukj.29.169)", async () => {
+    const real = window.matchMedia;
+    window.matchMedia = ((query: string) =>
+      ({
+        matches: query === "(pointer: coarse)",
+        media: query,
+      }) as MediaQueryList) as typeof window.matchMedia;
+    try {
+      const el = field("left", "kuba", 100, 300);
+      el.focus();
+      document.dispatchEvent(new Event("selectionchange"));
+      await frame();
+      expect(bar().style.display).toBe("none");
+      expect(el.style.caretColor).toBe("");
+      el.remove();
+    } finally {
+      window.matchMedia = real;
+    }
+  });
 });
