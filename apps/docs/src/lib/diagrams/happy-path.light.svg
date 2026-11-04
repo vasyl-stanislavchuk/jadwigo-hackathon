@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 544" role="img" aria-labelledby="happy-path-light-title happy-path-light-desc">
+<title id="happy-path-light-title">From a photo to a child playing</title>
+<desc id="happy-path-light-desc">A parent sends a photo with a message. The API pokes the runner, which asks Meta Muse for a step. The model drafts a lesson from the bank and the check passes in code. The parent gives the lesson and shares its play link, and the child plays it with no login.</desc>
+<defs><marker id="happy-path-light-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#5a6b85"/></marker><marker id="happy-path-light-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#2941f3"/></marker><marker id="happy-path-light-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#0f7f76"/></marker><marker id="happy-path-light-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#5a6b85" stroke-width="1.2"/></marker></defs>
+<line x1="115" y1="64" x2="115" y2="532" stroke="rgba(9,22,40,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="298" y1="64" x2="298" y2="532" stroke="rgba(9,22,40,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="480" y1="64" x2="480" y2="532" stroke="rgba(9,22,40,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="662" y1="64" x2="662" y2="532" stroke="rgba(9,22,40,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<line x1="845" y1="64" x2="845" y2="532" stroke="rgba(9,22,40,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+<path d="M302,104 L475,104" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#happy-path-light-default)"/>
+<path d="M484,140 L657,140" fill="none" stroke="#5a6b85" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#happy-path-light-open)"/>
+<path d="M666,176 L840,176" fill="none" stroke="#0f7f76" stroke-width="1.2" marker-end="url(#happy-path-light-link)"/>
+<path d="M841,212 L667,212" fill="none" stroke="#5a6b85" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#happy-path-light-default)"/>
+<path d="M662,242 L683,242 Q690,242 690,249 L690,249 Q690,256 683,256 L666,256" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#happy-path-light-default)"/>
+<path d="M662,282 L683,282 Q690,282 690,289 L690,289 Q690,296 683,296 L666,296" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#happy-path-light-default)"/>
+<path d="M302,328 L475,328" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#happy-path-light-default)"/>
+<path d="M476,364 L303,364" fill="none" stroke="#5a6b85" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#happy-path-light-default)"/>
+<path d="M302,400 L475,400" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#happy-path-light-default)"/>
+<path d="M476,436 L303,436" fill="none" stroke="#5a6b85" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#happy-path-light-default)"/>
+<path d="M294,472 L120,472" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#happy-path-light-default)"/>
+<path d="M119,508 L475,508" fill="none" stroke="#2941f3" stroke-width="1.5" marker-end="url(#happy-path-light-accent)"/>
+<rect x="33" y="16" width="164" height="48" rx="6" fill="#ffffff" stroke="#7888a0" stroke-width="1"/>
+<text x="115" y="37.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Child</text>
+<text x="115" y="50.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">a browser, no login</text>
+<rect x="216" y="16" width="164" height="48" rx="6" fill="#ffffff" stroke="#7888a0" stroke-width="1"/>
+<text x="298" y="37.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Parent</text>
+<text x="298" y="50.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">the web app</text>
+<rect x="398" y="16" width="164" height="48" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+<text x="480" y="37.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">API</text>
+<text x="480" y="50.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">API Lambda, Postgres</text>
+<rect x="580" y="16" width="164" height="48" rx="6" fill="rgba(41,65,243,0.10)" stroke="#2941f3" stroke-width="1.5"/>
+<text x="662" y="37.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Runner</text>
+<text x="662" y="50.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">the AI engine</text>
+<rect x="763" y="16" width="164" height="48" rx="6" fill="#ffffff" stroke="#7888a0" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="845" y="37.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Meta Muse</text>
+<text x="845" y="50.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">/v1/responses</text>
+<rect x="308.44" y="87" width="161.12" height="12" fill="#ffffff"/>
+<text x="389" y="96" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">photo to S3, then the message</text>
+<rect x="540.6" y="123" width="60.800000000000004" height="12" fill="#ffffff"/>
+<text x="571" y="132" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">async poke</text>
+<rect x="696.7" y="159" width="113.60000000000001" height="12" fill="#ffffff"/>
+<text x="753.5" y="168" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">1 step: photo, verbs</text>
+<rect x="701.98" y="195" width="103.04" height="12" fill="#ffffff"/>
+<text x="753.5" y="204" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">lesson_draft, bank</text>
+<rect x="694" y="243" width="118.88000000000001" height="12" fill="#ffffff"/>
+<text x="698" y="252" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">lesson_check, in code</text>
+<rect x="694" y="283" width="103.04" height="12" fill="#ffffff"/>
+<text x="698" y="292" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">run events written</text>
+<rect x="329.56" y="311" width="118.88000000000001" height="12" fill="#ffffff"/>
+<text x="389" y="320" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">read the run's events</text>
+<rect x="342.76" y="347" width="92.48" height="12" fill="#ffffff"/>
+<text x="389" y="356" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">a checked lesson</text>
+<rect x="345.4" y="383" width="87.2" height="12" fill="#ffffff"/>
+<text x="389" y="392" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">give the lesson</text>
+<rect x="350.68" y="419" width="76.64" height="12" fill="#ffffff"/>
+<text x="389" y="428" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">the play link</text>
+<rect x="162.9" y="455" width="87.2" height="12" fill="#ffffff"/>
+<text x="206.5" y="464" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">shares the link</text>
+<rect x="123" y="491" width="113.60000000000001" height="12" fill="#ffffff"/>
+<text x="127" y="500" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">plays: start, answer</text>
+</svg>

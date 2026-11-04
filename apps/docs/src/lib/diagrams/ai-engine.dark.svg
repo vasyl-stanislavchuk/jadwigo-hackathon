@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 280" role="img" aria-labelledby="ai-engine-dark-title ai-engine-dark-desc">
+<title id="ai-engine-dark-title">The AI engine's parts</title>
+<desc id="ai-engine-dark-desc">The step queue hands the step loop 1 step. The loop asks GuardedMuse, which checks the spend cap and writes a ledger row, for 1 Meta Muse call. The loop runs the verbs the model asks for, and every effect becomes a run event that the page folds into the chat and the lesson.</desc>
+<defs><marker id="ai-engine-dark-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#a8b6cc"/></marker><marker id="ai-engine-dark-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#6a7cff"/></marker><marker id="ai-engine-dark-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#3db8b8"/></marker><marker id="ai-engine-dark-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#a8b6cc" stroke-width="1.2"/></marker></defs>
+<path d="M208,72 L272,72" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#ai-engine-dark-default)"/>
+<path d="M448,72 L512,72" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#ai-engine-dark-default)"/>
+<path d="M688,72 L752,72" fill="none" stroke="#3db8b8" stroke-width="1.2" marker-end="url(#ai-engine-dark-link)"/>
+<path d="M360,104 L360,184" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#ai-engine-dark-default)"/>
+<path d="M448,216 L512,216" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#ai-engine-dark-default)"/>
+<path d="M688,216 L752,216" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#ai-engine-dark-default)"/>
+<rect x="32" y="40" width="176" height="64" rx="6" fill="rgba(168,182,204,0.12)" stroke="#93a1b8" stroke-width="1"/>
+<text x="120" y="69.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Step queue</text>
+<text x="120" y="82.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">pgmq agent_step</text>
+<rect x="272" y="40" width="176" height="64" rx="6" fill="rgba(106,124,255,0.14)" stroke="#6a7cff" stroke-width="1.5"/>
+<text x="360" y="69.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Step loop</text>
+<text x="360" y="82.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">1 step, 1 model call</text>
+<rect x="512" y="40" width="176" height="64" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="600" y="69.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">GuardedMuse</text>
+<text x="600" y="82.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">spend cap, ledger row</text>
+<rect x="752" y="40" width="176" height="64" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="840" y="69.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Meta Muse</text>
+<text x="840" y="82.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">/v1/responses</text>
+<rect x="272" y="184" width="176" height="64" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="360" y="213.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Verb groups</text>
+<text x="360" y="226.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">lesson, bank, learner, review</text>
+<rect x="512" y="184" width="176" height="64" rx="6" fill="rgba(168,182,204,0.12)" stroke="#93a1b8" stroke-width="1"/>
+<text x="600" y="213.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Run events</text>
+<text x="600" y="226.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">the log is the draft</text>
+<rect x="752" y="184" width="176" height="64" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="840" y="213.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Chat and lesson</text>
+<text x="840" y="226.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">folded on the page</text>
+<rect x="220.16" y="55" width="39.68" height="12" fill="#1d1e22"/>
+<text x="240" y="64" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">1 step</text>
+<rect x="462.8" y="55" width="34.400000000000006" height="12" fill="#1d1e22"/>
+<text x="480" y="64" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">input</text>
+<rect x="700.16" y="55" width="39.68" height="12" fill="#1d1e22"/>
+<text x="720" y="64" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">1 call</text>
+<rect x="364" y="139" width="60.800000000000004" height="12" fill="#1d1e22"/>
+<text x="368" y="148" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">verb calls</text>
+<rect x="457.52" y="199" width="44.96" height="12" fill="#1d1e22"/>
+<text x="480" y="208" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">effects</text>
+<rect x="705.44" y="199" width="29.12" height="12" fill="#1d1e22"/>
+<text x="720" y="208" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">read</text>
+</svg>

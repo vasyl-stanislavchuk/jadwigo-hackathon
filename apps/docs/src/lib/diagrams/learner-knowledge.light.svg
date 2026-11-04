@@ -1,25 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 176" role="img" aria-labelledby="learner-knowledge-light-title learner-knowledge-light-desc">
-<title id="learner-knowledge-light-title">Learner knowledge</title>
-<desc id="learner-knowledge-light-desc">Every answer becomes evidence, folded into a mastery level and a review date, then a brief for the next lesson.</desc>
-<defs><marker id="a-learner-knowledge-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#50535c"/></marker></defs>
-<rect x="0" y="0" width="960" height="176" fill="#ffffff"/>
-<line x1="186" y1="88" x2="216" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-learner-knowledge-light)"/>
-<line x1="372" y1="88" x2="402" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-learner-knowledge-light)"/>
-<line x1="558" y1="88" x2="588" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-learner-knowledge-light)"/>
-<line x1="744" y1="88" x2="774" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-learner-knowledge-light)"/>
-<rect x="30" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
-<text x="108" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Evidence</text>
-<text x="108" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">every first try, help, skip</text>
-<rect x="216" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
-<text x="294" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Fold</text>
-<text x="294" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">one result per question</text>
-<rect x="402" y="56" width="156" height="64" rx="6" fill="#dce8fb" stroke="#3a5fa8" stroke-width="1.5"/>
-<text x="480" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Mastery + FSRS</text>
-<text x="480" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">a level and a due date</text>
-<rect x="588" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
-<text x="666" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Brief</text>
-<text x="666" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">reteach, review, new, recheck</text>
-<rect x="774" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
-<text x="852" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Next lesson + report</text>
-<text x="852" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">what the parent sees</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 232" role="img" aria-labelledby="learner-knowledge-light-title learner-knowledge-light-desc">
+<title id="learner-knowledge-light-title">What Jadwigo knows about a learner</title>
+<desc id="learner-knowledge-light-desc">Every first try, help and skip is evidence. It folds to one happening per question, which moves a mastery level and a memory card's next due date. Both feed a brief, and the brief shapes the next lesson and the parent's report.</desc>
+<defs><marker id="learner-knowledge-light-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#5a6b85"/></marker><marker id="learner-knowledge-light-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#2941f3"/></marker><marker id="learner-knowledge-light-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#0f7f76"/></marker><marker id="learner-knowledge-light-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#5a6b85" stroke-width="1.2"/></marker></defs>
+<path d="M176,120 L208,120" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#learner-knowledge-light-default)"/>
+<path d="M368,104 L376,104 Q384,104 384,96 L384,80 Q384,72 392,72 L400,72" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#learner-knowledge-light-default)"/>
+<path d="M368,136 L376,136 Q384,136 384,144 L384,160 Q384,168 392,168 L400,168" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#learner-knowledge-light-default)"/>
+<path d="M560,72 L568,72 Q576,72 576,80 L576,96 Q576,104 584,104 L592,104" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#learner-knowledge-light-default)"/>
+<path d="M560,168 L568,168 Q576,168 576,160 L576,144 Q576,136 584,136 L592,136" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#learner-knowledge-light-default)"/>
+<path d="M752,120 L784,120" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#learner-knowledge-light-default)"/>
+<rect x="16" y="88" width="160" height="64" rx="6" fill="#ffffff" stroke="#7888a0" stroke-width="1"/>
+<text x="96" y="111" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Evidence</text>
+<text x="96" y="124" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">first tries, help,</text>
+<text x="96" y="137" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">skips</text>
+<rect x="208" y="88" width="160" height="64" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+<text x="288" y="117.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Fold</text>
+<text x="288" y="130.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">1 happening a question</text>
+<rect x="400" y="40" width="160" height="64" rx="6" fill="rgba(90,107,133,0.08)" stroke="#667997" stroke-width="1"/>
+<text x="480" y="69.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Mastery level</text>
+<text x="480" y="82.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">attempted to mastered</text>
+<rect x="400" y="136" width="160" height="64" rx="6" fill="rgba(90,107,133,0.08)" stroke="#667997" stroke-width="1"/>
+<text x="480" y="165.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Memory card</text>
+<text x="480" y="178.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">the next due date</text>
+<rect x="592" y="88" width="160" height="64" rx="6" fill="rgba(41,65,243,0.10)" stroke="#2941f3" stroke-width="1.5"/>
+<text x="672" y="111" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Brief</text>
+<text x="672" y="124" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">reteach, review,</text>
+<text x="672" y="137" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">new, recheck</text>
+<rect x="784" y="88" width="160" height="64" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+<text x="864" y="117.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Next lesson</text>
+<text x="864" y="130.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">and the parent's report</text>
 </svg>

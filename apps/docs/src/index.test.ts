@@ -54,9 +54,10 @@ describe("SIDEBAR", () => {
     ]);
     expect(byLabel("How it is built")).toEqual([
       "architecture",
-      "architecture/monorepo",
-      "architecture/contracts",
+      "architecture/happy-path",
       "architecture/ai-engine",
+      "architecture/contracts",
+      "architecture/monorepo",
       "architecture/building-with-agents",
     ]);
   });

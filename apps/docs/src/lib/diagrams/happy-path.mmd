@@ -1,0 +1,18 @@
+sequenceDiagram
+  participant C as Child
+  participant P as Parent, the web app
+  participant A as API
+  participant R as Runner
+  participant M as Meta Muse
+  P->>A: photo to S3, then the message
+  A-)R: async poke
+  R->>M: 1 step: photo, verbs
+  M-->>R: lesson_draft, bank
+  R->>R: lesson_check, in code
+  R->>R: run events written
+  P->>A: read the run's events
+  A-->>P: a checked lesson
+  P->>A: give the lesson
+  A-->>P: the play link
+  P->>C: shares the link
+  C->>A: plays: start, answer

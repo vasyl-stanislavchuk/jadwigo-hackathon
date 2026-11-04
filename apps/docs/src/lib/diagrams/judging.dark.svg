@@ -1,35 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1188 264" role="img" aria-labelledby="judging-dark-title judging-dark-desc">
-<title id="judging-dark-title">Judging an answer</title>
-<desc id="judging-dark-desc">Criteria written first, a code check that only asks for more, then an AI judge with a reason per criterion and kind feedback.</desc>
-<defs><marker id="a-judging-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9b4a7"/></marker></defs>
-<rect x="0" y="0" width="1188" height="264" fill="#1d1e22"/>
-<line x1="180" y1="88" x2="210" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-judging-dark)"/>
-<line x1="366" y1="88" x2="396" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-judging-dark)"/>
-<line x1="552" y1="88" x2="582" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-judging-dark)"/>
-<line x1="738" y1="88" x2="768" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-judging-dark)"/>
-<line x1="924" y1="88" x2="954" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-judging-dark)"/>
-<path d="M 474 120 L 474 208 L 552 208" fill="none" stroke="#b9b4a7" stroke-width="1.5"/>
-<line x1="552" y1="208" x2="554" y2="208" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-judging-dark)"/>
-<rect x="404" y="128" width="120" height="18" fill="#1d1e22"/><text x="474" y="141" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#918c83">if too short</text>
-<rect x="24" y="56" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="102" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">Criteria first</text>
-<text x="102" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">written before the task</text>
-<rect x="210" y="56" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="288" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">Child's answer</text>
-<text x="288" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">in their own words</text>
-<rect x="396" y="56" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="474" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">Code check</text>
-<text x="474" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">empty or too short?</text>
-<rect x="582" y="56" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="660" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">Kept unjudged</text>
-<text x="660" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">no code verdict</text>
-<rect x="768" y="56" width="156" height="64" rx="6" fill="#1d3157" stroke="#93b6ff" stroke-width="1.5"/>
-<text x="846" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">AI judge</text>
-<text x="846" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">a verdict per criterion</text>
-<rect x="954" y="56" width="156" height="64" rx="6" fill="#1d3157" stroke="#93b6ff" stroke-width="1.5"/>
-<text x="1032" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">Kind feedback</text>
-<text x="1032" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">short, one next step</text>
-<rect x="396" y="176" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="474" y="204" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">Ask for a little more</text>
-<text x="474" y="222" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">never a bare wrong</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 264" role="img" aria-labelledby="judging-dark-title judging-dark-desc">
+<title id="judging-dark-title">Judging a written answer</title>
+<desc id="judging-dark-desc">The criteria are written before the child answers. Code only checks that the answer is empty or too short, and asks for a little more. Any other answer is kept for the tutor: an AI judge gives one verdict per criterion with a reason, and the child reads short, kind feedback with one next step.</desc>
+<defs><marker id="judging-dark-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#a8b6cc"/></marker><marker id="judging-dark-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#6a7cff"/></marker><marker id="judging-dark-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#3db8b8"/></marker><marker id="judging-dark-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#a8b6cc" stroke-width="1.2"/></marker></defs>
+<path d="M208,70 L256,70" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#judging-dark-default)"/>
+<path d="M448,70 L496,70" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#judging-dark-default)"/>
+<path d="M688,70 L736,70" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#judging-dark-default)"/>
+<path d="M832,40 L832,32 Q832,24 824,24 L360,24 Q352,24 352,32 L352,40" fill="none" stroke="#a8b6cc" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#judging-dark-default)"/>
+<path d="M592,100 L592,132 Q592,140 584,140 L360,140 Q352,140 352,148 L352,184" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#judging-dark-default)"/>
+<path d="M448,214 L496,214" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#judging-dark-default)"/>
+<path d="M688,214 L736,214" fill="none" stroke="#6a7cff" stroke-width="1.5" marker-end="url(#judging-dark-accent)"/>
+<rect x="16" y="40" width="192" height="60" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="112" y="67.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Criteria first</text>
+<text x="112" y="80.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">before the child answers</text>
+<rect x="256" y="40" width="192" height="60" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="352" y="67.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">The child's answer</text>
+<text x="352" y="80.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">in their own words</text>
+<rect x="496" y="40" width="192" height="60" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="592" y="67.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Code check</text>
+<text x="592" y="80.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">empty or too short?</text>
+<rect x="736" y="40" width="192" height="60" rx="6" fill="rgba(255,255,255,0.02)" stroke="#7f8fa8" stroke-width="1" stroke-dasharray="2,3"/>
+<text x="832" y="67.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Ask for a little more</text>
+<text x="832" y="80.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">no verdict yet</text>
+<rect x="256" y="184" width="192" height="60" rx="6" fill="rgba(168,182,204,0.12)" stroke="#93a1b8" stroke-width="1"/>
+<text x="352" y="211.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Kept for the tutor</text>
+<text x="352" y="224.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">not judged by code</text>
+<rect x="496" y="184" width="192" height="60" rx="6" fill="rgba(106,124,255,0.14)" stroke="#6a7cff" stroke-width="1.5"/>
+<text x="592" y="211.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">AI judge</text>
+<text x="592" y="224.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">1 verdict a criterion</text>
+<rect x="736" y="184" width="192" height="60" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="832" y="211.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Feedback</text>
+<text x="832" y="224.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">short, kind, 1 next step</text>
+<rect x="700.08" y="53" width="23.84" height="12" fill="#1d1e22"/>
+<text x="712" y="62" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">yes</text>
+<rect x="537.84" y="5" width="108.32000000000001" height="12" fill="#1d1e22"/>
+<text x="592" y="14" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">the child adds more</text>
+<rect x="596" y="115" width="18.560000000000002" height="12" fill="#1d1e22"/>
+<text x="600" y="124" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">no</text>
 </svg>

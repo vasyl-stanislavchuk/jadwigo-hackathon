@@ -1,0 +1,16 @@
+flowchart TB
+  child(["Child<br/>plays a link, no login"])
+  parent(["Parent<br/>signs in, chats, gives lessons"])
+  aiapp(["Parent's own AI app<br/>connects by OAuth 2.1"])
+  author(["Lesson author or agent<br/>builds lessons from the bank"])
+  jadwigo["Jadwigo<br/>web app, API and AI engine, in AWS Frankfurt"]
+  supabase["Supabase<br/>Postgres and sign-in, Frankfurt"]
+  muse["Meta Muse<br/>Meta's model API"]
+  bank[("Question bank<br/>credited sets, searched")]
+  child -- plays --> jadwigo
+  parent -- chats --> jadwigo
+  aiapp -- MCP --> jadwigo
+  author -- searches --> jadwigo
+  jadwigo -- "records, sign-in" --> supabase
+  jadwigo -- "1 call per step" --> muse
+  jadwigo -- "search, read" --> bank
