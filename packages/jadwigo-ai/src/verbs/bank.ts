@@ -253,9 +253,10 @@ function questionOf(set: FixtureSet, index: number, language: BankLanguage): Ban
   const lines = LINES[language];
   const answer = set.op === "+" ? a + b : a - b;
   const expression = `${a} ${set.op} ${b}`;
-  // The twin swaps an addition's numbers, and moves a subtraction's by one: another answer.
-  const [ta, tb] = set.op === "+" ? [b, a] : [a + 1, b];
-  const twinAnswer = set.op === "+" ? answer : ta - tb;
+  // The twin swaps an addition's numbers, and moves a subtraction's by one: another answer. A double
+  // has nothing to swap, so it moves by one too, or the twin would ask the same sum (dl-hin8.48).
+  const [ta, tb] = set.op === "-" || a === b ? [a + 1, b] : [b, a];
+  const twinAnswer = set.op === "+" ? ta + tb : ta - tb;
   const twinExpression = `${ta} ${set.op} ${tb}`;
   const picked = set.question_type === "recognition";
   return {

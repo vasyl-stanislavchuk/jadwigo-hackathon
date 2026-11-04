@@ -650,6 +650,8 @@
   "chat_finding_unknown_mistake_class": false,
   "chat_finding_twin_representation": false,
   "chat_finding_twin_same_picture": false,
+  "chat_finding_twin_repeats": false,
+  "chat_finding_hint_gives_key": false,
   "chat_finding_key_in_say": false,
   "chat_finding_key_grades": false,
   "chat_finding_harsh_word": false,

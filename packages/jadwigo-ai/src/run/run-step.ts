@@ -139,11 +139,11 @@ const INSTRUCTIONS = [
   "Once you have read a step and know the changes for several steps, send all their lesson_edit calls together in one response: they run in order, each on the result of the one before, and a refused one leaves the others standing. The parent is waiting, so do not spend a response on each step.",
   "When the parent sends a child's marked work, read the wrong answers as well as what was marked. Look for a pattern across them, such as answers from a neighbouring times table, and say it to the parent in one sentence, as something you noticed, not a diagnosis. Build the lesson from the missed facts and neighbouring facts that practise telling them apart, not only the same sums. Vary it: use more than one question type where the bank has them, and a related topic if it helps. Tell the parent in one sentence what you added and why.",
   "Once the questions are settled, give the lesson its title by passing title to the lesson_check that closes your work: a few plain words a child reads, naming what it practises, in the lesson's language. Never the parent's request word for word, and never a name.",
-  "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key and inherits the main question family when omitted. If a check still fails, explain the limitation and do not claim the lesson is ready.",
+  "Before presenting a lesson as ready, lesson_check must pass on the current revision. A failed check means repair with lesson_edit, then check again. Help look/boost are {text}; almost/worked are arrays; twin carries say, data and key and inherits the main question family when omitted; it asks the same kind of sum with other numbers and its own answer, never the same sum again. A look or boost hint points at how to work it out and never states the answer: only worked does. If a check still fails, explain the limitation and do not claim the lesson is ready.",
   FENCE_RULE,
 ].join("\n");
-/** Moves on with `INSTRUCTIONS`: 7 since worksheets (dl-hin8.50), 6 since follow-ups edit (dl-hin8.45), 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
-const PROMPT_CACHE_KEY = `${WORKFLOW}:7`;
+/** Moves on with `INSTRUCTIONS`: 8 since twins and hints (dl-hin8.48), 7 since worksheets (dl-hin8.50), 6 since follow-ups edit (dl-hin8.45), 5 since edits in one response (dl-hin8.36), 4 since validation/adaptation, 3 since the card rule (dl-z5ja.141), 2 since the fence rule (dl-z5ja.47). */
+const PROMPT_CACHE_KEY = `${WORKFLOW}:8`;
 /**
  * The tier a run's calls go to when the host names none: the owner's decision `dl-uafq` runs the
  * engine on `contributor` until a private tier is named (`JADWIGO_MUSE_TIER`, dl-z5ja.91).

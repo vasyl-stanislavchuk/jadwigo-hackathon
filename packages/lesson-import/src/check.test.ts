@@ -290,6 +290,119 @@ describe("check.ts --json", () => {
     expect((out["errors"] as { step_id: string }[]).map((e) => e.step_id)).toEqual(["s03"]);
   });
 
+  describe("a twin and a hint that teach nothing (dl-hin8.48)", () => {
+    type Step = {
+      question: { key: unknown; data: unknown; family: string; help?: Record<string, unknown> };
+    };
+    const rulesOf = (out: Record<string, unknown>) =>
+      (out["findings"] as { rule: string; level: string; step_id: string }[]).filter((f) =>
+        ["twin-repeats", "hint-gives-key"].includes(f.rule),
+      );
+    const withTwin = (twinData: (data: unknown) => unknown, key?: unknown) =>
+      planted((raw) => {
+        const step = raw as unknown as Step;
+        step.question.help = {
+          ...step.question.help,
+          twin: {
+            say: "Policz jeszcze raz.",
+            data: twinData(structuredClone(step.question.data)),
+            key: key ?? step.question.key,
+          },
+        };
+      });
+
+    it("flags a twin with the same numbers and answer, though its words differ", () => {
+      const { out } = check(
+        withTwin((data) => ({
+          ...(data as object),
+          stem: { text: "Oblicz jeszcze raz." },
+        })),
+      );
+      expect(rulesOf(out)).toContainEqual(
+        expect.objectContaining({ rule: "twin-repeats", level: "error" }),
+      );
+    });
+
+    it("passes a twin with other numbers, even one with the same answer", () => {
+      const { out } = check(
+        withTwin((data) =>
+          JSON.parse(JSON.stringify(data).replace(/\d+/g, (n) => String(Number(n) + 1))),
+        ),
+      );
+      expect(rulesOf(out).filter((f) => f.rule === "twin-repeats")).toEqual([]);
+    });
+
+    it("reads a typed question's numbers in its words when its data shows none (the steward's input)", () => {
+      const said = (say: string, twinSay: string) =>
+        check(
+          planted((raw) => {
+            const step = raw as unknown as Step & { say: unknown };
+            step.say = say;
+            step.question.family = "enter";
+            step.question.data = { stem: { text: "Wpisz wynik." } };
+            step.question.key = { accept: ["7"] };
+            step.question.help = {
+              ...step.question.help,
+              twin: {
+                say: twinSay,
+                data: { stem: { text: "Wpisz wynik." } },
+                key: { accept: ["7"] },
+              },
+            };
+          }),
+        ).out;
+      const repeats = (out: Record<string, unknown>) =>
+        rulesOf(out).filter((f) => f.rule === "twin-repeats");
+      // Other numbers in the words, the same answer: a real twin.
+      expect(repeats(said("Ile to 3 + 4?", "Ile to 2 + 5?"))).toEqual([]);
+      // Swapped factors are another question too.
+      expect(repeats(said("Ile to 4 razy 5?", "Ile to 5 razy 4?"))).toEqual([]);
+      // The same numbers in other words still repeat it.
+      expect(repeats(said("Ile to 3 + 4?", "Policz: 3 + 4."))).toContainEqual(
+        expect.objectContaining({ rule: "twin-repeats", level: "error" }),
+      );
+    });
+
+    it("reads a choose question's sum in its words too: other numbers there make a real twin (the steward's input)", () => {
+      /** s03 ('Ile to jest 2 razy 8?', options 10/14/16/18) with a twin on its own options and key. */
+      const withSay = (twinSay: (own: unknown) => unknown) =>
+        check(
+          plantedIn("multiplication-times-four", (steps) => {
+            const s03 = steps["s03"] as unknown as Step & { say: unknown };
+            s03.question.help = {
+              ...s03.question.help,
+              twin: {
+                say: twinSay(structuredClone(s03.say)),
+                data: structuredClone(s03.question.data),
+                key: s03.question.key,
+              },
+            };
+          }),
+        ).out;
+      const repeats = (out: Record<string, unknown>) =>
+        rulesOf(out).filter((f) => f.rule === "twin-repeats" && f.step_id === "s03t");
+      // 'Ile to jest 4 razy 4?' over the same options: a real twin.
+      expect(repeats(withSay(() => ({ pl: "Ile to jest 4 razy 4? Wybierz liczbę." })))).toEqual([]);
+      // Its own words again over its own options: it asks its question again.
+      expect(repeats(withSay((own) => own))).toContainEqual(
+        expect.objectContaining({ rule: "twin-repeats", level: "error" }),
+      );
+    });
+
+    it("warns on a first hint that holds the answer, and leaves one that does not", () => {
+      const hint = (text: string) =>
+        planted((raw) => {
+          const step = raw as unknown as Step & { question: { key: { accept: string[] } } };
+          step.question.key.accept = ["49"];
+          step.question.help = { ...step.question.help, boost: { text } };
+        });
+      expect(rulesOf(check(hint("7 skrzynek po 7 jabłek to 49 jabłek.")).out)).toContainEqual(
+        expect.objectContaining({ rule: "hint-gives-key", level: "warn" }),
+      );
+      expect(rulesOf(check(hint("Policz 7 skrzynek po 7 jabłek.")).out)).toEqual([]);
+    });
+  });
+
   it("does not take an operand for the answer in key-in-say, and passes the file", () => {
     // equal-groups s02 is an enter question; "10 − 5" with the answer 5 needs its 5.
     for (const say of [

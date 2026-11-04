@@ -871,6 +871,8 @@
   "chat_finding_unknown_mistake_class": "A hint is for a slip this question can't lead to.",
   "chat_finding_twin_representation": "The similar question asks differently from this one.",
   "chat_finding_twin_same_picture": "The picture in the similar question shows this question's numbers.",
+  "chat_finding_twin_repeats": "The similar question repeats the same sum: the child has already seen its answer.",
+  "chat_finding_hint_gives_key": "The first hint may give the answer away.",
   "chat_finding_key_in_say": "The question gives the answer away.",
   "chat_finding_key_grades": "The right answer would not be marked right.",
   "chat_finding_harsh_word": "A child would read a word that is too harsh here.",

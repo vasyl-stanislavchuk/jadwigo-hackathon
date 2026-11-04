@@ -56,6 +56,8 @@ export const RULE_WORDS: Readonly<Record<string, CopyKey>> = {
   "unknown-mistake-class": "chat_finding_unknown_mistake_class",
   "twin-representation": "chat_finding_twin_representation",
   "twin-same-picture": "chat_finding_twin_same_picture",
+  "twin-repeats": "chat_finding_twin_repeats",
+  "hint-gives-key": "chat_finding_hint_gives_key",
   "key-in-say": "chat_finding_key_in_say",
   "key-grades": "chat_finding_key_grades",
   "harsh-word": "chat_finding_harsh_word",

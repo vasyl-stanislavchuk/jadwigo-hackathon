@@ -891,6 +891,8 @@
   "chat_finding_unknown_mistake_class": "Podpowiedź jest na pomyłkę, której w tym zadaniu nie da się zrobić.",
   "chat_finding_twin_representation": "Podobne pytanie pyta inaczej niż to zadanie.",
   "chat_finding_twin_same_picture": "Obrazek w podobnym pytaniu pokazuje liczby z tego zadania.",
+  "chat_finding_twin_repeats": "Podobne pytanie powtarza to samo zadanie: dziecko zobaczyło już odpowiedź.",
+  "chat_finding_hint_gives_key": "Pierwsza podpowiedź może zdradzać odpowiedź.",
   "chat_finding_key_in_say": "Pytanie zdradza odpowiedź.",
   "chat_finding_key_grades": "Dobra odpowiedź nie zostałaby zaliczona.",
   "chat_finding_harsh_word": "Dziecko przeczyta tu za ostre słowo.",

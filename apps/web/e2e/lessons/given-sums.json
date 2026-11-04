@@ -196,18 +196,18 @@
                 "almost": ["6 i jeszcze 6.", "6 + 6 = □"],
                 "worked": ["6 i jeszcze 6.", "6 + 6 = 12"],
                 "twin": {
-                  "say": "Ile to jest 6 + 6?",
+                  "say": "Ile to jest 6 + 7?",
                   "family": "enter",
                   "data": {
                     "input": "number",
                     "entry": "keypad",
                     "figure": {
                       "kind": "expression",
-                      "text": "6 + 6 = ?"
+                      "text": "6 + 7 = ?"
                     }
                   },
                   "key": {
-                    "accept": ["12"]
+                    "accept": ["13"]
                   }
                 }
               }
