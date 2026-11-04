@@ -817,6 +817,9 @@ export const COPY_KEYS = [
   "consent_accept",
   "consent_close",
   "consent_privacy",
+  "crash_title",
+  "crash_text",
+  "crash_retry",
   // end the lesson's send and its chat
   // the chat page (dl-z5ja.17): /playground/chat, a parent's chat on the left and the lesson on the right
   "chat_title",
