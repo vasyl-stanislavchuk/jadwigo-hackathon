@@ -91,9 +91,11 @@ export function Stem({
       </PictureView>
     ),
   );
-  // The stage (styles/stage.css): the spoken task as the instruction above the card when the stem
-  // carries the question, otherwise the task is the question and sits in the card itself.
-  // Instruction and card stand 16 apart, the column's gap (README §2, Enter addendum 3.1).
+  // The stage (styles/stage.css): the spoken task as the instruction above the question when the
+  // stem carries one, otherwise the task is the question itself. "The card" ([data-prompt-card])
+  // is no longer boxed: the question stands unboxed on the page at the prompt size, so it never
+  // reads as one more option (decision dl-xvtqp, dl-uukj.29.168). The two stand 16 apart, the
+  // column's gap (README §2, Enter addendum 3.1).
   return (
     <div className="flex flex-col gap-4">
       {ownCard && !cardOnly && <Instruction say={instruction} />}
