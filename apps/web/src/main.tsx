@@ -6,7 +6,8 @@ import { App } from "./App.tsx";
 import { startAppAnalytics } from "./analytics/start.ts";
 
 followSystemTheme(document.documentElement, window);
-// PostHog, once, never on the owner's playground; nothing is captured before a parent's yes.
+// PostHog, once, never on the owner's playground; every browser that has not said no is opted in
+// (dl-w0b4.129).
 void startAppAnalytics(window.location.pathname);
 
 const root = document.getElementById("root");

@@ -15,8 +15,8 @@ export function posthogOptions(surface: Surface): Partial<PostHogConfig> {
     ui_host: posthogHosts.ui,
     defaults: "2025-05-24",
     cross_subdomain_cookie: true,
-    // The answer to the banner is a cookie on .jadwigo.pl, not localStorage, so a yes or a no on
-    // jadwigo.pl holds on app.jadwigo.pl and the visitor is asked once (dl-w0b4.118).
+    // The opt-in or opt-out is a cookie on .jadwigo.pl, not localStorage, so a no on jadwigo.pl
+    // holds on app.jadwigo.pl too (dl-w0b4.118). Since dl-w0b4.129 no answer means opted in.
     opt_out_capturing_persistence_type: "cookie",
     person_profiles: "never",
     respect_dnt: false,
