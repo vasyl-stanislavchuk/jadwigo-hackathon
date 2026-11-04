@@ -24,7 +24,7 @@
   "dependencies": {
     "@jadwigo/contracts": "workspace:*",
     "n2words": "6.3.0",
-    "ts-fsrs": "5.4.2"
+    "ts-fsrs": "6.0.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",
