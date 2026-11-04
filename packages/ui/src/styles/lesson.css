@@ -17,6 +17,14 @@
   border-radius: 0;
 }
 
+/* A given lesson's first screen (apps/web/src/play/IntroScreen.tsx: the title, the count, who is
+ * playing) stands in the middle of the window, across and down, not in its top-left corner. Its
+ * column is as wide as its widest line (the title), so what shows is centred, not a wide box. */
+.kid-page[data-play] > [data-lesson-theme]:has(> [data-intro]) {
+  display: grid;
+  place-items: center;
+}
+
 /* On a phone the stage's ground goes to the edge, and the page's own 16 px are the lesson's gutters,
  * so a phone draws its 358 column at 390 (dl-uukj.29.81). The keypad's
  * Check key is then a third of the width, and Sprawdź fits at 18 px. */

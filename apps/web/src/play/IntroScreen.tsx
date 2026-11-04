@@ -49,7 +49,7 @@ export function IntroScreen({
   if (!intro.open && named === null)
     return (
       <KidPage>
-        <Column>
+        <Column data-intro className="w-auto">
           <p data-link-incomplete>{copy(language, "play_link_incomplete")}</p>
         </Column>
       </KidPage>
@@ -57,7 +57,7 @@ export function IntroScreen({
   const asksName = intro.open && (named === null || notThem);
   return (
     <KidPage>
-      <Column data-intro>
+      <Column data-intro className="w-auto">
         <div className="flex flex-col gap-1">
           <Heading lang={intro.language} data-intro-title>
             {intro.title}
