@@ -16,6 +16,7 @@
     "invoke": "node scripts/invoke-health.mjs"
   },
   "//": {
+    "@jadwigo/analytics": "reports a failing route to PostHog, scrubbed (src/index.ts)",
     "@aws-lambda-powertools/event-handler": "the router the /api/v1 routes register on (dl-e8ov.2.32.6)",
     "@aws-sdk/client-lambda": "invokes the bank Lambda's live alias for POST /api/v1/question-searches in src/questions.ts (dl-n9fr.33)",
     "@aws-sdk/client-s3": "reads one question body, questions/khan/<id>.json, from the content bucket for GET /api/v1/questions/{id} in src/questions.ts (dl-n9fr.51)",
@@ -60,6 +61,7 @@
     "@aws-sdk/client-ssm": "3.1158.0",
     "@aws-sdk/s3-presigned-post": "3.1158.0",
     "@aws-sdk/s3-request-presigner": "3.1158.0",
+    "@jadwigo/analytics": "workspace:*",
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/copy": "workspace:*",
     "@jadwigo/core": "workspace:*",

@@ -51,6 +51,8 @@ export interface HostDeps {
   dead_letters?: () => Promise<number>;
   /** Where a stuck queue is reported. Ids only: never a message, a name or a payload. */
   warn: (line: string) => void;
+  /** Where a step that threw is reported, scrubbed (dl-5ssh.158). Never throws. */
+  report?: (error: unknown) => Promise<void>;
 }
 
 export interface HostReport {
@@ -108,6 +110,7 @@ export function createHost(
       throw error;
     }
     const failed: FailedStep[] = [];
+    const reports: Promise<void>[] = [];
     const runs = new Set<RunId>();
     let max_wait_s: number | null = null;
     const refused = new Map<string, RefusalCount>();
@@ -126,6 +129,7 @@ export function createHost(
       onError: (error, step) => {
         failed.push(step);
         host.warn(failure(error, step));
+        if (host.report) reports.push(host.report(wordless(error)));
       },
       onRead: (run_id, waited_s) => {
         runs.add(run_id);
@@ -133,6 +137,7 @@ export function createHost(
       },
       ...(host.retry === undefined ? {} : { retry: host.retry }),
     });
+    await Promise.all(reports);
     const stuck = host.stuck ? await host.stuck() : null;
     if (stuck) reportStuck(stuck, host.warn);
     const dead_letters = host.dead_letters ? await host.dead_letters() : null;
@@ -165,6 +170,27 @@ function reportStuck(stuck: Stuck, warn: (line: string) => void): void {
     const ids = stuck.runs_past_deadline.map((r) => r.run_id).join(", ");
     warn(`agent_step: ${stuck.runs_past_deadline.length} runs past their deadline: ${ids}`);
   }
+}
+
+/**
+ * What the runner reports of a thrown value (dl-5ssh.158): its name, its `type` when it has one
+ * (`max_output_tokens`, `http_400`) and its stack frames, never its message, which may quote a
+ * prompt, a row or a URL, as `failure` logs it. A value that is not an Error reports as one.
+ */
+export function wordless(error: unknown): Error {
+  const name = error instanceof Error ? error.name : "Error";
+  const type =
+    typeof error === "object" && error !== null && "type" in error && typeof error.type === "string"
+      ? error.type
+      : "";
+  const out = new Error(type);
+  out.name = name;
+  const frames =
+    error instanceof Error && typeof error.stack === "string"
+      ? error.stack.split("\n").filter((line) => /^\s+at /.test(line))
+      : [];
+  out.stack = [`${name}${type === "" ? "" : `: ${type}`}`, ...frames].join("\n");
+  return out;
 }
 
 /**

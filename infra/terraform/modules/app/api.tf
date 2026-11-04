@@ -142,6 +142,8 @@ resource "aws_lambda_function" "api" {
         MCP_AUTHORIZATION_SERVER = var.jwt_issuer
         MCP_RESOURCE_URL         = "https://${var.domain_name}/api/mcp"
       },
+      # Where the routes report errors (dl-5ssh.158); absent, they report none.
+      var.posthog_key == "" ? {} : { JW_POSTHOG_KEY = var.posthog_key },
       # The step host the routes poke (dl-z5ja.88); absent, they poke nothing.
       var.runner_alias_arn == "" ? {} : { RUNNER_LIVE_ALIAS_ARN = var.runner_alias_arn },
       # The print Lambda the print route invokes (dl-1eieq.8.3); absent, the route has none.

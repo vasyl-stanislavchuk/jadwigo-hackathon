@@ -80,6 +80,8 @@ export default defineConfig(({ command, mode }) => {
       ...(media === undefined ? {} : { "import.meta.env.VITE_MEDIA_URL": JSON.stringify(media) }),
     },
     // One address everywhere: "localhost" is ::1 alone on macOS, and the Playwright smoke dials 127.0.0.1.
+    // For PostHog (dl-5ssh.159). The release deletes every map before it syncs the bucket.
+    build: { sourcemap: true },
     server: { host: "127.0.0.1", port: webPort(), strictPort: true, proxy },
     preview: { host: "127.0.0.1", port: webPort(), strictPort: true, proxy },
   };

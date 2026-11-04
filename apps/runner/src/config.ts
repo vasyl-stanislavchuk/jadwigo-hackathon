@@ -16,6 +16,11 @@ function setting(name: string): string | undefined {
   return process.env[name]?.trim() || undefined;
 }
 
+/** PostHog's public project key, where errors are reported (dl-5ssh.158). Unset, none are. */
+export function posthogKey(): string | undefined {
+  return setting("JW_POSTHOG_KEY");
+}
+
 /**
  * The URL once `new URL()` parses it with a postgres scheme and a host. The error never carries
  * the value: it holds the password.
