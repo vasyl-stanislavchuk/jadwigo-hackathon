@@ -74,3 +74,9 @@ variable "converter_image_tag" {
   type        = string
   default     = ""
 }
+
+variable "posthog_key" {
+  description = "PostHog's public project key, where the api and the runner report errors (dl-5ssh.158). The browser holds the same key; blank reports nothing"
+  type        = string
+  default     = ""
+}

@@ -13,7 +13,14 @@ import {
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
-import { createHost, type HostDeps, type Meter, STUCK_AFTER_S, type Stuck } from "./host.ts";
+import {
+  createHost,
+  type HostDeps,
+  type Meter,
+  STUCK_AFTER_S,
+  type Stuck,
+  wordless,
+} from "./host.ts";
 import { PROBE_SCRIPT, ProbeMuse, turnOf } from "./probe.ts";
 
 /** A meter that moves only when the test says, so wall and CPU are exact. */
@@ -184,6 +191,54 @@ describe("the step host", () => {
       { run_id: run, verb: "lesson_check", type: "copied-rung", count: 1 },
     ]);
     expect(JSON.stringify(report.refused)).not.toContain("quoted");
+  });
+
+  it("reports a step that threw, and still drains", async () => {
+    const usage = { input_tokens: 0, output_tokens: 0, cached_tokens: 0 };
+    const failure = new MuseFailed("quoting a prompt", 0, usage, null, "max_output_tokens");
+    const t = await setup({ respond: () => Promise.reject(failure) });
+    await t.say("one");
+    const reported: unknown[] = [];
+    const contexts: string[] = [];
+    const report = await createHost(
+      () =>
+        Promise.resolve({
+          ...t.deps(),
+          report: async (error: unknown, context: { run_id: string }) => {
+            reported.push(error);
+            contexts.push(context.run_id);
+          },
+        }),
+      fakeMeter(),
+    )();
+    expect(report.failed.length).toBeGreaterThan(0);
+    expect(contexts).toEqual(report.failed.map((step) => step.run_id));
+    expect(reported).toHaveLength(report.failed.length);
+    for (const sent of reported) {
+      expect(sent).toBeInstanceOf(Error);
+      const { name, message, stack } = sent as Error;
+      expect({ name, message }).toEqual({ name: "MuseFailed", message: "max_output_tokens" });
+      expect(stack).not.toContain("quoting a prompt");
+    }
+  });
+
+  it("reports an error's name, type and frames, never its words", () => {
+    const thrown = new MuseFailed(
+      "response.failed: Zosia napisała kot",
+      0,
+      { input_tokens: 0, output_tokens: 0, cached_tokens: 0 },
+      null,
+      "http_400",
+    );
+    const sent = wordless(thrown);
+    expect({ name: sent.name, message: sent.message }).toEqual({
+      name: "MuseFailed",
+      message: "http_400",
+    });
+    expect(sent.stack?.split("\n")[0]).toBe("MuseFailed: http_400");
+    expect(sent.stack).toMatch(/\n\s+at /);
+    expect(JSON.stringify([sent.message, sent.stack])).not.toContain("Zosia");
+    expect(wordless("Zosia")).toMatchObject({ name: "Error", message: "" });
   });
 
   it("logs a failed model call's code and never its words", async () => {

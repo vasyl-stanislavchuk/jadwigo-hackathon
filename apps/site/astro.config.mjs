@@ -40,7 +40,11 @@ export default defineConfig({
   // Read on `dev` only: Astro calls this for every command, and a build or astro check in a worktree
   // has no md port to read.
   server: ({ command }) => (command === "dev" ? { host: "127.0.0.1", port: sitePort() } : {}),
-  vite: { server: { strictPort: true } },
+  vite: {
+    server: { strictPort: true },
+    // For PostHog (dl-5ssh.159). The release deletes every map before it syncs the bucket.
+    build: { sourcemap: true },
+  },
   i18n: {
     defaultLocale: "pl",
     locales: [...LANGUAGE_CODES],

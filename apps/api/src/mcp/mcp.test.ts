@@ -8,6 +8,7 @@ import {
 } from "@modelcontextprotocol/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../app.ts";
+import { setReporter } from "../report.ts";
 import { bearerOf, signToken, testAuth } from "../testing/token.ts";
 
 const RESOURCE = "https://app.jadwigo.test/api/mcp";
@@ -196,6 +197,31 @@ describe("the remote MCP, /api/mcp", () => {
       headers,
     );
     expect(reply.body).toMatchObject({ result: { isError: true } });
+  });
+
+  it("reports a tool that failed by its name, and tells the caller only that it failed", async () => {
+    const failure = new Error("the database's own words");
+    const report = vi.fn(() => Promise.resolve());
+    setReporter(report);
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const out = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const lookup = vi.spyOn(InMemoryStore.prototype, "findMember").mockRejectedValue(failure);
+    try {
+      const reply = await call(
+        "POST",
+        MCP_PATH,
+        { jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "me", arguments: {} } },
+        bearerOf(signToken({ sub: randomUUID() })),
+      );
+      expect(reply.body).toMatchObject({ result: { isError: true } });
+      expect(JSON.stringify(reply.body)).not.toContain("own words");
+      expect(report).toHaveBeenCalledWith(failure, { operation: "mcp_tool:me" });
+    } finally {
+      lookup.mockRestore();
+      out.mockRestore();
+      err.mockRestore();
+      setReporter(() => Promise.resolve());
+    }
   });
 
   it("logs each tool call's client_id, tool and outcome, and nothing a tool read", async () => {

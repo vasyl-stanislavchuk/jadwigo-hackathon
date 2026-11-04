@@ -1,6 +1,7 @@
 import type { Attempt, LearnerId, LearnerSkillMastery } from "@jadwigo/contracts";
 import { foldLearner } from "@jadwigo/core";
 import type { Store } from "@jadwigo/store";
+import { reportFailure } from "./report.ts";
 
 /**
  * Rebuilds a learner's mastery cache from its evidence, in the learner's own pod: a featured
@@ -37,6 +38,7 @@ export async function rebuildAfter(store: Store, learner: LearnerId, now: Date):
     await rebuildMastery(store, learner, now);
   } catch (error) {
     logFoldFailure(error);
+    await reportFailure(error, { operation: "mastery_rebuild" });
   }
 }
 

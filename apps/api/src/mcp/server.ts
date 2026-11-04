@@ -2,6 +2,7 @@
 // and never SSE, so one Lambda request is one MCP exchange. The Lambda verifies the parent's
 // token itself (no gateway authorizer on this path), so a missing or bad one answers 401 with the
 // WWW-Authenticate challenge MCP clients follow to the authorization server.
+
 import { ErrorType, MCP_PATH } from "@jadwigo/contracts";
 import type { BankPort } from "@jadwigo/jadwigo-ai";
 import { type Store, StoreError } from "@jadwigo/store";
@@ -18,6 +19,7 @@ import {
 import type { Authenticate, Claims } from "../auth.ts";
 import { authorizeMember } from "../authorize.ts";
 import { ApiError, errorResponse, json } from "../errors.ts";
+import { reportFailure } from "../report.ts";
 import type { McpTool, ToolDeps } from "./tool.ts";
 import { TOOLS } from "./tools/index.ts";
 
@@ -212,6 +214,7 @@ async function callTool(
         error: failure,
       }),
     );
+    await reportFailure(error, { operation: `mcp_tool:${tool.name}` });
     return { isError: true, content: [{ type: "text", text: "the tool failed" }] };
   }
 }

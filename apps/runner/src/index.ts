@@ -1,6 +1,7 @@
+import { serverErrorReporter } from "@jadwigo/analytics/server";
 import { apiBank, fixtureBank, httpBankReads } from "@jadwigo/jadwigo-ai";
 import { s3Attachments } from "./attachments.ts";
-import { bankConfig, museConfig, runnerDatabaseUrl } from "./config.ts";
+import { bankConfig, museConfig, posthogKey, runnerDatabaseUrl } from "./config.ts";
 import { lambdaConverter } from "./converter.ts";
 import { postgresEngineHost } from "./engine.ts";
 import { createRunnerHandler } from "./handler.ts";
@@ -14,12 +15,13 @@ import { liveMuse, realRuntime } from "./muse.ts";
  * URL and the Meta key are read once per cold start from the SSM parameters Terraform names.
  */
 const warn = (line: string) => console.warn(line);
+const report = serverErrorReporter({ key: posthogKey(), surface: "runner" });
 
 const host = createHost(async () => {
   const [url, muse, bank] = await Promise.all([runnerDatabaseUrl(), museConfig(), bankConfig()]);
   if (bank === undefined) warn("JADWIGO_API_URL is unset: the verbs draw from the fixture bank");
   // The lane's ledger reads the host's own store (dl-z5ja.89), so its cap outlives a cold start.
-  return postgresEngineHost(
+  const deps = await postgresEngineHost(
     url,
     (store) => liveMuse(muse, realRuntime, store),
     warn,
@@ -28,6 +30,7 @@ const host = createHost(async () => {
     lambdaConverter(),
     bank === undefined ? fixtureBank() : apiBank(httpBankReads(bank)),
   );
+  return { ...deps, report };
 });
 
-export const handler = createRunnerHandler(host, warn);
+export const handler = createRunnerHandler(host, warn, report);

@@ -1,7 +1,8 @@
 import type { CaptureResult } from "posthog-js";
 import { describe, expect, it } from "vitest";
-import { beforeSend, beforeSendFor, cutPath, maskAttribute } from "./before-send.ts";
+import { beforeSend, beforeSendFor, maskAttribute } from "./before-send.ts";
 import { posthogOptions } from "./options.ts";
+import { cutPath } from "./scrub.ts";
 
 const event = (name: string, properties: Record<string, unknown>): CaptureResult => ({
   uuid: "u1",
@@ -41,9 +42,74 @@ describe("beforeSend", () => {
     expect(sent?.properties).toEqual({ verdict: "good", $session_id: "s" });
   });
 
-  it("drops exceptions and identity events", () => {
-    expect(beforeSend(event("$exception", { $exception_message: "Ala" }))).toBeNull();
+  it("drops identity events", () => {
     expect(beforeSend(event("$identify", {}))).toBeNull();
+  });
+
+  it("drops an exception with no list", () => {
+    expect(beforeSend(event("$exception", { $exception_message: "Ala" }))).toBeNull();
+  });
+
+  it.each([
+    ["a ResizeObserver notice", { type: "Error", value: "ResizeObserver loop limit exceeded" }],
+    ["an opaque error of another origin", { type: "Error", value: "Script error." }],
+    [
+      "a visitor's extension",
+      {
+        type: "TypeError",
+        value: "boom",
+        stacktrace: { type: "raw", frames: [{ filename: "chrome-extension://abc/inject.js" }] },
+      },
+    ],
+  ])("drops %s", (_name, exception) => {
+    expect(beforeSend(event("$exception", { $exception_list: [exception] }))).toBeNull();
+  });
+
+  it("keeps a known source and drops any other", () => {
+    const send = (source: string) =>
+      beforeSend(
+        event("$exception", { $exception_list: [{ type: "Error", value: "boom" }], source }),
+      )?.properties;
+    expect(send("error_boundary")).toMatchObject({ source: "error_boundary" });
+    expect(send("Ala")).not.toHaveProperty("source");
+  });
+
+  it("keeps a real error that only mentions a script", () => {
+    const list = [
+      {
+        type: "Error",
+        value: "Script error while loading a lesson",
+        stacktrace: { type: "raw", frames: [{ filename: "https://app.jadwigo.pl/assets/a.js" }] },
+      },
+    ];
+    expect(beforeSend(event("$exception", { $exception_list: list }))).not.toBeNull();
+  });
+
+  it("drops a level the SDKs do not send", () => {
+    const sent = beforeSend(
+      event("$exception", { $exception_list: [{ type: "Error" }], $exception_level: "Ala" }),
+    );
+    expect(sent?.properties).not.toHaveProperty("$exception_level");
+  });
+
+  it("sends an exception scrubbed, with its other keys gone and its URLs cut", () => {
+    const sent = beforeSend(
+      event("$exception", {
+        $exception_list: [{ type: "Error", value: 'no learner "Ala"' }],
+        $exception_level: "error",
+        $exception_message: "Ala",
+        $exception_personURL: "https://eu.posthog.com/person/Ala",
+        $current_url: "https://app.jadwigo.pl/play/les_9?for=lrn_2",
+        $session_id: "s",
+        note: "Ala",
+      }),
+    );
+    expect(sent?.properties).toEqual({
+      $exception_list: [{ type: "Error", value: 'no learner "…"' }],
+      $exception_level: "error",
+      $current_url: "https://app.jadwigo.pl/play/:id",
+      $session_id: "s",
+    });
   });
 
   it("passes a pageview with its URLs cut, its title gone and no person properties", () => {
