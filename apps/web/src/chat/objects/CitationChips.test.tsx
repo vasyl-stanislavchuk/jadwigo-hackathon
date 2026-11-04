@@ -25,7 +25,7 @@ const CITED = [
   { kind: "goal", goal_id: GOAL },
 ] as unknown as Citation[];
 
-/** The happy golden log as a finished turn, its agent message given `citations` (or none). */
+/** The happy golden log as a finished turn and its log, its agent message given `citations` (or none). */
 function turn(citations: Citation[] | undefined): Turn {
   const log = RUN_LOGS.find((l) => l.name === "happy-turn");
   if (log === undefined) throw new Error("no golden log happy-turn");
@@ -39,7 +39,9 @@ function turn(citations: Citation[] | undefined): Turn {
     id: RunId.parse(RunEvent.parse(log.events[0]).run_id),
     status: view.status ?? "completed",
   } as unknown as Run;
-  return { run, view };
+  // The page's turns carry their log, and the spine reads the reply from it (dl-uukj.47.71.38).
+  const events = log.events.map((e) => RunEvent.parse(e));
+  return { run, view, events };
 }
 
 function pane(turns: Turn[], onOpen?: (object: ObjectRef) => void) {

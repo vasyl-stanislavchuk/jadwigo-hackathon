@@ -79,17 +79,16 @@ const queuedSpine = (since: number): Spine => ({
 });
 
 /**
- * The turn's reply (D4): the fold's, else, once the turn ended, its last agent message. While the
- * turn runs, Jadwigo's sentences are the spine's now line, never prose.
+ * The turn's reply (D4), as the fold says it: its last agent message with no tool call after it,
+ * once the turn ended. A turn stopped or failed mid-call has none: its last sentence stays a line in
+ * its stage (§2 item 5, dl-uukj.47.71.38). While the turn runs, Jadwigo's sentences are the now line.
  */
 function replyOf(turn: Turn, spine: Spine): Message | null {
+  if (spine.reply === undefined) return null;
   const agent = turn.view.chat.filter(
     (i): i is Message => i.kind === "message" && i.from === "agent",
   );
-  if (spine.reply !== undefined)
-    return agent.findLast((m) => m.text === spine.reply) ?? { ...messageStub, text: spine.reply };
-  if (isOpen(turn)) return null;
-  return agent.at(-1) ?? null;
+  return agent.findLast((m) => m.text === spine.reply) ?? { ...messageStub, text: spine.reply };
 }
 
 const messageStub: Message = { kind: "message", seq: 0, from: "agent", text: "", attachments: [] };

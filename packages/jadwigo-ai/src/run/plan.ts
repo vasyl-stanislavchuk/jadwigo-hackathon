@@ -13,7 +13,13 @@
  */
 
 import type { Language } from "@jadwigo/contracts";
-import type { PlanEntry, PlanStatus, RunEvent, VerbName } from "@jadwigo/contracts/run";
+import {
+  PLAN_STAGE_OF,
+  type PlanEntry,
+  type PlanStatus,
+  type RunEvent,
+  type VerbName,
+} from "@jadwigo/contracts/run";
 
 /** The 3 stages in order, in each language the engine writes. */
 const STAGES: Readonly<Record<Language, readonly [string, string, string]>> = {
@@ -21,12 +27,8 @@ const STAGES: Readonly<Record<Language, readonly [string, string, string]>> = {
   en: ["Finding questions in the bank", "Drafting the lesson", "Checking the lesson"],
 };
 
-/** Which stage a verb works on; a verb outside the 3 moves nothing. */
-const STAGE_OF: Partial<Record<VerbName, 0 | 1 | 2>> = {
-  question_search: 0,
-  lesson_draft: 1,
-  lesson_check: 2,
-};
+/** Which stage a verb works on; a verb outside the 3 moves nothing. The chat reads the same table. */
+const STAGE_OF = PLAN_STAGE_OF;
 
 /** The verbs a lesson-building turn starts with. */
 const STARTS: ReadonlySet<VerbName> = new Set(["question_search", "lesson_draft"]);
