@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { type RunCli, uploadSourcemaps } from "./upload-sourcemaps.ts";
+import { type RunCli, spawnOptions, uploadSourcemaps } from "./upload-sourcemaps.ts";
 
 const dirs: string[] = [];
 
@@ -59,5 +59,35 @@ describe("uploadSourcemaps", () => {
     expect(uploadSourcemaps(dir, "phx_key", run)).toContain("upload failed");
     expect(calls).toHaveLength(1);
     expect(existsSync(join(dir, "assets/a.js.map"))).toBe(false);
+  });
+
+  it("when upload fails after inject, it goes on and still deletes the maps", () => {
+    const dir = build();
+    const { calls, run } = cli((verb) => (verb === "upload" ? 1 : 0));
+    expect(uploadSourcemaps(dir, "phx_key", run)).toContain("upload failed");
+    expect(calls).toHaveLength(2);
+    expect(existsSync(join(dir, "assets/a.js.map"))).toBe(false);
+  });
+});
+
+describe("spawnOptions", () => {
+  it("gives the CLI its key, PATH and HOME, none of the shell's secrets, and a time limit", () => {
+    const options = spawnOptions(
+      { POSTHOG_CLI_API_KEY: "phx_key", POSTHOG_CLI_PROJECT_ID: "331261" },
+      {
+        PATH: "/bin",
+        HOME: "/home/x",
+        AWS_SECRET_ACCESS_KEY: "secret",
+        AWS_SESSION_TOKEN: "secret",
+        DATABASE_URL: "secret",
+      },
+    );
+    expect(options.env).toEqual({
+      POSTHOG_CLI_API_KEY: "phx_key",
+      POSTHOG_CLI_PROJECT_ID: "331261",
+      PATH: "/bin",
+      HOME: "/home/x",
+    });
+    expect(options.timeout).toBeGreaterThan(0);
   });
 });
