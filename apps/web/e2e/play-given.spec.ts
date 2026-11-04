@@ -47,6 +47,17 @@ for (const [device, viewport] of [
   });
 }
 
+// dl-1eieq.8.17: the first screen has a quiet printer key, named for a screen reader. Pressing it
+// is the unit tests' job (PlayScreen.test.tsx): this api has no print Lambda.
+test("the first screen has a print key, Wydrukuj lekcję", async ({ page }) => {
+  await page.goto(await giveLesson(page, LESSON));
+  const intro = page.locator("[data-intro]");
+  await expect(intro).toBeVisible();
+  const key = intro.locator("[data-print-lesson]").getByRole("button", { name: "Wydrukuj lekcję" });
+  await expect(key).toBeVisible();
+  await expect(key).toBeEnabled();
+});
+
 // dl-1eieq.4: she came and went in about 2 ms in Chromium, which skips the .mov and fires `error`
 // at its <source>; the reducer's verdicts were never the cause.
 test("a celebration plays at the third right answer in a row in a given lesson", async ({
