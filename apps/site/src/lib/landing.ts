@@ -82,14 +82,21 @@ export const landingSchema = z.object({
     teaser: z.object({ text, link: text }),
   }),
   promises: z.object({ heading: text, items: z.array(item).min(1) }),
-  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to, beside a screenshot
-  // of the parent app's child page (dl-w0b4.123).
+  // Direction 1a, "Partner" (owner, 2026-11-01): learning the parent is close to. Beside it, Tymek's
+  // short story (dl-w0b4.143), which replaced the screenshot of the child page (dl-w0b4.123).
   partner: z.object({
     heading: text,
     text,
     pic: text,
-    // The parent app's child page, a screenshot with made-up names (dl-w0b4.123): its alt text.
-    app: text,
+    // Tymek, a made-up child from the demo film: his child page in the app's own lists, its new-lesson
+    // button, and the sheet it makes. `alt` tells the whole loop, for a reader who can't see it.
+    story: z.object({
+      alt: text,
+      name: text,
+      grade: text,
+      button: text,
+      lists: z.array(z.object({ label: text, item: text })).length(3),
+    }),
   }),
   // The end of the landing page and /jak-to-dziala: one line for the parent and the sign-up.
   end: z.object({ text, button: text }),

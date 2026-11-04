@@ -117,13 +117,23 @@ promises:
       text: From Alfik Matematyczny and Khan Academy, always with the source named.
     - title: Print it, and Jadwigo checks the photo
       text: Print any lesson for your child. Take a photo of the finished work or the homework, and Jadwigo checks it.
-# Direction 1a (draft). The screenshot shows Marta, a made-up child, never a real learner.
+# Direction 1a (draft). Its story shows Tymek, a made-up child, never a real learner.
 partner:
   heading: Learning with you close by
   text: Your child practices at their own pace. On your child's page you see each goal, with what they can do now, what they're working on and what comes next.
-  # The screenshot of the app's child page beside it (dl-w0b4.123; draft): its alt text.
-  app: "A screenshot of the Jadwigo app: the page of a child named Marta. 2 goals, each with what she can do now, what she is working on and what comes next, and 2 weeks of lessons below them."
   pic: "A sprout grows out of the pencil pot faster than the court can keep up: Jadwiga waters it from the top of Linijka, Gumka holds her steady and Ołówek marks the new height."
+  # Tymek's short story beside it (dl-w0b4.143; draft), replacing the screenshot of Marta's page. Tymek is
+  # a made-up child from the demo film. The labels are the app's own (packages/copy parent_goal_*,
+  # parent_new_lesson_child, parent_child_grade).
+  story:
+    alt: "Animation: Tymek, a made-up learner, sits at the table with his dad. Tymek's page in Jadwigo shows what he can do now, what he's working on and what comes next. His dad picks New lesson, and a sheet lands on the table: 7 × 9 split into 35 and 28. Tymek works it out."
+    name: Tymek
+    grade: Year 2
+    button: New lesson · Tymek
+    lists:
+      - { label: Can do now, item: "Multiplies by 2, 5 and 10." }
+      - { label: Working on, item: Multiplies by 7. }
+      - { label: What comes next, item: Reads the time on a clock. }
 end:
   text: A parent creates the account
   button: Create an account

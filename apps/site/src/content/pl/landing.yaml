@@ -120,13 +120,24 @@ promises:
     # Replaces "Bezpłatnie i bez reklam" (owner, 2026-11-01; draft).
     - title: Wydrukuj, a Jadwigo sprawdzi ze zdjęcia
       text: Każdą lekcję wydrukujesz dla dziecka. Gotową pracę albo pracę domową sfotografuj, a Jadwigo ją sprawdzi.
-# Direction 1a (owner, 2026-11-01; draft). The screenshot shows Marta, a made-up child, never a real learner.
+# Direction 1a (owner, 2026-11-01; draft). Its story shows Tymek, a made-up child, never a real learner.
 partner:
   heading: Nauka, przy której jesteś blisko
   text: Dziecko ćwiczy w swoim tempie. Na stronie dziecka widzisz każdy cel, a przy nim to, co już umie, nad czym pracuje i co dalej.
   pic: "Z doniczki na kredki wyrasta kiełek szybciej, niż dwór nadąża: Jadwiga podlewa go, stojąc na Linijce, Gumka ją przytrzymuje, a Ołówek zaznacza nową wysokość."
-  # The screenshot of the app's child page beside it (dl-w0b4.123; draft): its alt text.
-  app: "Zrzut ekranu aplikacji Jadwigo: strona dziecka o imieniu Marta. 2 cele, przy każdym to, co już umie, nad czym pracuje i co dalej, a pod nimi 2 tygodnie lekcji."
+  # Tymek's short story beside it (dl-w0b4.143; draft), replacing the screenshot of Marta's page. Tymek is
+  # a made-up child from the demo film. The labels are the app's own (packages/copy parent_goal_*,
+  # parent_new_lesson_child, parent_child_grade); the skills are catalogue skills (row-2/5/10 and row-7,
+  # II.3.3; clock-five-minutes, II.6.4). The sheet is 7 × 9 split into 7 × 5 and 7 × 4.
+  story:
+    alt: "Animacja: Tymek, wymyślony uczeń, siedzi z tatą przy stole. Strona Tymka w Jadwigo pokazuje, co już umie, nad czym pracuje i co dalej. Tata wybiera Nowa lekcja i na stół trafia kartka: 7 × 9 rozłożone na 35 i 28. Tymek ją rozwiązuje."
+    name: Tymek
+    grade: 2 kl.
+    button: Nowa lekcja · Tymek
+    lists:
+      - { label: Umie już, item: "Mnoży przez 2, 5 i 10." }
+      - { label: Nad czym pracujemy, item: Mnoży przez 7. }
+      - { label: Co dalej, item: Odczytuje godziny na zegarze. }
 end:
   text: Konto zakłada rodzic
   button: Załóż konto
