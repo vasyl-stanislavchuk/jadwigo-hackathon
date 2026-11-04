@@ -18,6 +18,12 @@ import { AUTH_ORIGIN } from "./auth-origin.ts";
 import { agreeToAi } from "./consent.ts";
 import { typeName } from "./given.ts";
 
+/**
+ * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
+ * place, as the bulb gives way to it (dl-uukj.65).
+ */
+const DONT_KNOW = "[data-dont-know], [data-move-on]";
+
 /** Plays equal-groups from the home page to the results, saying "Not sure yet" to every question. */
 async function playToTheEnd(page: Page): Promise<void> {
   await page.goto("/");
@@ -28,8 +34,8 @@ async function playToTheEnd(page: Page): Promise<void> {
     await expect(page.locator("[data-bulb]").or(results)).toBeVisible();
     if (await results.isVisible()) return;
     await page.locator("[data-bulb]").click();
-    await page.locator("[data-dont-know]").click();
-    await expect(page.locator("[data-dont-know]")).toBeHidden();
+    await page.locator(DONT_KNOW).first().click();
+    await expect(page.locator(DONT_KNOW).first()).toBeHidden();
   }
   await expect(results).toBeVisible();
 }

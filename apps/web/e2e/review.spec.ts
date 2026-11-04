@@ -9,6 +9,12 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { typeName } from "./given.ts";
 
+/**
+ * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
+ * place, as the bulb gives way to it (dl-uukj.65).
+ */
+const DONT_KNOW = "[data-dont-know], [data-move-on]";
+
 const field = (page: Page): Locator => page.locator("[data-field]").first();
 const band = (page: Page): Locator => page.locator("[data-bar]");
 
@@ -23,7 +29,7 @@ async function answer(page: Page, value: string): Promise<void> {
 /** Opens the help note and says "Not sure yet". */
 async function notSureYet(page: Page): Promise<void> {
   await page.locator("[data-bulb]").click();
-  await page.locator("[data-dont-know]").click();
+  await page.locator(DONT_KNOW).first().click();
 }
 
 async function onQuestion(page: Page, text: string): Promise<void> {
@@ -53,7 +59,7 @@ test("a child finishes a lesson and opens the question it missed, and one it got
     await expect(page.locator("[data-bulb]").or(results)).toBeVisible();
     if (await results.isVisible()) break;
     await notSureYet(page);
-    await expect(page.locator("[data-dont-know]")).toBeHidden();
+    await expect(page.locator(DONT_KNOW).first()).toBeHidden();
   }
 
   // The end: the congratulation first, then the questions as cards.

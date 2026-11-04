@@ -11,6 +11,12 @@
 import { expect, type Page, test } from "@playwright/test";
 import { typeName } from "./given.ts";
 
+/**
+ * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
+ * place, as the bulb gives way to it (dl-uukj.65).
+ */
+const DONT_KNOW = "[data-dont-know], [data-move-on]";
+
 /** The featured lessons as the seed writes them, and the families they hold between them. */
 const LESSONS = [
   { title: "equal-groups", id: "asg_0ectzj2evqb95a3v1v6wewjzy3" },
@@ -94,8 +100,8 @@ async function moveOn(page: Page): Promise<void> {
   if (await next.isVisible()) await next.click();
   else {
     await page.locator("[data-bulb]").click();
-    await page.locator("[data-dont-know]").click();
-    await expect(page.locator("[data-dont-know]")).toBeHidden();
+    await page.locator(DONT_KNOW).first().click();
+    await expect(page.locator(DONT_KNOW).first()).toBeHidden();
     await expect(live.or(next)).toBeVisible();
     if (await next.isVisible()) await next.click();
   }
