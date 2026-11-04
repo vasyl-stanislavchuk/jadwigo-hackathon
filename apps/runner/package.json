@@ -10,6 +10,7 @@
     "test:int": "vitest run --config ../../vitest.config.ts --project integration",
     "dev": "bun src/dev.ts",
     "probe": "bun src/probe-cli.ts",
+    "experiment:e6": "bun experiments/e6-run.ts",
     "smoke": "bun src/smoke.ts"
   },
   "//": {

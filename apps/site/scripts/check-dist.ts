@@ -2,7 +2,7 @@
 // and link previews read, or nothing is synced to the bucket.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { posthogKey } from "../src/config.ts";
-import { type DistCheck, parsePathPage, pathPageChecks } from "../src/lib/dist.ts";
+import { type DistCheck, parsePathPage, pathPageChecks, shareProblems } from "../src/lib/dist.ts";
 import { gradePlayProblems, playBase } from "../src/lib/featured.ts";
 import { servedLanguages, twinPath } from "../src/lib/i18n.ts";
 import { signInDistChecks } from "../src/lib/landing.ts";
@@ -119,10 +119,17 @@ const ungraded = gradePages.flatMap((file) => {
     (p) => `dist/${file}: ${p}`,
   );
 });
+// Every built page previews as itself when shared (dl-w0b4.128).
+const built = readdirSync(dist, { recursive: true, encoding: "utf8" })
+  .filter((f) => f.endsWith(".html"))
+  .map((file) => ({ file, html: readFileSync(new URL(file, dist), "utf8") }));
+const unshared = shareProblems(built);
 for (const [file, text] of missing) console.error(`dist/${file} lacks ${text}`);
 for (const [file, text] of present) console.error(`dist/${file} still carries ${text}`);
 for (const line of ungraded) console.error(line);
-if (missing.length > 0 || present.length > 0 || ungraded.length > 0) process.exit(1);
+for (const line of unshared) console.error(line);
+if (missing.length > 0 || present.length > 0 || ungraded.length > 0 || unshared.length > 0)
+  process.exit(1);
 console.warn(
   `dist/ carries all ${must.length} checks and none of the ${mustNot.length} it must not`,
 );

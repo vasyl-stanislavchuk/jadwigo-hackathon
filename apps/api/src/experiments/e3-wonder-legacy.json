@@ -1,0 +1,1532 @@
+{
+  "recorded": "2026-11-03, the experiment's first run, before the owner's contributor-only rule",
+  "model": "muse-wonder-full-1.0",
+  "transport": "muse exec on the Muse subscription (no per-call token export)",
+  "judge_calls": 57,
+  "totals": {
+    "spark": {
+      "narratives_with_no_findings": 1,
+      "panel_mean": {
+        "accuracy": 3.85,
+        "warmth": 2.19,
+        "usefulness": 3.0
+      }
+    },
+    "wonder": {
+      "narratives_with_no_findings": 2,
+      "panel_mean": {
+        "accuracy": 4.37,
+        "warmth": 2.5,
+        "usefulness": 3.2
+      }
+    }
+  },
+  "learners": [
+    {
+      "label": "Learner A",
+      "profile": "steady",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko ćwiczy mnożenie i ortografię, a mnożenie przez 2, przez 3, przez 5 i przez 7 wymaga uwagi.",
+          "direction_now": "Dziecko odpowiedziało na 121 pytań przez 16 dni. Ortografia idzie do przodu: wielkie litery, pisownia ch i h, pisownia nie oraz pisownia rz po spółgłosce. Mnożenie też idzie do przodu. Mnożenie przez 2, przez 3, przez 5 i przez 7 wymaga uwagi.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Mnożenie przez 2, przez 3 i przez 7 wymaga uwagi. W odpowiedziach pojawiała się niewielka różnica. Podobne różnice zapisano 28 razy.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "text": "Następna lekcja wraca do mnożenia przez 2, przez 3, przez 5 i przez 7. Przewidziana jest też powtórka pisowni ch i h oraz mnożenia przez 6. Taki kierunek odpowiada temu, co wymaga uwagi.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja skupia się na mnożeniu przez 2, przez 3, przez 5 i przez 7.",
+              "rationale": "Te umiejętności wymagają uwagi. W odpowiedziach pojawiała się niewielka różnica, a podobne różnice zapisano 28 razy.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel": [
+          {
+            "accuracy": 5,
+            "warmth": 2,
+            "usefulness": 4,
+            "reason": "All counts, skill movements, needs-attention rows, and next steps match the digest exactly, but the flat, repetitive phrasing offers little warmth or differentiated detail."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Narrative faithfully reports counts, mastered orthography, and reteach/review focus on rows 2, 3, 5 and 7, but it is impersonal and repetitive with little guidance on what the off-by-one pattern means or how to support it."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Faithfully reports counts, progressed skills, 28 off-by-one errors and the reteach/review focus, but the dry wording is vague about the error pattern and mastery levels, limiting parent guidance."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 4.67,
+          "warmth": 2.0,
+          "usefulness": 3.33
+        }
+      },
+      "spark_first_run": {
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel_mean": {
+          "accuracy": 4.67,
+          "warmth": 2.0,
+          "usefulness": 3.67
+        }
+      }
+    },
+    {
+      "label": "Learner B",
+      "profile": "forgetful",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko ćwiczy ortografię i mnożenie, a następna lekcja wróci do tematów, które wymagają uwagi.",
+          "direction_now": "Dziecko odpowiedziało na 87 pytań w ciągu 11 dni ćwiczeń. Tematy z ortografii i mnożenia idą do przodu, ale wiele z nich nadal wymaga uwagi. Pisownia „rz” po spółgłosce idzie do przodu. Następna lekcja wróci do tematów, które wymagają uwagi.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "answer": "Pisownia „ch” i „h”, pisownia „nie” oraz mnożenie przez 6 wymagają uwagi i na razie nie idą dalej. W ćwiczeniach pojawiały się odpowiedzi różniące się nieznacznie od oczekiwanych. Warto wrócić do tych tematów spokojnie, krok po kroku.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "answer": "Następny krok idzie we właściwą stronę. Następna lekcja wróci do wielkich liter, pisowni „ch” i „h”, pisowni „nie” oraz mnożenia przez 2, 3, 4, 5, 6 i 7. To są tematy, które wymagają uwagi.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja wróci do wielkich liter, pisowni „ch” i „h”, pisowni „nie” oraz mnożenia przez 2, 3, 4, 5, 6 i 7.",
+              "rationale": "Te tematy wymagają uwagi po ostatnich ćwiczeniach. Powrót do nich w następnej lekcji pozwoli dziecku ćwiczyć je jeszcze raz w spokojnym tempie.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": [],
+        "panel": [
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Counts, stuck skills, and reteach list match the digest exactly with no inventions, though mastered rz is understated and the calm but repetitive text offers parents little concrete guidance."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Faithful to the counts, stuck skills and reteach list, but it understates the mastered 'rz' skill and repeats generic phrasing with little specific encouragement or prioritisation."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Accurately reports counts, stuck skills and the reteach list but understates the mastered rz-after-consonant skill and remains generic and repetitive with no concrete parent action."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 4.0,
+          "warmth": 3.0,
+          "usefulness": 3.0
+        }
+      },
+      "spark_first_run": {
+        "findings": ["malformed narrative: 'str' object has no attribute 'get'"],
+        "panel_mean": {
+          "accuracy": 4.0,
+          "warmth": 1.67,
+          "usefulness": 2.33
+        }
+      }
+    },
+    {
+      "label": "Learner C",
+      "profile": "guesser",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko ćwiczy ortografię i mnożenie, a część tematów wymaga uwagi w następnej lekcji.",
+          "direction_now": "Za sobą jest 16 dni ćwiczeń i 124 pytania. Idą do przodu wielkie litery, pisownia ch i h, pisownia „nie”, pisownia rz po spółgłosce oraz mnożenie przez 2, przez 3, przez 4, przez 5, przez 6 i przez 7. Uwagi nadal wymaga część tych tematów. Cel wymaga uwagi.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "answer": "Część tematów idzie do przodu, ale nie wszystkie idą równo. Uwagi wymagają wielkie litery, pisownia ch i h, pisownia „nie”, pisownia rz po spółgłosce oraz mnożenie przez 3, przez 4 i przez 7. Warto dalej ćwiczyć te tematy.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "answer": "Następna lekcja wraca do wielkich liter, pisowni ch i h, pisowni „nie”, pisowni rz po spółgłosce oraz mnożenia przez 3, przez 4 i przez 7. W powtórce znajduje się też mnożenie przez 2 i przez 5. Taki plan idzie we właściwą stronę.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja skupi się na wielkich literach, pisowni ch i h, pisowni „nie”, pisowni rz po spółgłosce oraz mnożeniu przez 3, przez 4 i przez 7.",
+              "rationale": "Te tematy wymagają uwagi. Powrót do nich w następnej lekcji daje więcej ćwiczeń tam, gdzie są teraz potrzebne.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": [],
+        "panel": [
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Counts, moved skills, needs-attention skills and next-lesson plan match the digest, but the clinical repeated lists soften the stuck verdict and omit mastery levels and the off-by-one mistake pattern, limiting parent insight."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Counts and reteach/review lists match the digest exactly, but the neutral narrative softens the stuck verdict and omits mastery levels and the repeated mistake pattern, limiting actionable detail."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Factual claims about counts, skills moved, and reteach and review priorities match the digest, but it softens the stuck verdict, omits proficiency levels and the repeated off-by-one pattern, and offers only generic next-lesson guidance in a neutral tone."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 4.0,
+          "warmth": 2.67,
+          "usefulness": 3.0
+        }
+      },
+      "spark_first_run": {
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel_mean": {
+          "accuracy": 3.67,
+          "warmth": 2.0,
+          "usefulness": 2.67
+        }
+      }
+    },
+    {
+      "label": "Learner D",
+      "profile": "slow-then-click",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko ćwiczyło przez 20 dni, a teraz warto skupić się na tematach wymagających uwagi.",
+          "direction_now": "Dziecko odpowiedziało na 152 pytań w ciągu 20 dni ćwiczeń. Do przodu idzie pisownia wielkich liter, pisownia ch i h oraz pisownia nie. Do przodu idzie też mnożenie przez 2, przez 3 i przez 7. Uwagi wymagają pisownia rz po spółgłosce oraz mnożenie przez 4, przez 5 i przez 6.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Pisownia ch i h oraz pisownia nie idą do przodu. Mnożenie przez 2 idzie do przodu. Pisownia rz po spółgłosce oraz mnożenie przez 4 wymagają uwagi. W ćwiczeniach pojawiały się pomyłki bliskie oczekiwanej odpowiedzi, łącznie 79 razy.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "text": "Następna lekcja wraca do pisowni rz po spółgłosce oraz mnożenia przez 4, przez 5 i przez 6. Wraca też do utrwalenia pisowni ch i h, pisowni nie oraz mnożenia przez 7. Taki układ idzie we właściwą stronę.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja skupia się na pisowni rz po spółgłosce oraz mnożeniu przez 4, przez 5 i przez 6.",
+              "rationale": "Tematy te wymagają uwagi. W ćwiczeniach pojawiały się przy nich pomyłki bliskie oczekiwanej odpowiedzi.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel": [
+          {
+            "accuracy": 5,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Counts, mastered/proficient skills, 79 near-miss mistakes, and reteach/review lists all match the digest, but the tone is dry and repetitive with no concrete guidance for parents beyond naming next topics."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 2,
+            "usefulness": 4,
+            "reason": "All counts, mastered and proficient skills, needs-attention topics and next-focus plan match the digest, but the flat repetitive phrasing offers little encouragement or parent-facing guidance."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 4,
+            "reason": "Counts, mastered/proficient skills, needs-attention skills and next focus match the digest, but the flat factual tone lacks warmth and softens the overall 'stuck' standing verdict."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 4.67,
+          "warmth": 2.0,
+          "usefulness": 3.67
+        }
+      },
+      "spark_first_run": {
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel_mean": {
+          "accuracy": 4.33,
+          "warmth": 2.0,
+          "usefulness": 3.0
+        }
+      }
+    },
+    {
+      "label": "Learner E",
+      "profile": "help-heavy",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko ćwiczy mnożenie i pisownię, a część tematów wymaga uwagi w następnej lekcji.",
+          "direction_now": "Zanotowano 106 pytań przez 12 dni ćwiczeń. Mnożenie i pisownia idą do przodu. Pisownia wielkich liter, pisownia z ch i h, pisownia z nie oraz mnożenie przez 2, przez 3, przez 4 i przez 6 nadal wymagają uwagi. Powtarzający się wzór odpowiedzi zanotowano 48 razy.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Pisownia wielkich liter, pisownia z ch i h, pisownia z nie oraz mnożenie przez 2, przez 3, przez 4 i przez 6 idą do przodu, ale nadal wymagają uwagi. Pisownia rz po spółgłoskach oraz mnożenie przez 5 i przez 7 także idą do przodu. Cel wymaga uwagi.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                },
+                {
+                  "kind": "goal",
+                  "goal_id": "gol_4g3gep69xm9vvatbfm1wg35ze0"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "text": "Najpierw warto wrócić do pisowni wielkich liter, pisowni z ch i h, pisowni z nie oraz mnożenia przez 2, przez 3, przez 4 i przez 6. W planie jest też powtórka mnożenia przez 5. Taki układ następnej lekcji odpowiada temu, co wymaga uwagi.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja ponownie przećwiczy pisownię wielkich liter, pisownię z ch i h, pisownię z nie oraz mnożenie przez 2, przez 3, przez 4 i przez 6.",
+              "rationale": "Każdy z tych obszarów wymaga uwagi. Powtarzający się wzór odpowiedzi zanotowano 48 razy.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel": [
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Numbers, skills needing attention, and the reteach/review plan match the digest, but the dry repeated lists soften the stuck verdict and leave the 48 off-by-one mistakes unexplained for parents."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Faithfully reports counts, needs-attention skills, review item and the 48-error pattern, but in dry repetitive lists that obscure proficiency differences and never explain the off-by-one mistake in parent-usable terms."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Counts, needs-attention skills and the reteach/review plan match the digest, but proficient versus attempted levels and the stuck verdict are flattened into generic progress in dry, repetitive language with the 48 off-by-one mistakes left unexplained."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 4.0,
+          "warmth": 2.0,
+          "usefulness": 3.0
+        }
+      },
+      "spark_first_run": {
+        "findings": ["no JSON narrative"],
+        "panel_mean": null
+      }
+    },
+    {
+      "label": "Learner F",
+      "profile": "rusher",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko ćwiczyło przez 16 dni i odpowiedziało na 130 pytań, a część ortografii i mnożenia wymaga teraz uwagi.",
+          "direction_now": "Zapisano 16 podejść, 130 pytań i 16 dni ćwiczeń. Do przodu idą wielkie litery, pisownia ch i h, pisownia nie, pisownia rz po spółgłosce oraz mnożenie przez 2, 3, 4, 5, 6 i 7. Uwagi wymagają wielkie litery, pisownia ch i h, pisownia nie, pisownia rz po spółgłosce oraz mnożenie przez 3, 4, 5 i 6. Podobne trudności wystąpiły 80 razy. Aktualny cel wymaga uwagi.",
+          "answers": {
+            "skills_standing": {
+              "text": "Wielkie litery, pisownia nie oraz mnożenie przez 5 i 7 idą do przodu, ale przy kolejnych ćwiczeniach nadal wymagają spokojnej uwagi. Podobne trudności wystąpiły 80 razy i dotyczyły między innymi tych umiejętności.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            },
+            "next_focus": {
+              "text": "Następna lekcja ponownie poćwiczy wielkie litery, pisownię ch i h, pisownię nie, pisownię rz po spółgłosce oraz mnożenie przez 3, 4, 5 i 6. Przewidziano też powtórkę mnożenia przez 7. Taki układ ćwiczeń idzie we właściwą stronę.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          },
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja ponownie poćwiczy wielkie litery, pisownię ch i h, pisownię nie, pisownię rz po spółgłosce oraz mnożenie przez 3, 4, 5 i 6.",
+              "rationale": "Te umiejętności wymagają uwagi. W ćwiczeniach powtarzały się przy nich podobne trudności, więc spokojne ponowne ćwiczenie pomoże dziecku iść dalej.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": ["malformed narrative: 'str' object has no attribute 'get'"],
+        "panel": [
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Numbers, moved and needs-attention skills, 80 mistakes and next-focus reteach/review match the digest, but proficiency levels and the stuck verdict are blurred into repetitive lists that limit clarity despite a calm tone."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Counts, skill lists, and the 80 repeated difficulties are correct and next focus matches reteach and review, but the stuck standing is softened to moving forward, proficiency levels are omitted, and repetitive vague wording limits parent guidance."
+          },
+          {
+            "accuracy": 3,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Counts, skill lists, and next-focus plan match the digest, but calling the 'stuck' skills moving forward misrepresents standing and the flat undifferentiated lists omit proficiency levels and what the 80 mistakes mean."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 3.67,
+          "warmth": 3.0,
+          "usefulness": 3.0
+        }
+      },
+      "spark_first_run": {
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel_mean": {
+          "accuracy": 3.0,
+          "warmth": 2.0,
+          "usefulness": 3.0
+        }
+      }
+    },
+    {
+      "label": "Learner G",
+      "profile": "perfectionist",
+      "wonder": {
+        "narrative": null,
+        "findings": ["no JSON narrative"]
+      },
+      "spark_first_run": {
+        "findings": ["no JSON narrative"],
+        "panel_mean": null
+      }
+    },
+    {
+      "label": "Learner H",
+      "profile": "early-plateau",
+      "wonder": {
+        "narrative": null,
+        "findings": ["no JSON narrative"]
+      },
+      "spark_first_run": {
+        "findings": [],
+        "panel_mean": {
+          "accuracy": 4.0,
+          "warmth": 2.0,
+          "usefulness": 3.0
+        }
+      }
+    },
+    {
+      "label": "Learner I",
+      "profile": "weekend-only",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko ćwiczy mnożenie i pisownię, a następna lekcja powtórzy tematy wymagające uwagi.",
+          "direction_now": "Dziecko odpowiadało na 53 pytania. Ćwiczenia odbyły się w 6 dni. Ćwiczone tematy idą do przodu. Część z nich nadal wymaga uwagi i będzie powtórzona w następnej lekcji. Dotyczy to pisowni i mnożenia przez 3, przez 4, przez 5, przez 6 i przez 7.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Pisownia rz po spółgłosce, mnożenie przez 4 i mnożenie przez 7 wymagają uwagi. Następna lekcja powtórzy te tematy, aby dziecko mogło ćwiczyć je dalej.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "text": "Następna lekcja skupi się na powtórzeniu tematów wymagających uwagi. Będą to wielkie litery, pisownia ch i h, pisownia „nie”, pisownia rz po spółgłosce oraz mnożenie przez 3, przez 4, przez 5, przez 6 i przez 7.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja powtórzy wielkie litery, pisownię ch i h, pisownię „nie”, pisownię rz po spółgłosce oraz mnożenie przez 3, przez 4, przez 5, przez 6 i przez 7.",
+              "rationale": "Te tematy wymagają uwagi. W odpowiedziach dotyczących tych tematów 36 razy pojawiła się różnica wymagająca powtórzenia. Powtórzenie w następnej lekcji pozwoli dziecku wrócić do tych ćwiczeń.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel": [
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Counts, stuck skills and the nine reteach topics match the digest, but the dry repetitive text omits the row-2 proficient success and gives parents little insight into the 36 off-by-one pattern."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Counts, skill lists, and reteach plan match the digest, but the repetitive clinical tone omits clear strengths like multiplication by 2 proficiency and softens the stuck verdict."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "Counts, stuck skills, nine reteach topics and 36 off-by-one mistakes match the digest, but the dry repetitive text omits the proficient multiplication-by-2 success and offers parents no encouraging or actionable detail."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 4.0,
+          "warmth": 2.0,
+          "usefulness": 3.0
+        }
+      },
+      "spark_first_run": {
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel_mean": {
+          "accuracy": 4.0,
+          "warmth": 2.67,
+          "usefulness": 3.33
+        }
+      }
+    },
+    {
+      "label": "Learner J",
+      "profile": "uneven",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Mnożenie idzie do przodu, a ortografia wymaga uwagi.",
+          "direction_now": "Dziecko ćwiczyło przez 15 dni i odpowiedziało na 119 pytań. Mnożenie przez 2, 3, 4, 5, 6 i 7 idzie do przodu. Wielkie litery, pisownia ch i h, pisownia «nie» oraz rz po spółgłosce wymagają uwagi.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Pisownia «nie» oraz rz po spółgłosce wymagają uwagi. Dziecko ćwiczyło te tematy, a pomyłki nadal się przy nich powtarzają. Warto wrócić do nich w następnej lekcji.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "text": "Następna lekcja wraca do wielkich liter, pisowni ch i h, pisowni «nie» oraz rz po spółgłosce. Będzie też powtórka mnożenia przez 3.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja wraca do wielkich liter, pisowni ch i h, pisowni «nie» oraz rz po spółgłosce.",
+              "rationale": "Każdy z tych tematów wymaga uwagi, więc następna lekcja daje im miejsce do dalszych ćwiczeń.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel": [
+          {
+            "accuracy": 5,
+            "warmth": 3,
+            "usefulness": 4,
+            "reason": "All counts, proficient multiplication rows, stuck spelling skills and reteach/review plan match the digest exactly, in a clear but rather neutral tone."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 3,
+            "usefulness": 4,
+            "reason": "It faithfully reports the 15 days, 119 questions, proficient multiplication rows 2-7 and four orthography areas needing attention with a clear next focus, though the tone is neutral rather than encouraging."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 2,
+            "usefulness": 4,
+            "reason": "Accurately reflects the 15 days, 119 questions, multiplication proficiency and four orthography reteach priorities without adding claims, but the tone is dry and it omits the repeated off-by-one pattern and concrete parent actions."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 5.0,
+          "warmth": 2.67,
+          "usefulness": 4.0
+        }
+      },
+      "spark_first_run": {
+        "findings": ["no JSON narrative"],
+        "panel_mean": null
+      }
+    },
+    {
+      "label": "Learner K",
+      "profile": "comeback",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko idzie do przodu, a następna lekcja wróci do pisowni i mnożenia, które wymagają uwagi.",
+          "direction_now": "W 10 dni ćwiczeń dziecko odpowiedziało na 79 pytań. Do przodu idą pisownia wielkich liter, pisownia z ch i h, pisownia z „nie”, pisownia rz po spółgłosce oraz mnożenie przez 2, 3, 4, 5, 6 i 7. Uwagi wymagają pisownia wielkich liter, pisownia z ch i h, pisownia z „nie” oraz mnożenie przez 2, 3, 4, 5, 6 i 7.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Pisownia z ch i h oraz mnożenie przez 2, 3, 5 i 7 wymagają uwagi i dalszych ćwiczeń. W ćwiczeniach ten sam rodzaj pomyłki powtórzył się 41 razy. Warto więc wracać do tych tematów spokojnie i krok po kroku.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "text": "Następna lekcja idzie we właściwą stronę. Wróci do pisowni wielkich liter, pisowni z ch i h i pisowni z „nie”. Wróci też do mnożenia przez 2, 3, 4, 5, 6 i 7. To są tematy, które wymagają uwagi.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja ponownie wyjaśni i przećwiczy pisownię wielkich liter, pisownię z ch i h, pisownię z „nie” oraz mnożenie przez 2, 3, 4, 5, 6 i 7.",
+              "rationale": "Te tematy wymagają uwagi. W ćwiczeniach ten sam rodzaj pomyłki powtórzył się 41 razy, więc powrót do nich jest następnym krokiem.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel": [
+          {
+            "accuracy": 5,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Faithfully reports the counts, moved and needs-attention skills, 41 repeated mistakes, and reteach plan, but remains list-heavy and generic without differentiating mastered or familiar skills or prioritising next steps for parents."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "All counts, skills and the 41 repeated mistakes match the digest, but the narrative is repetitive list-heavy prose that omits mastery levels and gives parents little specific guidance beyond reteaching."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "All counts, skill movements, 41 repeated mistakes and the reteach focus match the digest exactly, but the narrative repeats undifferentiated skill lists without distinguishing mastered from attempted or giving parents a concrete next action."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 5.0,
+          "warmth": 3.0,
+          "usefulness": 3.0
+        }
+      },
+      "spark_first_run": {
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel_mean": {
+          "accuracy": 4.0,
+          "warmth": 2.0,
+          "usefulness": 3.0
+        }
+      }
+    },
+    {
+      "label": "Learner L",
+      "profile": "new-and-keen",
+      "wonder": {
+        "narrative": {
+          "language": "pl",
+          "headline": "Dziecko idzie do przodu, a część ćwiczeń nadal wymaga uwagi.",
+          "direction_now": "Dziecko odpowiedziało na 168 pytań przez 21 dni. Do przodu idą między innymi pisownia „rz” po spółgłosce i mnożenie przez 3. Wymagają uwagi wielkie litery, pisownia z „ch” i „h”, pisownia z „nie” oraz mnożenie przez 2, 4, 5, 6 i 7. Cel wymaga uwagi.",
+          "answers": [
+            {
+              "question": "skills_standing",
+              "text": "Pisownia „rz” po spółgłosce i mnożenie przez 3 idą do przodu. Pisownia z „ch” i „h” wymaga uwagi. Mnożenie przez 5 idzie do przodu, ale nadal wymaga uwagi. Ta część na razie stoi w miejscu.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.rz-after-consonant"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-3"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                }
+              ]
+            },
+            {
+              "question": "next_focus",
+              "text": "Następna lekcja wraca do wielkich liter, pisowni z „ch” i „h”, pisowni z „nie” oraz mnożenia przez 2, 4, 5, 6 i 7. Kierunek kolejnych ćwiczeń jest zgodny z tym, co wymaga uwagi.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "proposals": [
+            {
+              "proposal_id": "p1",
+              "claim": "Następna lekcja wraca do ćwiczeń z wielkimi literami, pisowni z „ch” i „h”, pisowni z „nie” oraz mnożenia przez 2, 4, 5, 6 i 7.",
+              "rationale": "Te umiejętności wymagają uwagi. Cel także wymaga uwagi, więc powrót do tych ćwiczeń jest następnym krokiem.",
+              "citations": [
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.capitals"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.ch-h"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "draft.ortografia.nie"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-2"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-4"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-5"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-6"
+                },
+                {
+                  "kind": "skill",
+                  "skill_code": "maths.multiplication.row-7"
+                }
+              ]
+            }
+          ],
+          "asks": [],
+          "made_by": "jadwigo-report-write/muse-wonder-full-1.0"
+        },
+        "findings": ["answer skills_standing is empty", "answer next_focus is empty"],
+        "panel": [
+          {
+            "accuracy": 5,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "Counts, mastered/proficient progress, needs-attention skills and next focus match the digest without invention, but the flat tone and omission of mastery levels and the dominant off-by-one pattern limit warmth and practical value."
+          },
+          {
+            "accuracy": 5,
+            "warmth": 2,
+            "usefulness": 3,
+            "reason": "All counts, progress, needs-attention skills, goal status and next focus match the digest, but the neutral listing omits the mastered/proficient levels and the dominant off-by-one mistake pattern that would help a parent act."
+          },
+          {
+            "accuracy": 4,
+            "warmth": 3,
+            "usefulness": 3,
+            "reason": "It faithfully reports the counts, mastered and proficient skills, and reteach list, but its dry repetition and omission of the dominant off-by-one pattern and exact mastery levels limit warmth and practical guidance."
+          }
+        ],
+        "panel_mean": {
+          "accuracy": 4.67,
+          "warmth": 2.67,
+          "usefulness": 3.0
+        }
+      },
+      "spark_first_run": {
+        "findings": ["malformed narrative: 'str' object has no attribute 'get'"],
+        "panel_mean": {
+          "accuracy": 3.0,
+          "warmth": 3.33,
+          "usefulness": 3.0
+        }
+      }
+    }
+  ]
+}

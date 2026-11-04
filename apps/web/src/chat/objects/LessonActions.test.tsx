@@ -10,10 +10,14 @@ import { RunEvent } from "@jadwigo/contracts/run";
 import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LessonActions } from "./LessonActions.tsx";
 
 afterEach(cleanup);
+// Daj lekcję opens a tab; a unit test opens none (no network).
+beforeEach(() => {
+  vi.spyOn(window, "open").mockReturnValue(null);
+});
 
 const lesson = foldRun(
   (RUN_LOGS.find((l) => l.name === "happy-turn")?.events ?? []).map((e) => RunEvent.parse(e)),
@@ -118,7 +122,9 @@ describe("giving and printing only a checked lesson (steward on #747)", () => {
       given: { kind: "given", name: "Ola", href: "/play/asg_x?learner=lrn_y" },
     });
     const url = `${window.location.origin}/play/asg_x?learner=lrn_y`;
-    expect(document.querySelector("[data-given]")?.textContent).toContain("Lekcja czeka na: Ola.");
+    expect(document.querySelector("[data-give-state='given']")?.textContent).toContain(
+      "Lekcja czeka na: Ola.",
+    );
     expect((document.querySelector("[data-given-url]") as HTMLInputElement).value).toBe(url);
     const open = screen.getByRole("link", { name: "Otwórz lekcję" });
     expect(open.getAttribute("href")).toBe("/play/asg_x?learner=lrn_y");
@@ -129,7 +135,7 @@ describe("giving and printing only a checked lesson (steward on #747)", () => {
     cleanup();
     // With no child, the same link, and it says anyone may play.
     footer({ given: { kind: "given", name: null, href: "/play/asg_x" } });
-    expect(document.querySelector("[data-given]")?.textContent).toContain(
+    expect(document.querySelector("[data-give-state='given']")?.textContent).toContain(
       "Każdy, kto ma ten link, może zagrać",
     );
     cleanup();

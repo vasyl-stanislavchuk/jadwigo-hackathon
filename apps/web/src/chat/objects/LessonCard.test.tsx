@@ -277,7 +277,7 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     drawn({ ...BASE, kind: "fix", count: 4, preview: PREVIEW, findings: [] });
     const reason = card()?.querySelector("[data-fix-reason]")?.textContent ?? "";
     expect(reason).toBe(
-      "Ta wersja nie została sprawdzona. „Popraw za mnie” sprawdzi ją i poprawi.",
+      "Tej lekcji nikt jeszcze nie sprawdził. „Popraw za mnie” sprawdzi ją i poprawi.",
     );
     // It names no question to fix, since none is listed.
     expect(reason).not.toMatch(/zadania będą poprawione|poprawić/);
@@ -285,6 +285,37 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     expect(document.getElementById(give.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
       reason,
     );
+  });
+
+  it("no card state names a version, in pl or en (delta C5, dl-uukj.47.71.52)", () => {
+    const states: LessonCardState[] = [
+      { ...BASE, kind: "ready", count: 4, preview: PREVIEW },
+      { ...BASE, kind: "working", count: 4, preview: PREVIEW },
+      {
+        ...BASE,
+        kind: "fix",
+        count: 4,
+        preview: PREVIEW,
+        findings: [{ step: 2, words: { copyKey: "chat_finding_key_in_say", values: {} } }],
+      },
+      // The unchecked fix card, whose reason said "Ta wersja" (#858).
+      { ...BASE, kind: "fix", count: 4, preview: PREVIEW, findings: [] },
+    ];
+    for (const language of ["pl", "en"] as const)
+      for (const state of states) {
+        drawn(state, { language, actions: <span data-test-actions>actions</span> });
+        const give = card()?.querySelector("[data-give]");
+        const tooltip = document.getElementById(give?.getAttribute("aria-describedby") ?? "");
+        const text = `${card()?.textContent ?? ""} ${tooltip?.textContent ?? ""}`;
+        expect(text, `${language} ${state.kind}`).not.toMatch(/wersj|version \d/i);
+        cleanup();
+      }
+    // The superseded row says a newer version exists, as the delta draws it, but never its number.
+    for (const language of ["pl", "en"] as const) {
+      drawn({ ...BASE, kind: "superseded" }, { language, onOpenVersion: () => {} });
+      expect(card()?.textContent).not.toMatch(/wersj\w* \d|version \d/i);
+      cleanup();
+    }
   });
 
   it("fix with no step to show never says 0 zadań; without onFix there is no Popraw za mnie", () => {
