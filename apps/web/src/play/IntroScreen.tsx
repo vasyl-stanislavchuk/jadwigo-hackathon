@@ -72,9 +72,6 @@ export function IntroScreen({
             </p>
           )}
         </div>
-        {print !== undefined && intro.question_count > 0 && (
-          <PrintLesson language={language} print={print} />
-        )}
         {asksName ? (
           <form className="flex w-full flex-col items-start gap-4" onSubmit={submit} noValidate>
             <div className="flex w-full max-w-sm flex-col gap-2">
@@ -134,6 +131,15 @@ export function IntroScreen({
                 {copy(language, "play_intro_not_me")}
               </Button>
             )}
+          </div>
+        )}
+        {print !== undefined && intro.question_count > 0 && (
+          // Secondary to playing: below a divider, at the right (dl-1eieq.8.25).
+          <div
+            className="flex self-stretch justify-end border-t border-jw-line pt-4"
+            data-print-row
+          >
+            <PrintLesson language={language} print={print} />
           </div>
         )}
       </Column>

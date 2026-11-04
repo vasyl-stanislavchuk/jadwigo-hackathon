@@ -71,6 +71,9 @@ export function PrintLesson({
   };
   return (
     <div className="flex items-center gap-3" data-print-lesson>
+      <p role="status" className="text-right text-jw-page-small text-jw-ink-soft" data-print-said>
+        {state === "idle" ? "" : copy(language, SAID[state])}
+      </p>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -88,9 +91,6 @@ export function PrintLesson({
         </TooltipTrigger>
         <TooltipContent>{label}</TooltipContent>
       </Tooltip>
-      <p role="status" className="text-jw-page-small text-jw-ink-soft" data-print-said>
-        {state === "idle" ? "" : copy(language, SAID[state])}
-      </p>
     </div>
   );
 }
