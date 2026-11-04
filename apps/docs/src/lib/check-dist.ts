@@ -32,7 +32,7 @@ export const MUST: readonly (readonly [file: string, text: string])[] = [
   ["mcp/index.html", "MCP"],
   ["mcp/index.html", 'href="/mcp/question_item/"'],
   // Registration comes first on the MCP page, and every tool page links back to it (dl-5ssh.90.31).
-  ["mcp/index.html", 'id="muse-code"'],
+  ["mcp/index.html", 'id="register-the-server"'],
   ["mcp/question_item/index.html", ">item_id</code>"],
   ["mcp/question_item/index.html", `href="${REGISTER_HREF}"`],
   ["mcp-tools.json", '"name": "question_item"'],

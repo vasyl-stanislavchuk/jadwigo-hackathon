@@ -7,8 +7,8 @@ This guide is for anyone who calls Jadwigo's API: where it lives, how it behaves
 the other guides use.
 
 Jadwigo is a learning app for children in the first school grades, in Polish and English.
-A child plays a lesson. A parent sees what the child played. Everything the app does goes
-through one HTTP API.
+A parent makes a lesson by chatting with Jadwigo's AI. A child plays the lesson, and the parent
+sees what the child played. Everything the app does goes through one HTTP API.
 
 ## Base URL
 
@@ -46,6 +46,9 @@ A breaking change to a route adds `/api/v2/` beside it. The old route stays unti
 | help | The hints a child may ask for on a question, released one rung at a time. |
 | learner | A child, added by a parent. |
 | pod | A family's space. Every record belongs to one pod, and a pod sees only its own. |
+| conversation | A parent's chat with Jadwigo's AI, made of the parent's messages and the AI's turns. |
+| run | One turn of the AI in a conversation: it reads the message, calls its tools and writes events you read back. |
+| MCP | The Model Context Protocol. Jadwigo serves 2 MCP servers, so an AI agent can search the bank and make lessons. |
 
 ## Next
 
