@@ -6,6 +6,7 @@ import {
   Help,
   type LessonId,
   type LessonQuestionId,
+  namesOwnSource,
   type PodId,
   QUESTION_TYPE_FAMILY,
   SkillId,
@@ -206,11 +207,12 @@ const TWIN_WRITTEN = "a twin written from this question";
 
 /**
  * A twin's credit and based_on (dl-1eieq.6.2, decision `dl-0qsjc`). A twin with a credit, or with a
- * based_on naming its own source (a `bank:` or `authored:` question), keeps what it has. A twin with
- * neither was written from its question: it takes that question's credit, with a `wording` change on
- * the question's source, so the page and the paper say it was adapted. When no source can be named
- * (a credit with no based_on, not from Khan), it stays as written, and the page still shows its
- * question's credit, adapted (`pageCredit`'s `original`).
+ * based_on naming a source of its own (`namesOwnSource`: a `bank:` or `authored:` question), keeps
+ * what it has. Any other twin was written from its question: it takes that question's credit, and
+ * its based_on (its own `khan:` one, else the question's source) gains a `wording` change, so the
+ * page and the paper say it was adapted. When no source can be named (a credit with no based_on,
+ * not from Khan), it stays as written, and the page still shows its question's credit, adapted
+ * (`pageCredit`'s `original`).
  */
 function twinCredence(
   basedOn: BasedOn | null,
@@ -218,17 +220,17 @@ function twinCredence(
   question: Pick<NewLessonQuestion, "credit" | "based_on">,
 ): { based_on: BasedOn | null; credit: Credit | null } {
   const as = { based_on: basedOn, credit };
-  if (credit !== null || basedOn !== null || question.credit === null) return as;
+  if (credit !== null || namesOwnSource(basedOn) || question.credit === null) return as;
   const { credit: from } = question;
   const source =
-    question.based_on?.question ?? (from.source === "khan" ? `khan:${from.ref}` : null);
+    basedOn?.question ??
+    question.based_on?.question ??
+    (from.source === "khan" ? `khan:${from.ref}` : null);
   if (source === null) return as;
+  const written = { change: "wording" as const, why: TWIN_WRITTEN, reviewed: false };
   return {
     credit: from,
-    based_on: {
-      question: source,
-      changes: [{ change: "wording", why: TWIN_WRITTEN, reviewed: false }],
-    },
+    based_on: { question: source, changes: [...(basedOn?.changes ?? []), written] },
   };
 }
 
@@ -238,8 +240,8 @@ function twinCredence(
  * `2026-10-27-the-v0-attempt-rules-questions-only-on-the-wire-the-api-v1-route`), and each
  * `help.twin` becomes a spare lesson question with `twin_of`. A twin keeps its own `credit` and
  * `based_on` when it has them, so a sibling bank item taken as the twin carries its attribution into
- * the stored question (dl-a38n.46). A twin with no credit of its own was written from its question,
- * so it takes that question's credit and says it was adapted (dl-1eieq.6.2, `inheritedBasedOn`);
+ * the stored question (dl-a38n.46). A twin with no credit and no `bank:` or `authored:` source of its
+ * own was written from its question, so it takes that question's credit and says it was adapted (dl-1eieq.6.2, `twinCredence`);
  * our own question's twin keeps none, as the playground writes none.
  */
 export function compileLessonFile(raw: unknown, pod: PodId = FEATURED_POD.id): CompiledLesson {

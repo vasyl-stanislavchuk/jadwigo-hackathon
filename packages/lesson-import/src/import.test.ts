@@ -178,6 +178,33 @@ describe("compiling a lesson file", () => {
     expect(byStep.get("s05t")?.credit).toBeNull();
   });
 
+  it("gives a twin with a khan: based_on and no credit its question's credit, adapted", () => {
+    const raw = file("equal-groups");
+    // Made up: no bank item has these refs.
+    const credit = {
+      source: "khan",
+      ref: "x0000000000000001",
+      licence: "cc-by-nc-sa-4.0",
+      original_lang: "en",
+      checked: "2026-11-04",
+    };
+    Object.assign(step(raw, "s02"), {
+      credit,
+      based_on: { question: "khan:x0000000000000001", changes: [] },
+    });
+    const twin = (step(raw, "s02")["question"] as { help: { twin: Record<string, unknown> } }).help
+      .twin;
+    twin["based_on"] = { question: "khan:x0000000000000002", changes: [] };
+    const compiled = compileLessonFile(raw);
+    const s02t = compiled.questions.find((q) => q.step_id === "s02t")?.question;
+    expect(s02t?.credit).toEqual(credit);
+    expect(s02t?.based_on).toEqual({
+      question: "khan:x0000000000000002",
+      changes: [{ change: "wording", why: "a twin written from this question", reviewed: false }],
+    });
+    expect(pageCredit(s02t ?? { credit: null, based_on: null })?.adapted).toBe(true);
+  });
+
   it("leaves a twin that names its own source, or has no source to name, as written", () => {
     const raw = file("equal-groups");
     const elsewhere = {

@@ -177,6 +177,15 @@ export function creditLicence(credit: Pick<Credit, "source" | "licence">): strin
 }
 
 /**
+ * Whether a twin's based_on names a source of its own that carries no credit: a `bank:` or
+ * `authored:` question, ours. A `khan:` based_on is still Khan's, so a twin with one and no credit
+ * takes its question's (dl-1eieq.6.2). Compile and the page read this one rule.
+ */
+export function namesOwnSource(basedOn: BasedOn | null | undefined): boolean {
+  return basedOn != null && /^(bank|authored):/.test(basedOn.question);
+}
+
+/**
  * A lesson question's credit as the page sees it, or null for our own and bank questions. A twin
  * with no credit of its own that was written from a credited question (`original`, the question
  * its `twin_of` names) shows that question's credit, adapted (dl-1eieq.6.2): the model rewrote it.
@@ -188,7 +197,9 @@ export function pageCredit(
   original?: Pick<LessonQuestion, "credit"> | null,
 ): PageCredit | null {
   const inherited =
-    question.credit === null && question.based_on === null ? (original?.credit ?? null) : null;
+    question.credit === null && !namesOwnSource(question.based_on)
+      ? (original?.credit ?? null)
+      : null;
   const credit = question.credit ?? inherited;
   if (credit === null) return null;
   return {

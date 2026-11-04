@@ -10,6 +10,7 @@ import {
   creditLicence,
   GoalPatch,
   LearnerCreate,
+  namesOwnSource,
   PageAttemptResult,
   ParentReviewQuestion,
   pageAttemptResult,
@@ -349,8 +350,22 @@ describe("a borrowed question's credit (dl-1eieq.6.2)", () => {
   });
 
   it("does not credit a twin that names its own source to its question's", () => {
-    const own = { question: "authored:twin-of-s02", changes: [] };
-    expect(pageCredit({ credit: null, based_on: own }, { credit })).toBeNull();
+    for (const question of ["authored:twin-of-s02", "bank:made-up-1"]) {
+      expect(
+        pageCredit({ credit: null, based_on: { question, changes: [] } }, { credit }),
+      ).toBeNull();
+    }
+    expect(namesOwnSource({ question: "khan:x1", changes: [] })).toBe(false);
+    expect(namesOwnSource(null)).toBe(false);
+  });
+
+  it("credits a twin whose based_on is Khan's but has no credit to its question's, adapted", () => {
+    const khan = { question: "khan:x0000000000000001", changes: [] };
+    expect(pageCredit({ credit: null, based_on: khan }, { credit })).toMatchObject({
+      source: "khan",
+      licence: "cc-by-nc-sa-4.0",
+      adapted: true,
+    });
   });
 
   it("shows no credit for our own question or its twin", () => {
