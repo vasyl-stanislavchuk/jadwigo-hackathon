@@ -104,6 +104,50 @@ export function useTouch(ref: RefObject<HTMLElement>): boolean {
   return touch;
 }
 
+/** The mark on <html> once a hardware keyboard has typed on this page (useHardwareKeyboard). */
+const HARDWARE = "hardwareKeys";
+/** A keyboard smaller than this is no system keyboard (a browser's own bar coming and going). */
+const SYSTEM_KEYBOARD_MIN = 120;
+
+/**
+ * Whether a real keyboard is at hand on a touch device (dl-uukj.29.174): an iPad with a Magic
+ * Keyboard or a Bluetooth one hides the on-screen keyboard, and its Option layer has no Polish
+ * letters, so the child still needs the letter row. Either a fine pointer is attached (a trackpad
+ * or a mouse: `any-pointer: fine`), or a key typed a character into a field while no system
+ * keyboard covered the window. Android's on-screen keys send "Unidentified" (keyCode 229) and
+ * iOS's arrive with its keyboard up, so neither counts. Once seen it holds for the page. Under
+ * `data-input-touch` (the page says touch) only a typed key counts.
+ */
+export function useHardwareKeyboard(ref: RefObject<HTMLElement>): boolean {
+  const [hardware, setHardware] = useState(false);
+  useLayoutEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+    const root = document.documentElement;
+    const pointer =
+      typeof window.matchMedia === "function" ? window.matchMedia("(any-pointer: fine)") : null;
+    const said = (): boolean => ref.current?.closest("[data-input-touch]") != null;
+    const read = (): void =>
+      setHardware((pointer?.matches === true && !said()) || HARDWARE in root.dataset);
+    const typed = (event: KeyboardEvent): void => {
+      if (HARDWARE in root.dataset || event.isComposing || event.key.length !== 1) return;
+      const target = event.target;
+      if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
+      const viewport = window.visualViewport;
+      if (viewport && keyboardInset(window.innerHeight, viewport) > SYSTEM_KEYBOARD_MIN) return;
+      root.dataset[HARDWARE] = "";
+      read();
+    };
+    read();
+    pointer?.addEventListener?.("change", read);
+    document.addEventListener("keydown", typed, true);
+    return () => {
+      pointer?.removeEventListener?.("change", read);
+      document.removeEventListener("keydown", typed, true);
+    };
+  }, [ref]);
+  return hardware;
+}
+
 /** How far the system keyboard covers the bottom of the window, from the visual viewport: 0 while
  * it is down. */
 export function keyboardInset(

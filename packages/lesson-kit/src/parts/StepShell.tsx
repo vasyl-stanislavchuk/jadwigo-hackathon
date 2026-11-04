@@ -73,7 +73,7 @@ import type {
   PageHintCard,
   PageSolutionLine,
 } from "../stage/types.ts";
-import { keyboardInset, toolsAt, useFrame, useTouch } from "./frame.ts";
+import { keyboardInset, toolsAt, useFrame, useHardwareKeyboard, useTouch } from "./frame.ts";
 import { HelpLadder } from "./HelpLadder.tsx";
 import { HelpPicture } from "./HelpPicture.tsx";
 import { MathNotation } from "./notation.ts";
@@ -625,6 +625,9 @@ export function StepShell({
   // The frame by input and shape (frame.ts, README §2), and where it puts the tools.
   const frame = useFrame(shellRef);
   const touch = useTouch(shellRef);
+  // The on-screen keyboard types (decision dl-6ihrv): touch, with no real keyboard at hand.
+  const hardware = useHardwareKeyboard(shellRef);
+  const onScreenKeys = touch && !hardware;
   const at = toolsAt(frame);
   // In a lesson on a phone or an upright tablet the keypad and the letter row are docked above
   // the footer; the answer itself stays in the page (addendum 1.1, 1.1.1).
@@ -682,11 +685,11 @@ export function StepShell({
       folded: at === "tray" && folded,
       ended,
       docked,
-      touch,
+      onScreenKeys,
       dock,
       register,
     }),
-    [frame, at, folded, ended, docked, touch, dock, register],
+    [frame, at, folded, ended, docked, onScreenKeys, dock, register],
   );
   // Once the step ends the tools are gone and their space is kept (rule 12): the answer holds the
   // tallest it has been on this step, and the solution fills that space.

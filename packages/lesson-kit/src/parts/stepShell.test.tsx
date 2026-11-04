@@ -1503,6 +1503,26 @@ describe("on a phone in a lesson the answer sits in the page", () => {
     expect(container.querySelector('[data-area="answer"] [data-fold]')).toBeNull();
   });
 
+  it("on a touch device with a hardware keyboard keeps the letter row (an iPad's has no ł)", () => {
+    const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);
+    expect(container.querySelector("[data-letters]")).toBeNull();
+    // A key types into the field while no system keyboard covers the window: a real keyboard.
+    act(() => {
+      fireEvent.keyDown(screen.getByRole("textbox", { name: "answer" }), { key: "l" });
+    });
+    expect(container.querySelector("[data-letters]")).not.toBeNull();
+    delete document.documentElement.dataset["hardwareKeys"];
+  });
+
+  it("does not take the on-screen keys for a hardware keyboard", () => {
+    const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);
+    const answer = screen.getByRole("textbox", { name: "answer" });
+    // Android's on-screen keys send "Unidentified"; a composing key is the IME's.
+    fireEvent.keyDown(answer, { key: "Unidentified", keyCode: 229 });
+    fireEvent.keyDown(answer, { key: "a", isComposing: true });
+    expect(container.querySelector("[data-letters]")).toBeNull();
+  });
+
   it("with a mouse still docks the letter row above the footer", () => {
     const { container } = render(lesson({ answer: letters }));
     const dock = must(container.querySelector<HTMLElement>("[data-tools-dock]"));
