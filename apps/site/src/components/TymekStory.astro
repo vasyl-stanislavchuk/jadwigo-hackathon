@@ -1,0 +1,188 @@
+---
+// Tymek's short story (dl-w0b4.143): the landing page's cut of the demo film's vision scene (S12 v3).
+// Tymek, a made-up child, sits with his dad at the table from the film. Above them, his child page in
+// the app's own lists. The new-lesson button is pressed, a sheet drops onto the table (7 × 9 split into
+// 7 × 5 and 7 × 4), and Tymek fills it in. One 10 s CSS loop, no script. With reduced motion the loop
+// never runs and the last frame shows, still. The words are landing.yaml's; the art is H1's pose from
+// the film (jadwigo-art s04-anim tymek-solve-v8 and tymek-hands-v8), as WebP, with the sheet drawn here
+// between its two layers so the sheet and its numbers stay sharp.
+import type { Language } from "@jadwigo/config";
+import hands from "../assets/illustrations/tymek-hands.webp";
+import pose from "../assets/illustrations/tymek-solve.webp";
+import { landingWords } from "../lib/words.ts";
+
+interface Props {
+  lang: Language;
+}
+
+const { lang } = Astro.props;
+const s = (await landingWords(lang)).partner.story;
+
+// The pose is 1152 × 768. Its sheet lies on the table, turned to face Tymek: this matrix maps a
+// 290 × 340 sheet onto it (story-v3.js tableSheet, at this width).
+const k = 1152 / 1536;
+const fit = 0.85;
+const sheet = `matrix(${(512 * k * fit) / 290} ${(12 * k * fit) / 290} ${(-95 * k * fit) / 340} ${(240 * k * fit) / 340} ${858 * k} ${676 * k}) rotate(180)`;
+// The next sheet's dots: 7 rows of 9, a gap after the 5th column (7 × 5 and 7 × 4).
+const dots = Array.from({ length: 63 }, (_, i) => ({
+  x: -104 + (i % 9) * 25 + (i % 9 > 4 ? 8 : 0),
+  y: -62 + Math.floor(i / 9) * 20,
+}));
+const done = [48, 42, 36];
+---
+
+<figure class="story" role="img" aria-label={s.alt}>
+  <div class="window" aria-hidden="true">
+    <span class="bar"><i></i><i></i><i></i></span>
+    <div class="head">
+      <span class="avatar">{s.name.slice(0, 1)}</span>
+      <span class="who"><b>{s.name}</b><small>{s.grade}</small></span>
+      <span class="act">{s.button}</span>
+    </div>
+    <dl class="lists">
+      {
+        s.lists.map((l, i) => (
+          <div class={`row r${i + 1}`}>
+            <dt>{l.label}</dt>
+            <dd>{l.item}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+
+  <svg class="scene" viewBox="40 0 1100 770" aria-hidden="true" data-audience="kid">
+    <image href={pose.src} x="0" y="0" width="1152" height="768" />
+    <g transform={sheet}>
+      {/* The lesson from the film: 7 × 8 split into 35 + 21, and 7 × 6, both done. */}
+      <g class="old">
+        <path class="band" d="M-120 -148H55" />
+        <text x="-42" y="-112">7 × 8 =</text>
+        <rect class="box ok" x="18" y="-136" width="54" height="48" rx="8" />
+        <text class="hand" x="45" y="-111">56</text>
+        <path class="tick" d="M91 -112l9 10L120 -128" />
+        <rect class="part" x="-125" y="-78" width="156" height="84" rx="6" />
+        <rect class="part deep" x="31" y="-78" width="94" height="84" rx="6" />
+        <text class="sm" x="-47" y="-53">7 × 5</text>
+        <text class="sm" x="78" y="-53">7 × 3</text>
+        <text class="num" x="-47" y="-20">35</text>
+        <text class="num" x="78" y="-20">21</text>
+        <text x="0" y="38">7 × 6 =</text>
+        {
+          done.map((n, i) => (
+            <>
+              <rect class:list={["box", { ok: n === 42 }]} x={-126 + i * 88} y="66" width="76" height="50" rx="10" />
+              <text x={-88 + i * 88} y="92">{n}</text>
+            </>
+          ))
+        }
+        <path class="tick" d="M91 38l9 10L120 22" />
+      </g>
+      {/* The next lesson: 7 × 9, split the same way. */}
+      <g class="new">
+        <path class="band" d="M-120 -148H55" />
+        <text x="-42" y="-112">7 × 9 =</text>
+        <rect class="box" x="18" y="-136" width="54" height="48" rx="8" />
+        <g class="a3">
+          <text class="hand" x="45" y="-111">63</text>
+          <path class="tick" d="M91 -112l9 10L120 -128" />
+        </g>
+        <rect class="part" x="-125" y="-80" width="250" height="154" rx="8" />
+        {dots.map((d) => <circle class="dot" cx={d.x} cy={d.y} r="7" />)}
+        <path class="split" d="M17 -74V68" />
+        <text class="sm" x="-55" y="100">7 × 5</text>
+        <text class="sm" x="70" y="100">7 × 4</text>
+        <rect class="box" x="-89" y="120" width="68" height="40" rx="8" />
+        <rect class="box" x="36" y="120" width="68" height="40" rx="8" />
+        <text class="hand a1" x="-55" y="141">35</text>
+        <text class="hand a2" x="70" y="141">28</text>
+      </g>
+    </g>
+    <image href={hands.src} x="0" y="0" width="1152" height="768" />
+    {/* The sheet on its way from the page above to the table. */}
+    <g class="flyer">
+      <rect class="paper" x="-145" y="-170" width="290" height="340" rx="18" />
+      <path class="band" d="M-120 -148H55" />
+      <rect class="part" x="-125" y="-80" width="250" height="154" rx="8" />
+      {dots.map((d) => <circle class="dot" cx={d.x} cy={d.y} r="7" />)}
+    </g>
+  </svg>
+</figure>
+
+<style>
+  .story { margin: 0; display: grid; gap: 0.75rem; }
+  /* The child page, on the adult scale, in the frame the screenshot had. */
+  .window {
+    background: var(--jw-card); border: var(--jw-border) solid var(--jw-ink); border-radius: var(--jw-radius-card);
+    overflow: hidden; position: relative; z-index: 0;
+  }
+  .bar { display: flex; gap: 0.35rem; padding: 0.5rem 0.75rem; border-bottom: var(--jw-border) solid var(--jw-line); }
+  .bar i { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--jw-line-strong); }
+  .head { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem 0.5rem; flex-wrap: wrap; }
+  .avatar {
+    width: 2.5rem; height: 2.5rem; border-radius: 50%; display: grid; place-items: center;
+    background: var(--jw-avatar); color: var(--jw-avatar-ink); font-weight: 700;
+  }
+  .who { display: flex; flex-direction: column; line-height: 1.2; }
+  .who b { font-size: 1.35rem; }
+  .who small { color: var(--jw-ink-soft); font-size: 0.9rem; }
+  .act {
+    margin-left: auto; padding: 0.45rem 0.9rem; border-radius: var(--jw-radius-control);
+    background: var(--jw-act); color: var(--jw-on-act); font-weight: 600; font-size: 0.95rem; white-space: nowrap;
+  }
+  .lists { margin: 0; padding: 0.25rem 1.25rem 1.1rem; display: grid; gap: 0.6rem; }
+  .row dt { font-weight: 600; }
+  .row dd { margin: 0.1rem 0 0; padding-left: 1.1rem; position: relative; }
+  .row dd::before { content: ""; position: absolute; left: 0.3rem; top: 0.6em; width: 0.3rem; height: 0.3rem; border-radius: 50%; background: currentColor; }
+
+  /* The table, with the sheet drawn between the pose's two layers. */
+  .scene { display: block; width: 100%; height: auto; overflow: visible; position: relative; z-index: 1; }
+  .scene text { font-family: var(--jw-font-kid); font-size: 30px; fill: var(--jw-ink); text-anchor: middle; dominant-baseline: central; }
+  .scene .sm { font-size: 24px; }
+  .scene .num { font-size: 32px; fill: var(--jw-p-ink-650); }
+  .scene .hand { fill: var(--jw-p-ink-650); }
+  .band { stroke: var(--jw-p-ink-100); stroke-width: 13; stroke-linecap: round; fill: none; }
+  .box { fill: var(--jw-p-ink-75); stroke: var(--jw-p-ink-300); stroke-width: 2; }
+  .box.ok { fill: var(--jw-p-green-50); stroke: var(--kid-correct); stroke-width: 3; }
+  .part { fill: var(--jw-p-ink-100); stroke: var(--jw-p-ink-500); stroke-width: 3; }
+  .part.deep { fill: var(--jw-p-ink-150); }
+  .tick { fill: none; stroke: var(--kid-correct); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+  .dot { fill: var(--jw-p-ink-650); }
+  .split { stroke: var(--jw-p-ink-500); stroke-width: 3; stroke-dasharray: 7 7; }
+  .paper { fill: var(--jw-card); stroke: var(--jw-ink); stroke-width: 4; }
+
+  /* The last frame, which is also what reduced motion shows: the new sheet done, nothing in flight. */
+  .old, .flyer { opacity: 0; }
+  .flyer { transform-box: view-box; transform-origin: 0 0; transform: translate(640px, 500px) scale(0.42); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    /* One full shorthand each: a shorthand with no name minifies to "animation: none". */
+    .r1 { animation: ty-r1 10s linear infinite both; }
+    .r2 { animation: ty-r2 10s linear infinite both; }
+    .r3 { animation: ty-r3 10s linear infinite both; }
+    .act { animation: ty-press 10s linear infinite both; }
+    .old { animation: ty-old 10s linear infinite both; }
+    .new { animation: ty-new 10s linear infinite both; }
+    .a1 { animation: ty-a1 10s linear infinite both; }
+    .a2 { animation: ty-a2 10s linear infinite both; }
+    .a3 { animation: ty-a3 10s linear infinite both; }
+    .flyer { animation: ty-fly 10s ease-in-out infinite both; }
+  }
+  @keyframes ty-r1 { 0%, 3% { opacity: 0; transform: translateY(0.4rem); } 8%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+  @keyframes ty-r2 { 0%, 8% { opacity: 0; transform: translateY(0.4rem); } 13%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+  @keyframes ty-r3 { 0%, 13% { opacity: 0; transform: translateY(0.4rem); } 18%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
+  @keyframes ty-press { 0%, 25% { transform: none; background: var(--jw-act); } 27% { transform: scale(0.95); background: var(--jw-act-hover); } 31%, 100% { transform: none; background: var(--jw-act); } }
+  @keyframes ty-old { 0%, 41% { opacity: 1; } 44%, 97% { opacity: 0; } 100% { opacity: 1; } }
+  @keyframes ty-new { 0%, 41% { opacity: 0; } 44%, 95% { opacity: 1; } 98%, 100% { opacity: 0; } }
+  @keyframes ty-a1 { 0%, 54% { opacity: 0; } 57%, 100% { opacity: 1; } }
+  @keyframes ty-a2 { 0%, 65% { opacity: 0; } 68%, 100% { opacity: 1; } }
+  @keyframes ty-a3 { 0%, 76% { opacity: 0; } 79%, 100% { opacity: 1; } }
+  @keyframes ty-fly {
+    /* Down Tymek's right side, never across a face, then onto the table in front of him. */
+    0%, 29% { opacity: 0; transform: translate(1090px, -40px) rotate(10deg) scale(0.5); }
+    31% { opacity: 1; }
+    36% { opacity: 1; transform: translate(1050px, 400px) rotate(2deg) scale(0.46); }
+    41% { opacity: 1; transform: translate(640px, 500px) rotate(-12deg) scale(0.42); }
+    44%, 100% { opacity: 0; transform: translate(640px, 500px) rotate(-12deg) scale(0.42); }
+  }
+</style>

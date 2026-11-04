@@ -1,7 +1,7 @@
 # The print Lambda (dl-1eieq.8.3, decision dl-o05aa), planned against mock providers: no AWS and
 # no credentials. Its role reads a sheet (pods/*/prints/*.json) and writes a PDF or an error file
 # beside it, tagged, and nothing else in S3; the function runs the tagged image on arm64 with no URL;
-# with no tag there is only the ECR repo. The api may invoke it, and put and get under
+# with no tag there is only the ECR repo. At most 5 renders run at once (dl-1eieq.8.16). The api may invoke it, and put and get under
 # pods/*/prints/, once it exists and not before. The uploads bucket expires whatever is tagged
 # kind=print after 30 days. `make -C infra test` runs it.
 
@@ -96,6 +96,11 @@ run "the_print_lambda" {
   assert {
     condition     = aws_lambda_function.print[0].memory_size == 1024 && aws_lambda_function.print[0].timeout == 60
     error_message = "1024 MB and a 60 s timeout"
+  }
+
+  assert {
+    condition     = aws_lambda_function.print[0].reserved_concurrent_executions == 5
+    error_message = "at most 5 renders at once, so a flood of public starts queues (dl-1eieq.8.16)"
   }
 
   assert {
@@ -197,6 +202,22 @@ run "refuses_a_timeout_past_60_s" {
   }
 
   expect_failures = [var.timeout]
+}
+
+run "refuses_a_cap_of_0" {
+  command = plan
+
+  module {
+    source = "./modules/print"
+  }
+
+  variables {
+    environment          = "dev"
+    uploads_bucket_name  = "jadwigo-uploads-dev-test"
+    reserved_concurrency = 0
+  }
+
+  expect_failures = [var.reserved_concurrency]
 }
 
 run "the_uploads_bucket_expires_prints" {

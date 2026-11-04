@@ -36,6 +36,17 @@ variable "timeout" {
   }
 }
 
+variable "reserved_concurrency" {
+  description = "Renders that may run at once (decision dl-3h2e8, dl-1eieq.8.16): anyone holding a play link may start a print, so a flood waits here. The api starts it as an async invoke, which Lambda retries when throttled, so an extra start queues rather than fails"
+  type        = number
+  default     = 5
+
+  validation {
+    condition     = var.reserved_concurrency >= 1
+    error_message = "at least 1: 0 would stop every print"
+  }
+}
+
 variable "log_retention_days" {
   description = "Days CloudWatch keeps the logs, which carry ids, counts, times and outcomes only"
   type        = number

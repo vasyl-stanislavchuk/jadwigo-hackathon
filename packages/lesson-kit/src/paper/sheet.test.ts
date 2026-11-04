@@ -122,6 +122,53 @@ describe("the mixed lesson's sheet", () => {
     });
   });
 
+  it("draws a picture's labels as the screen's Picture does: each line as TeX, \\text{…} also as words", () => {
+    const production = MIXED_PRINT_LESSON.questions.find((q) => q.question_type === "production");
+    if (production?.family !== "enter") throw new Error("fixture");
+    const labels = {
+      range: [
+        [-1, 4],
+        [-1, 10],
+      ] as [[number, number], [number, number]],
+      items: [
+        { content: "\\small{5}", coordinates: [0, 5] as [number, number], alignment: "left" },
+        {
+          content: "\\text{\\small{cm}}",
+          coordinates: [0, 0] as [number, number],
+          alignment: "right",
+        },
+        {
+          content: "\\text{Break}<br>\\text{dance}",
+          coordinates: [1, 0] as [number, number],
+          alignment: "below",
+        },
+        {
+          content: "Liczba dni",
+          coordinates: [-1, 5] as [number, number],
+          alignment: "center",
+          math: false as const,
+        },
+      ],
+    };
+    const pictured = {
+      ...production,
+      data: {
+        ...production.data,
+        stem: {
+          text: "Wykres",
+          pictures: [{ src: "g.svg", alt: "wykres", width: 400, height: 300, labels }],
+        },
+      },
+    };
+    const { html } = sheetOf([pictured]);
+    expect(html["$\\small{5}$"]).toBe('<span class="formula">5</span>');
+    expect(html["$\\text{Break}$"]).toBe("Break");
+    expect(html["dance"]).toBe("dance");
+    expect(html["$\\text{\\small{cm}}$"]).toBe("cm");
+    expect(html["Liczba dni"]).toBe("Liczba dni");
+    expect(html["\\small{5}"]).toBeUndefined();
+  });
+
   it("leaves spares off the sheet", () => {
     const [first, second] = MIXED_PRINT_LESSON.questions;
     if (!first || !second) throw new Error("fixture");

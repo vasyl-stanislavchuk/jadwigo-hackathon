@@ -175,6 +175,11 @@ table.grid.headed td.row-head { font-weight: 700; background: {{ g.HEADER_FILL }
 .word-bank { font-size: {{ g.SMALL_PT }}pt; border: {{ g.STROKE_MM|mm }} dashed {{ g.GREY }}; border-radius: {{ g.SPACE_XS_MM|mm }};
   padding: {{ g.SPACE_S_MM|mm }} {{ g.SPACE_M_MM|mm }} {{ (g.SPACE_S_MM + g.WORD_LIFT_MM)|mm }}; display: inline-block; line-height: 1; text-align: center; }
 .picture-wrap { position: relative; display: inline-block; }
+.labelled { position: relative; display: inline-block; vertical-align: top; line-height: 1; }
+.labelled img.picture { display: block; max-width: none; max-height: none; }
+.frame .labelled img.picture { max-width: none; max-height: none; }
+.pic-label { position: absolute; white-space: nowrap; line-height: 1; color: #000; padding: {{ g.LABEL_PAD_EM }}em; }
+.pic-label.wrap { white-space: normal; text-align: center; line-height: 1.15; hyphens: auto; }
 .pin { position: absolute; width: {{ g.PIN_MM|mm }}; height: {{ g.PIN_MM|mm }}; margin: {{ (-g.PIN_MM / 2)|mm }} 0 0 {{ (-g.PIN_MM / 2)|mm }}; border-radius: 50%; background: {{ g.INK }}; color: #fff;
   font-size: {{ g.SMALL_PT }}pt; font-weight: 700; text-align: center; line-height: {{ g.PIN_MM|mm }}; }
 
