@@ -321,7 +321,7 @@ describe("the solution card", () => {
   const card = (c: HTMLElement) =>
     c.querySelector<HTMLElement>('[data-area="help"] [data-solution-card]');
 
-  it('after "I don\'t know yet" stands under the answer with every worked line numbered, and the help note folds away', () => {
+  it('after "I don\'t know yet" stands under the answer with every worked line numbered, and the help note stays above it with nothing to press (dl-uukj.64)', () => {
     const { container } = render(
       shell({
         action: null,
@@ -347,7 +347,8 @@ describe("the solution card", () => {
       "35 + 7 = 42",
       "So 7 × 6 is not 48.",
     ]);
-    expect(container.querySelector("[data-help-note]")).toBeNull();
+    const note = must(container.querySelector("[data-help-note]"));
+    expect(note.querySelector("button")).toBeNull();
     expect(container.querySelector('[data-help="worked"]')).toBeNull();
     // Yellow stays help: the card is never the help note.
     expect(box.classList.contains("kid-help-note")).toBe(false);
@@ -552,6 +553,21 @@ describe("the help note", () => {
     expect(must(container.querySelector("[data-help-refused]")).textContent).toBe(
       en("help_try_first"),
     );
+  });
+
+  // dl-uukj.64: a step that ended on its solution keeps the note above it, with no buttons.
+  it("keeps the note on a step that ended on its solution, with nothing left to press", () => {
+    const { container } = render(
+      shell({
+        action: null,
+        feedback: { kind: "moved_on", index: 0 },
+        next: { press: press() },
+        ladder: { help: released(2), ask: ask(), refused: false },
+      }),
+    );
+    const note = must(container.querySelector("[data-help-cards]"));
+    expect(note.textContent).toContain("Now the columns.");
+    expect(screen.queryByRole("button", { name: en("help_more") })).toBeNull();
   });
 
   it("draws the dashed blank only where the almost-there card leaves one", () => {
