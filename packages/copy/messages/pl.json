@@ -1529,6 +1529,7 @@
   "card_collapse": "Zwiń lekcję",
   "card_fix_reason": "Daj lekcję będzie można, gdy zadania będą poprawione.",
   "card_unchecked_reason": "Tej lekcji nikt jeszcze nie sprawdził. „Popraw za mnie” sprawdzi ją i poprawi.",
+  "card_unchecked_plain": "Tej lekcji nikt jeszcze nie sprawdził.",
   "card_fix_reason_short": [
     {
       "declarations": ["input n", "local q_noun = n: plural"],
