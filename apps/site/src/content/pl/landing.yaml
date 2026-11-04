@@ -29,6 +29,7 @@ links:
   - { href: /lekcje, label: Lekcje }
   - { href: /jak-to-dziala, label: Jak to działa }
   - { href: /porownanie, label: Porównanie }
+  - { href: /jadwigo-ai, label: Jadwigo AI }
   - { href: /o-nas, label: O nas }
 # /jak-to-dziala in direction 1a (design handoff "landing 3", 2026-11-01; draft). The owner's principle:
 # the parent is aware and close in a few minutes, never required to sit through a lesson together.

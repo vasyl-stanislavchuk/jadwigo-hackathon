@@ -55,9 +55,10 @@ const { photos, photosLabel, link, heading } = entry.data;
   .about { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
   @media (min-width: 56rem) { .about { grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: start; } }
   .about h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
-  .about .words p { margin-top: 1rem; max-width: 36rem; }
+  .about .words { max-width: 34rem; }
+  .about .words p { margin-top: 1rem; font-size: 1.125rem; line-height: 1.6; }
   /* The first paragraph is the page's lead. */
-  .about .words p:first-of-type { font-size: 1.3rem; font-weight: 700; line-height: 1.4; }
-  .about .words ul { margin: 0.75rem 0 0; padding-left: 1.25rem; max-width: 36rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .about .words p:first-of-type { font-size: 1.35rem; font-weight: 500; line-height: 1.45; }
+  .about .words h2 { margin-top: 2.25rem; font-size: 1.35rem; }
   .about .link { display: inline-block; margin-top: 1.5rem; font-weight: 700; }
 </style>
