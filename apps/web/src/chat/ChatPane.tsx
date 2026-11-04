@@ -83,12 +83,6 @@ export interface ChatPaneProps {
   /** Takes one waiting row out (its ×). */
   onTakeNext?: ((index: number) => string | null) | undefined;
   /**
-   * The "Jadwigo AI widzi" chip is gone (handoff dl-uukj.47.71 S21), so these two draw nothing;
-   * they stay until the workspace stops passing them (dl-uukj.47.71.13).
-   */
-  contextClosed?: boolean;
-  onCloseContext?: (() => void) | undefined;
-  /**
    * A choose form's answers, by the approval's call (dl-uukj.47.35). A stand-in for now: no route
    * resolves an approval until dl-uukj.47.48.
    */

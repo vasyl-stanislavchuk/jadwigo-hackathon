@@ -68,6 +68,7 @@ import { forgetLinks, type ReadAttachment } from "../chat/attachments/ThreadAtta
 import type { UploadDeps } from "../chat/attachments/upload.ts";
 import { ConsentScreen, giveConsent } from "../chat/ConsentScreen.tsx";
 import { newEventId } from "../chat/ids.ts";
+import { TitleEdit } from "../chat/objects/LessonCard.tsx";
 import { clearChatQueues } from "../chat/queue.ts";
 import { setPodLanguage } from "../nav/language.ts";
 import { navigate, useLocation } from "../nav/location.ts";
@@ -111,7 +112,7 @@ import { ParentShell } from "./shell/ParentShell.tsx";
 import type { Place } from "./shell/Sidebar.tsx";
 import { learnerTone } from "./tone.ts";
 import { browserEngine, firstMessage, type LessonEngine } from "./workspace/engine.ts";
-import { LessonWorkspace } from "./workspace/LessonWorkspace.tsx";
+import { type LessonRename, LessonWorkspace } from "./workspace/LessonWorkspace.tsx";
 
 /** The parent's page: the app page's prose column. */
 /** A parent page: the prose column, or a wider one for a list that needs the room (Lekcje). */
@@ -571,6 +572,19 @@ function SignedIn({
   // Dodaj dziecko is open, and from where: Dla's menu picks the new child, the "+" does not.
   const [adding, setAdding] = useState<"plus" | "dla" | null>(null);
   const [forLearner, setForLearner] = useState<LearnerId | null>(forAtFirst);
+  // The open lesson's title for the breadcrumb, and its rename, as the workspace reports them.
+  const [lessonTitle, setLessonTitle] = useState<{
+    of: string;
+    title: string;
+    rename: LessonRename | undefined;
+  } | null>(null);
+  const lessonRoute = route.kind === "lesson" ? route.conversation : null;
+  const onLessonTitle = useCallback(
+    (title: string, rename: LessonRename | undefined) => {
+      if (lessonRoute !== null) setLessonTitle({ of: lessonRoute, title, rename });
+    },
+    [lessonRoute],
+  );
   const [soon, setSoon] = useState(false);
   // The first screen's send (dl-z5ja.108): on its way, refused for want of consent with the words
   // kept, or failed.
@@ -831,11 +845,38 @@ function SignedIn({
             <Failed language={language} />
           </ParentPage>,
         );
+      // The last step names the lesson once it has a title, and renames it in place.
+      // Until this lesson's workspace reports, the last one's title says nothing here.
+      const named =
+        lessonTitle !== null && lessonTitle.of === route.conversation && lessonTitle.title !== ""
+          ? lessonTitle
+          : null;
+      const lessonCrumb: Crumb[] =
+        named === null
+          ? newLesson
+          : [
+              lessons,
+              {
+                label:
+                  named.rename === undefined ? (
+                    named.title
+                  ) : (
+                    <TitleEdit
+                      key={route.conversation}
+                      look="crumb"
+                      title={named.title}
+                      language={language}
+                      onRename={named.rename}
+                    />
+                  ),
+              },
+            ];
       return shell(
         { kind: "lessons" },
-        newLesson,
+        lessonCrumb,
         <LessonWorkspace
           key={route.conversation}
+          onTitle={onLessonTitle}
           language={language}
           conversation={route.conversation}
           engine={engine}
