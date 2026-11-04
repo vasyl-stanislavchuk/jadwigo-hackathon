@@ -1,7 +1,0 @@
-/* The lesson's print sheet (dl-z5ja.108.1.1): while it is in the page (body[data-printing]), only
- * the sheet shows on paper, never the app around it. Any other time a page prints as it is. */
-@media print {
-  body[data-printing] > :not([data-print-sheet]) {
-    display: none !important;
-  }
-}

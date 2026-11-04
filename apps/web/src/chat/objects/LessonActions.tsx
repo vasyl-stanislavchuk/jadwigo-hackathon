@@ -6,9 +6,12 @@
  *
  *   Dla   who the lesson is for: the composer's Dla select when the page gives it (`forWhom`),
  *              else the child's name or "Bez dziecka" in words
- *   Drukuj   an icon button with its name as a tooltip: the lesson's sheet, printed in place
- *              (LessonPrint), once the lesson's latest check passed: an unchecked sheet could reach
- *              a child on paper (steward, #747)
+ *   Drukuj   an icon button with its name as a tooltip: the lesson's PDF, made on the server
+ *              (dl-1eieq.8.11, the print routes of dl-1eieq.8.4), once the lesson's latest check
+ *              passed: an unchecked sheet could reach a child on paper (steward, #747). It opens
+ *              a tab inside the click, so no popup blocker stops it, says "Przygotowuję kartkę…"
+ *              while the PDF is made, and sends the tab to the PDF; a failure closes the tab and
+ *              says so under the buttons, and pressing Drukuj again is the retry.
  *   Daj lekcję / Daj lekcję · {imię}   the one primary. Until it can give, it is quiet with its
  *              reason as a tooltip (DS S5, `DisabledReason`), never `disabled`. It gives
  *              the lesson (POST /api/v1/conversations/{id}/lessons), to that child or to nobody in
@@ -16,7 +19,6 @@
  *              2026-11-03-a-play-link-opens-on-a-first-screen-title-and-question-count-the).
  *
  * No "Zapisz na później": every lesson is already in Lekcje (owner, 2026-11-03).
- * Drukuj prints in place until the server's PDF (dl-1eieq.2) replaces `print`.
  */
 
 import type { Learner } from "@jadwigo/contracts";
@@ -33,7 +35,6 @@ import {
 } from "@jadwigo/ui";
 import { CheckIcon, CopyIcon, ExternalLinkIcon, PrinterIcon } from "lucide-react";
 import { type ReactElement, type ReactNode, useEffect, useRef, useState } from "react";
-import { LessonPrint, printLesson } from "./LessonPrint.tsx";
 
 /** Where giving the lesson stands: nothing yet, on its way, given, or refused with its reason. */
 export type GiveState =
@@ -42,6 +43,24 @@ export type GiveState =
   /** `name` is the child it waits for, or null for a link anyone may play. */
   | { kind: "given"; name: string | null; href: string }
   | { kind: "refused"; reason: "changed" | "child" | "failed" };
+
+/** Why the PDF did not come: no print route here, the route failed, or it took too long. */
+export class PrintFailed extends Error {
+  constructor(readonly why: "unavailable" | "failed" | "slow") {
+    super(`the print ${why}`);
+    this.name = "PrintFailed";
+  }
+}
+
+/** Where printing stands: nothing yet, the PDF on its way, or why it did not come. */
+type PrintState = { kind: "idle" } | { kind: "preparing" } | { kind: PrintFailed["why"] };
+
+const PRINT_SAID: Readonly<Record<Exclude<PrintState["kind"], "idle">, CopyKey>> = {
+  preparing: "parent_print_preparing",
+  unavailable: "parent_print_failed",
+  failed: "parent_print_failed",
+  slow: "parent_print_slow",
+};
 
 const REFUSED: Readonly<Record<Extract<GiveState, { kind: "refused" }>["reason"], CopyKey>> = {
   changed: "parent_give_refused_changed",
@@ -57,7 +76,7 @@ export function LessonActions({
   forWhom,
   onGive,
   given = { kind: "idle" },
-  print = () => window.print(),
+  print,
 }: {
   language: Language;
   /** Whether the lesson's latest check passed, so it can be given. */
@@ -72,23 +91,39 @@ export function LessonActions({
   onGive?: (() => void) | undefined;
   /** Where giving stands, said under the buttons. */
   given?: GiveState;
-  /** The browser's print; a test's own. */
-  print?: () => void;
+  /**
+   * Makes the lesson's PDF and answers its address (the print routes, through waitForPrint), or
+   * throws `PrintFailed`; absent where there is no route to print through.
+   */
+  print?: (() => Promise<string>) | undefined;
 }): ReactElement {
   const t = (key: CopyKey, vars: Record<string, string> = {}): string =>
     copy(language, key, vars, "adult");
-  const [printing, setPrinting] = useState(false);
-  // Once the browser is done printing, the sheet leaves the page, and so does its print rule.
-  useEffect(() => {
-    if (!printing) return;
-    const done = () => setPrinting(false);
-    window.addEventListener("afterprint", done);
-    return () => window.removeEventListener("afterprint", done);
-  }, [printing]);
+  const [printed, setPrinted] = useState<PrintState>({ kind: "idle" });
   const printNow = (): void => {
-    if (!ready) return;
-    setPrinting(true);
-    printLesson(print);
+    if (!ready || lesson === null || print === undefined || printed.kind === "preparing") return;
+    // The PDF's tab opens inside the click, as Daj lekcję's does, so no popup blocker stops it.
+    const opened = window.open("about:blank", "_blank");
+    setPrinted({ kind: "preparing" });
+    print().then(
+      (url) => {
+        setPrinted({ kind: "idle" });
+        if (opened === null) {
+          window.open(url, "_blank", "noopener");
+          return;
+        }
+        try {
+          opened.opener = null;
+        } catch {
+          // Left as it is.
+        }
+        opened.location.href = url;
+      },
+      (e: unknown) => {
+        opened?.close();
+        setPrinted({ kind: e instanceof PrintFailed ? e.why : "failed" });
+      },
+    );
   };
   const busy = given.kind === "giving";
   // A link is for one child and one revision (LessonWorkspace resets `given` when either changes),
@@ -127,8 +162,13 @@ export function LessonActions({
     : onGive === undefined
       ? t("parent_give_unavailable")
       : null;
-  // Printing waits for the same check as giving.
-  const printReason = ready && lesson !== null ? null : t("parent_give_reason");
+  // Printing waits for the same check as giving, and for a route to print through.
+  const printReason =
+    !ready || lesson === null
+      ? t("parent_give_reason")
+      : print === undefined
+        ? t("parent_give_unavailable")
+        : null;
   const givenReason = !done
     ? null
     : given.name === null
@@ -159,10 +199,10 @@ export function LessonActions({
               size="icon"
               aria-label={t("parent_print")}
               className="size-8 min-h-8 min-w-8 max-sm:size-11 max-sm:min-h-11 max-sm:min-w-11"
-              onClick={() => {
-                if (ready && lesson !== null) printNow();
-              }}
+              onClick={printNow}
+              aria-busy={printed.kind === "preparing"}
               data-print
+              data-print-state={printed.kind}
             >
               <PrinterIcon aria-hidden className="size-4" />
             </Button>
@@ -214,7 +254,13 @@ export function LessonActions({
             ? t("parent_given_anyone")
             : t("parent_given_child", { name: given.name }))}
       </div>
-      {printing && lesson !== null && <LessonPrint language={language} lesson={lesson} />}
+      <div
+        role="status"
+        className="text-jw-page-small text-jw-ink not-empty:mt-2"
+        data-print-said={printed.kind}
+      >
+        {printed.kind !== "idle" && t(PRINT_SAID[printed.kind])}
+      </div>
     </div>
   );
 }
