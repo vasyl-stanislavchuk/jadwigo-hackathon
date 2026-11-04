@@ -119,6 +119,56 @@
       "grade": 3,
       "question_count": 8,
       "first_say": "Which farms have fewer ponies than Horse Haven?"
+    },
+    {
+      "assignment_id": "asg_0fhg3rkv9hb028d6xxgx53553w",
+      "lesson_id": "les_023x6dyc9dbb79g206p9pd6j7c",
+      "title": "Czytam ze zrozumieniem: Spacer w deszczu",
+      "language": "pl",
+      "subject": "polish",
+      "grade": 3,
+      "question_count": 11,
+      "first_say": "Dziś ćwiczysz czytanie ze zrozumieniem. Otwórz opowiadanie „Spacer w deszczu”, przeczytaj je i odpowiedz na pytanie."
+    },
+    {
+      "assignment_id": "asg_1rg97r54e1b42vq6p3wjfkr9k3",
+      "lesson_id": "les_7h3fzt6v0yb6sr0r6ks039kptj",
+      "title": "Litery, głoski, sylaby i alfabet",
+      "language": "pl",
+      "subject": "polish",
+      "grade": 3,
+      "question_count": 11,
+      "first_say": "Dziś liczysz litery, głoski, sylaby i samogłoski, a potem układasz wyrazy według alfabetu. Ile liter ma wyraz „szkoła”?"
+    },
+    {
+      "assignment_id": "asg_67kydsbh5ma9yafdv8mtcccjkr",
+      "lesson_id": "les_35dzxscf7hbagsbt3kfdfmm40z",
+      "title": "Rzeczownik, przymiotnik, czasownik i rodzina wyrazów",
+      "language": "pl",
+      "subject": "polish",
+      "grade": 3,
+      "question_count": 12,
+      "first_say": "Dziś ćwiczysz części mowy: rzeczownik, przymiotnik i czasownik, a na końcu rodzinę wyrazów. Przesuń każdy wyraz do dobrej grupy."
+    },
+    {
+      "assignment_id": "asg_4k9w2t4d5rbwyahw90pa9se3p6",
+      "lesson_id": "les_6hqetrmeg0bqktxa1vqh53c5d0",
+      "title": "Zdania: rozsypanka, rozwijanie i pytania",
+      "language": "pl",
+      "subject": "polish",
+      "grade": 3,
+      "question_count": 12,
+      "first_say": "Dziś ćwiczysz zdania: układasz je z rozsypanki, rozwijasz i zadajesz pytania do wyrazów. Ułóż zdanie z tych wyrazów."
+    },
+    {
+      "assignment_id": "asg_36xynjx1e3a65sbrh7bvzpe8k9",
+      "lesson_id": "les_4tgxbakxsha3rb1httn8rsm4p8",
+      "title": "Ortografia, zaproszenie, życzenia i adres",
+      "language": "pl",
+      "subject": "polish",
+      "grade": 3,
+      "question_count": 15,
+      "first_say": "Dziś ćwiczysz pisownię: ó i u, rz i ż, ch i h, wielką literę. Potem zaproszenie, ogłoszenie, życzenia i adres na kartce. Wybierz słowo napisane poprawnie."
     }
   ]
 }
