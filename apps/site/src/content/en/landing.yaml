@@ -121,7 +121,6 @@ promises:
 partner:
   heading: Learning with you close by
   text: Your child practices at their own pace. On your child's page you see each goal, with what they can do now, what they're working on and what comes next.
-  pic: "A sprout grows out of the pencil pot faster than the court can keep up: Jadwiga waters it from the top of Linijka, Gumka holds her steady and Ołówek marks the new height."
   # Tymek's short story beside it (dl-w0b4.143; draft), replacing the screenshot of Marta's page. Tymek is
   # a made-up child from the demo film. The labels are the app's own (packages/copy parent_goal_*,
   # parent_new_lesson_child, parent_child_grade).

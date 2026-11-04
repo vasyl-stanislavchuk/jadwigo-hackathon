@@ -87,7 +87,6 @@ export const landingSchema = z.object({
   partner: z.object({
     heading: text,
     text,
-    pic: text,
     // Tymek, a made-up child from the demo film: his child page in the app's own lists, its new-lesson
     // button, and the sheet it makes. `alt` tells the whole loop, for a reader who can't see it.
     story: z.object({

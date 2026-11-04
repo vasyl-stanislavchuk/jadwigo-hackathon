@@ -1,6 +1,6 @@
 ---
 // Tymek's short story (dl-w0b4.143): the landing page's cut of the demo film's vision scene (S12 v3).
-// Tymek, a made-up child, sits with his dad at the table from the film. Above them, his child page in
+// Tymek, a made-up child, sits with his dad at the table from the film. Beside them, his child page in
 // the app's own lists. The new-lesson button is pressed, a sheet drops onto the table (7 × 9 split into
 // 7 × 5 and 7 × 4), and Tymek fills it in. One 10 s CSS loop, no script. With reduced motion the loop
 // never runs and the last frame shows, still. The words are landing.yaml's; the art is H1's pose from
@@ -13,9 +13,12 @@ import { landingWords } from "../lib/words.ts";
 
 interface Props {
   lang: Language;
+  // The partner block puts the two halves on its two sides (dl-w0b4.146): `page`, the child page under
+  // the text, and `table`, the scene. Both run on the page's one clock, so they stay in step.
+  part: "page" | "table";
 }
 
-const { lang } = Astro.props;
+const { lang, part } = Astro.props;
 const s = (await landingWords(lang)).partner.story;
 
 // The pose is 1152 × 768. Its sheet lies on the table, turned to face Tymek: this matrix maps a
@@ -31,8 +34,9 @@ const dots = Array.from({ length: 63 }, (_, i) => ({
 const done = [48, 42, 36];
 ---
 
-<figure class="story" role="img" aria-label={s.alt}>
-  <div class="window" aria-hidden="true">
+{
+  part === "page" ? (
+<div class="window" aria-hidden="true">
     <span class="bar"><i></i><i></i><i></i></span>
     <div class="head">
       <span class="avatar">{s.name.slice(0, 1)}</span>
@@ -50,7 +54,8 @@ const done = [48, 42, 36];
       }
     </dl>
   </div>
-
+  ) : (
+    <figure class="story" role="img" aria-label={s.alt}>
   <svg class="scene" viewBox="40 0 1100 770" aria-hidden="true" data-audience="kid">
     <image href={pose.src} x="0" y="0" width="1152" height="768" />
     <g transform={sheet}>
@@ -107,10 +112,12 @@ const done = [48, 42, 36];
       {dots.map((d) => <circle class="dot" cx={d.x} cy={d.y} r="7" />)}
     </g>
   </svg>
-</figure>
+    </figure>
+  )
+}
 
 <style>
-  .story { margin: 0; display: grid; gap: 0.75rem; }
+  .story { margin: 0; }
   /* The child page, on the adult scale, in the frame the screenshot had. */
   .window {
     background: var(--jw-card); border: var(--jw-border) solid var(--jw-ink); border-radius: var(--jw-radius-card);
@@ -178,10 +185,11 @@ const done = [48, 42, 36];
   @keyframes ty-a2 { 0%, 65% { opacity: 0; } 68%, 100% { opacity: 1; } }
   @keyframes ty-a3 { 0%, 76% { opacity: 0; } 79%, 100% { opacity: 1; } }
   @keyframes ty-fly {
-    /* Down Tymek's right side, never across a face, then onto the table in front of him. */
-    0%, 29% { opacity: 0; transform: translate(1090px, -40px) rotate(10deg) scale(0.5); }
-    31% { opacity: 1; }
-    36% { opacity: 1; transform: translate(1050px, 400px) rotate(2deg) scale(0.46); }
+    /* From the page on the left, over both heads, then down the gap between them: never across a face. */
+    0%, 29% { opacity: 0; transform: translate(60px, -90px) rotate(-10deg) scale(0.5); }
+    31% { opacity: 1; transform: translate(140px, -90px) rotate(-8deg) scale(0.5); }
+    34% { opacity: 1; transform: translate(530px, -80px) rotate(-4deg) scale(0.48); }
+    37% { opacity: 1; transform: translate(530px, 270px) rotate(-6deg) scale(0.45); }
     41% { opacity: 1; transform: translate(640px, 500px) rotate(-12deg) scale(0.42); }
     44%, 100% { opacity: 0; transform: translate(640px, 500px) rotate(-12deg) scale(0.42); }
   }

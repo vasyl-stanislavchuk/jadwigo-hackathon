@@ -124,7 +124,6 @@ promises:
 partner:
   heading: Nauka, przy której jesteś blisko
   text: Dziecko ćwiczy w swoim tempie. Na stronie dziecka widzisz każdy cel, a przy nim to, co już umie, nad czym pracuje i co dalej.
-  pic: "Z doniczki na kredki wyrasta kiełek szybciej, niż dwór nadąża: Jadwiga podlewa go, stojąc na Linijce, Gumka ją przytrzymuje, a Ołówek zaznacza nową wysokość."
   # Tymek's short story beside it (dl-w0b4.143; draft), replacing the screenshot of Marta's page. Tymek is
   # a made-up child from the demo film. The labels are the app's own (packages/copy parent_goal_*,
   # parent_new_lesson_child, parent_child_grade); the skills are catalogue skills (row-2/5/10 and row-7,
