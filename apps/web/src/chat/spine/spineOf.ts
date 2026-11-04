@@ -83,13 +83,26 @@ const NEXT = -2;
 
 /**
  * Which stage a call joins: the engine's table, and on the chat's side only, the question-type
- * lookup under the search, a search-stage verb. Any other verb (an edit, a read, a learner verb)
- * joins the stage being worked on (handoff §2 item 2): edits after a check re-check (s06).
+ * lookup under the search, a search-stage verb. An edit has a stage by what it is for (`editOf`);
+ * any other verb (a read, a learner verb) joins the stage work is on (handoff §2 item 2).
  */
 const STAGE_OF: Readonly<Partial<Record<VerbName, number>>> = {
   ...PLAN_STAGE_OF,
   question_types: 0,
 };
+
+/**
+ * Edits are drafting until a check has run; after a check, they are fixing (lead, dl-uukj.47.71.49,
+ * handoff s06). An edit with no check before it in the turn is drafting work: it joins Układanie
+ * lekcji and continues its visit ("dodane zadanie 5, poprawione 1 i 3"). An edit after a check is
+ * fixing what the check found: it resumes Sprawdzanie lekcji, its next visit ("drugi raz"). `work`
+ * is the verb the visit rule compares, so a drafting edit counts as the draft's own work.
+ */
+function editOf(checked: boolean): { stage: number; work: VerbName } {
+  return checked
+    ? { stage: PLAN_STAGE_OF.lesson_check ?? 2, work: "lesson_edit" }
+    : { stage: PLAN_STAGE_OF.lesson_draft ?? 1, work: "lesson_draft" };
+}
 
 /** A line placed in the turn: its stage, and the order it came in. */
 interface Placed {
@@ -186,6 +199,8 @@ export function spineOf(
    * finished, as the engine marks a stage done then. Read from the calls, never the plan's statuses.
    */
   const settled = new Map<number, VerbName>();
+  /** A check has run in the turn: from then on an edit is fixing, not drafting (`editOf`). */
+  let checked = false;
   /**
    * Work enters `stage` with `verb`. A new visit (D1, "drugi raz") when work comes back to it from
    * another stage, or when other work resumes it once it finished (s06: an edit after the check).
@@ -235,10 +250,13 @@ export function spineOf(
       }
       case "tool_call": {
         if (calls.has(e.payload.call_id)) break;
-        // A verb with a stage enters it; any other joins the stage work is on, resuming it as its
-        // next visit when it settled done (s06: edits after a check open the check again).
-        const own = STAGE_OF[e.payload.verb] ?? (running() ? current : openStage());
-        if (own !== null && own !== undefined && entries.length > 0) enter(own, e.payload.verb);
+        // A verb with a stage enters it, and so does an edit (`editOf`); any other joins the stage
+        // work is on, between calls the next one it has not reached.
+        const edit = e.payload.verb === "lesson_edit" ? editOf(checked) : null;
+        const own = edit?.stage ?? STAGE_OF[e.payload.verb] ?? (running() ? current : openStage());
+        if (own !== null && own !== undefined && entries.length > 0)
+          enter(own, edit?.work ?? e.payload.verb);
+        if (e.payload.verb === "lesson_check") checked = true;
         const stage = entries.length === 0 ? LOOSE : (own ?? NEXT);
         calls.set(e.payload.call_id, {
           call_id: e.payload.call_id,
