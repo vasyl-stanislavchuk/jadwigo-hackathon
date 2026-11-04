@@ -192,6 +192,10 @@ describe("runner", () => {
     expect(currentOf(one)?.help_released).toBe(1);
     const refused = runner(start, { type: "help", result: help({ released: null }) });
     expect(refused.helpRefused).toBe(true);
+    // dl-uukj.65: nothing now and nothing to come is no help at all, never "have a go first".
+    const none = runner(start, { type: "help", result: help({ released: null, more: false }) });
+    expect(none.helpRefused).toBe(false);
+    expect(none.help).toMatchObject({ card: null, hints: null, worked: null, more: false });
     const twin = question(2, { added: "twin" });
     const four = runner(start, {
       type: "help",

@@ -106,6 +106,19 @@ function pageHelp(released: ReleasedHelp, more: boolean): PageHelp {
   };
 }
 
+/** A rung with nothing in it and nothing after it: how a page says a question has no help left. */
+const NO_HELP_LEFT: PageHelp = {
+  rung: 0,
+  card: null,
+  focus: null,
+  given: null,
+  worked: null,
+  blank: false,
+  twin: null,
+  more: false,
+  hints: null,
+};
+
 /** A question's help note on arrival: the last rung it has had released, so a reload shows it. */
 function helpOf(question: PageAttemptQuestion | undefined): PageHelp | null {
   const last = question?.help.at(-1);
@@ -245,6 +258,10 @@ export function runner(state: RunnerState, action: RunnerAction): RunnerState {
       const { result } = action;
       if (result.seq !== state.seq || state.phase !== "live") return state;
       if (result.released === null) {
+        // Nothing now and nothing to come: the question has no help left, so the note stays shut
+        // and the bulb gives way to "Jeszcze nie wiem" (StepShell reads an empty rung so, dl-uukj.29.154).
+        // Only the gate, with more to come after a try, says to have a go first (dl-uukj.65).
+        if (!result.more) return { ...state, help: NO_HELP_LEFT, helpRefused: false };
         return { ...state, helpRefused: true };
       }
       const help = pageHelp(result.released, result.more);
