@@ -9,6 +9,7 @@
 // (JW_E2E_API=1), with the api and e2e/auth-server.ts started as parent.spec.ts's header says.
 import { expect, type Page, test } from "@playwright/test";
 import { agreeToAi } from "./consent.ts";
+import { typeName } from "./given.ts";
 
 /** Types `value` into the question's first field, replacing what is there, and presses Sprawdź. */
 async function answer(page: Page, value: string): Promise<void> {
@@ -22,6 +23,7 @@ async function answer(page: Page, value: string): Promise<void> {
 async function playWithAMiss(page: Page): Promise<void> {
   await page.goto("/");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   await expect(page.locator("[data-step-shell]").getByText("2 × 5").first()).toBeVisible();
   await answer(page, "7");
   await expect(page.locator("[data-bar]")).toHaveAttribute("data-band", "miss");

@@ -8,11 +8,13 @@
 // parent.spec.ts's header says.
 import { expect, type Page, test } from "@playwright/test";
 import { agreeToAi } from "./consent.ts";
+import { typeName } from "./given.ts";
 
 /** Plays equal-groups: 2 × 5 right on the first try, "Not sure yet" to every other question. */
 async function play(page: Page): Promise<void> {
   await page.goto("/");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   await expect(page.locator("[data-step-shell]").getByText("2 × 5").first()).toBeVisible();
   await page.locator("[data-field]").first().click();
   await page.keyboard.type("10");

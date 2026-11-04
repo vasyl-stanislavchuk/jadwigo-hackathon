@@ -119,6 +119,13 @@ export async function giveLesson(
     : `/play/${given.assignment.id}`;
 }
 
+/** Past a featured lesson's first screen, which asks who is playing (dl-5ssh.156): a typed name,
+ * so the attempt carries it to the end, where a parent can keep it. */
+export async function typeName(page: Page, name = "Ola"): Promise<void> {
+  await page.locator("[data-intro-name]").fill(name);
+  await page.locator("[data-intro-start]").click();
+}
+
 /** Past a given lesson's first screen, as the child the link names. */
 export async function confirmChild(page: Page): Promise<void> {
   await page.locator("[data-intro-yes]").click();

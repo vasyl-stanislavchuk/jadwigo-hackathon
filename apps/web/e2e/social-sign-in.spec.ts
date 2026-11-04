@@ -16,11 +16,13 @@
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
 import { AUTH_ORIGIN } from "./auth-origin.ts";
 import { agreeToAi } from "./consent.ts";
+import { typeName } from "./given.ts";
 
 /** Plays equal-groups from the home page to the results, saying "Not sure yet" to every question. */
 async function playToTheEnd(page: Page): Promise<void> {
   await page.goto("/");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   const results = page.locator("[data-results]");
   for (let i = 0; i < 12; i++) {
     await expect(page.locator("[data-bulb]").or(results)).toBeVisible();

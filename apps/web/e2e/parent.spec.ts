@@ -12,6 +12,7 @@
 //     AUTH_JWKS_URL=http://127.0.0.1:54321/auth/v1/.well-known/jwks.json bun apps/api/src/serve.ts &
 import { expect, type Page, test } from "@playwright/test";
 import { agreeToAi } from "./consent.ts";
+import { typeName } from "./given.ts";
 
 /** Opens the help note and says "Not sure yet". */
 async function notSureYet(page: Page): Promise<void> {
@@ -23,6 +24,7 @@ async function notSureYet(page: Page): Promise<void> {
 async function playToTheEnd(page: Page): Promise<void> {
   await page.goto("/");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   const results = page.locator("[data-results]");
   for (let i = 0; i < 12; i++) {
     await expect(page.locator("[data-bulb]").or(results)).toBeVisible();
