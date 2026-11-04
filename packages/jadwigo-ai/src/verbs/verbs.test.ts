@@ -287,6 +287,63 @@ describe("a rewritten question's skill (dl-hin8.49)", () => {
   });
 });
 
+const CREDIT = {
+  source: "khan",
+  ref: "xmadeup0001",
+  licence: "cc-by-nc-sa-4.0",
+  original_lang: "en",
+  checked: "2026-11-03",
+};
+
+describe("a rewritten question's credit (dl-qgeu3)", () => {
+  /** A drafted lesson whose s01 carries a bank item's credit, as a real draw does. */
+  async function credited() {
+    const { verbs, run, lesson_file } = await drafted();
+    const file = structuredClone(lesson_file) as {
+      script: { parts: { steps: Record<string, unknown>[] }[] };
+    };
+    const first = file.script.parts[0]?.steps[0];
+    if (first === undefined) throw new Error("no s01");
+    first["credit"] = CREDIT;
+    const at = (call_id: string) =>
+      contextFor(run, call_id, { revision: 1, lesson_file: file as never });
+    return { verbs, run, at, data: (first["question"] as { data: object }).data };
+  }
+
+  it("drops once words, data and answer all changed, and keeps based_on", async () => {
+    const { verbs, run, at, data } = await credited();
+    const effect = await verbs.lesson_edit.run(at("call_rewrite"), {
+      draft_id: run,
+      names: [],
+      step_id: "s01",
+      why: "the parent's ask",
+      change: "numbers",
+      patch: {
+        say: "Ile to jest 49 : 7?",
+        question: {
+          data: { ...data, figure: { kind: "expression", text: "49 : 7 = ?" } },
+          key: { accept: ["7"] },
+        },
+      },
+    });
+    const step = stepsOf(effect.lesson_file)[0] as unknown as Record<string, unknown>;
+    expect(step).not.toHaveProperty("credit");
+    expect(JSON.stringify(step)).not.toContain("xmadeup0001");
+  });
+
+  it("stays on a smaller change", async () => {
+    const { verbs, run, at } = await credited();
+    const effect = await verbs.lesson_edit.run(at("call_small"), {
+      draft_id: run,
+      names: [],
+      step_id: "s01",
+      why: "the parent's ask",
+      patch: { say: "Policz, proszę." },
+    });
+    expect(stepsOf(effect.lesson_file)[0]).toHaveProperty("credit", CREDIT);
+  });
+});
+
 describe("lesson_check", () => {
   it("refuses a rung the bank's copy holds, and fills one it leaves empty", async () => {
     const { verbs, run, at, lesson_file } = await drafted();

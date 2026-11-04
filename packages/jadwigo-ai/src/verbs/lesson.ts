@@ -101,6 +101,17 @@ function writable(file: Json): Json {
   return file;
 }
 
+/** Whether an edit changed a step's words, data and answer: a new question, not an adapted one. */
+function rewritten(before: Step, after: Step): boolean {
+  const question = (step: Step) => (isObject(step["question"]) ? step["question"] : {});
+  const changed = (a: unknown, b: unknown) => !isDeepStrictEqual(a, b);
+  return (
+    changed(before["say"], after["say"]) &&
+    changed(question(before)["data"], question(after)["data"]) &&
+    changed(question(before)["key"], question(after)["key"])
+  );
+}
+
 /** A model-written twin uses its parent's family when only say/data/key were supplied. */
 function inheritTwinFamily(step: Step): Step {
   const question = isObject(step["question"]) ? step["question"] : {};
@@ -433,6 +444,9 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   const helpPatch = isObject(question) && isObject(question["help"]) ? question["help"] : {};
   const edited = helpPatch["twin"] === undefined ? merged : inheritTwinFamily(merged);
   edited.id = step.id;
+  // Numbers, answer and words all new: it no longer shows its source's credit (the owner's decision
+  // dl-qgeu3). based_on keeps where it started, so this stays auditable.
+  if (rewritten(step, edited)) delete edited["credit"];
   const copied = copiedChanges(step, edited);
   if (copied.length > 0 && (why === null || why.trim() === "")) {
     throw new VerbError(
