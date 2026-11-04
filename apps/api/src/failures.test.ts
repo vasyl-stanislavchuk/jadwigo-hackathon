@@ -6,6 +6,8 @@ import { ErrorType } from "@jadwigo/contracts";
 import { InMemoryStore, type Store, StoreError } from "@jadwigo/store";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "./app.ts";
+import { rebuildAfter } from "./mastery.ts";
+import { setReporter } from "./report.ts";
 
 function get(path: string) {
   return {
@@ -32,6 +34,7 @@ function failing(error: unknown): Store {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  setReporter(() => Promise.resolve());
 });
 
 describe("a failing route", () => {
@@ -54,6 +57,45 @@ describe("a failing route", () => {
       error: { name: "Error", message: "connection terminated unexpectedly" },
     });
     expect(line.error.stack).toContain("connection terminated unexpectedly");
+  });
+
+  it("reports the failure once with its route, and still answers 500", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const failure = new Error("connection terminated unexpectedly");
+    const report = vi.fn(() => Promise.resolve());
+    const app = createApp(failing(failure), { report });
+    const reply = (await app.resolve(get("/api/v1/featured-lessons"), context)) as {
+      statusCode: number;
+    };
+    expect(reply.statusCode).toBe(500);
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith(failure, {
+      route: "featuredLessons",
+      request_id: undefined,
+    });
+  });
+
+  it("reports a mastery rebuild it caught, and carries on", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const report = vi.fn(() => Promise.resolve());
+    setReporter(report);
+    const failure = new Error("fold failed");
+    const store = new InMemoryStore();
+    store.findLearnerPod = async () => {
+      throw failure;
+    };
+    const learner = "lrn_00000000000000000000000000" as Parameters<typeof rebuildAfter>[1];
+    await expect(rebuildAfter(store, learner, new Date(0))).resolves.toBeUndefined();
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith(failure, { operation: "mastery_rebuild" });
+  });
+
+  it("reports nothing for a refusal the API names", async () => {
+    const report = vi.fn(() => Promise.resolve());
+    const refusal = new StoreError(ErrorType.enum.NotFound, "no such pod");
+    const app = createApp(failing(refusal), { report });
+    await app.resolve(get("/api/v1/featured-lessons"), context);
+    expect(report).not.toHaveBeenCalled();
   });
 
   it("logs nothing for a refusal the API names: a 4xx is no failure", async () => {

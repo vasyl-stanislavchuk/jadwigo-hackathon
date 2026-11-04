@@ -64,6 +64,21 @@ module.exports = {
       to: { path: "node_modules/posthog-js/" },
     },
     {
+      name: "posthog-node-only-in-analytics",
+      comment:
+        "The server SDK is configured in one place, so every report passes the scrubber (dl-5ssh.158).",
+      severity: "error",
+      from: { pathNot: "^packages/analytics/" },
+      to: { path: "node_modules/posthog-node/" },
+    },
+    {
+      name: "no-server-analytics-in-the-browser",
+      comment: "posthog-node must never reach a browser bundle (dl-5ssh.158).",
+      severity: "error",
+      from: { path: "^(apps/web|apps/site|packages/lesson-kit|packages/ui)/" },
+      to: { path: "^packages/analytics/src/server\\.ts$" },
+    },
+    {
       name: "no-circular",
       severity: "error",
       from: {},

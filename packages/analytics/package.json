@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts"
   },
   "scripts": {
     "lint": "biome check .",
@@ -12,6 +13,7 @@
     "test": "vitest run --config ../../vitest.config.ts --project unit"
   },
   "//": {
+    "posthog-node": "the server SDK reportServerError sends through (src/server.ts); only the Lambdas load it",
     "posthog-js": "the browser SDK startAnalytics loads once a key is set (src/start.ts); its types shape the options (src/options.ts)",
     "@jadwigo/config": "the EU PostHog host, posthogHosts (src/options.ts)",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
@@ -20,7 +22,8 @@
   },
   "dependencies": {
     "@jadwigo/config": "workspace:*",
-    "posthog-js": "catalog:"
+    "posthog-js": "catalog:",
+    "posthog-node": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
