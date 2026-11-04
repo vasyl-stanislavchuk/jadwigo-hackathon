@@ -425,9 +425,11 @@ const KEYBOARD_SETTLE_MS = 600;
  * row) ride on top of it (rule 18): whether it is up, from the visual viewport. How far it covers
  * the window is written straight to --kid-keyboard (styles/stage.css) on every frame the viewport
  * moves, never through a render, so the row keeps to the keyboard's top while iOS slides it in and
- * pans the page (dl-uukj.29.170). Once the keyboard settles, the focused field in `shell` is shown
- * again between the top bar and the row: iOS's own scroll leaves it just above the keyboard, under
- * the row. */
+ * pans the page (dl-uukj.29.170). Once the keyboard settles, or the child taps another field while
+ * it is up, the focused field in `shell` is shown again between the top bar and the row, in one
+ * jump: iOS's own scroll leaves it just above the keyboard, under the row (dl-uukj.29.172). The
+ * page's room under the stage comes from --kid-keyboard-room, the keyboard's height, which a pan
+ * does not change: padding that moved with the pan fed iOS's scroll back into itself and shook. */
 function useKeyboardInset(on: boolean, shell: RefObject<HTMLElement | null>): boolean {
   const [up, setUp] = useState(false);
   useEffect(() => {
@@ -438,20 +440,29 @@ function useKeyboardInset(on: boolean, shell: RefObject<HTMLElement | null>): bo
       return;
     }
     let shown = 0;
+    let shownField: Element | null = null;
     let frame = 0;
     let until = 0;
     const write = (): number => {
       const inset = keyboardInset(window.innerHeight, viewport);
+      const room = Math.max(0, Math.round(window.innerHeight - viewport.height));
       if (inset > 0) root.style.setProperty("--kid-keyboard", `${inset}px`);
       else root.style.removeProperty("--kid-keyboard");
+      if (room > 0) root.style.setProperty("--kid-keyboard-room", `${room}px`);
+      else root.style.removeProperty("--kid-keyboard-room");
       setUp(inset > KEYBOARD_MIN);
       return inset;
     };
     const settle = (inset: number): void => {
-      if (inset <= KEYBOARD_MIN || Math.abs(inset - shown) <= 40) return;
-      shown = inset;
       const field = document.activeElement;
-      if (field instanceof HTMLElement && shell.current?.contains(field)) scrollToShow(field);
+      if (inset <= KEYBOARD_MIN) return;
+      // The keyboard's height, not the inset: a pan by the child moves the inset, not the keyboard.
+      const room = Math.round(window.innerHeight - viewport.height);
+      if (Math.abs(room - shown) <= 40 && field === shownField) return;
+      shown = room;
+      shownField = field;
+      if (field instanceof HTMLElement && shell.current?.contains(field))
+        scrollToShow(field, undefined, true);
     };
     const follow = (): void => {
       const inset = write();
@@ -459,7 +470,10 @@ function useKeyboardInset(on: boolean, shell: RefObject<HTMLElement | null>): bo
       else {
         frame = 0;
         settle(inset);
-        if (inset <= KEYBOARD_MIN) shown = 0;
+        if (inset <= KEYBOARD_MIN) {
+          shown = 0;
+          shownField = null;
+        }
       }
     };
     const read = (): void => {
@@ -471,11 +485,16 @@ function useKeyboardInset(on: boolean, shell: RefObject<HTMLElement | null>): bo
     write();
     viewport.addEventListener("resize", read);
     viewport.addEventListener("scroll", read);
+    // A tap on another field while the keyboard stays up: settle once iOS's own scroll is done.
+    const box = shell.current;
+    box?.addEventListener("focusin", read);
     return () => {
       viewport.removeEventListener("resize", read);
       viewport.removeEventListener("scroll", read);
+      box?.removeEventListener("focusin", read);
       if (frame !== 0) cancelAnimationFrame(frame);
       root.style.removeProperty("--kid-keyboard");
+      root.style.removeProperty("--kid-keyboard-room");
     };
   }, [on, shell]);
   return up;

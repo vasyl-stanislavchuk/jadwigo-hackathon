@@ -1316,10 +1316,11 @@ html:has(
 }
 
 /* The fold arrow hangs over the dock line too, so the last field can scroll clear of it
- * (dl-uukj.29.111, dl-uukj.29.170). */
+ * (dl-uukj.29.111, dl-uukj.29.170). The room is the keyboard's height, which a pan does not
+ * change, so the page's height holds still while iOS pans it (dl-uukj.29.172). */
 .kid-step-shell[data-framed][data-keyboard] > [data-stage] {
   padding-bottom: calc(
-    var(--kid-keyboard, 0px) +
+    var(--kid-keyboard-room, 0px) +
     var(--kid-tray-height, 0px) +
     var(--kid-fold-overhang, 0px) +
     1rem
