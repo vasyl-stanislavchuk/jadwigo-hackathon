@@ -1,5 +1,6 @@
 import { createPublicKey, type JsonWebKey, verify } from "node:crypto";
 import { Uuid } from "@jadwigo/contracts";
+import { reportFailure } from "./report.ts";
 
 /**
  * Who a token route's caller is, from a verified Supabase Auth token (docs/research/parent-login.md).
@@ -145,6 +146,7 @@ export function jwksAuth(
           (error: unknown) => {
             nextLoadAt = Date.now() + RETRY_MS;
             logJwksFailure(error);
+            return reportFailure(error, { operation: "jwks_read" });
           },
         )
         .finally(() => {
