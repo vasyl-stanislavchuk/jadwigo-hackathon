@@ -15,11 +15,8 @@
 {% macro _template(q, text) %}
 {% set by_id = gaps_by_id(q.data.gaps) %}
 {% if q.data.template %}
-<div class="template">
-{%- for kind, piece in text.split(q.data.template) -%}
-{% if kind == "text" %}{{ text.rich(piece) }}{% elif piece in by_id %}{{ _gap(by_id[piece]) }}{% else %}{{ "{" ~ piece ~ "}" }}{% endif %}
-{%- endfor -%}
-</div>
+{% set markers = {} %}{% for id, gap in by_id.items() %}{% set _ = markers.update({id: _gap(gap)}) %}{% endfor %}
+<div class="template">{{ text.fill(q.data.template, markers) }}</div>
 {% endif %}
 {%- endmacro %}
 
@@ -37,14 +34,15 @@
 {#- Given cells grey, empty cells white with a thicker border: a white cell is the child's job. -#}
 {% macro _table(q, text) %}
 {% set by_id = gaps_by_id(q.data.gaps) %}
-<table class="grid">
+{% set markers = {} %}{% for id, gap in by_id.items() %}{% set _ = markers.update({id: _gap(gap)}) %}{% endfor %}
+<table class="grid{% if q.data.table.header %} headed{% endif %}">
   {% if q.data.table.header %}<tr>{% for h in q.data.table.header %}<th>{{ text.rich(h) }}</th>{% endfor %}</tr>{% endif %}
   {% for row in q.data.table.rows %}
   <tr>
   {% for cell in row %}
     {% set parts_ = text.split(cell) %}
     {% if parts_|length == 1 and parts_[0][0] == "marker" and parts_[0][1] in by_id %}<td class="open">{% if by_id[parts_[0][1]].kind == "choose" %}{{ _gap(by_id[parts_[0][1]]) }}{% endif %}</td>
-    {% else %}<td>{% for kind, piece in parts_ %}{% if kind == "text" %}{{ text.rich(piece) }}{% elif piece in by_id %}{{ _gap(by_id[piece]) }}{% endif %}{% endfor %}</td>{% endif %}
+    {% else %}<td{% if q.data.table.header and loop.first %} class="row-head"{% endif %}>{{ text.fill(cell, markers) }}</td>{% endif %}
   {% endfor %}
   </tr>
   {% endfor %}
@@ -92,7 +90,7 @@
 
 {#- Bricks, top row first: given numbers printed, empty bricks white for the child. -#}
 {% macro _pyramid(q, text) %}
-{% set bw, bh = geom.BRICK_W_MM, geom.BRICK_H_MM %}
+{% set bw, bh = geom.BRICK_W_MM + geom.BRICK_GAP_MM, geom.BRICK_H_MM + geom.BRICK_GAP_MM %}{% set gap = geom.BRICK_GAP_MM %}
 {% set rows = q.data.pyramid %}
 {% set n = rows|map("length")|max %}
 {% set fs = geom.FIGURE_PT / geom.PT_PER_MM %}
@@ -103,7 +101,7 @@
   {% set ox = (n - row|length) * bw / 2 %}
   {% for cell in row %}
   {% set is_gap = cell is string and cell.startswith("{") %}
-  <rect x="{{ ox + loop.index0 * bw + geom.STROKE_MM }}" y="{{ y + geom.STROKE_MM }}" width="{{ bw - 2 * geom.STROKE_MM }}" height="{{ bh - 2 * geom.STROKE_MM }}"
+  <rect x="{{ ox + loop.index0 * bw + gap / 2 }}" y="{{ y + gap / 2 }}" width="{{ bw - gap }}" height="{{ bh - gap }}" rx="{{ geom.STROKE_MM * 2 }}"
         fill="{{ '#fff' if is_gap else geom.SHADE }}" stroke="#000" stroke-width="{{ geom.STROKE_MM * (2.5 if is_gap else 1) }}"/>
   {% if not is_gap %}<text x="{{ ox + (loop.index0 + 0.5) * bw }}" y="{{ y + bh / 2 + fs * 0.35 }}" font-size="{{ fs }}" text-anchor="middle">{{ cell|num if cell is number else cell }}</text>{% endif %}
   {% endfor %}

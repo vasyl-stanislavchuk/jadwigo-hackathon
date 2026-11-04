@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Tick ✓ each question you have done." |
+* | "If you like, tick ✓ the questions you have done." |
 *
 * @param {Print_Card_NoteInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

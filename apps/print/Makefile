@@ -22,8 +22,8 @@ help: ## list targets
 test: ## pytest; the layout tests skip where pango is missing (brew install pango)
 	uv run --frozen pytest -q
 
-sample: ## draw SHEET (the 20-question fixture) to OUT with this machine's pango, and open it
-	uv run --frozen python -m printer $(SHEET) $(OUT)
+sample: ## draw SHEET (the 20-question fixture) to OUT with this machine's pango, its pictures from memory, and open it
+	uv run --frozen python tests/sample.py $(SHEET) $(OUT)
 	@if command -v open >/dev/null; then open $(OUT); fi
 
 image: ## build the image for Lambda's arm64, tagged $(LOCAL)

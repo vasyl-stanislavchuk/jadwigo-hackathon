@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "Answer card" |
+* | "Answer card (optional)" |
 *
 * @param {Print_Card_TitleInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options

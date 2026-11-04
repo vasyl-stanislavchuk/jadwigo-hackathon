@@ -24,8 +24,17 @@
 <div class="answer">{{ parts.write_line() }}</div>
 {%- endmacro %}
 
-{#- The equation with a box for its answer. -#}
-{% macro expression(q, text, sheet) %}{{ _with_box(q, text) }}{% endmacro %}
+{#- The equation with a box for its answer; a written sum or product under a picture gets a wide
+    box, centred under what it describes. -#}
+{% macro expression(q, text, sheet) %}
+{% set s = q.data.stem %}
+{% if s and s.text and not s.text_replaces_say and only_text(s) and not q.data.figure %}{{ _with_box(q, text) }}
+{% else %}
+{{ parts.stem(s, text) }}
+{% if q.data.figure %}{{ figures.figure(q.data.figure, text) }}{% endif %}
+<div class="answer center">{{ parts.box("expression") }}</div>
+{% endif %}
+{%- endmacro %}
 
 {#- The object over a ruler drawn to its own scale, then "[ ] cm". -#}
 {% macro measure(q, text, sheet) %}

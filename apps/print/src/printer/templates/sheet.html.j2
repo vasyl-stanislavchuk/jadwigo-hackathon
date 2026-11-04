@@ -14,12 +14,17 @@
 <header class="head">
   <h1>{{ sheet.title }}</h1>
   <p class="who">{{ sheet.labels.name }} <span></span> {{ sheet.labels.date }} <span></span></p>
+</header>
+{#- Page 1's legend of paper marks, small and grey, centred under the footer's title line. -#}
+<div class="first-foot">
+  <p class="line"><span>{{ sheet.labels.brand }} · {{ sheet.title }}</span>
+  <span>{{ sheet.labels.page }} 1 {{ sheet.labels.page_of }} {{ pages or 1 }}{% if (pages or 1) > 1 %}&#8195;{{ sheet.labels.next }} <img src="next.svg" alt="">{% endif %}</span></p>
   <p class="legend">
   {% for action in ["circle", "tick", "write", "draw", "join", "number"] %}
-    <span class="mark">{{ icons.action(action) }}{{ sheet.labels.legend[action] }}</span>
+    <span class="mark" style="color: {{ geom.ACTION_COLOURS[action] }}">{{ icons.action(action) }}<span class="word">{{ sheet.labels.legend[action] }}</span></span>
   {% endfor %}
   </p>
-</header>
+</div>
 <main>
 {% for row in rows %}
   <div class="row{% if row.id in breaks %} break{% endif %}" id="{{ row.id }}">
