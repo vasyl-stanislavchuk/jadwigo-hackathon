@@ -1,7 +1,7 @@
 /**
  * The app's PostHog (decision dl-376c8, dl-uukj.56): started once from main.tsx with the build's
- * public key, never on the owner's /playground. Nothing is captured until a parent answers the
- * banner on the parent screens; a learner's screen records only on a device whose parent said yes.
+ * public key, never on the owner's /playground. Every browser that has not said no is opted in from
+ * the first page, a learner's screens included (the owner's call on 2026-11-04, dl-w0b4.129).
  */
 import {
   acceptConsent,

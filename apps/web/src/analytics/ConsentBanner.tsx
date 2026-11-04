@@ -1,9 +1,8 @@
 /**
  * The one cookie banner (dl-w0b4.118, decision dl-376c8), the same as the site's
  * (apps/site/src/components/Analytics.astro). It shows only while PostHog has started and nobody on
- * this browser has answered, on jadwigo.pl or here: the answer is a .jadwigo.pl cookie. Accept turns
- * on the cookie and replay; the × is a no, which counts the visit cookieless. A child on /play never
- * sees it.
+ * this browser has answered. Since dl-w0b4.129 startAnalytics opts every unanswered browser in, so
+ * it does not show; it stays for when consent-first returns. Accept opts in, the × opts out.
  */
 import { hosts } from "@jadwigo/config";
 import { copy, type Language } from "@jadwigo/copy";

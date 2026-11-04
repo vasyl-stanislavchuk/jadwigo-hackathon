@@ -22,7 +22,8 @@ let client: Client | null = null;
 /** `off` when PostHog never started (no key); otherwise the visitor's answer to the banner. */
 export type ConsentStatus = "off" | "pending" | "granted" | "denied";
 
-/** Starts PostHog once, when `key` is set, and resolves to the consent status. */
+/** Starts PostHog once, when `key` is set, and resolves to the consent status. A browser that has
+ * not answered is opted in (dl-w0b4.129); one that said no stays opted out. */
 export async function startAnalytics(
   key: string | null | undefined,
   surface: Surface,
@@ -31,6 +32,7 @@ export async function startAnalytics(
   if (client === null && key) {
     const loaded = await load();
     loaded.init(key, posthogOptions(surface));
+    if (loaded.get_explicit_consent_status() === "pending") loaded.opt_in_capturing();
     client = loaded;
   }
   return consentStatus();
@@ -45,7 +47,7 @@ export function acceptConsent(): void {
   client?.opt_in_capturing();
 }
 
-/** No on the banner: the visit is still counted, cookieless, and nothing is stored or recorded. */
+/** Opts this browser out: nothing more is captured, stored or recorded. */
 export function rejectConsent(): void {
   client?.opt_out_capturing();
 }
