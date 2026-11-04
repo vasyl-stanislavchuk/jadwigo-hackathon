@@ -27,6 +27,7 @@ import {
   type QuestionType,
 } from "@jadwigo/contracts";
 import { type CopyKey, copy } from "@jadwigo/copy";
+import { labelLines, textOnly } from "../parts/labelWidths.ts";
 import { paperHtml } from "./text.ts";
 
 /** One question of the lesson, as the compiler or the store gives it; its key and help are ignored. */
@@ -249,14 +250,58 @@ const NOT_TEXT = new Set([
   "items",
 ]);
 
-/** Every text leaf of a value, and every picture address (`src`, or a string `image`). */
-function walk(value: unknown, strings: Set<string>, srcs: Set<string>, key = ""): void {
-  if (typeof value === "string") {
+/** Khan's `\small{…}` around a label's TeX. */
+const SMALL = /\\small\s*\{([^{}]*)\}/g;
+
+/**
+ * The strings a picture's labels print as: each line of a label as the TeX the screen's Picture
+ * draws (`$line$`), and its plain words when it is only `\text{…}`, which the print Lambda uses for
+ * a label that wraps (Picture.tsx, labelWidths.ts). A `math: false` label's lines are its words.
+ */
+function labelStrings(labels: unknown, strings: Set<string>, sources: Map<string, string>): void {
+  if (labels === null || typeof labels !== "object" || !("items" in labels)) return;
+  const items = (labels as { items: unknown }).items;
+  if (!Array.isArray(items)) return;
+  for (const item of items) {
+    const content: unknown = item?.content;
+    if (typeof content !== "string") continue;
+    for (const line of labelLines(content)) {
+      if (item.math === false) {
+        strings.add(line);
+        continue;
+      }
+      // Keyed by the line as the lesson wrote it; drawn without Khan's `\small{…}`, so a tick's
+      // number prints in the sheet's face at the label size, not as KaTeX's smaller serif.
+      strings.add(`$${line}$`);
+      // A line that is only words (`\text{cm}`, `\text{\small{cm}}`, a bar's name) prints as those
+      // words in the sheet's face too, never in KaTeX's serif.
+      const bare = line.replace(SMALL, "$1");
+      const words = textOnly(bare);
+      sources.set(`$${line}$`, words ?? `$${bare}$`);
+      if (words !== null) strings.add(words);
+    }
+  }
+}
+
+/**
+ * Every text leaf of a value, and every picture address (`src`, or a string `image`). A label
+ * line's key is in `strings` and, when it is drawn from other TeX, its source is in `sources`.
+ */
+function walk(
+  value: unknown,
+  strings: Set<string>,
+  srcs: Set<string>,
+  sources: Map<string, string>,
+  key = "",
+): void {
+  if (key === "labels" && value !== null && typeof value === "object")
+    labelStrings(value, strings, sources);
+  else if (typeof value === "string") {
     if (key === "src" || key === "image") srcs.add(value);
     else if (!NOT_TEXT.has(key)) strings.add(value);
-  } else if (Array.isArray(value)) for (const v of value) walk(v, strings, srcs, key);
+  } else if (Array.isArray(value)) for (const v of value) walk(v, strings, srcs, sources, key);
   else if (value !== null && typeof value === "object")
-    for (const [k, v] of Object.entries(value)) walk(v, strings, srcs, k);
+    for (const [k, v] of Object.entries(value)) walk(v, strings, srcs, sources, k);
 }
 
 /** The `{id}` markers a question's strings may hold: its options (inline choose) or its gaps. */
@@ -309,9 +354,10 @@ export function buildPrintSheet(input: PrintInput): PrintSheet {
   const creditN = new Map<string, number>();
   const html: Record<string, string> = {};
   const srcs = new Set<string>();
+  const sources = new Map<string, string>();
   const render = (text: string, slots?: ReadonlySet<string>) => {
     if (html[text] !== undefined) return;
-    html[text] = paperHtml(text, {
+    html[text] = paperHtml(sources.get(text) ?? text, {
       language,
       slots,
       media: (src) => {
@@ -350,7 +396,7 @@ export function buildPrintSheet(input: PrintInput): PrintSheet {
       ...printed,
     });
     const strings = new Set<string>([question.say]);
-    walk(question.data, strings, srcs);
+    walk(question.data, strings, srcs, sources);
     for (const text of strings) render(text, slots);
     return question;
   });

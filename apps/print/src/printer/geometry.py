@@ -130,6 +130,16 @@ LEGEND_ICON_MM: Final = 4.0
 #: A picture in a stem never eats a page.
 PICTURE_MAX_W_MM: Final = 120.0
 PICTURE_MAX_H_MM: Final = 60.0
+#: A picture's labels (axis numbers, a bar's name): the screen's text-sm and, wrapped, text-xs, in
+#: pt, scaled with the picture, but never under LABEL_MIN_PT (dl-1eieq.8.14).
+LABEL_PT: Final = 10.5
+LABEL_WRAP_PT: Final = 9.0
+LABEL_MIN_PT: Final = 8.0
+#: A label's padding all round, in em: a gap from the axis or tick it is aligned to, which the
+#: screen's smaller type does not need; a centred label stays centred.
+LABEL_PAD_EM: Final = 0.2
+#: A turned y-axis title keeps its centre this far in from the picture's left edge, in percent.
+LABEL_AXIS_INSET_PCT: Final = 3.0
 
 # --- Answer places -----------------------------------------------------------------------------
 #: A 6- or 7-year-old writes a digit about 7 to 10 mm high, so no answer place is shorter.

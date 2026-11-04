@@ -9,7 +9,7 @@
 {% elif c.kind == "bool" %}{{ sheet.labels.true_word if c.bool else sheet.labels.false_word }}
 {% elif c.kind == "array" %}{{ figures.dots(c.rows, c.cols) }}
 {% elif c.kind == "image" %}{% if text.src(c.image) %}<img src="{{ text.src(c.image) }}" alt="{{ c.alt }}">{% endif %}
-{% elif c.kind == "pictures" %}{% for p in c.pictures if text.src(p.src) %}<img src="{{ text.src(p.src) }}" alt="{{ p.alt }}">{% endfor %}
+{% elif c.kind == "pictures" %}{% for p in c.pictures if text.src(p.src) %}{{ parts.picture(p, text, geom.OPTION_PICTURE_W_MM, geom.OPTION_PICTURE_H_MM) }}{% endfor %}
 {% elif c.kind == "none" %}{{ sheet.labels.none_word if sheet.labels.none_word is defined else "—" }}
 {% endif %}
 {%- endmacro %}

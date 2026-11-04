@@ -45,9 +45,17 @@
 {% endif %}
 {%- endmacro %}
 
-{% macro picture(p, text, max_w=geom.PICTURE_MAX_W_MM) %}
-{% set w = [p.width * 25.4 / 96, max_w]|min %}
+{#- A picture at its own size within the box, its shape kept, and its labels over it where the
+    screen puts them (labels.py): a bar graph's scale and names, a number line's numbers. -#}
+{% macro picture(p, text, max_w=geom.PICTURE_MAX_W_MM, max_h=geom.PICTURE_MAX_H_MM) %}
+{% set w = picture_width_mm(p, max_w, max_h) %}
+{% set labels = placed_labels(p, text) %}
+{% if labels %}
+<span class="labelled" style="width: {{ w|mm }}"><img class="picture" src="{{ text.src(p.src) }}" alt="{{ p.alt }}" style="width: {{ w|mm }}">
+{%- for l in labels %}<span class="pic-label{% if l.wrap is not none %} wrap{% endif %}" aria-hidden="true" style="left: {{ l.left }}%; top: {{ l.top }}%; transform: {{ l.transform }}; font-size: {{ label_pt(p, w, l.wrap is not none) }}pt;{% if l.wrap is not none %} max-width: {{ l.wrap }}%;{% endif %}">{{ l.html }}</span>{% endfor %}</span>
+{%- else %}
 <img class="picture" src="{{ text.src(p.src) }}" alt="{{ p.alt }}" style="width: {{ w|mm }}">
+{%- endif %}
 {%- endmacro %}
 
 {#- Answer places: a number box, a small digit box, a fraction's two stacked boxes, a writing line. -#}
