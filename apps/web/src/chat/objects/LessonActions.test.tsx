@@ -1,8 +1,9 @@
 // @vitest-environment happy-dom
 /**
  * The lesson card's actions (dl-uukj.47.55), the footer's before #740 (dl-z5ja.108.1.1). Daj
- * lekcję gives at once, with or without a child, and shows one link to copy or open. "Drukuj" draws
- * the lesson's print sheet and asks the browser to print. Not ready, nothing happens.
+ * lekcję gives at once, with or without a child, and shows one link to copy or open. "Drukuj" opens
+ * a tab and sends it to the lesson's PDF from the print routes (dl-1eieq.8.11), or says why not.
+ * Not ready, nothing happens.
  */
 
 import { type Learner, LearnerId } from "@jadwigo/contracts";
@@ -11,7 +12,7 @@ import { foldRun } from "@jadwigo/core";
 import { RUN_LOGS } from "@jadwigo/testing";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LessonActions } from "./LessonActions.tsx";
+import { LessonActions, PrintFailed } from "./LessonActions.tsx";
 
 afterEach(cleanup);
 // Daj lekcję opens a tab; a unit test opens none (no network).
@@ -35,7 +36,7 @@ function footer(changes: Partial<Parameters<typeof LessonActions>[0]> = {}) {
     child: null,
     onGive: vi.fn(),
     lesson,
-    print: vi.fn(),
+    print: vi.fn(async () => "https://bucket.test/sheet.pdf"),
     ...changes,
   };
   render(<LessonActions {...props} />);
@@ -46,10 +47,6 @@ const give = () => document.querySelector("[data-give]") as HTMLElement;
 
 describe("the lesson card's actions (dl-uukj.47.55)", () => {
   it("say who the lesson is for; Drukuj is an icon and prints with no dialog; no Zapisz", async () => {
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((go) => {
-      go(0);
-      return 0;
-    });
     const props = footer();
     expect(document.querySelector("[data-for-whom]")?.textContent).toBe("Dla kogo: Bez dziecka");
     // Every lesson is already in Lekcje (owner, 2026-11-03).
@@ -58,9 +55,6 @@ describe("the lesson card's actions (dl-uukj.47.55)", () => {
     await act(async () => fireEvent.click(document.querySelector("[data-print]") as HTMLElement));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(props.print).toHaveBeenCalledTimes(1);
-    expect(document.querySelector("[data-print-sheet]")).not.toBeNull();
-    await act(async () => window.dispatchEvent(new Event("afterprint")));
-    expect(document.querySelector("[data-print-sheet]")).toBeNull();
     cleanup();
     footer({ child: ola });
     expect(document.querySelector("[data-for-whom]")?.textContent).toBe("Dla kogo: Ola");
@@ -175,26 +169,53 @@ describe("Daj lekcję (dl-z5ja.108.1.1)", () => {
     ).toBe("Dawanie lekcji zadziała po zalogowaniu.");
   });
 
-  it("Drukuj draws the sheet of every step with no answer, and prints", async () => {
-    vi.spyOn(window, "requestAnimationFrame").mockImplementation((go) => {
-      go(0);
-      return 0;
-    });
-    const props = footer();
-    await act(async () => fireEvent.click(document.querySelector("[data-print]") as HTMLElement));
-    expect(props.print).toHaveBeenCalledTimes(1);
-    const sheet = document.querySelector("[data-print-sheet]");
-    expect(sheet?.parentElement).toBe(document.body);
+  it("Drukuj opens a tab in the click and sends it to the lesson's PDF", async () => {
+    const tab = { opener: {}, location: { href: "about:blank" }, close: vi.fn() };
+    vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+    let made: (url: string) => void = () => {};
+    const print = vi.fn(() => new Promise<string>((done) => (made = done)));
+    footer({ print });
+    const button = document.querySelector("[data-print]") as HTMLElement;
+    await act(async () => fireEvent.click(button));
+    expect(window.open).toHaveBeenCalledWith("about:blank", "_blank");
+    expect(button.getAttribute("aria-busy")).toBe("true");
+    expect(document.querySelector("[data-print-said]")?.textContent).toBe("Przygotowuję kartkę…");
+    // A second press while the PDF is made starts nothing new.
+    await act(async () => fireEvent.click(button));
+    expect(print).toHaveBeenCalledTimes(1);
+    await act(async () => made("https://bucket.test/sheet.pdf"));
+    expect(tab.location.href).toBe("https://bucket.test/sheet.pdf");
+    expect(tab.opener).toBeNull();
+    expect(document.querySelector("[data-print-said]")?.textContent).toBe("");
+  });
+
+  it("a print that fails closes its tab and says so, and Drukuj tries again", async () => {
+    const tab = { opener: {}, location: { href: "about:blank" }, close: vi.fn() };
+    vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+    const print = vi
+      .fn<() => Promise<string>>()
+      .mockRejectedValueOnce(new PrintFailed("unavailable"))
+      .mockRejectedValueOnce(new PrintFailed("slow"))
+      .mockResolvedValueOnce("https://bucket.test/sheet.pdf");
+    footer({ print });
+    const button = document.querySelector("[data-print]") as HTMLElement;
+    const said = () => document.querySelector("[data-print-said]")?.textContent;
+    await act(async () => fireEvent.click(button));
+    expect(tab.close).toHaveBeenCalledTimes(1);
+    expect(said()).toBe("Nie udało się przygotować kartki. Spróbuj jeszcze raz.");
+    await act(async () => fireEvent.click(button));
+    expect(said()).toBe("Kartka jeszcze się przygotowuje. Spróbuj za chwilę.");
+    await act(async () => fireEvent.click(button));
+    expect(tab.location.href).toBe("https://bucket.test/sheet.pdf");
+    expect(said()).toBe("");
+  });
+
+  it("with no route to print through, Drukuj is quiet with its reason", () => {
+    footer({ print: undefined });
+    const button = document.querySelector("[data-print]") as HTMLElement;
+    expect(button.getAttribute("aria-disabled")).toBe("true");
     expect(
-      [...(sheet?.querySelectorAll("[data-print-step]") ?? [])].map((s) =>
-        s.getAttribute("data-print-step"),
-      ),
-    ).toEqual(["s02", "s05", "s06", "s07"]);
-    expect(sheet?.textContent).not.toContain("Poprawna odpowiedź");
-    // Only while the sheet is in the page does printing hide the app; after printing it leaves.
-    expect(document.body.hasAttribute("data-printing")).toBe(true);
-    await act(async () => window.dispatchEvent(new Event("afterprint")));
-    expect(document.querySelector("[data-print-sheet]")).toBeNull();
-    expect(document.body.hasAttribute("data-printing")).toBe(false);
+      document.getElementById(button.getAttribute("aria-describedby") ?? "")?.textContent,
+    ).toBe("Dawanie lekcji zadziała po zalogowaniu.");
   });
 });

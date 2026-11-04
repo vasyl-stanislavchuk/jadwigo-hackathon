@@ -200,3 +200,31 @@ for (const [width, height] of [
     expect(box && box.y + box.height <= height).toBe(true);
   });
 }
+
+// Drukuj gets the lesson's PDF from the print routes (dl-1eieq.8.11): the route answers pending,
+// then ready with the PDF's address, and the tab the click opened goes there. The routes and the
+// PDF are stubbed here; on prod they are the API's and the print Lambda's.
+test("Drukuj opens the lesson's PDF from the print routes", async ({ page, context }) => {
+  const id = "a".repeat(64);
+  await page.goto("/playground/workspace");
+  const pdf = new URL("/e2e-print/sheet.pdf", page.url()).href;
+  await context.route("**/api/v1/conversations/*/prints", (route) =>
+    route.fulfill({ json: { status: "pending", print_id: id } }),
+  );
+  await context.route(`**/api/v1/prints/${id}`, (route) =>
+    route.fulfill({
+      json: { status: "ready", print_id: id, url: pdf, expires_at: "2026-11-04T20:00:00.000Z" },
+    }),
+  );
+  await context.route("**/e2e-print/sheet.pdf", (route) =>
+    route.fulfill({ contentType: "application/pdf", body: "%PDF-1.7\n%%EOF\n" }),
+  );
+  const card = cardOf(page);
+  await expect(card).toBeVisible({ timeout: 20_000 });
+
+  const asked = context.waitForEvent("request", (r) => r.url() === pdf);
+  await card.locator("[data-print]").click();
+  await expect(card.locator("[data-print-said]")).toHaveText("Przygotowuję kartkę…");
+  await asked;
+  await expect(card.locator("[data-print-said]")).toHaveText("");
+});
