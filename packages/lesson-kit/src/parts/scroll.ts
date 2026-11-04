@@ -9,6 +9,8 @@
  * (a phone's keypad or letter row) below, each with the 16 px the README keeps.
  */
 
+import { keyboardInset } from "./frame.ts";
+
 /** The room kept between a box and the bar it would sit against (§3.2, §3.4). */
 export const GAP = 16;
 
@@ -98,6 +100,14 @@ export function insetsOf(el: Element): Insets {
   // above the half of their fold arrow that stands over the dock line (dl-uukj.29.111).
   const overhang = (dock?.querySelector<HTMLElement>("[data-fold]")?.offsetHeight ?? 0) / 2;
   const tray = dock !== null && !dock.contains(el) ? dock.offsetHeight + overhang : 0;
+  // While a phone's keyboard is up (StepShell's data-keyboard) the footer waits under it and the
+  // dock rides on it: the clear edges are those of the visual viewport, the part of the window the
+  // keyboard leaves, with the row and its fold arrow above the keyboard (dl-uukj.29.170).
+  const viewport = typeof window === "undefined" ? undefined : window.visualViewport;
+  if (shell.hasAttribute("data-keyboard") && viewport) {
+    const below = keyboardInset(window.innerHeight, viewport);
+    return { top: Math.max(bar, viewport.offsetTop) + GAP, bottom: below + tray + GAP };
+  }
   return { top: bar + GAP, bottom: footer + tray + GAP };
 }
 

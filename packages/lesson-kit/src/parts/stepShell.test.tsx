@@ -1364,7 +1364,8 @@ describe("a word on a touch phone", () => {
     expect([answer.selectionStart, answer.selectionEnd]).toEqual([0, 3]);
   });
 
-  it("rides the docked tools on the system keyboard while it is up", () => {
+  it("rides the docked tools on the system keyboard while it is up", async () => {
+    const { insetsOf } = await import("./scroll.ts");
     const viewport = Object.assign(new EventTarget(), { height: 844, offsetTop: 0, width: 390 });
     const was = Object.getOwnPropertyDescriptor(window, "visualViewport");
     Object.defineProperty(window, "visualViewport", { configurable: true, value: viewport });
@@ -1383,6 +1384,14 @@ describe("a word on a touch phone", () => {
     expect(document.documentElement.style.getPropertyValue("--kid-keyboard")).toBe(
       `${window.innerHeight - 544}px`,
     );
+    // The field scrolls clear of the keyboard and the row on it, not of the footer under it, and
+    // below the part of the page iOS panned away (dl-uukj.29.170). happy-dom lays out no dock.
+    const answer = screen.getByRole("textbox", { name: "answer" });
+    act(() => {
+      viewport.offsetTop = 40;
+      viewport.dispatchEvent(new Event("scroll"));
+    });
+    expect(insetsOf(answer)).toEqual({ top: 40 + 16, bottom: window.innerHeight - 544 - 40 + 16 });
     if (was) Object.defineProperty(window, "visualViewport", was);
     else delete (window as { visualViewport?: unknown }).visualViewport;
   });
