@@ -82,6 +82,31 @@ describe("serverErrorReporter", () => {
     expect(JSON.stringify(properties)).not.toContain("Ala");
   });
 
+  // Through the real SDK, whose coercers decide what a value that is no Error becomes.
+  it.each([
+    ["a thrown string", "Zosia lubi koty"],
+    ["a thrown number", 500600700],
+    ["a thrown object with a name", { name: "Zosia", message: "lubi koty" }],
+    ["a thrown object with a message", { message: "Zosia lubi koty" }],
+    ["a thrown object's keys", { Zosia: "koty" }],
+    ["an error named after a person", Object.assign(new Error("boom"), { name: "Zosia Kowalska" })],
+    ["an escaped JSON body", new Error('flagged: {"text":"\\"Zosia lubi koty\\""}')],
+    ["a Polish quote", new Error("Nie ma ucznia „Zosia lubi koty”")],
+    ["a cause", new Error("outer", { cause: new Error('inner "Zosia lubi koty"') })],
+  ])("sends none of %s", async (_name, thrown) => {
+    const network = capturing();
+    const report = serverErrorReporter({ key: "phc_test", surface: "api", fetch: network.fetch });
+    await report(thrown);
+    const [event] = network.sent();
+    expect(event).toBeDefined();
+    const list = ((event?.["properties"] ?? {}) as Record<string, unknown>)["$exception_list"] as {
+      type: string;
+      value: string;
+    }[];
+    const said = JSON.stringify(list.map(({ type, value }) => ({ type, value })));
+    expect(said).not.toMatch(/Zosia|koty|500600700/);
+  });
+
   it("gives up on a network that hangs, at its timeout", async () => {
     const hang: Fetch = () => new Promise(() => {});
     const report = serverErrorReporter({
