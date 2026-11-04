@@ -102,6 +102,9 @@ describe("the runner's Lambda handler", () => {
       },
     );
     await expect(handler({})).rejects.toBe(failure);
-    expect(reported).toEqual([failure]);
+    expect(reported).toHaveLength(1);
+    const [sent] = reported as Error[];
+    expect({ name: sent?.name, message: sent?.message }).toEqual({ name: "Error", message: "" });
+    expect(sent?.stack).not.toContain("no database");
   });
 });
