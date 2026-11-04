@@ -1,29 +1,42 @@
 ---
 title: Print
-description: A lesson prints from the browser today. A server PDF with a paper form per question type is in build.
+description: A lesson prints as a PDF the server draws for paper, with a form for each question type and no answer key.
 status: live
-as_of: 2026-11-03
-prs: [698, 747, 783]
+as_of: 2026-11-04
+prs: [783, 878, 913]
 ---
 
-This page is for a judge who wants to see a lesson on paper.
+A lesson prints as a PDF the server draws for paper, so a child can do it at the kitchen table
+with a pencil.
 
-Drukuj on the lesson card prints the lesson in place. It mounts a print sheet, opens the
-browser's print dialog once, and removes the sheet when printing ends (#747, from #698). That is
-what runs today.
+## How it works
 
-The server PDF is in build under `dl-1eieq.8` and `dl-1eieq.2`. Its sheet contract and keyless
-builder landed on `main` (#783). It renders paper-first HTML and CSS with WeasyPrint in a Python
-Lambda. Each question is 1 card that never splits across pages.
-The child answers in place: circle, write, draw, join, or number the order. 5 paper action icons
-keep the same meaning across the whole sheet. Type is Andika at 14 pt, a font drawn for beginning
-readers. No answer key, hint, or solution prints, and a test fails the build if one does. A lesson
-of only lettered choices gets an Alfik-style answer card instead. Printing does not publish or
-assign, so a parent can print before giving.
+### Where printing starts
 
-Until that lands, Drukuj stays the in-page print above. This page is labelled `live` for the
-browser print only.
+Drukuj on the lesson card opens the lesson's PDF. The play page's first screen has a print key
+too, below the start. Printing doesn't give or publish the lesson, so a parent can print before
+giving it.
+
+### The sheet
+
+The server draws the sheet from HTML and CSS with WeasyPrint. Each question is 1 card that never
+splits across pages. The child answers in place: circle, write, draw, join, or number the order.
+5 paper action icons keep the same meaning across the whole sheet. Type is Andika at 14 pt, a font
+drawn for beginning readers.
+
+### What never prints
+
+No answer key, hint or solution prints, and a test fails the build if one does. Each borrowed
+question keeps its credit line on paper.
+
+## Limits
+
+- **The sheet is A4 only.** There's no Letter size and no choice of layout.
+- **The server draws at most 5 PDFs at once.** When more prints arrive together, they wait in turn.
+- **A print is kept for 30 days,** then deleted. Printing the lesson again draws it again.
 
 ## Next
 
 - [Sharing and play links](/features/share-and-play/): the other way a lesson reaches a child.
+- [The player and its question families](/features/player-and-families/): the same questions on
+  screen.
