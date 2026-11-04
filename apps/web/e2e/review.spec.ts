@@ -7,6 +7,7 @@
 // No imported lesson carries reveal lines yet (the importer writes no `why` or worked lines into a
 // key), so the speech bubble is checked by the component tests (src/review/ReviewStep.test.tsx).
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { typeName } from "./given.ts";
 
 /**
  * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
@@ -40,6 +41,7 @@ test("a child finishes a lesson and opens the question it missed, and one it got
 }) => {
   await page.goto("/");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   await expect(page).toHaveURL(/\/play\/asg_[0-9a-z]{26}$/);
 
   // 2 × 5 right; 3 × 4 missed with 7, then "Not sure yet"; "Not sure yet" to everything after.

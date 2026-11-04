@@ -52,7 +52,7 @@ describe("bun run import <file>", () => {
     expect(assignment).toMatchObject({
       lesson_id: lessonId,
       audience: "anyone",
-      identity: "none",
+      identity: "type",
       lesson_version_id: null,
     });
     const latest = await store.getLatestLessonVersion(DRAFTS_POD.id, assignment.lesson_id);
@@ -114,7 +114,7 @@ describe("bun run import <file> --featured", () => {
     expect(await store.findAssignmentPod(featuredId)).toBe(FEATURED_POD.id);
     expect(await store.getAssignment(FEATURED_POD.id, featuredId)).toMatchObject({
       audience: "anyone",
-      identity: "none",
+      identity: "type",
     });
     expect(await listed()).toContain(featuredId);
   });

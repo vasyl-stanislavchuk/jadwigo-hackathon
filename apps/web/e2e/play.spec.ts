@@ -17,6 +17,7 @@
 // answers its twin 3 × 5 after a pause and a reload, and says "Not sure yet" to the rest and their
 // twins, which finishes the attempt.
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { typeName } from "./given.ts";
 
 /**
  * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
@@ -57,6 +58,7 @@ test("a child plays equal-groups to the results, through a miss, a twin, a pause
 }) => {
   await page.goto("/");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   await expect(page).toHaveURL(/\/play\/asg_[0-9a-z]{26}$/);
 
   // 2 × 5: a miss stays on the question, then the right answer and Dalej. The bar is drawn from
@@ -132,6 +134,7 @@ test("the question keeps its lesson's lang and Check the screens' when they diff
   await page.goto("/?lang=en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   await onQuestion(page, "2 × 5");
   await expectLangs();
 

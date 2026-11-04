@@ -8,6 +8,7 @@
 // parent.spec.ts's header says.
 import { expect, type Page, test } from "@playwright/test";
 import { agreeToAi } from "./consent.ts";
+import { typeName } from "./given.ts";
 
 /**
  * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
@@ -19,6 +20,7 @@ const DONT_KNOW = "[data-dont-know], [data-move-on]";
 async function play(page: Page): Promise<void> {
   await page.goto("/");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   await expect(page.locator("[data-step-shell]").getByText("2 × 5").first()).toBeVisible();
   await page.locator("[data-field]").first().click();
   await page.keyboard.type("10");

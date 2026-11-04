@@ -9,6 +9,7 @@
 // says how to run them locally. Nothing here knows an answer: an edit and Sprawdź give a miss or a
 // right answer, and both must hold still. "Jeszcze nie wiem" moves on.
 import { expect, type Page, test } from "@playwright/test";
+import { typeName } from "./given.ts";
 
 /**
  * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
@@ -116,6 +117,7 @@ test("the top bar, instruction, card, field and footer hold still through an edi
   const seen = new Set<string>();
   for (const lesson of LESSONS) {
     await page.goto(`/play/${lesson.id}`);
+    await typeName(page);
     const results = page.locator("[data-results]");
     for (let n = 0; n < 12 && seen.size < FAMILIES.length; n++) {
       await expect(page.locator("[data-check]").or(results)).toBeVisible();

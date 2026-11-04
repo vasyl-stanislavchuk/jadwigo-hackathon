@@ -961,6 +961,17 @@ class PostgresStore implements Store {
             .executeTakeFirst();
         },
       );
+      // A put of an assignment that is there changes only its identity (dl-5ssh.156): a re-import
+      // switches a featured lesson to asking who is playing. Every other field stays as written.
+      if (row.identity !== assignment.identity) {
+        const updated = await tx
+          .updateTable("assignment")
+          .set({ identity: assignment.identity })
+          .where("id", "=", id)
+          .returningAll()
+          .executeTakeFirstOrThrow();
+        return read(Assignment, updated, ID_PREFIXES.assignment);
+      }
       return read(Assignment, row, ID_PREFIXES.assignment);
     });
   }

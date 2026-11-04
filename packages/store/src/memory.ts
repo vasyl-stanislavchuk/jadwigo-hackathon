@@ -503,6 +503,12 @@ export class InMemoryStore implements Store {
     this.#inPod(this.#lessons, pod, assignment.lesson_id, "the lesson");
     const id = assignment.id ?? mint(AssignmentId, ID_PREFIXES.assignment);
     const stored = this.#taken(this.#assignments, pod, id);
+    // A put of an assignment that is there changes only its identity (dl-5ssh.156).
+    if (stored && stored.identity !== assignment.identity) {
+      const row = frozen({ ...stored, identity: assignment.identity });
+      this.#assignments.set(id, row);
+      return row;
+    }
     if (stored) return stored;
     const row = frozen(
       parse(

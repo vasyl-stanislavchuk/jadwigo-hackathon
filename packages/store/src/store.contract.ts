@@ -213,6 +213,35 @@ export function storeContract(name: string, make: () => Promise<Store> | Store):
       });
     });
 
+    describe("a put of an assignment that is there", () => {
+      // dl-5ssh.156: a re-import switches a featured lesson to asking who is playing.
+      it("changes only its identity, and a second put with the same one changes nothing", async () => {
+        const store = await make();
+        const a = await seed(store);
+        const first = await store.putAssignment(a.pod, {
+          ...ASSIGNMENT,
+          lesson_id: a.lesson,
+          closes_at: hoursFromNow(2),
+        });
+        const again = await store.putAssignment(a.pod, {
+          ...ASSIGNMENT,
+          id: first.id,
+          lesson_id: a.lesson,
+          identity: "type",
+          audience: "learners",
+        });
+        expect(again).toEqual({ ...first, identity: "type" });
+        expect(await store.getAssignment(a.pod, first.id)).toEqual({ ...first, identity: "type" });
+        const same = await store.putAssignment(a.pod, {
+          ...ASSIGNMENT,
+          id: first.id,
+          lesson_id: a.lesson,
+          identity: "type",
+        });
+        expect(same).toEqual({ ...first, identity: "type" });
+      });
+    });
+
     describe("open assignments", () => {
       it("lists the pod's open anyone-assignments of a published lesson, and no other pod's", async () => {
         const store = await make();

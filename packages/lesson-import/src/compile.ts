@@ -416,7 +416,9 @@ function compile(
       id: featuredAssignmentId(file.id, pod),
       lesson_id: lessonId,
       audience: "anyone",
-      identity: "none",
+      // Asks who is playing, so the parent can keep the attempt at the end (owner 2026-11-04,
+      // dl-5ssh.156); was none.
+      identity: "type",
     },
   };
 }

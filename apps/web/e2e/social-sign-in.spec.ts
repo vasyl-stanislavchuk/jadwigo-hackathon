@@ -16,6 +16,7 @@
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
 import { AUTH_ORIGIN } from "./auth-origin.ts";
 import { agreeToAi } from "./consent.ts";
+import { typeName } from "./given.ts";
 
 /**
  * "Jeszcze nie wiem": in the open help note, or, on a question with no help left, in the bulb's
@@ -27,6 +28,7 @@ const DONT_KNOW = "[data-dont-know], [data-move-on]";
 async function playToTheEnd(page: Page): Promise<void> {
   await page.goto("/");
   await page.locator("[data-featured]").getByRole("link", { name: "Równe grupy" }).click();
+  await typeName(page);
   const results = page.locator("[data-results]");
   for (let i = 0; i < 12; i++) {
     await expect(page.locator("[data-bulb]").or(results)).toBeVisible();
