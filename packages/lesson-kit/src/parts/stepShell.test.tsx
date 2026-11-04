@@ -1392,8 +1392,74 @@ describe("a word on a touch phone", () => {
       viewport.dispatchEvent(new Event("scroll"));
     });
     expect(insetsOf(answer)).toEqual({ top: 40 + 16, bottom: window.innerHeight - 544 - 40 + 16 });
+    // The page's room under the stage is the keyboard's height, which the pan does not move: a
+    // padding that followed the pan fed iOS's scroll back into itself (dl-uukj.29.172).
+    expect(document.documentElement.style.getPropertyValue("--kid-keyboard-room")).toBe(
+      `${window.innerHeight - 544}px`,
+    );
     if (was) Object.defineProperty(window, "visualViewport", was);
     else delete (window as { visualViewport?: unknown }).visualViewport;
+  });
+
+  it("shows a field tapped while the keyboard stays up, though the keyboard did not move", async () => {
+    const scroll = await import("./scroll.ts");
+    fireEvent.pointerUp(document.body);
+    vi.useFakeTimers({
+      now: FIXED_NOW,
+      toFake: ["Date", "requestAnimationFrame", "cancelAnimationFrame", "performance"],
+    });
+    const show = vi.spyOn(scroll, "scrollToShow").mockImplementation(() => undefined);
+    const viewport = Object.assign(new EventTarget(), { height: 844, offsetTop: 0, width: 390 });
+    const was = Object.getOwnPropertyDescriptor(window, "visualViewport");
+    Object.defineProperty(window, "visualViewport", { configurable: true, value: viewport });
+    const two = (
+      <div>
+        <input aria-label="first" data-field="a" />
+        <input aria-label="second" data-field="b" />
+      </div>
+    );
+    try {
+      render(
+        <div data-input-touch data-learner-view>
+          {shell({
+            answer: two,
+            keys: keysOf([
+              field("a", "", { word: true, maxLength: 12 }),
+              field("b", "", { word: true, maxLength: 12 }),
+            ]),
+            progress: { done: 0, total: 3 },
+          })}
+        </div>,
+      );
+      const first = screen.getByRole("textbox", { name: "first" });
+      const second = screen.getByRole("textbox", { name: "second" });
+      act(() => {
+        first.focus();
+        viewport.height = 844 - 300;
+        viewport.dispatchEvent(new Event("resize"));
+        vi.advanceTimersByTime(700);
+      });
+      expect(show).toHaveBeenLastCalledWith(first, undefined, true);
+      show.mockClear();
+      // The keyboard stays as it is; only the focus moves, as a tap on the next gap does.
+      act(() => {
+        second.focus();
+        vi.advanceTimersByTime(700);
+      });
+      expect(show).toHaveBeenCalledWith(second, undefined, true);
+      // A pan by the child alone moves nothing back.
+      show.mockClear();
+      act(() => {
+        viewport.offsetTop = 120;
+        viewport.dispatchEvent(new Event("scroll"));
+        vi.advanceTimersByTime(700);
+      });
+      expect(show).not.toHaveBeenCalled();
+    } finally {
+      show.mockRestore();
+      if (was) Object.defineProperty(window, "visualViewport", was);
+      else delete (window as { visualViewport?: unknown }).visualViewport;
+    }
   });
 });
 
