@@ -17,14 +17,17 @@ const pages = readdirSync(PAGES, { recursive: true, encoding: "utf8" })
   .map((path) => [path, readFileSync(join(PAGES, path), "utf8")] as const);
 
 describe("the docs' diagrams", () => {
-  it("include the 5 ported from the architecture pages' mermaid blocks", () => {
+  it("include the architecture ladder's, context down to components", () => {
     expect(names).toEqual(
       expect.arrayContaining([
-        "answer-sequence",
+        "context",
         "containers",
-        "living-docs",
+        "happy-path",
+        "ai-engine",
+        "runner-turn",
+        "contracts",
         "monorepo",
-        "routes-readers",
+        "pr-loop",
       ]),
     );
   });

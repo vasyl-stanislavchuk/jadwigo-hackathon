@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 456" role="img" aria-labelledby="contracts-light-title contracts-light-desc">
+<title id="contracts-light-title">One route table, every reader</title>
+<desc id="contracts-light-desc">ROUTES in the contracts package feeds the API, the typed client, the Terraform route list and the OpenAPI snapshot. The docs build reads the snapshot and the other sources, check-dist reads the built site, and only then is docs.jadwigo.pl published.</desc>
+<defs><marker id="contracts-light-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#5a6b85"/></marker><marker id="contracts-light-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#2941f3"/></marker><marker id="contracts-light-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#0f7f76"/></marker><marker id="contracts-light-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#5a6b85" stroke-width="1.2"/></marker></defs>
+<path d="M208,54 L272,54" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#contracts-light-default)"/>
+<path d="M208,142 L272,142" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#contracts-light-default)"/>
+<path d="M208,230 L272,230" fill="none" stroke="#5a6b85" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#contracts-light-default)"/>
+<path d="M208,318 L272,318" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#contracts-light-default)"/>
+<path d="M464,318 L504,318" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#contracts-light-default)"/>
+<path d="M592,260 L592,288" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#contracts-light-default)"/>
+<path d="M680,318 L736,318" fill="none" stroke="#5a6b85" stroke-width="1.2" marker-end="url(#contracts-light-default)"/>
+<path d="M832,348 L832,376" fill="none" stroke="#2941f3" stroke-width="1.5" marker-end="url(#contracts-light-accent)"/>
+<rect x="32" y="24" width="176" height="324" rx="6" fill="rgba(41,65,243,0.10)" stroke="#2941f3" stroke-width="1.5"/>
+<text x="120" y="170" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7.5" font-weight="500" letter-spacing="0.18em" fill="#2941f3">CONTRACTS</text>
+<text x="120" y="184" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">ROUTES</text>
+<text x="120" y="197" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">method, path,</text>
+<text x="120" y="210" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">credential, schemas</text>
+<rect x="272" y="24" width="192" height="60" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+<text x="368" y="51.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">API Lambda</text>
+<text x="368" y="64.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">parses every request</text>
+<rect x="272" y="112" width="192" height="60" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+<text x="368" y="139.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">api-client</text>
+<text x="368" y="152.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">typed calls, web app</text>
+<rect x="272" y="200" width="192" height="60" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+<text x="368" y="227.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Terraform routes</text>
+<text x="368" y="240.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">throttles, JWT check</text>
+<rect x="272" y="288" width="192" height="60" rx="6" fill="rgba(90,107,133,0.08)" stroke="#667997" stroke-width="1"/>
+<text x="368" y="315.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">openapi.json</text>
+<text x="368" y="328.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">snapshot, tested</text>
+<rect x="504" y="200" width="176" height="60" rx="6" fill="rgba(90,107,133,0.08)" stroke="#667997" stroke-width="1"/>
+<text x="592" y="227.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Other sources</text>
+<text x="592" y="240.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">MCP tools, tokens, types</text>
+<rect x="504" y="288" width="176" height="60" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+<text x="592" y="315.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">Docs build</text>
+<text x="592" y="328.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">generated tables</text>
+<rect x="736" y="288" width="192" height="60" rx="6" fill="#ffffff" stroke="#5a6b85" stroke-width="1"/>
+<text x="832" y="315.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">check-dist</text>
+<text x="832" y="328.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">pages, tables, links</text>
+<rect x="736" y="376" width="192" height="60" rx="6" fill="#ffffff" stroke="#7888a0" stroke-width="1"/>
+<text x="832" y="403.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#040810">docs.jadwigo.pl</text>
+<text x="832" y="416.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#5a6b85">published by hand</text>
+<rect x="222.8" y="213" width="34.400000000000006" height="12" fill="#ffffff"/>
+<text x="240" y="222" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#5a6b85">equal</text>
+</svg>

@@ -1,61 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" role="img" aria-labelledby="story-timeline-dark-title story-timeline-dark-desc">
-<title id="story-timeline-dark-title">Jadwigo, decided day by day</title>
-<desc id="story-timeline-dark-desc">The dated decisions behind Jadwigo, from 2026-10-24 to the 4 November demo.</desc>
-<defs><marker id="a-m-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9b4a7"/></marker><marker id="a-a-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#93b6ff"/></marker><marker id="a-l-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7aa6f0"/></marker></defs>
-<rect x="0" y="0" width="960" height="300" fill="#1d1e22"/>
-
-<line x1="40" y1="110" x2="920" y2="110" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#a-m-dark)"/>
-<circle cx="95" cy="110" r="5" fill="#1d1e22" stroke="#ece8de" stroke-width="1.5"/>
-<text x="95" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" fill="#ece8de">10-24</text>
-<line x1="95" y1="115" x2="95" y2="134" stroke="#373941" stroke-width="1.5"/>
-<text x="95" y="154" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">One monorepo</text>
-<text x="95" y="169" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Meta models for</text>
-<text x="95" y="184" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">every AI workflow</text>
-<text x="95" y="199" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Bank stays out</text>
-<text x="95" y="214" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">of git</text>
-<circle cx="205" cy="110" r="5" fill="#1d1e22" stroke="#ece8de" stroke-width="1.5"/>
-<text x="205" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" fill="#ece8de">10-26</text>
-<line x1="205" y1="115" x2="205" y2="134" stroke="#373941" stroke-width="1.5"/>
-<text x="205" y="154" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">1 meta project</text>
-<text x="205" y="169" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">6 workstreams</text>
-<text x="205" y="184" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">1 shared board</text>
-<circle cx="315" cy="110" r="5" fill="#1d1e22" stroke="#ece8de" stroke-width="1.5"/>
-<text x="315" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" fill="#ece8de">10-29</text>
-<line x1="315" y1="115" x2="315" y2="134" stroke="#373941" stroke-width="1.5"/>
-<text x="315" y="154" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Credits stay on</text>
-<text x="315" y="169" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Khan questions</text>
-<text x="315" y="184" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">First lesson draft</text>
-<text x="315" y="199" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">from the bank</text>
-<circle cx="425" cy="110" r="5" fill="#1d1e22" stroke="#ece8de" stroke-width="1.5"/>
-<text x="425" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" fill="#ece8de">10-30</text>
-<line x1="425" y1="115" x2="425" y2="134" stroke="#373941" stroke-width="1.5"/>
-<text x="425" y="154" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">The dream runs</text>
-<text x="425" y="169" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">on demand: code</text>
-<text x="425" y="184" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">counts, AI writes</text>
-<circle cx="535" cy="110" r="5" fill="#1d1e22" stroke="#ece8de" stroke-width="1.5"/>
-<text x="535" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" fill="#ece8de">11-01</text>
-<line x1="535" y1="115" x2="535" y2="134" stroke="#373941" stroke-width="1.5"/>
-<text x="535" y="154" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Learner data by</text>
-<text x="535" y="169" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">design, for the</text>
-<text x="535" y="184" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">parent&#x27;s request</text>
-<text x="535" y="199" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Lessons may be</text>
-<text x="535" y="214" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">English</text>
-<circle cx="645" cy="110" r="5" fill="#93b6ff" stroke="#93b6ff" stroke-width="1.5"/>
-<text x="645" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" fill="#ece8de">11-02</text>
-<line x1="645" y1="115" x2="645" y2="134" stroke="#373941" stroke-width="1.5"/>
-<text x="645" y="154" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Chat-first app</text>
-<text x="645" y="169" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">OAuth 2.1 remote</text>
-<text x="645" y="184" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">MCP, play links</text>
-<text x="645" y="199" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">with a learner</text>
-<circle cx="755" cy="110" r="5" fill="#93b6ff" stroke="#93b6ff" stroke-width="1.5"/>
-<text x="755" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" fill="#ece8de">11-03</text>
-<line x1="755" y1="115" x2="755" y2="134" stroke="#373941" stroke-width="1.5"/>
-<text x="755" y="154" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">The demo cut: the</text>
-<text x="755" y="169" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">parent happy path</text>
-<text x="755" y="184" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Server print</text>
-<text x="755" y="199" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">joins the scope</text>
-<circle cx="865" cy="110" r="5" fill="#1d1e22" stroke="#ece8de" stroke-width="1.5"/>
-<text x="865" y="86" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" letter-spacing="0.5" fill="#ece8de">11-04</text>
-<line x1="865" y1="115" x2="865" y2="134" stroke="#373941" stroke-width="1.5"/>
-<text x="865" y="154" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="10.5" fill="#b9b4a7">Demo day</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 176" role="img" aria-labelledby="story-timeline-dark-title story-timeline-dark-desc">
+<title id="story-timeline-dark-title">Jadwigo in 10 days</title>
+<desc id="story-timeline-dark-desc">From the first commit on 26 October to demo day on 4 November: the board, the first lesson from the bank, the dream, English lessons, the chat-first parent app, the demo cut, and demo day, when the whole class practises for tomorrow's test.</desc>
+<defs><marker id="story-timeline-dark-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#a8b6cc"/></marker><marker id="story-timeline-dark-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#6a7cff"/></marker><marker id="story-timeline-dark-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#3db8b8"/></marker><marker id="story-timeline-dark-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#a8b6cc" stroke-width="1.2"/></marker></defs>
+<line x1="48" y1="88" x2="912" y2="88" stroke="#93a1b8" stroke-width="1.2"/>
+<circle cx="80" cy="88" r="5" fill="#1d1e22" stroke="#a8b6cc" stroke-width="1.2"/>
+<circle cx="212" cy="88" r="5" fill="#1d1e22" stroke="#a8b6cc" stroke-width="1.2"/>
+<circle cx="344" cy="88" r="5" fill="#1d1e22" stroke="#a8b6cc" stroke-width="1.2"/>
+<circle cx="476" cy="88" r="5" fill="#1d1e22" stroke="#a8b6cc" stroke-width="1.2"/>
+<circle cx="608" cy="88" r="5" fill="#1d1e22" stroke="#a8b6cc" stroke-width="1.2"/>
+<circle cx="740" cy="88" r="5" fill="#1d1e22" stroke="#a8b6cc" stroke-width="1.2"/>
+<circle cx="872" cy="88" r="5" fill="#6a7cff" stroke="#6a7cff" stroke-width="1.5"/>
+<text x="80" y="52" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.06em" fill="#ffffff">10-26</text>
+<text x="80" y="70" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">First commit, 1 board</text>
+<text x="212" y="120" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.06em" fill="#ffffff">10-29</text>
+<text x="212" y="138" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">First lesson from the bank</text>
+<text x="344" y="52" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.06em" fill="#ffffff">10-30</text>
+<text x="344" y="70" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">The dream runs on demand</text>
+<text x="476" y="120" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.06em" fill="#ffffff">11-01</text>
+<text x="476" y="138" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Lessons in English too</text>
+<text x="608" y="52" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.06em" fill="#ffffff">11-02</text>
+<text x="608" y="70" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">The chat-first parent app</text>
+<text x="740" y="120" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.06em" fill="#ffffff">11-03</text>
+<text x="740" y="138" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Demo cut: the parent's path</text>
+<text x="872" y="52" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" font-weight="600" letter-spacing="0.06em" fill="#6a7cff">11-04</text>
+<text x="872" y="70" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Demo day</text>
+<text x="944" y="112" text-anchor="end" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="11" fill="#a8b6cc">The whole class practises</text>
+<text x="944" y="126" text-anchor="end" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="11" fill="#a8b6cc">for tomorrow's test</text>
 </svg>

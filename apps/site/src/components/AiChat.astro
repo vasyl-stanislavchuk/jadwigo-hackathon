@@ -1,0 +1,151 @@
+---
+// The picture beside /jadwigo-ai's intro (dl-w0b4.127): a short conversation from homework to analysis
+// to a lesson link, one message at a time in a chat window with the court standing on top of it, after
+// the film's "Also in your own AI app" frame. It moves by itself, and a dot jumps to a message and holds it
+// for a while. With reduced motion the messages swap with no movement, and with no script they stack. Tymek and his numbers are made up, and `caption` says so: a real child's homework never
+// enters this repo. Drawn in HTML so its words follow the language.
+import { Image } from "astro:assets";
+import { courtArt } from "../lib/illustrations.ts";
+
+interface Props {
+  words: {
+    alt: string;
+    caption: string;
+    step: string;
+    ask: string;
+    found: string;
+    columns: readonly string[];
+    rows: readonly (readonly string[])[];
+    note: string;
+    yes: string;
+    lesson: { title: string; meta: string; link: string; url: string };
+  };
+  apps: readonly string[];
+}
+
+const { words, apps } = Astro.props;
+const steps = [0, 1, 2, 3];
+---
+
+<figure class="chat-pic" data-chat>
+  <div class="court" aria-hidden="true">
+    {courtArt.map((src) => <Image src={src} alt="" widths={[src.width]} sizes="5rem" />)}
+  </div>
+  <div class="window" role="img" aria-label={words.alt}>
+    <span class="bar"><i></i><i></i><i></i></span>
+    <div class="body">
+      <div class="slide parent" data-hold="4000">
+        <svg class="sheet" viewBox="0 0 40 52" width="40" height="52" fill="none" stroke="currentColor" stroke-linecap="round">
+          <rect x="1" y="1" width="38" height="50" rx="3" stroke-width="1.5"></rect>
+          <path d="M8 11h24M8 19h24M8 27h24M8 35h24M8 43h14" stroke-width="1.25" opacity="0.5"></path>
+          <path d="m27 41 3 3 5-6" stroke-width="1.75" stroke-linejoin="round"></path>
+        </svg>
+        <p class="bubble">{words.ask}</p>
+      </div>
+      <div class="slide reply" data-hold="7000">
+        <p>{words.found}</p>
+        <table>
+          <thead><tr>{words.columns.map((c) => <th>{c}</th>)}</tr></thead>
+          <tbody>
+            {words.rows.map((row) => <tr>{row.map((cell) => <td>{cell}</td>)}</tr>)}
+          </tbody>
+        </table>
+        <p>{words.note}</p>
+      </div>
+      <div class="slide parent" data-hold="2500">
+        <p class="bubble">{words.yes}</p>
+      </div>
+      <div class="slide lesson-slide" data-hold="5000">
+        <div class="lesson">
+          <b>{words.lesson.title}</b>
+          <span class="meta">{words.lesson.meta}</span>
+          <span class="link">{words.lesson.link} <u>{words.lesson.url}</u></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dots" hidden>
+    {steps.map((i) => <button type="button" data-go={i} aria-label={`${words.step} ${i + 1}`}></button>)}
+  </div>
+  <figcaption>{words.caption}</figcaption>
+  <ul class="apps" aria-hidden="true">{apps.map((a) => <li>{a}</li>)}</ul>
+</figure>
+
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>("[data-chat]")) {
+    const slides = [...root.querySelectorAll<HTMLElement>(".slide")];
+    const dots = [...root.querySelectorAll<HTMLButtonElement>("[data-go]")];
+    const nav = root.querySelector<HTMLElement>(".dots");
+    if (slides.length === 0 || !nav) continue;
+    root.classList.add("play");
+    nav.hidden = false;
+    let at = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const show = (i: number) => {
+      at = i;
+      slides.forEach((slide, n) => {
+        slide.classList.toggle("on", n === i);
+      });
+      dots.forEach((dot, n) => {
+        if (n === i) dot.setAttribute("aria-current", "true");
+        else dot.removeAttribute("aria-current");
+      });
+    };
+    const wait = (ms: number) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const next = (at + 1) % slides.length;
+        show(next);
+        wait(Number(slides[next]?.dataset["hold"] ?? 4000));
+      }, ms);
+    };
+    // A dot holds its message long enough to read, then the conversation carries on.
+    dots.forEach((dot, i) => {
+      dot.addEventListener("click", () => {
+        show(i);
+        wait(12000);
+      });
+    });
+    show(0);
+    wait(Number(slides[0]?.dataset["hold"] ?? 4000));
+  }
+</script>
+
+<style>
+  .chat-pic { display: flex; flex-direction: column; min-width: 0; margin: 0; }
+  .court { display: flex; justify-content: space-around; align-items: flex-end; padding: 0 1.5rem; }
+  .court img { display: block; height: clamp(4rem, 9vw, 5.5rem); width: auto; margin-bottom: -2px; }
+  .window { overflow: hidden; background: var(--jw-card); border: 2px solid var(--jw-ink); border-radius: var(--jw-radius-card); }
+  .bar { display: flex; gap: 0.3rem; padding: 0.55rem 0.75rem; border-bottom: 1px solid var(--jw-line); background: var(--secondary); }
+  .bar i { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--jw-line); }
+  .body { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; font-size: 0.95rem; line-height: 1.4; }
+  /* All the messages share one grid cell, so the window keeps the tallest one's height and the page never jumps. */
+  .play .body { display: grid; }
+  .play .slide {
+    grid-area: 1 / 1; align-self: center; opacity: 0; visibility: hidden; translate: 0 0.75rem;
+    transition: opacity 300ms, translate 300ms, visibility 300ms;
+  }
+  .play .slide.on { opacity: 1; visibility: visible; translate: 0 0; }
+  .parent { display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem; }
+  .sheet { color: var(--jw-ink-soft); }
+  .bubble { max-width: 85%; padding: 0.55rem 0.8rem; background: var(--secondary); border-radius: var(--jw-radius-card); }
+  .reply { display: flex; flex-direction: column; gap: 0.5rem; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th { padding: 0.25rem 0; border-bottom: 1px solid var(--jw-line); font-weight: 600; text-align: left; }
+  td { padding: 0.25rem 0; border-bottom: 1px solid var(--jw-line); }
+  .lesson { display: flex; flex-direction: column; gap: 0.15rem; padding: 0.7rem 0.8rem; border: 1px solid var(--jw-line); border-radius: var(--jw-radius-small); }
+  .meta { color: var(--jw-ink-soft); }
+  .link { margin-top: 0.25rem; overflow-wrap: anywhere; }
+  .link u { color: var(--jw-brand-go); }
+  .dots { display: flex; justify-content: center; gap: 0.1rem; margin-top: 0.25rem; }
+  .dots[hidden] { display: none; }
+  [data-go] { display: grid; place-items: center; width: 1.5rem; height: 1.75rem; padding: 0; background: none; border: 0; cursor: pointer; }
+  [data-go]::before { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--jw-line); }
+  [data-go][aria-current]::before { background: var(--jw-ink); }
+  figcaption { margin-top: 0.25rem; font-size: 0.85rem; color: var(--jw-ink-soft); text-align: center; }
+  .apps { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; margin: 0.6rem 0 0; padding: 0; }
+  .apps li { padding: 0.2rem 0.85rem; border: 1px solid var(--jw-line); border-radius: 999px; background: var(--jw-card); font-size: 0.9rem; font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) {
+    .play .slide { transition: none; translate: 0 0; }
+  }
+</style>

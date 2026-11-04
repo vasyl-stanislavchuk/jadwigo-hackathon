@@ -13,6 +13,7 @@ import {
   signedOut,
   verifyToken,
 } from "./auth.ts";
+import { setReporter } from "./report.ts";
 import { bearerOf, signToken, TEST_ISSUER, TEST_JWKS, testAuth } from "./testing/token.ts";
 
 afterEach(() => {
@@ -165,6 +166,8 @@ describe("jwksAuth", () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     let fail = true;
     let loads = 0;
+    const report = vi.fn(() => Promise.resolve());
+    setReporter(report);
     const auth = jwksAuth(
       async () => {
         loads += 1;
@@ -180,6 +183,8 @@ describe("jwksAuth", () => {
       message: "JWKS read failed",
       error: "the JWKS at https://ref.supabase.co answered 503",
     });
+    expect(report).toHaveBeenCalledWith(expect.any(Error), { operation: "jwks_read" });
+    setReporter(() => Promise.resolve());
     fail = false;
     expect(await auth(request(bearerOf(signToken({ sub }))), {})).toBeUndefined();
     expect(loads).toBe(1);

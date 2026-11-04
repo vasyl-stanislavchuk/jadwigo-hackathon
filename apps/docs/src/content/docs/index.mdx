@@ -1,71 +1,52 @@
 ---
 title: What Jadwigo is
-description: Jadwigo turns a photo of homework into a lesson a child can play. This page says what it does, what is live, and where to read next.
+description: Jadwigo turns a photo of homework into a lesson a child can play. Start here for what is live, how it is built, and what comes next.
 template: splash
 hero:
-  tagline: A learning app for children in the first school grades. A parent photographs homework, Jadwigo builds a lesson from a credited question bank, and the child plays it.
+  tagline: A learning app for children in the first school grades, in Polish and English. A parent photographs homework, Jadwigo builds a lesson from a credited question bank, and the child plays it.
   actions:
-    - text: Tour the features
-      link: /features/photo-to-lesson/
+    - text: What's built
+      link: /built/
       icon: right-arrow
     - text: Read the story
       link: /story/
       icon: document
       variant: secondary
-    - text: Use with agents
-      link: /guides/agents/
-      icon: rocket
+    - text: Play a lesson
+      link: https://app.jadwigo.pl/play/asg_67ppftwzj9a4ttbtftc3mn4z45
+      icon: external
       variant: secondary
 ---
 
 import { CardGrid, LinkCard } from "@astrojs/starlight/components";
 
-Jadwigo is a learning app for children in the first school grades, in Polish and English. The
-parent's job takes 1 photo. Everything after it is the app's job.
+The parent's job is 1 photo. A parent signs in and sends a photo of a homework page in the chat.
+Jadwigo reads it, draws up to 20 questions from the question bank, and checks the lesson. The
+parent sends the child a link, and the child plays with no sign-in.
 
-The happy path has 4 steps. A parent signs in and adds a child. The parent photographs a homework
-page in the chat. Jadwigo reads the photo, draws questions from the question bank, and builds a
-lesson of at most 20 questions. The parent gives the lesson, prints it, or sends its link. The
-child opens the link and plays, with no sign-in.
-
-Every feature page carries 1 of 3 labels. `live` means it runs on prod today. `main` means the
-code is on `main` and not yet on prod. `vision` means it is not built, and an experiment page
-shows the idea working on invented learners. Labels were checked on 2026-11-03.
+Everything under Features runs on app.jadwigo.pl today. A page about the future carries a
+`vision` label: it was tried in an experiment on invented learners, not built. Each section opens
+with a one-page overview, so you can stop there or go deeper.
 
 <CardGrid>
   <LinkCard
-    title="Features"
-    href="/features/photo-to-lesson/"
-    description="What a parent and a child can do today, 1 page per feature, each labelled."
-  />
-  <LinkCard
-    title="The story"
-    href="/story/"
-    description="How Jadwigo was decided, day by day, from 2026-10-24 to 2026-11-04."
-  />
-  <LinkCard
-    title="Vision"
-    href="/vision/"
-    description="What comes next: knowing the learner, picking the next lesson, dreaming over results."
-  />
-  <LinkCard
-    title="Experiments"
-    href="/experiments/"
-    description="7 runs on invented learners that show the vision working, with costs."
+    title="What's built"
+    href="/built/"
+    description="Every feature built in 10 days, and how to try it."
   />
   <LinkCard
     title="How it is built"
     href="/architecture/"
-    description="The containers, the AI engine, and how agents build this repo."
+    description="The system on one page, then the AI engine, contracts and agents that built it."
   />
   <LinkCard
-    title="API and MCP"
-    href="/api/"
-    description="Every route and every MCP tool, generated from the code."
+    title="What's next"
+    href="/next/"
+    description="Where it goes next, and 7 experiments with their costs and failures."
+  />
+  <LinkCard
+    title="For developers and agents"
+    href="/guides/agents/"
+    description="The API, the MCP server and the design system, generated from the code."
   />
 </CardGrid>
-
-## Next
-
-- [Photo to lesson](/features/photo-to-lesson/): the first step of the happy path.
-- [The story](/story/): why the product looks the way it does.

@@ -4,6 +4,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
 import { startAppAnalytics } from "./analytics/start.ts";
+import { CrashBoundary } from "./CrashScreen.tsx";
 
 followSystemTheme(document.documentElement, window);
 // PostHog, once, never on the owner's playground; every browser that has not said no is opted in
@@ -14,6 +15,8 @@ const root = document.getElementById("root");
 if (root === null) throw new Error("index.html has no #root");
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <CrashBoundary>
+      <App />
+    </CrashBoundary>
   </StrictMode>,
 );

@@ -1,28 +1,35 @@
 ---
 title: Sharing and play links
 description: A given lesson reaches the child as a link. A link with a learner in it starts as that child, with no sign-in.
-status: main
-as_of: 2026-11-03
+status: live
+as_of: 2026-11-04
 prs: [698, 711, 712, 729]
 ---
 
-This page is for a judge who wants to see how a lesson gets from the parent's screen to the
-child's hands.
+A lesson reaches the child as a play link, and the child starts playing with no sign-in.
 
-Daj lekcję gives a checked lesson revision to play. With no child named, it opens 2 choices:
-open the lesson on this computer, or print it. With a child named, the parent gets a play link
-with the learner in it, as `?learner=`. The child opens the link and the lesson starts as that
-child. No sign-in stands between the child and the first question.
+## How it works
 
-Giving on this computer and printing in place are live (#698). This page is labelled `main`
-for the links below. The `?learner=` links are on
-`main`, not yet on prod: the play page starting as the named child (#711), the route that gives a
-checked revision (#712), and the end-to-end test that plays such a link to the results (#729).
+### Giving a lesson
 
-A lesson confirmed through the remote MCP reaches the child the same way, as a play link with the
-learner in it.
+Daj lekcję gives a checked lesson to play. With no child named, it offers 2 choices: open the
+lesson on this computer, or print it. With a child named, the parent gets a play link made for
+that child.
+
+### Playing from a link
+
+The child opens the link and the lesson starts as that child. Nothing stands between the child
+and the first question, and the answers are kept against that child. A lesson a parent confirms
+from their own [connected AI app](/features/connect-your-ai/) reaches the child the same way.
+
+## Limits
+
+- **The link is the child's key.** Anyone who opens it plays as that child, so a parent shares it
+  with the child only.
+- **Nothing learns from the answers yet.** They're kept, but the next lesson isn't drawn from them.
+  That's [the learning loop](/vision/learning-loop/), a vision.
 
 ## Next
 
-- [The player and its question families](/features/player-and-families/): what the child plays.
+- [Player and question families](/features/player-and-families/): what the child plays.
 - [Connect your AI](/features/connect-your-ai/): giving a lesson from the parent's own AI app.

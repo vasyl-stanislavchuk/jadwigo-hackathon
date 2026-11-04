@@ -1,0 +1,55 @@
+---
+title: Building with agents
+description: Almost 900 commits in 10 days, by AI agents working in parallel under checks Vasyl set, and what he did.
+---
+
+import Diagram from "../../../components/Diagram.astro";
+
+Jadwigo's `main` branch took almost 900 commits in 10 days, from the first commit on 26 October 2026
+to the demo on 4 November. Nearly all of them are pull requests, each squash-merged as 1 commit. AI
+agents wrote the code, many at once, each in its own worktree. Muse, Codex and Claude Code each
+built part of it.
+
+## Who did what
+
+Vasyl, one person, made the product decisions, wrote and approved the plans, and set the checks.
+He also ran every paid or outward step: each deploy, each Terraform apply, each
+publish. A merge deploys nothing, and no agent can deploy.
+
+The agents did the rest. A lead agent splits a plan into issues, and builder agents take one issue
+each. An issue is a brief: what to read, the paths it owns, the tests it must not change, what
+done looks like, and when to stop and ask.
+
+## PR loop
+
+<Diagram name="pr-loop" caption="Every change takes the same road to main." />
+
+An agent opens a draft pull request and pushes often. Marking it ready starts the review. CI runs
+lint, types and tests, and a merge steward then starts fresh reviewer agents that never saw the
+code being written. GitHub merges the pull request once both checks are green. A red review goes
+back to the agent that wrote the code. The builder never reviews its own work: a builder reporting
+green is a claim, and a reviewer's re-run is the evidence.
+
+## Guard
+
+The guard is a script that runs before every command an agent types in Claude Code, and refuses
+the ones only a person should run. It blocks a force-push, a push to `main`, skipping the commit
+hooks, a deploy, a Terraform apply, any command against the production database, and an agent
+approving its own pull request. Each refusal has a test that tries the command and expects a no.
+
+One real catch: the build asks a person to type `prod` in a terminal before a command touches the
+production database. An agent's session can fake that terminal and type `prod` itself. Pull
+request #81 added a test that reproduces the bypass, and made the guard refuse the command however
+it is wrapped. Later review rounds found other ways around it, such as clearing the environment
+through another program's name. Each became a refusal with its own test in #106.
+
+## Limits
+
+The guard is a Claude Code hook, so it covers Claude Code sessions only. In a Codex shell, the
+build's own prompt is the only check, and a fake terminal still gets through it. The other checks,
+CI and the reviewers, apply to every pull request whoever wrote it.
+
+## Next
+
+- [Story](/story/): the decisions those agents worked under.
+- [Monorepo](/architecture/monorepo/): the layout the agents share.

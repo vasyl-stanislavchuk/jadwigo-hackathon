@@ -5,45 +5,37 @@ description: The apps and packages Jadwigo is built from, what each is for, and 
 
 import Diagram from "../../../components/Diagram.astro";
 
-This page is for anyone finding their way around Jadwigo's code: the apps and packages it is built
-from, which way imports may go, and the rules the build holds.
+All of Jadwigo's code lives in one repository: TypeScript apps and packages in one workspace, and
+3 Python apps beside them, the command-line tool, the converter and print. A change to a schema
+and every caller it breaks land in the same pull request.
 
-All of Jadwigo's code lives in one repository: TypeScript apps and packages in one workspace,
-and a Python command-line tool beside them. A change to a schema and every caller it breaks land
-in the same pull request.
+<Diagram name="monorepo" caption="Imports point down. Nothing imports an app." />
 
-An app runs, and nothing imports an app. A package is imported. Each package has one job and one
-public entry, which is all other code imports.
+## Layers
 
-## Who imports whom
+An app runs, and nothing imports an app. A domain package holds one job, such as grading, the
+store or the AI engine, and has one public entry that other code imports. Domain packages may
+import each other. `contracts` sits at the bottom and imports Zod and nothing of ours, so every
+other part can depend on it.
 
-Each arrow is a runtime dependency: the app or package on the left imports the one it points to.
-
-<Diagram name="monorepo" />
-
-A test checks this diagram against the workspace's own dependency lists, so an edge added in the
-code and not here fails the docs build.
+A test reads this diagram's layers and every `package.json` in the workspace. It fails when an
+import points up a layer, when anything imports out of `contracts`, or when a package that imports
+or is imported sits in no layer.
 
 ## Rules the build enforces
 
-Each of these is a check that runs on every pull request, and each has a test that plants a
-violation to prove the check still catches it.
+Each of these is a check that runs on every pull request. Each has a test that plants a violation
+to prove the check still catches it.
 
-- **Apps import packages, never the reverse.** A package that imports an app fails.
-- **`contracts` is the bottom.** It imports Zod and nothing of ours, so every other part can
-  depend on it.
-- **No cycles**, and no import that does not resolve.
+- **Apps import packages, never the reverse.**
+- **No cycles**, and no import that doesn't resolve.
 - **Test helpers stay in tests.** Only test files import the `testing` package.
-- **Inside `lesson-kit`, parts know no family.** A part draws for any family, so it never imports
-  one. Heavy libraries stay in one place: drag and drop only in the 3 drag parts, TeX only in rich
-  text.
-- **Strict TypeScript.** Ids are branded types that only the contract parsers create, and an
-  index into an array may be undefined.
+- **Strict TypeScript.** Ids are branded types that only the contract parsers create, and an index
+  into an array may be undefined.
 - **The environment is read in one file per app**, its `config.ts`. An error type, a route path
   or an id prefix is written through its constant from `contracts`, never retyped.
 - **No unused code.** An unused file, export or dependency fails.
-- **No question bank in git.** No question pages, Khan items, database files or media, and no
-  file over 1 MB.
+- **No file over 1 MB.** Media and data go to their own stores, never into a commit.
 - **Unit tests run offline.** A unit test fails on a network call, on real AWS and on an unpinned
   clock. Anything that needs those is an integration test.
 
@@ -53,10 +45,12 @@ violation to prove the check still catches it.
 | --- | --- |
 | `api` | The one Lambda: the router, `authorize()` and the routes. |
 | `web` | The app at app.jadwigo.pl: the lesson player and the parent's screens. |
+| `runner` | The AI engine's step host, a 2nd Lambda that drains the step queue. |
+| `converter` | A Lambda that turns a PDF, DOCX or HEIC into 1 JPEG per page. |
+| `print` | A Lambda that renders a lesson as a PDF to print. |
 | `site` | The marketing site at jadwigo.pl. |
 | `docs` | This site, docs.jadwigo.pl. |
-| `runner` | The AI engine's step host: it drains the step queue through the engine, as a 2nd Lambda or a Supabase Edge Function. |
-| `cli` | `jw`, in Python: question search for lesson authors, and its MCP server. It imports none of the TypeScript code and talks to the API over HTTP. |
+| `cli` | The command-line tool for lesson authors, in Python: question search and its own MCP server. It talks to the API over HTTP. |
 
 ## Every package
 
@@ -65,19 +59,18 @@ violation to prove the check still catches it.
 | `contracts` | Zod schemas for everything that crosses a boundary: ids, records, the answer wire, the route table and the errors. |
 | `core` | Grading, numbers and mastery, as pure functions. |
 | `store` | The `Store` interface, an in-memory store and a Postgres store, and one contract suite both pass. |
-| `api-client` | The typed client the web app calls the API with. Its types come from the contracts, never written by hand. |
-| `config` | The hosts and languages of every environment, in one place. A domain name written anywhere else is a bug. |
+| `jadwigo-ai` | The AI engine: a parent's chat becomes a lesson, one run per turn, every effect a run event. |
+| `lesson-import` | Compiles a lesson file into lesson questions and a published version. |
 | `lesson-kit` | The interaction families and the lesson blocks built on them. |
+| `bank` | Code to read, search and import the question bank. |
+| `api-client` | The typed client the web app calls the API with. Its types come from the contracts. |
 | `ui` | The design tokens and the shadcn/ui primitives. See [Design system](/design-system/). |
 | `copy` | Every string a person reads, in Polish and English. |
-| `lesson-import` | Compiles a lesson file from the playground into lesson questions and a published version. |
-| `bank` | Code to read, search and import the question bank. Never the questions themselves. |
-| `jadwigo-ai` | The AI engine: a parent's chat becomes a lesson, one run per turn, every effect a run event. |
-| `analytics` | PostHog for the site and the app: the event catalogue, the one init config, consent and the filter every event passes. |
+| `config` | The hosts and languages of every environment, in one place. |
+| `analytics` | PostHog for the site and the app: the event catalogue, consent, the filter every event passes, and the scrubbed error report the API and the runner send. |
 | `testing` | Fixtures, factories and the unit setup, for test files only. |
 
 ## Next
 
-- [Contracts and generated docs](/architecture/contracts/): how the `contracts` package feeds the
-  rest.
-- [Design system](/design-system/): what the `ui` package draws.
+- [Contracts and generated docs](/architecture/contracts/): how `contracts` feeds the rest.
+- [Building with agents](/architecture/building-with-agents/): how this repo was built.

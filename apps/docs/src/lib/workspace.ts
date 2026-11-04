@@ -28,33 +28,62 @@ export function workspaceEdges(root: string = ROOT): string[] {
   return edges.sort();
 }
 
-/**
- * The `a --> b` edges of a diagram's mermaid source (src/lib/diagrams/monorepo.mmd since
- * dl-5ssh.90.53.1; a fenced block in a page is read the same way), with each node id read back
- * as its name: `api_client` is `api-client`, as the source writes an id that holds a dash.
- */
-export function diagramEdges(markdown: string): string[] {
-  const fenced = [...markdown.matchAll(/```mermaid\n([\s\S]*?)```/g)].map((m) => m[1] ?? "");
-  const blocks = fenced.length > 0 ? fenced : [markdown];
-  return blocks
-    .flatMap((block) => [...block.matchAll(/^\s*(\w+) --> (\w+)\s*$/gm)])
-    .map(([, from = "", to = ""]) => `${from.replaceAll("_", "-")} --> ${to.replaceAll("_", "-")}`)
-    .sort();
+/** Every app's and package's short name in the workspace, with the folder it sits in. */
+function workspaceMembers(root: string): Map<string, "apps" | "packages"> {
+  const members = new Map<string, "apps" | "packages">();
+  for (const dir of ["apps", "packages"] as const)
+    for (const name of readdirSync(join(root, dir))) {
+      const manifest = join(root, dir, name, "package.json");
+      if (!existsSync(manifest)) continue;
+      const pkg = JSON.parse(readFileSync(manifest, "utf8")) as { name: string };
+      members.set(pkg.name.slice(SCOPE.length), dir);
+    }
+  return members;
 }
 
 /**
- * What keeps the Monorepo page's diagram (`markdown`) from matching the workspace: each edge the
- * workspace has and the diagram lacks, and each the diagram draws and the workspace no longer has.
+ * The layers of a diagram's mermaid source, top first: each `subgraph`'s member ids, read back as
+ * names (`lesson_kit` is `lesson-kit`, as the source writes an id that holds a dash).
+ */
+export function diagramLayers(mermaid: string): string[][] {
+  return [...mermaid.matchAll(/^\s*subgraph\b[^\n]*\n([\s\S]*?)^\s*end\s*$/gm)].map(
+    ([, body = ""]) =>
+      [...body.matchAll(/^\s*(\w+)/gm)].map(([, id = ""]) => id.replaceAll("_", "-")),
+  );
+}
+
+/**
+ * What keeps the Monorepo page's layered diagram (src/lib/diagrams/monorepo.mmd) from being true:
+ * an app or package an import names that no layer holds, a layer member the workspace lacks, an
+ * app below the top layer, an import that points up a layer, and any import out of the bottom one.
  * `check:dist` runs it in CI's docs-site job on every code change, because `turbo --affected` does
  * not select the docs test when only another package's package.json changes.
  */
-export function checkWorkspaceDiagram(markdown: string, root: string = ROOT): string[] {
-  const drawn = new Set(diagramEdges(markdown));
-  const real = new Set(workspaceEdges(root));
-  return [
-    ...[...real].filter((e) => !drawn.has(e)).map((e) => `the Monorepo diagram lacks ${e}`),
-    ...[...drawn]
-      .filter((e) => !real.has(e))
-      .map((e) => `the Monorepo diagram draws ${e}, which no package.json has`),
-  ];
+export function checkWorkspaceDiagram(mermaid: string, root: string = ROOT): string[] {
+  const layers = diagramLayers(mermaid);
+  const layerOf = new Map(layers.flatMap((names, i) => names.map((name) => [name, i] as const)));
+  const members = workspaceMembers(root);
+  const bottom = layers.length - 1;
+  const problems: string[] = [];
+  for (const [name, layer] of layerOf) {
+    if (!members.has(name))
+      problems.push(`the Monorepo diagram draws ${name}, which is no app or package`);
+    else if (members.get(name) === "apps" && layer !== 0)
+      problems.push(`the Monorepo diagram draws the app ${name} below the top layer`);
+  }
+  for (const edge of workspaceEdges(root)) {
+    const [from = "", to = ""] = edge.split(" --> ");
+    const a = layerOf.get(from);
+    const b = layerOf.get(to);
+    for (const [name, layer] of [
+      [from, a],
+      [to, b],
+    ] as const)
+      if (layer === undefined)
+        problems.push(`the Monorepo diagram lacks ${name}, which ${edge} needs`);
+    if (a === undefined || b === undefined) continue;
+    if (b < a) problems.push(`${edge} imports up a layer`);
+    else if (a === bottom) problems.push(`${edge} imports out of the bottom layer`);
+  }
+  return [...new Set(problems)];
 }

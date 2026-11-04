@@ -1,40 +1,49 @@
 ---
 title: Judging answers
-description: How a child's own-words answer gets judged kindly, against criteria written before the task.
+description: How a child's own-words answer would get judged kindly, against criteria written before the task.
 status: vision
-as_of: 2026-11-03
+as_of: 2026-11-04
 prs: []
 ---
 
 import Diagram from "../../../components/Diagram.astro";
 
-This page is for a judge marking homework with us: when a child explains in their own words, the
-judging follows criteria set before the task, and never lands as a bare wrong.
-
-Today a typed explanation is kept without a verdict. The product's code judge refuses this
-family on purpose: an explanation is judged after the lesson, against the task's criteria, not
-during it and not by pattern matching. What code does decide is small and honest: an empty
-answer, or one under the task's soft minimum, asks the child for a little more. Everything
-longer waits for the tutor.
+When a child explains something in their own words, a model would judge the answer against
+criteria written before the task, and the child would never read a bare „wrong".
 
 <Diagram
   name="judging"
-  caption="Criteria first, then code asks only for more; the tutor judges the rest."
+  caption="Criteria first, then code asks only for more, and the tutor judges the rest."
 />
 
-The vision is the tutor judging each explanation the way a good teacher marks: 1 verdict per
-criterion, each with a reason that points at the child's own words, and a judgement that keeps
-the criteria version it used, so a parent can see what was asked and why a line was given. The
-feedback the child reads is short and kind: it names one thing that is good or one next step,
-and never a bare „wrong". Spelling slips never fail a criterion about meaning.
+## How it works
 
-[E7](/experiments/e7/) shows this working on 80 invented answers: 2 models judged against
-criteria written first, agreeing with hand labels on about 19 of 20 answers, spending their
-rare false „wrong" on the same borderline case, and writing a cited reason for every one of
-the 170 criterion verdicts. It also shows why the tutor is needed at all: of the 80 answers,
-code could settle none, and its length gate alone was wrong about half the answers it touched.
+### Today
+
+A typed explanation is kept without a verdict. The product's code judge refuses this kind of
+answer on purpose. Code decides only one small thing: an empty answer, or one under the task's
+minimum length, asks the child for a little more.
+
+### Vision
+
+A tutor model gives 1 verdict per criterion, each with a reason, and keeps the version of the
+criteria it used. A parent can see what was asked and why. Spelling slips never fail a criterion
+about meaning.
+
+### What the child reads
+
+The feedback is short and kind. It names one thing that's good or one next step, and never says
+a bare „wrong".
+
+## Limits
+
+- **It's tested on invented answers only.** 2 Meta models agreed with the team's own labels on
+  about 19 of 20 answers the team wrote ([E7](/experiments/e7/)).
+- **A reason isn't checked against the child's words.** E7 counted a reason when it had 3 words
+  or more.
+- **Both models made the same false „wrong"** on 1 borderline answer ([E7](/experiments/e7/)).
 
 ## Next
 
-- [E7: judging a freeform answer](/experiments/e7/): the run that shows it.
-- [Vision](/vision/): the other five areas.
+- [E7: judging a freeform answer](/experiments/e7/): the run behind this page.
+- [What's next](/next/): the gaps and the other areas.

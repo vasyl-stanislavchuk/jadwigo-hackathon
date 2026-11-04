@@ -1,13 +1,13 @@
 ---
 title: Authentication
-description: Which credential each route takes, how to send it, and what a refusal means.
+description: Which credential each route and the remote MCP take, how to send it, and what a refusal means.
 ---
 
 import AccessTable from "../../../components/AccessTable.astro";
 import Generated from "../../../components/Generated.astro";
 
-This guide is for anyone who calls a route that needs a credential: which one it takes, how to
-send it, and what the API answers when it is missing.
+This guide is for anyone who calls a route or the remote MCP with a credential: which one it
+takes, how to send it, and what the API answers when it's missing.
 
 A route takes one of 3 credentials: none, a Supabase Auth token, or the bank's read token. The
 tables at the end list every route under its credential.
@@ -66,6 +66,25 @@ curl https://app.jadwigo.pl/api/v1/questions/$QUESTION_ID \
 
 No error message ever names a token.
 
+## Remote MCP: an OAuth 2.1 token
+
+The remote MCP at `https://app.jadwigo.pl/api/mcp` takes a Supabase Auth token too, but a
+parent's AI app gets it by OAuth 2.1, with Supabase Auth as the authorization server. An MCP
+client runs these steps on its own:
+
+1. It calls `POST /api/mcp` with no token. The answer is `401` `NotSignedIn`, with a
+   `WWW-Authenticate: Bearer resource_metadata="…"` header.
+2. It reads that metadata, served at `/.well-known/oauth-protected-resource`. The metadata names
+   the authorization server. The client registers itself there and starts OAuth 2.1.
+3. The parent signs in to Jadwigo and approves the app on the consent page, `/oauth/consent`.
+4. The client gets an access token and sends it as `Authorization: Bearer` on every call.
+
+The token is checked like the web app's: RS256, the audience `authenticated`, and an `exp` that
+hasn't passed. It also names the AI app's OAuth client in `client_id`. It carries the same rights
+as the parent's own token, so the app reads only that family. A token that was sent and failed is
+`401` with `error="invalid_token"` in the header, and the client refreshes it. A revoked app keeps
+its current token until it expires, at most 1 hour later.
+
 ## Every route and its credential
 
 ### No credential
@@ -76,7 +95,7 @@ No error message ever names a token.
 
 <AccessTable credential="supabase" />
 
-### The bank's read token
+### Bank read token
 
 <AccessTable credential="bank" />
 

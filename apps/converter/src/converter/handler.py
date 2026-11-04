@@ -32,6 +32,7 @@ from converter import tools
 from converter.encode import reencode
 from converter.errors import Refused
 from converter.keys import Request, parse_event
+from converter.report import report
 
 
 class S3(Protocol):
@@ -133,4 +134,7 @@ def lambda_handler(event: object, _context: object) -> dict[str, Any]:
         return convert(request, _client())
     except Refused as exc:
         _log(outcome="refused", code=exc.code, attachment_id=request.attachment_id)
+        raise
+    except Exception as exc:
+        report(exc, "converter", "convert")
         raise

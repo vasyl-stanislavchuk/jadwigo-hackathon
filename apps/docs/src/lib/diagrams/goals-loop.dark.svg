@@ -1,25 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 176" role="img" aria-labelledby="goals-loop-dark-title goals-loop-dark-desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 184" role="img" aria-labelledby="goals-loop-dark-title goals-loop-dark-desc">
 <title id="goals-loop-dark-title">The goals loop</title>
-<desc id="goals-loop-dark-desc">A parent's goal draws lessons, playing makes evidence, the report shows what changed, and the next goal follows.</desc>
-<defs><marker id="a-goals-loop-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9b4a7"/></marker></defs>
-<rect x="0" y="0" width="960" height="176" fill="#1d1e22"/>
-<line x1="186" y1="88" x2="216" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-goals-loop-dark)"/>
-<line x1="372" y1="88" x2="402" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-goals-loop-dark)"/>
-<line x1="558" y1="88" x2="588" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-goals-loop-dark)"/>
-<line x1="744" y1="88" x2="774" y2="88" stroke="#b9b4a7" stroke-width="1.5" marker-end="url(#a-goals-loop-dark)"/>
-<rect x="30" y="56" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="108" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">A parent's goal</text>
-<text x="108" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">in their own words</text>
-<rect x="216" y="56" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="294" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">Lessons</text>
-<text x="294" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">drawn for the goal</text>
-<rect x="402" y="56" width="156" height="64" rx="6" fill="#1d3157" stroke="#93b6ff" stroke-width="1.5"/>
-<text x="480" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">Evidence</text>
-<text x="480" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">from playing</text>
-<rect x="588" y="56" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="666" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">The report</text>
-<text x="666" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">what changed</text>
-<rect x="774" y="56" width="156" height="64" rx="6" fill="#1d1e22" stroke="#b9b4a7" stroke-width="1.5"/>
-<text x="852" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#ece8de">The next goal</text>
-<text x="852" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">the parent decides</text>
+<desc id="goals-loop-dark-desc">A parent's goal draws lessons, playing makes evidence, the report shows what changed, and the parent sets the next goal, which draws the next lessons.</desc>
+<defs><marker id="goals-loop-dark-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#a8b6cc"/></marker><marker id="goals-loop-dark-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#6a7cff"/></marker><marker id="goals-loop-dark-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#3db8b8"/></marker><marker id="goals-loop-dark-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#a8b6cc" stroke-width="1.2"/></marker></defs>
+<path d="M176,64 L208,64" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#goals-loop-dark-default)"/>
+<path d="M368,64 L400,64" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#goals-loop-dark-default)"/>
+<path d="M560,64 L592,64" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#goals-loop-dark-default)"/>
+<path d="M752,64 L784,64" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#goals-loop-dark-default)"/>
+<path d="M864,96 L864,128 Q864,136 856,136 L296,136 Q288,136 288,128 L288,96" fill="none" stroke="#a8b6cc" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#goals-loop-dark-default)"/>
+<rect x="16" y="32" width="160" height="64" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="96" y="61.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">A parent's goal</text>
+<text x="96" y="74.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">in their own words</text>
+<rect x="208" y="32" width="160" height="64" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="288" y="61.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Lessons</text>
+<text x="288" y="74.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">drawn for the goal</text>
+<rect x="400" y="32" width="160" height="64" rx="6" fill="rgba(106,124,255,0.14)" stroke="#6a7cff" stroke-width="1.5"/>
+<text x="480" y="61.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Evidence</text>
+<text x="480" y="74.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">from playing</text>
+<rect x="592" y="32" width="160" height="64" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="672" y="61.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">The report</text>
+<text x="672" y="74.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">what changed</text>
+<rect x="784" y="32" width="160" height="64" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="864" y="61.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">The next goal</text>
+<text x="864" y="74.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">the parent decides</text>
+<rect x="535.04" y="147" width="81.92" height="12" fill="#1d1e22"/>
+<text x="576" y="156" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">the next round</text>
 </svg>

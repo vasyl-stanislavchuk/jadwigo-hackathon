@@ -16,4 +16,4 @@ script in `tools/` or `infra/` and make the step the command that runs it.
 
 Runbooks land with the work that needs them: deploy (`dl-5ssh.2`), infra (`dl-5ssh.34.4`),
 migrations (`migrations.md`) and a lesson's import onto dev and prod (`lesson-import.md`). To see
-why a lesson's prep was slow or what it refused, use `run-timeline.md`.
+why a lesson's prep was slow or what it refused, use `run-timeline.md`. To turn on, read or turn off PostHog's error tracking, use `error-tracking.md`.

@@ -1,38 +1,50 @@
 ---
 title: "E1: learner knowledge on a cohort"
-description: 12 invented learners, 3 weeks of attempts each, folded into mastery and due dates.
+description: 12 learners the team invented, 3 weeks of answers each, folded by code into a level and a review date per skill.
 ---
 
-import Diagram from "../../../components/Diagram.astro";
 import ExperimentResult from "../../../components/ExperimentResult.astro";
 
-This experiment is for a judge who wants to see learner knowledge move: 12 invented learners with
-distinct profiles answer for 3 weeks, and code folds every attempt into mastery levels and review
-dates.
+This run tests whether code alone can turn 3 weeks of a child's answers into what the child knows.
+It's the first step of [the learning loop](/vision/learning-loop/).
 
 <ExperimentResult id="e1" />
 
-Each learner is a small behaviour, not a script: a hidden skill level per topic that grows with a
-clean first try, fades over a gap, and is sampled on every answer. The clock is pinned (from
-2026-10-12, seed 20261012, 21 days), so a re-run gives the same cohort byte for byte, apart from
-the wall time and the commit the run records. The 10 skills are real catalogue codes:
-multiplication rows 2 to 7 and 4 Polish spelling skills. The fold, the FSRS due dates and the
-brief are the product's own code in `packages/core` (`foldLearner`, `brief`); no model ran and
-nothing was written to a database, so
-the cost is $0.
+## Question
 
-<Diagram name="learner-knowledge" caption="Evidence in, a level and a due date out, then a brief." />
+Can code, with no model, fold every first try into a level per skill, a flag when a skill needs
+work, and a date to review it, and tell different children apart?
 
-This cohort is the shared starting point of this lane: E2 draws each learner's next lesson from
-these briefs, and E3 dreams a parent report over the same evidence. As product work it seeds the
-learner knowledge base (`dl-e8ov.5`) and the parent progress view, where these levels are never
-shown by name, only in words a parent can use.
+## Setup
+
+The team invented 12 learners, each with a profile such as steady, forgetful, guesser or
+weekend-only. Each one has a hidden skill level per topic that grows with a clean first try and
+fades over a gap. The run plays 21 days from a pinned clock and seed, so a re-run gives the same
+cohort. The 10 skills are real catalogue skills: multiplication rows 2 to 7 and 4 Polish spelling
+skills. The fold and the review dates are the product's own code. No real child's data went in.
+
+## Result
+
+Code folded 1,301 first tries, and the profiles came out clearly different. Steady and
+perfectionist end with 4 skills at mastered. Forgetful keeps 1 and has 9 flagged. Being right with
+help doesn't lift a level: help-heavy answered 104 times and still has 5 skills at attempted.
+
+## What failed
+
+- **The flag fires too often.** A miss in a skill's last 2 tries flags it, so 79 of the 120 skill
+  rows are flagged after 3 weeks. Most briefs start with "reteach", which is too long a list for a
+  parent to act on.
+- **The learners are invented.** The run shows that the code separates profiles the team wrote. It
+  doesn't show that the code reads a real child correctly.
+
+## Cost
+
+$0. No model ran, and nothing was written to a database.
 
 ## Every learner in the cohort
 
-The table is each profile after 21 days: how much they answered, where their 10 skills landed,
-and what the brief asks for next. The full day-by-day series is in the experiment's JSON under
-`detail`.
+Each profile after 21 days: how much the learner answered, where their 10 skills landed, and what
+the brief asks for next.
 
 | Learner | Profile | Tries | Final levels (of 10) | Brief |
 | --- | --- | ---: | --- | --- |
@@ -49,33 +61,7 @@ and what the brief asks for next. The full day-by-day series is in the experimen
 | Learner K | comeback | 77 | 1 mastered, 3 familiar, 6 attempted | 9 reteach |
 | Learner L | new-and-keen | 165 | 1 mastered, 1 proficient, 8 attempted | 8 reteach |
 
-Mean level (0 to 4 over the 10 skills) every 3rd day, as a text chart from the same series:
-
-| Learner | Profile | Days 0 to 20 | Day 0 | Day 9 | Day 20 |
-| --- | --- | --- | ---: | ---: | ---: |
-| Learner A | steady | ▁▄▅▅▆▆▇▇ | 0 | 2.3 | 3 |
-| Learner B | forgetful | ▂▃▃▃▄▄▃▃ | 0.7 | 1.4 | 1.3 |
-| Learner C | guesser | ▂▃▄▅▅▄▅▅ | 0.5 | 2 | 2.2 |
-| Learner D | slow-then-click | ▂▃▄▄▄▅▆▆ | 0.7 | 1.7 | 2.5 |
-| Learner E | help-heavy | ▂▂▃▄▄▄▄▄ | 0.5 | 1.5 | 1.7 |
-| Learner F | rusher | ▁▃▄▄▄▄▄▄ | 0 | 1.5 | 1.7 |
-| Learner G | perfectionist | ▂▄▅▅▆▆▆▆ | 0.7 | 2.3 | 2.8 |
-| Learner H | early-plateau | ▁▃▄▅▅▄▄▄ | 0 | 2 | 1.9 |
-| Learner I | weekend-only | ▁▁▄▄▄▄▄▃ | 0 | 1.6 | 1.4 |
-| Learner J | uneven | ▂▄▄▅▅▅▅▅ | 0.9 | 2.1 | 2.2 |
-| Learner K | comeback | ▂▃▄▄▄▅▄▄ | 0.5 | 1.5 | 1.6 |
-| Learner L | new-and-keen | ▂▄▄▃▃▃▄▄ | 0.8 | 1.2 | 1.5 |
-
-3 readings a judge can check in the JSON:
-
-- The fold separates the profiles as written: steady and perfectionist end with 4 skills at
-  mastered, while forgetful keeps only 1 and has 9 skills flagged for reteach.
-- Being right with help does not lift a level. Help-heavy answered 104 times and still has 5
-  skills at attempted.
-- A miss in a skill's last 2 attempts flags it. After 3 weeks 79 of the 120 skill rows carry that
-  flag, which is why so many briefs read reteach first.
-
 ## Next
 
-- [Learner knowledge](/vision/learner-knowledge/): what this run seeds.
-- [Experiments](/experiments/): the other runs.
+- [Learning loop](/vision/learning-loop/): what this run is for, with its diagram.
+- [E2: the next lesson, drawn](/experiments/e2/): the briefs above, turned into lessons.

@@ -16,13 +16,12 @@ describe("apiBase", () => {
 describe("SIDEBAR", () => {
   it("reads judges first, then the developer sections, every slug once", () => {
     expect(SIDEBAR.map((group) => group.label)).toEqual([
-      "What Jadwigo is",
+      "Start",
       "Features",
-      "The story",
+      "How it is built",
       "Vision",
       "Experiments",
-      "How it is built",
-      "Start here",
+      "API guides",
       "Use with agents",
       "API reference",
       "TypeScript client",
@@ -37,11 +36,12 @@ describe("SIDEBAR", () => {
     expect(sidebar[0]?.items[0]).toEqual({ slug: "index" });
   });
 
-  it("lists the 10 features, the vision pages and the 7 experiments a judge walks", () => {
+  it("lists the 8 features, the vision pages and the 7 experiments a judge walks", () => {
     const byLabel = (label: string) => SIDEBAR.find((group) => group.label === label)?.items;
-    expect(byLabel("Features")).toHaveLength(10);
+    expect(byLabel("Features")).toHaveLength(8);
     expect(byLabel("Features")?.every((slug) => slug.startsWith("features/"))).toBe(true);
-    expect(byLabel("Vision")).toHaveLength(7);
+    expect(byLabel("Vision")).toHaveLength(3);
+    expect(byLabel("Start")).toEqual(["index", "built", "next", "story"]);
     expect(byLabel("Experiments")).toEqual([
       "experiments",
       "experiments/e1",
@@ -54,15 +54,18 @@ describe("SIDEBAR", () => {
     ]);
     expect(byLabel("How it is built")).toEqual([
       "architecture",
-      "architecture/monorepo",
-      "architecture/contracts",
+      "architecture/happy-path",
       "architecture/ai-engine",
+      "architecture/contracts",
+      "architecture/monorepo",
       "architecture/building-with-agents",
     ]);
   });
 
   it("lists the MCP tool pages the build generates after the agents page and the MCP overview", () => {
-    expect(sidebar.find((group) => group.label === "Use with agents")?.items).toEqual([
+    const agents = sidebar.find((group) => group.label === "Use with agents");
+    expect(agents?.collapsed).toBe(true);
+    expect(agents?.items).toEqual([
       { slug: "guides/agents" },
       { slug: "mcp" },
       { label: "MCP tools", items: [{ autogenerate: { directory: "mcp" } }] },

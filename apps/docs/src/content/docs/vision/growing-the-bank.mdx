@@ -2,58 +2,49 @@
 title: Growing the bank
 description: "How the question bank grows: new sets read, enriched and indexed by Meta models, then gated."
 status: vision
-as_of: 2026-11-03
+as_of: 2026-11-04
 prs: []
 ---
 
 import Diagram from "../../../components/Diagram.astro";
 
-This page is for a judge asking how the bank reaches the next grade: new question sets are read
-and enriched by Meta models, indexed for search, and held to a golden-set gate before a lesson may
-use them.
+The question bank grows by reading a new set of questions, having Meta models enrich it for
+search, and letting it in only when the search test still passes.
 
-<Diagram name="bank-pipeline" caption="The slice flow, from a source library to a gated index." />
+<Diagram name="bank-pipeline" caption="Build the index, then test search before a child sees it." />
 
-The first slice was Khan maths for grade 3 in Polish and English: 143 sets and 2,738
-questions, enriched on `muse-spark-1.3-contributor` for $2.57 (sets) and $1.22 (items) and
-indexed at 1,892 vectors. The index has already grown past it: the index E5 gated on holds
-411 sets (Khan grades 1, 2, 3 and 4 at 23, 70, 143 and 151 sets, and 24 Alfik sets) at
-5,677 vectors, with enrichment still `reviewed: false` throughout, waiting for a person's
-read. Growing means running the same steps again for a new grade or a new
-library, and E4 priced them: enrichment projects to $26.52 per 1,000 sets, golden labels to
-about $2 to $3 per 100 needs, and a scored search run to about $0.04 per 100 needs of OpenAI
-and Voyage calls. The money is not the constraint. A person's review is: every enriched field
-carries `reviewed: false` until a person reads it, and the fields where the 3 drafts disagreed
-wait in 1 file for that read.
+## How it works
 
-What stays fixed as the bank grows:
+### Read and enrich
 
-- **Source fields are never rewritten.** A model writes only under `enrichment`, with the model
-  named on every field and the source words each claim rests on. Code drops a claim whose quote
-  is not in its source.
-- **Needs never come from a source's own titles.** A need written from a page's title would find
-  that page and prove nothing, so needs come from the curriculum, and the golden split is frozen
-  once with a fixed seed.
-- **Nothing is indexed before its licence is settled.** Khan's terms (CC BY-NC-SA 4.0, named on
-  every page) and Alfik's were each ruled on by the owner first. A third library needs the same
-  ruling, a reader that writes the same set page, and its credit line in the schema.
-- **The gate decides, on tune, before holdout is read.** E5 showed both edges: a grown index
-  that finds more and abstains less is blocked until a person reads the gaps, and a stale
-  holdout baseline blocks judgement rather than passing quietly.
+A reader turns each source library into the bank's own set pages. A Meta model then writes topics,
+keywords and a summary for each set and question, so search can find them. A model writes only
+under its own field, names itself on every field, and quotes the source for every claim. Code
+drops a claim whose quote isn't in the source. [E4](/experiments/e4/) ran these steps on 143 sets.
 
-That growth has begun the same way: Khan grades 1, 2 and 4 and Alfik Matematyczny, the
-second library, are read, enriched and indexed beside grade 3, each reusing the same tools
-with only its input file, output folder, needs and golden set of its own changed. What they
-do not have yet is their own passed gate and a person's review of their enrichment. The
-gaps in today's golden set
-choose what to pull next: of the 215 needs, 127 have no set graded relevant, and the curriculum
-outcomes they cite, such as reading and ordering numbers to 1000, are the shopping list. What
-is not yet measured is size: the search service builds its keyword corpus in memory at start,
-the vector stage keeps its best 300 vectors a query, and neither has been read at thousands of
-sets. The gate is how each growth step proves search still works before a child sees a question
-from it.
+### Test before use
+
+The team wrote test requests, called needs, from the curriculum, never from a source's own titles,
+because a need written from a page's title would find that page and prove nothing. Each change to
+the index runs against those needs, and a gate blocks it when a score drops past its limit
+([E5](/experiments/e5/)).
+
+### Licence first
+
+Nothing is indexed before its licence is settled. Khan Academy's licence is CC BY-NC-SA 4.0, and
+Vasyl ruled on it and on Alfik Matematyczny's terms first. A third library needs the same
+ruling and its own credit line.
+
+## Limits
+
+- **The gate blocks the grown index today.** It finds more, but declines fewer requests it should
+  decline ([E5](/experiments/e5/)).
+- **No person has reviewed the enrichment.** Every field the models wrote is marked unreviewed,
+  and the models' keywords barely agree with each other ([E4](/experiments/e4/)).
+- **Size isn't measured.** Search hasn't been tried at thousands of sets.
+- **The test needs show the gaps.** 127 of the 215 needs have no set that answers them yet.
 
 ## Next
 
-- [E4: how Meta models indexed the bank](/experiments/e4/): the run that shows it.
-- [E5: golden-set evals](/experiments/e5/): the gate, measured.
+- [E4: how Meta models indexed the bank](/experiments/e4/): what enrichment cost.
+- [E5: the bank's search test](/experiments/e5/): the gate, measured.

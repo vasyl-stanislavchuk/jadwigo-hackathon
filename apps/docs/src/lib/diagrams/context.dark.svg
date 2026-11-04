@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 352" role="img" aria-labelledby="context-dark-title context-dark-desc">
+<title id="context-dark-title">Jadwigo in its world</title>
+<desc id="context-dark-desc">A child, a parent, the parent's own AI app and a lesson author use Jadwigo. Jadwigo keeps its records in Supabase, asks Meta Muse for each AI step, and composes lessons from its question bank.</desc>
+<defs><marker id="context-dark-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#a8b6cc"/></marker><marker id="context-dark-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#6a7cff"/></marker><marker id="context-dark-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#3db8b8"/></marker><marker id="context-dark-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#a8b6cc" stroke-width="1.2"/></marker></defs>
+<path d="M132,84 L132,144" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#context-dark-default)"/>
+<path d="M364,84 L364,144" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#context-dark-default)"/>
+<path d="M596,84 L596,144" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#context-dark-default)"/>
+<path d="M828,84 L828,144" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#context-dark-default)"/>
+<path d="M152,216 L152,272" fill="none" stroke="#3db8b8" stroke-width="1.2" marker-end="url(#context-dark-link)"/>
+<path d="M480,216 L480,272" fill="none" stroke="#3db8b8" stroke-width="1.2" marker-end="url(#context-dark-link)"/>
+<path d="M808,216 L808,272" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#context-dark-default)"/>
+<rect x="32" y="24" width="200" height="60" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="132" y="51.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Child</text>
+<text x="132" y="64.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">plays a link, no login</text>
+<rect x="264" y="24" width="200" height="60" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="364" y="51.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Parent</text>
+<text x="364" y="64.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">signs in, chats, gives lessons</text>
+<rect x="496" y="24" width="200" height="60" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="596" y="51.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Parent's own AI app</text>
+<text x="596" y="64.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">connects by OAuth 2.1</text>
+<rect x="728" y="24" width="200" height="60" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="828" y="51.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Lesson author or agent</text>
+<text x="828" y="64.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">builds lessons from the bank</text>
+<rect x="32" y="144" width="896" height="72" rx="6" fill="rgba(106,124,255,0.14)" stroke="#6a7cff" stroke-width="1.5"/>
+<text x="480" y="170.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="7.5" font-weight="500" letter-spacing="0.18em" fill="#6a7cff">THE SYSTEM</text>
+<text x="480" y="184.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Jadwigo</text>
+<text x="480" y="197.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">web app, API and AI engine, serverless</text>
+<rect x="32" y="272" width="240" height="60" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="152" y="299.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Supabase</text>
+<text x="152" y="312.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">managed Postgres and sign-in</text>
+<rect x="360" y="272" width="240" height="60" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1" stroke-dasharray="4,3"/>
+<text x="480" y="299.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Meta Muse</text>
+<text x="480" y="312.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">Meta's model API</text>
+<rect x="688" y="272" width="240" height="60" rx="6" fill="rgba(168,182,204,0.12)" stroke="#93a1b8" stroke-width="1"/>
+<text x="808" y="299.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Question bank</text>
+<text x="808" y="312.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">credited sets, searched</text>
+<rect x="138" y="109" width="34.400000000000006" height="12" fill="#1d1e22"/>
+<text x="142" y="118" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">plays</text>
+<rect x="370" y="109" width="34.400000000000006" height="12" fill="#1d1e22"/>
+<text x="374" y="118" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">chats</text>
+<rect x="602" y="109" width="23.84" height="12" fill="#1d1e22"/>
+<text x="606" y="118" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">MCP</text>
+<rect x="834" y="109" width="50.24" height="12" fill="#1d1e22"/>
+<text x="838" y="118" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">searches</text>
+<rect x="158" y="239" width="92.48" height="12" fill="#1d1e22"/>
+<text x="162" y="248" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">records, sign-in</text>
+<rect x="486" y="239" width="87.2" height="12" fill="#1d1e22"/>
+<text x="490" y="248" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">1 call per step</text>
+<rect x="814" y="239" width="71.36" height="12" fill="#1d1e22"/>
+<text x="818" y="248" text-anchor="start" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">search, read</text>
+</svg>

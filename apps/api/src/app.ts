@@ -1,4 +1,5 @@
 import { Router } from "@aws-lambda-powertools/event-handler/http";
+import type { ReportError } from "@jadwigo/analytics/server";
 import {
   AUTH_EMAIL_HOOK_PATH,
   ErrorType,
@@ -98,6 +99,8 @@ type TokenRoute = Exclude<RouteName, OpenRoute>;
 
 /** What the app is built with besides the store. */
 export interface AppDeps {
+  /** Where a failure no refusal names is reported, beside its log line (dl-5ssh.158). */
+  readonly report?: ReportError | undefined;
   /** Verifies a token route's token. With none, no token is ever verified. */
   readonly authenticate?: Authenticate;
   /** The bank the search route asks. With none, no bank is wired. */
@@ -169,6 +172,7 @@ export function createApp(
     mail,
     mcp = {},
     print = { media: "" },
+    report,
   }: AppDeps = {},
 ): Router {
   const app = new Router();
@@ -178,7 +182,7 @@ export function createApp(
     const route: Route = ROUTES[name];
     const path = route.path.replace(/\{(\w+)\}/g, ":$1") as `/${string}`;
     const method = route.method.toLowerCase() as "get" | "post" | "patch";
-    app[method](path, async ({ req, params, event }) => {
+    app[method](path, async ({ req, params, event, context }) => {
       try {
         // A token route checks the token before anything else, so an unknown id is 401 too.
         const claims = route.auth === "token" ? await authenticate(req, event) : undefined;
@@ -201,6 +205,8 @@ export function createApp(
         // The router answers it 500, which the api-5xx alarm counts (dl-5ssh.13); the log line
         // is what tells why. Never the request's body: it may carry a child's answer.
         logFailure(name, error);
+        // Scrubbed, and it never throws or waits long (dl-5ssh.158).
+        await report?.(error, { route: name, request_id: context?.awsRequestId });
         throw error;
       }
     });

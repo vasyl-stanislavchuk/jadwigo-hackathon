@@ -1,15 +1,20 @@
 ---
-// /jadwigo-ai and /en/jadwigo-ai (dl-w0b4.114): Jadwigo AI as a named part of the product, the way
-// PostHog markets PostHog AI (owner's call jadwigo-marketing/calls/2026-11-02-jadwigo-ai-gets-a-marketing-page).
-// The intro, the 4 steps (reads the request, searches the question bank, builds and checks the lesson,
-// you decide), what it reads about a child and where that goes, with no claim about models either way
-// (dl-w0b4.79, dl-w0b4.116: the consent screen in the app and the privacy page say the rest), what it never
-// does, and "you check, then give". The words are the `ai` section of src/content/<lang>/landing.yaml.
-import type { Language } from "@jadwigo/config";
+// /jadwigo-ai and /en/jadwigo-ai: Jadwigo AI as a named part of the product, the way PostHog markets
+// PostHog AI (owner's call jadwigo-marketing/calls/2026-11-02-jadwigo-ai-gets-a-marketing-page), led by
+// what a parent gets (jadwigo-hackathon/decisions/2026-11-03-the-demo-scope-adds-an-outcome-led-jadwigo-ai-page-about-using-j).
+// The film's AI beat ends on this path, so it never moves and the page carries the set-up itself
+// (dl-w0b4.127). The words are the `ai` section of src/content/<lang>/landing.yaml. What it reads about a
+// child and where that goes makes no claim about models either way (dl-w0b4.79, dl-w0b4.116).
+import { Image } from "astro:assets";
+import { hosts, type Language } from "@jadwigo/config";
+import { MCP_PATH } from "@jadwigo/contracts";
+import AiChat from "../components/AiChat.astro";
 import EndBand from "../components/EndBand.astro";
+import Segmented from "../components/Segmented.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { footerPaths, otherLanguage, twinPath, twinStaticPaths } from "../lib/i18n.ts";
+import { courtArt } from "../lib/illustrations.ts";
 import { landingReviewed, landingWords } from "../lib/words.ts";
 
 export const getStaticPaths = () => twinStaticPaths("jadwigoAi", strictBuild);
@@ -30,28 +35,132 @@ const page = {
   reviewed,
   translation: twinPath("jadwigoAi", otherLanguage(lang)),
 };
+const mcpUrl = `https://${hosts.prod.app}${MCP_PATH}`;
+const docsUrl = `https://${hosts.prod.docs}/features/connect-your-ai/`;
+const apps = ai.connect.clients.map((c) => c.name);
+const clientValue = (i: number) => `client-${i}`;
+const tiles = Array.from({ length: 29 }, (_, i) => i);
 ---
 
 <Base page={page} path={twinPath("jadwigoAi", lang)}>
   <section class="wrap top" aria-labelledby="page-title">
-    <h1 id="page-title">{ai.heading}</h1>
-    <p class="intro">{ai.intro}</p>
+    <div class="top-words">
+      <h1 id="page-title">{ai.heading}</h1>
+      <p class="intro">{ai.intro}</p>
+      <a class="btn connect-link" href="#connect">{ai.connectLink}</a>
+    </div>
+    <AiChat words={ai.chat} apps={apps} />
   </section>
 
-  <ol class="wrap steps">
-    {
-      ai.steps.map((step, i) => (
-        <li class="step paper">
-          <p class="num" aria-hidden="true">{i + 1}</p>
-          <h2>
-            <span class="sr-only">{i + 1}. </span>
-            {step.title}
-          </h2>
-          <p>{step.text}</p>
-        </li>
-      ))
-    }
-  </ol>
+  <section class="wrap band" aria-labelledby="features-title">
+    <h2 id="features-title">{ai.features.heading}</h2>
+    <ul class="features">
+      {
+        ai.features.items.map((f, i) => (
+          <li class="feature">
+            <div class="fpic" aria-hidden="true">
+              {i === 0 && (
+                <span class="photo-lesson">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round">
+                    <rect x="3" y="6.5" width="18" height="13" rx="2.5" />
+                    <circle cx="12" cy="13" r="3.5" />
+                    <path d="M8.5 6.5 10 4h4l1.5 2.5" />
+                  </svg>
+                  <svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 12h15M13 6l6 6-6 6" />
+                  </svg>
+                  <span class="sheet paper" data-audience="kid"><b>7 × 8</b><b>6 × 7</b></span>
+                </span>
+              )}
+              {i === 1 && (
+                <span class="sources">
+                  <span>Alfik Matematyczny</span>
+                  <span>Khan Academy</span>
+                  <Image src={courtArt[1]} alt="" widths={[courtArt[1].width]} sizes="4rem" />
+                </span>
+              )}
+              {i === 2 && (
+                <span class="types">
+                  {tiles.map((t) => (
+                    <i class={`t${t % 4}`} />
+                  ))}
+                  <b>
+                    29 <small>{ai.features.types}</small>
+                  </b>
+                </span>
+              )}
+              {i === 3 && (
+                <span class="ways">
+                  <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                      <path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1" />
+                    </svg>
+                    {ai.features.link}
+                  </span>
+                  <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+                      <path d="M7 8V3h10v5M7 17H4V8h16v9h-3M7 14h10v7H7z" />
+                    </svg>
+                    {ai.features.paper}
+                  </span>
+                </span>
+              )}
+            </div>
+            <h3>{f.title}</h3>
+            <p>{f.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="wrap band" aria-labelledby="how-title">
+    <h2 id="how-title">{ai.how.heading}</h2>
+    <p class="lead">{ai.how.text}</p>
+    <ol class="steps">
+      {
+        ai.steps.map((step, i) => {
+          const art = courtArt[i];
+          return (
+            <li class="step">
+              {art && <Image src={art} alt="" widths={[art.width]} sizes="6rem" />}
+              <h3>{step.title}</h3>
+              <p>{step.text}</p>
+            </li>
+          );
+        })
+      }
+    </ol>
+  </section>
+
+  <section class="wrap band connect" id="connect" aria-labelledby="connect-title">
+    <h2 id="connect-title">{ai.connect.heading}</h2>
+    <p class="lead">{ai.connect.text}</p>
+    <div class="url">
+      <p class="url-label">{ai.connect.urlLabel}</p>
+      <p class="url-row">
+        <code>{mcpUrl}</code>
+        <button type="button" class="copy" data-copy={mcpUrl} data-copied={ai.connect.copied} hidden>{ai.connect.copy}</button>
+      </p>
+    </div>
+    <div class="clients">
+      <Segmented
+        label={ai.connect.clientsLabel}
+        name="ai-client"
+        value={clientValue(0)}
+        options={ai.connect.clients.map((c, i) => ({ value: clientValue(i), label: c.name }))}
+      />
+      <ol class="connect-steps">
+        {
+          ai.connect.clients.map((c, i) =>
+            c.steps.map((line) => <li data-client={clientValue(i)}>{line}</li>),
+          )
+        }
+        {ai.connect.after.map((line) => <li>{line}</li>)}
+      </ol>
+    </div>
+    <p class="more">{ai.connect.docs.text} <a href={docsUrl}>{ai.connect.docs.link}</a></p>
+  </section>
 
   <section class="wrap band data" aria-labelledby="data-title">
     <h2 id="data-title">{ai.data.heading}</h2>
@@ -82,24 +191,83 @@ const page = {
   <EndBand lang={lang} />
 </Base>
 
+<script>
+  // The address's copy button appears only where the clipboard works; without it the address stays selectable.
+  for (const button of document.querySelectorAll<HTMLButtonElement>("button[data-copy]")) {
+    if (!navigator.clipboard) continue;
+    const label = button.textContent;
+    button.hidden = false;
+    button.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(button.dataset["copy"] ?? "");
+      button.textContent = button.dataset["copied"] ?? label;
+      setTimeout(() => {
+        button.textContent = label;
+      }, 2000);
+    });
+  }
+</script>
+
 <style>
-  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .top { padding-top: clamp(2rem, 5vw, 3.5rem); }
+  .top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2rem; padding-top: clamp(2rem, 5vw, 3.5rem); }
+  @media (min-width: 56rem) { .top { grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: center; } }
   .top h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
   .intro { margin-top: 0.75rem; max-width: 40rem; font-size: 1.2rem; color: var(--jw-ink-soft); }
-
-  /* The 4 steps: one row of 4 on a wide screen, 2 by 2 on a tablet, one column on a phone. */
-  .steps {
-    list-style: none; margin-top: clamp(2rem, 5vw, 3rem); padding-top: 0; padding-bottom: 0;
-    display: grid; gap: 1.25rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-  }
-  .step { display: flex; flex-direction: column; gap: 0.5rem; padding: 1.25rem; }
-  .num { font-size: 2.75rem; font-weight: 700; line-height: 1; color: var(--jw-brand-go); }
-  .step h2 { font-size: 1.25rem; }
-  .step p:not(.num) { color: var(--jw-ink-soft); font-size: 0.98rem; }
+  .connect-link { margin-top: 1.25rem; }
 
   .band { border-top: 1px solid var(--jw-line); margin-top: clamp(3rem, 7vw, 4.5rem); padding-top: clamp(2rem, 5vw, 3rem); }
   .band h2 { font-size: clamp(1.5rem, 3vw, 2rem); max-width: 28ch; }
+  .lead { margin-top: 0.75rem; max-width: 42rem; color: var(--jw-ink-soft); }
+
+  /* What you get: 4 across on a wide screen, 2 by 2 on a tablet, one column on a phone. */
+  .features, .steps {
+    list-style: none; margin: 1.5rem 0 0; padding: 0;
+    display: grid; gap: 1.75rem 1.5rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+  .feature h3, .step h3 { font-size: 1.1rem; margin-top: 0.75rem; }
+  .feature p, .step p { margin-top: 0.35rem; color: var(--jw-ink-soft); font-size: 0.98rem; }
+  .fpic {
+    display: grid; place-items: center; height: 8.5rem; padding: 0.75rem; overflow: hidden;
+    background: var(--secondary); border-radius: var(--jw-radius-card);
+  }
+  .photo-lesson { display: flex; align-items: center; gap: 0.5rem; }
+  .photo-lesson svg { width: 3.25rem; height: 3.25rem; }
+  .photo-lesson .arrow { width: 1.5rem; height: 1.5rem; color: var(--jw-ink-soft); }
+  .photo-lesson .sheet { display: flex; flex-direction: column; gap: 0.2rem; padding: 0.5rem 0.75rem; border-radius: var(--jw-radius-small); font-size: 0.95rem; }
+  .sources { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; width: 100%; font-size: 0.85rem; font-weight: 600; }
+  .sources span { padding: 0.15rem 0.6rem; background: var(--jw-card); border: 1px solid var(--jw-line); border-radius: 999px; }
+  .sources img { position: absolute; right: 0; bottom: -0.25rem; height: 6.5rem; width: auto; }
+  .types { position: relative; display: grid; grid-template-columns: repeat(10, 1fr); gap: 0.2rem; width: min(100%, 13rem); }
+  .types i { aspect-ratio: 1; border-radius: 0.2rem; background: var(--jw-card); border: 1px solid var(--jw-line); }
+  .types i.t1 { background: var(--jw-act-quiet); }
+  .types b {
+    position: absolute; inset: 50% auto auto 50%; translate: -50% -50%; display: flex; flex-direction: column; align-items: center;
+    padding: 0.3rem 0.8rem; border-radius: var(--jw-radius-small); background: var(--jw-card); border: 1px solid var(--jw-ink); color: var(--jw-ink);
+    font-size: 1.75rem; line-height: 1.1; white-space: nowrap;
+  }
+  .types small { font-size: 0.75rem; font-weight: 600; }
+  .ways { display: flex; gap: 0.75rem; font-size: 0.85rem; font-weight: 600; text-align: center; }
+  .ways span { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; padding: 0.6rem 0.75rem; background: var(--jw-card); border: 1px solid var(--jw-line); border-radius: var(--jw-radius-small); }
+  .ways svg { width: 2.25rem; height: 2.25rem; }
+
+  .step img { display: block; height: 6rem; width: auto; }
+
+  /* The address, then one app's steps: the radios choose by CSS alone, so no script is needed. */
+  .url { margin-top: 1.25rem; max-width: 42rem; }
+  .url-label { font-size: 0.95rem; font-weight: 500; color: var(--jw-ink-soft); }
+  .url-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; margin-top: 0.35rem; padding: 0.6rem 0.75rem;
+    background: var(--jw-card); border: 1px solid var(--jw-line); border-radius: var(--jw-radius-small);
+  }
+  .url-row code { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; font-size: 1rem; font-weight: 600; }
+  .copy { padding: 0.2rem 0.75rem; background: var(--jw-card); border: 1px solid var(--jw-line); border-radius: var(--jw-radius-small); color: var(--jw-ink); font: inherit; font-size: 0.9rem; cursor: pointer; }
+  .copy:hover { background: var(--jw-hover-strong); }
+  .clients { margin-top: 1.25rem; max-width: 42rem; }
+  .connect-steps { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0 0; padding-left: 1.5rem; }
+  .connect-steps li[data-client] { display: none; }
+  .clients:has(input[value="client-0"]:checked) li[data-client="client-0"],
+  .clients:has(input[value="client-1"]:checked) li[data-client="client-1"],
+  .clients:has(input[value="client-2"]:checked) li[data-client="client-2"] { display: list-item; }
+  .connect .more { margin-top: 1rem; max-width: 42rem; color: var(--jw-ink-soft); }
 
   /* What it reads and where it goes, then where the app and the privacy page say more. */
   .data ul { margin: 1rem 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; max-width: 42rem; }

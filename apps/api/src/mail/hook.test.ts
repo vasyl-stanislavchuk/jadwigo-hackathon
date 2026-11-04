@@ -5,6 +5,7 @@ import { InMemoryStore } from "@jadwigo/store";
 import { Webhook } from "standardwebhooks";
 import { describe, expect, it, vi } from "vitest";
 import { createApp } from "../app.ts";
+import { setReporter } from "../report.ts";
 import {
   AUTH_EMAIL_FROM,
   handleSendEmail,
@@ -422,14 +423,16 @@ describe("hardening (dl-e8ov.2.100)", () => {
       await handleSendEmail(raw, signedHeaders(raw), quiet);
       expect(out.mock.calls.map((c) => String(c[0])).join("")).toContain("auth mail sent");
       expect(err).not.toHaveBeenCalled();
-      const failing: MailDeps = {
-        ...quiet,
-        client: { send: () => Promise.reject(new Error("down")) },
-      };
+      const down = new Error("down");
+      const failing: MailDeps = { ...quiet, client: { send: () => Promise.reject(down) } };
+      const report = vi.fn(() => Promise.resolve());
+      setReporter(report);
       const again = payload("magiclink");
       await handleSendEmail(again, signedHeaders(again), failing);
       expect(String(err.mock.calls[0]?.[0])).toContain("auth mail failed");
+      expect(report).toHaveBeenCalledWith(down, { operation: "auth_mail" });
     } finally {
+      setReporter(() => Promise.resolve());
       out.mockRestore();
       err.mockRestore();
     }

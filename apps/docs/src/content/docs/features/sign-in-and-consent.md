@@ -1,28 +1,42 @@
 ---
 title: Sign-in and consent
-description: A parent signs in with a 6-digit email code. A child never signs in. Consent gates analytics and any connected AI app.
+description: A parent signs in with an email code, Google or Facebook. A child never signs in. Consent gates analytics and any connected AI app.
 status: live
-as_of: 2026-11-03
+as_of: 2026-11-04
 prs: [717]
 ---
 
-This page is for a judge who wants to see who signs in, who does not, and what a parent agrees
-to.
+A parent signs in with an email code, Google or Facebook, a child never signs in, and nothing
+about a family leaves Jadwigo without the parent's yes.
 
-A parent signs in with a 6-digit code sent by email, through Supabase Auth. The token is RS256,
-so API Gateway verifies it before the API Lambda runs. A child never signs in: a play link with a
-learner in it starts the lesson as that child.
+## How it works
 
-1 cookie banner covers jadwigo.pl and app.jadwigo.pl. PostHog analytics runs only after the
-parent accepts. Session replay then records screens with every input masked. An analytics event
-carries no learner id, name, answer, or score.
+### Parent sign-in
 
-Connecting an AI app takes a 2nd consent, on `/oauth/consent` (#717, on `main`). The page names
-the app and what it may read. The parent's yes there lets that app receive their family's data,
-names included, through the remote MCP. Nothing else receives it. Row-level security in Postgres
-keeps each pod's rows to that pod on every route.
+A parent signs in with a 6-digit code sent by email, or with Google or Facebook. The token is
+checked before any of Jadwigo's code runs. A child never signs in: a
+[play link](/features/share-and-play/) made for a child starts the lesson as that child.
+
+### Analytics waits for a yes
+
+1 cookie banner covers jadwigo.pl and app.jadwigo.pl. Analytics runs only after the parent
+accepts. Session replay then records the screens with every input masked. An analytics event
+carries no learner id, name, answer or score.
+
+### A connected AI app needs a 2nd yes
+
+[Connecting an AI app](/features/connect-your-ai/) takes a 2nd consent, on its own page. The page
+names the app and what it may read. The parent's yes there lets that app receive the family's
+data, names included. Nothing else receives it. The database keeps each family's rows to that
+family on every route.
+
+## Limits
+
+- **There's no password, Apple or phone sign-in.** On 2026-11-04 prod offered the email code,
+  Google and Facebook only.
+- **A disconnected AI app keeps working for up to 1 hour,** until its current token expires.
 
 ## Next
 
-- [Connect your AI](/features/connect-your-ai/): what the OAuth consent unlocks.
+- [Connect your AI](/features/connect-your-ai/): what the 2nd consent unlocks.
 - [Authentication](/guides/authentication/): every credential, route by route.

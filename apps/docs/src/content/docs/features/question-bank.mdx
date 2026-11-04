@@ -1,28 +1,43 @@
 ---
-title: The question bank
-description: Lessons are composed from credited Khan Academy and Alfik questions. The bank lives outside git and only lesson-ready questions reach a child.
+title: Question bank
+description: Lessons are composed from credited Khan Academy and Alfik questions, and only lesson-ready questions reach a child.
 status: live
-as_of: 2026-11-03
-prs: []
+as_of: 2026-11-04
+prs: [780]
 ---
 
-This page is for a judge who wants to know where the questions come from, and what keeps a bad
-one away from a child.
+Lessons are built from a bank of borrowed, credited questions, and only a question the bank has
+checked reaches a child.
 
-The bank holds converted Khan Academy items and Alfik Matematyczny tasks. Each item keeps its
-source credit and licence. The bank itself lives outside the repo: no question pages, database
-files, or media are ever committed. The API reaches it 2 ways only. It invokes the bank's own
-search Lambda, and it reads a question's body from the content bucket by id. An id that starts
-with `alfik_` is an Alfik task. Any other id is a Khan item.
+## How it works
 
-A lesson takes only a lesson-ready question. Ready means the bank checked that the item compiles,
-that its key grades its own answer, that every picture loads, and that the page draws it without
-an error. An item the bank has not checked waits. An item a person flagged is out. The bank
-searches by topic, grade, language, and question type, so a draft can ask for the types a child
-needs. Questions embed with OpenAI `text-embedding-3-large` for that search, a call whose prompts
-pass a name guard first.
+### What's in it
+
+The bank holds Khan Academy maths items for grades 1 to 4 and Alfik Matematyczny tasks, in Polish
+and English. It has its own search, by topic, grade, language and question type, so a lesson can
+ask for the kinds of question a child needs.
+
+### Lesson-ready
+
+A lesson takes only a lesson-ready question. Ready means the bank checked that the question
+compiles, that its key grades its own answer, that every picture loads, and that the page draws
+it without an error. A question the bank hasn't checked waits. A question a person flagged is out.
+
+### Credits
+
+Every question carries its source, a reference, its licence and its original language. A Khan
+Academy item shows Khan's credit and its CC BY-NC-SA licence, with a line that says what changed.
+An Alfik task names Alfik Matematyczny. The child sees the credit beside the question, and the
+card it opens names the licence.
+
+## Limits
+
+- **No person has reviewed the enrichment yet.** The topics and summaries that models wrote for
+  search are all marked unreviewed ([E4](/experiments/e4/)).
+- **The search test flags the current index.** It finds more than the last one, but declines
+  fewer of the requests it should decline ([E5](/experiments/e5/)).
 
 ## Next
 
-- [Credits](/features/credits/): how a borrowed question shows its source.
-- [Question sources](/guides/question-sources/): sets, ready ids, and type counts.
+- [Growing the bank](/vision/growing-the-bank/): how the bank reaches the next grade.
+- [Question sources](/guides/question-sources/): sets, ready ids and type counts, for developers.

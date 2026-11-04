@@ -9,19 +9,19 @@ drawn in one style, **kredki**: coloured pencil and wax crayon on cream paper.
 
 ![The cast in kredki: Jadwiga with her crown and blue notebook, Ola with a high ponytail and a lined-page cape, Tymek with round glasses and a blue scarf, Zoja with two buns and paper-plane wings, and Marko with a folded paper hat and a wide blue cape](../../../assets/illustration/cast.webp)
 
-## The style
+## Style
 
-- **The medium:** coloured pencil and wax crayon on cream paper. Pencil strokes and paper tooth
+- **Medium:** coloured pencil and wax crayon on cream paper. Pencil strokes and paper tooth
   show, the edges are soft, and the outline is a confident dark pencil line of even weight.
-- **The feel:** a talented 10-year-old's drawing, tidied by a careful illustrator. Shapes are
+- **Feel:** a talented 10-year-old's drawing, tidied by a careful illustrator. Shapes are
   simple.
 - **Faces and bodies:** a big head on a small body, about 1 to 2.5. Dot eyes with a small white
   highlight, simple brows, a small mouth and a light rosy cheek.
 - **The palette** is Zeszyt's:
-  - pencil black for clothes and outlines;
-  - ink blue (`--jw-p-ink-650`) for capes, wings and scarves;
-  - the crown's yellow (`--jw-crown`) on Jadwiga's crown and nowhere else;
-  - natural skin tones and dark brown hair;
+  - pencil black for clothes and outlines
+  - ink blue (`--jw-p-ink-650`) for capes, wings and scarves
+  - the crown's yellow (`--jw-crown`) on Jadwiga's crown and nowhere else
+  - natural skin tones and dark brown hair
   - white paper and pencil grey for anything folded from paper.
 
 The pencil texture is why this style was chosen over a clean vector. It sits on the same notebook
@@ -68,15 +68,17 @@ approved final art enters the app.
 
 | Character | Who they are | Their marks |
 | --- | --- | --- |
-| **Jadwiga** | The queen, about 10. Calm, kind and a little clumsy. She doesn't fly. | Crown; one long brown plait; black A-line dress; a blue notebook under her arm |
-| **Ola** | A hero. Fast and straight. | Tall and slim; a high ponytail, nothing on her head; a cape torn from a lined notebook page |
-| **Tymek** | A hero. Careful and thoughtful; his landings wobble. | Short and round; big round glasses; a long blue scarf worn as a cape |
-| **Zoja** | A hero. Dreamy; she glides and loops. | Two round buns; paper-plane wings folded from notebook paper |
-| **Marko** | A hero. A cheerful joker who waves hello in 2 languages. | A pointed hat folded from white paper; a wide blue cape |
+| **Jadwiga** | The queen, about 10. Calm, kind and a little clumsy. She doesn't fly. | Crown, one long brown plait, black A-line dress, a blue notebook under her arm |
+| **Ola** | A hero. Fast and straight. | Tall and slim. A high ponytail, nothing on her head. A cape torn from a lined notebook page |
+| **Tymek** | A hero. Careful and thoughtful. His landings wobble. | Short and round, big round glasses, a long blue scarf worn as a cape |
+| **Zoja** | A hero. Dreamy, she glides and loops. | Two round buns, paper-plane wings folded from notebook paper |
+| **Marko** | A hero. A cheerful joker who waves hello in 2 languages. | A pointed hat folded from white paper, a wide blue cape |
 
 Jadwiga is named after Queen Jadwiga. The name Jadwigo is a play on words: Jadwiga, the queen, and
-go, moving: moving forward and growing under her warm wings. A teacher
-character may join the class later, but only with the teacher's written consent.
+go, moving: moving forward and growing under her warm wings.
+
+The class's real teacher joined the cast with her consent. After 3 right answers in a row, a short
+video plays: the queen gives a thumbs-up, or the teacher says "Brawo!".
 
 ## Next
 

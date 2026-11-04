@@ -9,6 +9,10 @@ supabase_ref = "xhzkmpainwzrfktxffjv"
 # billing/addons, connections_pooler, read 2026-10-29). 150 leaves 50 for make api-dev and the seeds.
 app_reserved_concurrency = 150
 
+# PostHog's public project key on the EU cloud, as in infra/web-build/prod.env: the api and the
+# runner report errors there, scrubbed (dl-5ssh.158, decision dl-9tuku).
+posthog_key = "phc_vEesu6ZErp6CwUqMQvgW4CihUncNnGdwtzov29kAsjRW" # gitleaks:allow
+
 # The step host's Muse lane may spend 30 USD a UTC day across every run before GuardedMuse refuses
 # (decision dl-uxnj); each run's own cap_usd still holds per turn.
 runner_muse_cap_usd = "30"

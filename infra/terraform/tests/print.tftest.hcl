@@ -78,6 +78,7 @@ run "the_print_lambda" {
   }
 
   variables {
+    posthog_key         = "phc_test"
     environment         = "dev"
     uploads_bucket_name = "jadwigo-uploads-dev-test"
     image_tag           = "dev-abc1234"
@@ -104,8 +105,8 @@ run "the_print_lambda" {
   }
 
   assert {
-    condition     = aws_lambda_function.print[0].environment[0].variables == tomap({ UPLOADS_BUCKET = "jadwigo-uploads-dev-test" })
-    error_message = "the environment names the bucket and nothing else"
+    condition     = aws_lambda_function.print[0].environment[0].variables == tomap({ UPLOADS_BUCKET = "jadwigo-uploads-dev-test", JW_POSTHOG_KEY = "phc_test" })
+    error_message = "the environment names the bucket and the PostHog key, and nothing else"
   }
 
   assert {

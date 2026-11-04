@@ -2,13 +2,18 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkWorkspaceDiagram, diagramEdges, workspaceEdges } from "./workspace.ts";
+import { checkWorkspaceDiagram, diagramLayers, workspaceEdges } from "./workspace.ts";
 
 const MONOREPO = readFileSync(new URL("./diagrams/monorepo.mmd", import.meta.url), "utf8");
 
-describe("the Monorepo page's import diagram", () => {
-  it("draws exactly the workspace's runtime dependencies", () => {
-    expect(diagramEdges(MONOREPO)).toEqual(workspaceEdges());
+describe("the Monorepo page's layered diagram", () => {
+  it("holds apps on top and contracts alone at the bottom", () => {
+    const layers = diagramLayers(MONOREPO);
+    expect(layers).toHaveLength(3);
+    expect(layers[0]).toEqual(
+      expect.arrayContaining(["api", "web", "runner", "converter", "print"]),
+    );
+    expect(layers[2]).toEqual(["contracts"]);
   });
 });
 
@@ -27,15 +32,11 @@ describe("workspaceEdges", () => {
   });
 });
 
-describe("diagramEdges", () => {
-  it("reads a fenced mermaid block, and turns an underscore id back into its dashed name", () => {
-    const page =
-      "a --> b\n\n```mermaid\nflowchart LR\n  lesson_kit --> ui\n  x -- label --> y\n```\n";
-    expect(diagramEdges(page)).toEqual(["lesson-kit --> ui"]);
-  });
-
-  it("reads a bare .mmd source, which is what monorepo.mmd is", () => {
-    expect(diagramEdges("flowchart LR\n  lesson_kit --> ui\n")).toEqual(["lesson-kit --> ui"]);
+describe("diagramLayers", () => {
+  it("reads each subgraph's members in order, an underscore id as its dashed name", () => {
+    const source =
+      'flowchart TB\n  subgraph a [Top]\n    web\n    lesson_kit["lesson-kit"]\n  end\n  subgraph b [Bottom]\n    contracts\n  end\n  a --> b\n';
+    expect(diagramLayers(source)).toEqual([["web", "lesson-kit"], ["contracts"]]);
   });
 });
 
@@ -54,31 +55,58 @@ describe("checkWorkspaceDiagram", () => {
     }
     return root;
   }
-  const page = (edges: string) => `\`\`\`mermaid\nflowchart LR\n${edges}\n\`\`\`\n`;
+  /** A layered source: one subgraph per layer, top first. */
+  const layered = (...layers: string[][]) =>
+    `flowchart TB\n${layers.map((names, i) => `  subgraph l${i} [L${i}]\n${names.map((n) => `    ${n}\n`).join("")}  end\n`).join("")}`;
+  const inWorkspace = (coreDeps: Record<string, string>, check: (root: string) => void) => {
+    const root = workspace(coreDeps);
+    try {
+      check(root);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  };
 
   it("passes the real page against the real workspace", () => {
     expect(checkWorkspaceDiagram(MONOREPO)).toEqual([]);
   });
 
-  it("names an edge a package.json gained and the diagram lacks", () => {
-    const root = workspace({ "@jadwigo/copy": "workspace:*" });
-    try {
-      expect(checkWorkspaceDiagram(page(""), root)).toEqual([
-        "the Monorepo diagram lacks core --> copy",
-      ]);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
+  it("passes an import that points down a layer, or within one", () => {
+    inWorkspace({ "@jadwigo/copy": "workspace:*" }, (root) => {
+      expect(checkWorkspaceDiagram(layered(["core"], ["copy"]), root)).toEqual([]);
+      expect(checkWorkspaceDiagram(layered(["core", "copy"], []), root)).toEqual([]);
+    });
   });
 
-  it("names an edge the diagram draws and no package.json has", () => {
-    const root = workspace({});
-    try {
-      expect(checkWorkspaceDiagram(page("  core --> copy"), root)).toEqual([
-        "the Monorepo diagram draws core --> copy, which no package.json has",
+  it("names an import that points up a layer", () => {
+    inWorkspace({ "@jadwigo/copy": "workspace:*" }, (root) => {
+      expect(checkWorkspaceDiagram(layered(["copy"], ["core"]), root)).toEqual([
+        "core --> copy imports up a layer",
       ]);
-    } finally {
-      rmSync(root, { recursive: true, force: true });
-    }
+    });
+  });
+
+  it("names an import out of the bottom layer", () => {
+    inWorkspace({ "@jadwigo/copy": "workspace:*" }, (root) => {
+      expect(checkWorkspaceDiagram(layered([], ["core", "copy"]), root)).toEqual([
+        "core --> copy imports out of the bottom layer",
+      ]);
+    });
+  });
+
+  it("names a package an import needs that no layer holds", () => {
+    inWorkspace({ "@jadwigo/copy": "workspace:*" }, (root) => {
+      expect(checkWorkspaceDiagram(layered(["core"]), root)).toEqual([
+        "the Monorepo diagram lacks copy, which core --> copy needs",
+      ]);
+    });
+  });
+
+  it("names a layer member the workspace does not have", () => {
+    inWorkspace({}, (root) => {
+      expect(checkWorkspaceDiagram(layered(["core", "gone"], ["copy"]), root)).toEqual([
+        "the Monorepo diagram draws gone, which is no app or package",
+      ]);
+    });
   });
 });

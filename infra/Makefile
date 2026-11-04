@@ -9,7 +9,7 @@ export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy site-photos deploydeploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test probe-step-host-plan probe-step-host-apply probe-step-host-destroy runner-deploy runner-rollback runner-status
+.PHONY: init plan apply output site-deploy site-photos deploy deploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test probe-step-host-plan probe-step-host-apply probe-step-host-destroy runner-deploy runner-rollback runner-status
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -33,9 +33,15 @@ AWS := aws --profile $(AWS_PROFILE)
 # app.<apex>. The recipe's shell runs it, so it names the checkout the build came from.
 STAMP = printf '%s %s%s\n' "$$(git rev-parse HEAD)" "$$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$$([ -z "$$(git status --porcelain)" ] || echo ' dirty')"
 
+# Sends a build's source maps to PostHog, so a reported error's stack is readable (dl-5ssh.159), and
+# always deletes them, so no bucket or zip holds one. POSTHOG_CLI_API_KEY, a personal key in the owner's
+# shell, turns the upload on; without it the release goes on and stacks stay minified.
+UPLOAD_MAPS := bun ../tools/src/upload-sourcemaps.ts
+
 site-deploy:
 	@$(NOT_FROM_AGENT)
 	set -a && . $(abspath site-build/prod.env) && set +a && cd $(SITE) && bun run build && bun run check:dist && bun run check:hreflang dist
+	$(UPLOAD_MAPS) $(SITE)/dist
 	$(STAMP) > $(SITE)/dist/version.txt
 	bucket=$$($(TF) output -raw site_bucket) && dist_id=$$($(TF) output -raw site_distribution_id) && \
 	{ [ ! -d $(SITE)/dist/_astro ] || $(AWS) s3 sync $(SITE)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
@@ -79,6 +85,7 @@ prod-status:
 api-deploy:
 	@$(NOT_FROM_AGENT)
 	$(MAKE) -C .. api-bundle
+	$(UPLOAD_MAPS) ../apps/api/dist
 	rm -f $(API_ZIP) && zip -qj $(API_ZIP) ../apps/api/dist/index.mjs
 	fn=$$($(TF) output -raw api_function_name) && \
 	$(AWS) lambda update-function-code --function-name $$fn --zip-file fileb://$(API_ZIP) --architectures arm64 >/dev/null && \
@@ -93,6 +100,7 @@ web-deploy:
 	@$(NOT_FROM_AGENT)
 	$(MAKE) web-build
 	test -f $(WEB)/dist/index.html
+	$(UPLOAD_MAPS) $(WEB)/dist
 	mkdir -p $(WEB)/dist/version && $(STAMP) > $(WEB)/dist/version/web.txt
 	bucket=$$($(TF) output -raw app_bucket) && dist_id=$$($(TF) output -raw app_distribution_id) && \
 	{ [ ! -d $(WEB)/dist/assets ] || $(AWS) s3 sync $(WEB)/dist/assets s3://$$bucket/assets --cache-control "public, max-age=31536000, immutable"; } && \
@@ -150,7 +158,7 @@ auth-apply:
 # runs one turn against it. runner-rollback VERSION=<n> points `live` back; runner-status reads it.
 RUNNER_ZIP := ../apps/runner/dist/runner.zip
 RUNNER_ENTRY := $(abspath ../apps/runner/dist/index.mjs)
-RUNNER_PATHS := apps/runner packages/jadwigo-ai packages/store packages/contracts packages/core packages/lesson-import bun.lock
+RUNNER_PATHS := apps/runner packages/analytics packages/config packages/jadwigo-ai packages/store packages/contracts packages/core packages/lesson-import bun.lock
 
 runner-deploy:
 	@$(NOT_FROM_AGENT)
@@ -161,6 +169,7 @@ runner-deploy:
 	if [ -z "$(FORCE)" ] && git -C .. cat-file -e "$$shipped^{commit}" 2>/dev/null && git -C .. diff --quiet "$$shipped" HEAD -- $(RUNNER_PATHS); then \
 	  echo "runner-deploy: nothing the runner bundles changed since $$shipped (version $$live is live); FORCE=1 deploys anyway"; exit 0; fi && \
 	$(MAKE) -C .. runner-bundle && \
+	$(UPLOAD_MAPS) ../apps/runner/dist && \
 	node --input-type=module -e "const m = await import('$(RUNNER_ENTRY)'); if (typeof m.handler !== 'function') process.exit(1);" && \
 	rm -f $(RUNNER_ZIP) && zip -qj $(RUNNER_ZIP) $(RUNNER_ENTRY) && \
 	sum=$$(shasum -a 256 $(RUNNER_ZIP) | cut -d' ' -f1) && commit=$$(git -C .. rev-parse HEAD) && \

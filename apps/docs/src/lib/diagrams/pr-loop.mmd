@@ -1,0 +1,9 @@
+flowchart LR
+  issue["Issue<br/>a brief on the board"]
+  worktree["Worktree<br/>1 per agent, own branch"]
+  draft["Draft PR<br/>pushed often"]
+  ci["CI<br/>lint, types, tests"]
+  reviewers["Reviewers<br/>fresh agents"]
+  merge["Auto-merge<br/>squash into main"]
+  issue --> worktree --> draft --> ci -- ci-ok --> reviewers -- review-ok --> merge
+  reviewers -. "red: back to the author" .-> draft

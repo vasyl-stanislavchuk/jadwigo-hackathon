@@ -1,14 +1,15 @@
 /**
  * What may leave the browser (decision dl-376c8). PostHog's own `$` events (pageviews, replay
  * snapshots, consent) pass with their URLs cut to route shapes, so no learner or lesson id rides
- * along. Our events pass only as the catalogue declares them. Anything else is dropped.
+ * along. An exception passes scrubbed (scrub.ts). Our events pass only as the catalogue declares
+ * them. Anything else is dropped.
  */
 import type { CaptureResult } from "posthog-js";
 import { CATALOG, isEventName, type PropSpec, type Surface } from "./catalog.ts";
+import { cutPath, ID_ANYWHERE, isExceptionLevel, isNoise, scrubExceptionList } from "./scrub.ts";
 
-/** PostHog events we never send: exceptions carry messages, identity calls carry a person. */
+/** PostHog events we never send: identity calls carry a person. */
 const DROPPED_SYSTEM_EVENTS = new Set([
-  "$exception",
   "$identify",
   "$create_alias",
   "$set",
@@ -17,34 +18,6 @@ const DROPPED_SYSTEM_EVENTS = new Set([
   "$rageclick",
   "$dead_click",
 ]);
-
-/** Path segments that follow these words are ids; they become `:id`. */
-const ID_AFTER = new Set(["play", "children", "attempts", "assignments", "lessons", "history"]);
-
-/** An id-looking segment: a prefixed id (`lrn_…`), a uuid, or a long run of digits or hex. */
-const ID_SEGMENT = /^([a-z]{2,5}_[0-9A-Za-z]+|[0-9a-f-]{16,}|\d{4,})$/;
-
-/** Cuts ids out of a path or a URL, and drops its query and hash (`?claim=`, `?for=` carry ids).
- * A value that is neither, such as PostHog's `$direct` referrer, passes unchanged. */
-export function cutPath(value: string): string {
-  if (!value.startsWith("/") && !/^[a-z]+:\/\//i.test(value)) return value;
-  let url: URL;
-  try {
-    url = new URL(value, "https://x.invalid");
-  } catch {
-    return "";
-  }
-  const parts = url.pathname.split("/");
-  const cut = parts.map((part, i) =>
-    (i > 0 && ID_AFTER.has(parts[i - 1] ?? "")) || ID_SEGMENT.test(part) ? ":id" : part,
-  );
-  const path = cut.join("/");
-  return /^[a-z]+:\/\//i.test(value) ? `${url.origin}${path}` : path;
-}
-
-/** A prefixed id (`lrn_…`) or a uuid anywhere in a value, such as `data-learner-card`'s. */
-const ID_ANYWHERE =
-  /\b[a-z]{2,5}_[0-9A-Za-z]{10,}\b|\b[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\b/g;
 
 /** The attributes whose value is a URL. */
 const URL_ATTRIBUTES = new Set(["href", "src", "action", "poster"]);
@@ -129,6 +102,29 @@ function ownProps(
   return out;
 }
 
+/** Where a caught error was reported from (`reportError`). */
+const ERROR_SOURCES = ["error_boundary"] as const;
+export type ErrorSource = (typeof ERROR_SOURCES)[number];
+
+/** An exception's scrubbed list and level, its known source, and PostHog's other `$` keys: every
+ * other `$exception_*` (a person URL, a raw message) is dropped. No list or noise, no event. */
+function exceptionProps(props: Record<string, unknown>): Record<string, unknown> | null {
+  if (isNoise(props["$exception_list"])) return null;
+  const list = scrubExceptionList(props["$exception_list"]);
+  const kept = ownProps({}, props);
+  if (list === null || kept === null) return null;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(kept)) {
+    if (!key.startsWith("$exception_")) out[key] = value;
+  }
+  out["$exception_list"] = list;
+  if (isExceptionLevel(props["$exception_level"]))
+    out["$exception_level"] = props["$exception_level"];
+  const source = ERROR_SOURCES.find((known) => known === props["source"]);
+  if (source !== undefined) out["source"] = source;
+  return out;
+}
+
 /** The before_send for one surface: `beforeSend`, then the surface and no GeoIP on every event. */
 export function beforeSendFor(
   surface: Surface,
@@ -148,6 +144,10 @@ export function beforeSend(event: CaptureResult | null): CaptureResult | null {
   const props = rest.properties ?? {};
   if (name.startsWith("$")) {
     if (DROPPED_SYSTEM_EVENTS.has(name)) return null;
+    if (name === "$exception") {
+      const kept = exceptionProps(props);
+      return kept === null ? null : { ...rest, properties: cutUrls(kept) };
+    }
     return { ...rest, properties: cutUrls(props) };
   }
   if (!isEventName(name)) return null;
