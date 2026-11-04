@@ -25,10 +25,14 @@ import hero from "../assets/illustrations/hero.webp";
 import howStep2 from "../assets/illustrations/how-step2.webp";
 import howTop from "../assets/illustrations/how-top.webp";
 import partner from "../assets/illustrations/partner.webp";
+import partnerGrow from "../assets/illustrations/partner-grow.webp";
 
 // `partner` is the table picture with the blinking Queen, in the landing page's hero since
-// dl-5ssh.4.48. The sprout that was the partner block's picture left with dl-w0b4.146.
-export const slotArt = { hero, partner, howTop, howStep2 } satisfies Record<string, ImageMetadata>;
+// dl-5ssh.4.48; `partnerGrow`, the sprout, is the partner block's picture.
+export const slotArt = { hero, partner, partnerGrow, howTop, howStep2 } satisfies Record<
+  string,
+  ImageMetadata
+>;
 
 // The court on their own, transparent, from jadwigo-art/cast/2a/anchors (dl-w0b4.127): the 4 who carry
 // /jadwigo-ai's steps, in that order.

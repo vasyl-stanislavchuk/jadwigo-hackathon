@@ -29,6 +29,8 @@ const landing: readonly DistCheck[] = [
   ["index.html", 'id="lekcje"'],
   // Direction 1a (design handoff "landing 3", dl-5ssh.4.13): the example profile and the sign-up at the end.
   ["index.html", 'id="partner-title"'],
+  // Tymek's story is in /jak-to-dziala's step 3 (dl-w0b4.153).
+  ["jak-to-dziala/index.html", 'class="story"'],
   ["index.html", '<section class="end-band"'],
   ["jak-to-dziala/index.html", '<section class="end-band"'],
   ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
@@ -51,6 +53,8 @@ const landing: readonly DistCheck[] = [
   // And the film, with the link to the docs.
   ["o-nas/index.html", "/about-photos/film.mp4"],
   ["o-nas/index.html", 'href="https://docs.jadwigo.pl/"'],
+  // /jak-to-dziala's first step plays its clip, served the same way.
+  ["jak-to-dziala/index.html", "/about-photos/how-request.mp4"],
   // A lesson card opens the lesson in a new tab, so the site stays where it was (dl-w0b4.140).
   ["index.html", 'target="_blank" rel="noopener"'],
   ["lekcje/index.html", 'target="_blank" rel="noopener"'],
@@ -112,6 +116,8 @@ const hidden: readonly DistCheck[] = [
   ["sitemap-0.xml", "https://jadwigo.pl/porownanie/"],
   ["index.html", "Źródła zadań"],
   ["index.html", "Odpowiedzi dziecka widzisz tylko Ty"],
+  // The photo of finished work is told as vision, never as live (dl-w0b4.154).
+  ["index.html", "Jadwigo sprawdzi"],
   // The school is named only after it consents (dl-w0b4.89).
   ["o-nas/index.html", "szkoły naszego syna"],
 ];

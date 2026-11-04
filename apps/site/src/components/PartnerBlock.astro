@@ -1,13 +1,11 @@
 ---
 // Direction 1a, "Partner" (design handoff "landing 3", owner, 2026-11-01): learning the parent is close
-// to (decision dl-w0b4.124). Beside it, Tymek's short story from the demo film (dl-w0b4.143), which
-// replaced the screenshot of the app's child page (dl-w0b4.123): his page in the app's own lists, a new
-// lesson, and the sheet it makes landing on his table. Tymek is made up, never a real learner.
-// Two sides (dl-w0b4.146): the heading, the text and Tymek's child page on one, his table on the other.
-// The sprout picture that stood under the text is gone.
+// to (decision dl-w0b4.124), beside the sprout that grows out of the pencil pot. The sprout came back in
+// dl-w0b4.153, when Tymek's story moved to /jak-to-dziala's step 3.
 import type { Language } from "@jadwigo/config";
+import { slotArt } from "../lib/illustrations.ts";
 import { landingWords } from "../lib/words.ts";
-import TymekStory from "./TymekStory.astro";
+import Pic from "./Pic.astro";
 
 interface Props {
   lang: Language;
@@ -21,9 +19,8 @@ const p = (await landingWords(lang)).partner;
   <div class="lead">
     <h2 id="partner-title">{p.heading}</h2>
     <p class="text">{p.text}</p>
-    <TymekStory lang={lang} part="page" />
   </div>
-  <TymekStory lang={lang} part="table" />
+  <Pic label={p.pic} src={slotArt.partnerGrow} sizes="(max-width: 56rem) 100vw, 36rem" />
 </section>
 
 <style>
@@ -33,5 +30,4 @@ const p = (await landingWords(lang)).partner;
   /* The section heading on the adult scale (dl-w0b4.124). */
   .lead h2 { font-size: var(--jw-page-h1); max-width: 18ch; }
   .text { font-size: 1.15rem; color: var(--jw-ink-soft); }
-  .lead :global(.window) { margin-top: 0.75rem; }
 </style>

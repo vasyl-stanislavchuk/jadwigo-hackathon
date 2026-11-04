@@ -1,5 +1,5 @@
 ---
-// Tymek's short story (dl-w0b4.143): the landing page's cut of the demo film's vision scene (S12 v3).
+// Tymek's short story (dl-w0b4.143), in /jak-to-dziala's step 3 since dl-w0b4.153: a cut of the demo film's vision scene (S12 v3).
 // Tymek, a made-up child, sits with his dad at the table from the film. Beside them, his child page in
 // the app's own lists. The new-lesson button is pressed, a sheet drops onto the table (7 × 9 split into
 // 7 × 5 and 7 × 4), and Tymek fills it in. One 10 s CSS loop, no script. With reduced motion the loop
@@ -13,8 +13,7 @@ import { landingWords } from "../lib/words.ts";
 
 interface Props {
   lang: Language;
-  // The partner block puts the two halves on its two sides (dl-w0b4.146): `page`, the child page under
-  // the text, and `table`, the scene. Both run on the page's one clock, so they stay in step.
+  // The two halves (dl-w0b4.146): `page`, the child page, and `table`, the scene. Both run on the page's one clock, so they stay in step.
   part: "page" | "table";
 }
 
@@ -153,7 +152,7 @@ const done = [48, 42, 36];
   .who small { color: var(--jw-ink-soft); font-size: 0.9rem; }
   .act {
     margin-left: auto; padding: 0.45rem 0.9rem; border-radius: var(--jw-radius-control);
-    background: var(--jw-act); color: var(--jw-on-act); font-weight: 600; font-size: 0.95rem; white-space: nowrap;
+    background: var(--jw-card); border: 1px solid var(--jw-line-strong); color: var(--jw-ink); font-weight: 600; font-size: 0.95rem; white-space: nowrap;
   }
   .lists { margin: 0; padding: 0.25rem 1.25rem 1.1rem; display: grid; gap: 0.6rem; }
   .row dt { font-weight: 600; }
@@ -204,7 +203,7 @@ const done = [48, 42, 36];
   @keyframes ty-r1 { 0%, 3% { opacity: 0; transform: translateY(0.4rem); } 8%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
   @keyframes ty-r2 { 0%, 8% { opacity: 0; transform: translateY(0.4rem); } 13%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
   @keyframes ty-r3 { 0%, 13% { opacity: 0; transform: translateY(0.4rem); } 18%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
-  @keyframes ty-press { 0%, 25% { transform: none; background: var(--jw-act); } 27% { transform: scale(0.95); background: var(--jw-act-hover); } 31%, 100% { transform: none; background: var(--jw-act); } }
+  @keyframes ty-press { 0%, 25% { transform: none; background: var(--jw-card); } 27% { transform: scale(0.95); background: var(--secondary); } 31%, 100% { transform: none; background: var(--jw-card); } }
   @keyframes ty-old { 0%, 41% { opacity: 1; } 44%, 97% { opacity: 0; } 100% { opacity: 1; } }
   @keyframes ty-new { 0%, 41% { opacity: 0; } 44%, 95% { opacity: 1; } 98%, 100% { opacity: 0; } }
   @keyframes ty-a1 { 0%, 54% { opacity: 0; } 57%, 100% { opacity: 1; } }
