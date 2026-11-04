@@ -152,7 +152,7 @@ const done = [48, 42, 36];
   .who small { color: var(--jw-ink-soft); font-size: 0.9rem; }
   .act {
     margin-left: auto; padding: 0.45rem 0.9rem; border-radius: var(--jw-radius-control);
-    background: var(--jw-act); color: var(--jw-on-act); font-weight: 600; font-size: 0.95rem; white-space: nowrap;
+    background: var(--jw-card); border: 1px solid var(--jw-line-strong); color: var(--jw-ink); font-weight: 600; font-size: 0.95rem; white-space: nowrap;
   }
   .lists { margin: 0; padding: 0.25rem 1.25rem 1.1rem; display: grid; gap: 0.6rem; }
   .row dt { font-weight: 600; }
@@ -203,7 +203,7 @@ const done = [48, 42, 36];
   @keyframes ty-r1 { 0%, 3% { opacity: 0; transform: translateY(0.4rem); } 8%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
   @keyframes ty-r2 { 0%, 8% { opacity: 0; transform: translateY(0.4rem); } 13%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
   @keyframes ty-r3 { 0%, 13% { opacity: 0; transform: translateY(0.4rem); } 18%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
-  @keyframes ty-press { 0%, 25% { transform: none; background: var(--jw-act); } 27% { transform: scale(0.95); background: var(--jw-act-hover); } 31%, 100% { transform: none; background: var(--jw-act); } }
+  @keyframes ty-press { 0%, 25% { transform: none; background: var(--jw-card); } 27% { transform: scale(0.95); background: var(--secondary); } 31%, 100% { transform: none; background: var(--jw-card); } }
   @keyframes ty-old { 0%, 41% { opacity: 1; } 44%, 97% { opacity: 0; } 100% { opacity: 1; } }
   @keyframes ty-new { 0%, 41% { opacity: 0; } 44%, 95% { opacity: 1; } 98%, 100% { opacity: 0; } }
   @keyframes ty-a1 { 0%, 54% { opacity: 0; } 57%, 100% { opacity: 1; } }
