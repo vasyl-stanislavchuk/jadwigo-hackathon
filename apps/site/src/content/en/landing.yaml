@@ -80,7 +80,7 @@ ai:
     alt: "A chat window with the Queen and her pencil-case court standing on top of it. A parent sends a photo of Tymek's marked math homework and asks what he got wrong. The app answers that he got 38 of 42 right, lists the 4 facts to fix, and proposes a lesson. The parent says yes and gets Tymek's play link."
     caption: An example with a made-up child, Tymek.
     ask: This is Tymek's math homework from today, marked by his teacher. Can you see what he got wrong? Make him a short lesson on just that.
-    found: Tymek got 38 of 42 right. The 4 to fix are
+    found: "Tymek got 38 of 42 right. The 4 to fix:"
     columns: [Multiplication, Division]
     rows:
       - ["7 × 8 = 56", "56 ÷ 7 = 8"]
