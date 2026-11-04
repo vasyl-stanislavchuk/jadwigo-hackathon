@@ -32,6 +32,13 @@ const landing: readonly DistCheck[] = [
   ["index.html", '<section class="end-band"'],
   ["jak-to-dziala/index.html", '<section class="end-band"'],
   ["index.html", 'href="https://app.jadwigo.pl/play/asg_'],
+  // The film sends a parent to /jadwigo-ai for the set-up (dl-w0b4.127): the header links it, and the
+  // page holds the address and the steps for each app.
+  ["index.html", 'href="/jadwigo-ai/"'],
+  ["jadwigo-ai/index.html", "https://app.jadwigo.pl/api/mcp"],
+  ["jadwigo-ai/index.html", "ChatGPT"],
+  ["jadwigo-ai/index.html", "Claude"],
+  ["jadwigo-ai/index.html", "Muse"],
   // Each header link is its own page, built and in the sitemap (owner, 2026-10-31).
   ...["lekcje", "jak-to-dziala", "o-nas"].flatMap((p): DistCheck[] => [
     ["index.html", `href="/${p}/"`],

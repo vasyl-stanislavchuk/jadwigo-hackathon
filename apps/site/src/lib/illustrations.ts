@@ -16,6 +16,10 @@ import cardPl3Czytanie from "../assets/illustrations/card-pl3-czytanie.webp";
 import cardPl3Gloski from "../assets/illustrations/card-pl3-gloski.webp";
 import cardPl3Ortografia from "../assets/illustrations/card-pl3-ortografia.webp";
 import cardPl3Zdanie from "../assets/illustrations/card-pl3-zdanie.webp";
+import courtGumka from "../assets/illustrations/court-gumka.webp";
+import courtLinijka from "../assets/illustrations/court-linijka.webp";
+import courtOlowek from "../assets/illustrations/court-olowek.webp";
+import courtQueen from "../assets/illustrations/court-queen.webp";
 import eyesClosed from "../assets/illustrations/eyes-closed.webp";
 import hero from "../assets/illustrations/hero.webp";
 import howStep2 from "../assets/illustrations/how-step2.webp";
@@ -25,6 +29,10 @@ import partner from "../assets/illustrations/partner.webp";
 // `partner` is the table picture with the blinking Queen, in the landing page's hero since
 // dl-5ssh.4.48. The sprout that was the partner block's picture left with dl-w0b4.146.
 export const slotArt = { hero, partner, howTop, howStep2 } satisfies Record<string, ImageMetadata>;
+
+// The court on their own, transparent, from jadwigo-art/cast/2a/anchors (dl-w0b4.127): the 4 who carry
+// /jadwigo-ai's steps, in that order.
+export const courtArt = [courtQueen, courtOlowek, courtGumka, courtLinijka] as const;
 
 // The Queen's slow blink on the table picture (dl-5ssh.4.25, approved 2026-11-02; drawn by
 // src/components/BlinkingQueen.astro): her closed eyes, a feathered 2 KB patch cut from partner.webp exactly as it is. If partner.webp is ever re-cropped,
