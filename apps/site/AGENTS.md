@@ -62,6 +62,9 @@ There is no jadwigo.kids. English reaches a deploy only once `en` is `live` in `
   `--jw-press`, `--jw-radius-*`, the shadcn names), never a new hex. Crown yellow is for the brand only.
 - A link to a page with a `path` appears only when the build serves that page (`servedPathPages`),
   so a draft such as `/o-nas` is never linked.
+- O nas's family photos live outside git, in the site bucket's `about-photos/`, shown as slides. The
+  owner uploads them with `make -C infra site-photos` before the page deploys, and the site's deploy
+  leaves that prefix alone (`dl-w0b4.41`).
 - O nas names the son's school only after the school consents
   (`jadwigo-marketing/decisions/2026-10-31-the-o-nas-page-on-jadwigo-pl-names-the-son-s-school-jadwiga-scho`).
 - `public/` holds the favicon files `tools/src/brand-icons.ts` writes. Edit their sources in

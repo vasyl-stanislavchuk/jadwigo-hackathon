@@ -34,10 +34,30 @@ export const pageSchema = z.object({
   /** A line shown above the words while the lawyer has not read them (dl-e8ov.2.9). */
   draftNote: z.string().min(1).optional(),
   /**
-   * The O nas layout (design handoff "landing 3", dl-5ssh.4.15): the words in a column beside 3 photo
-   * frames, each labelled with the photo still to come, and one link under the words.
+   * The O nas layout (dl-5ssh.4.15, photos as slides in dl-w0b4.42): the words in a column beside the
+   * family's photos, and one link under the words. `file` names the photo in the site bucket's
+   * about-photos/, never in git; `width` and `height` are its largest size, so the page holds its place.
    */
-  photos: z.tuple([z.string().min(1), z.string().min(1), z.string().min(1)]).optional(),
+  photos: z
+    .array(
+      z.object({
+        file: z.string().regex(/^photo-[0-9]+$/),
+        width: z.number().int().positive(),
+        height: z.number().int().positive(),
+        alt: z.string().min(1),
+      }),
+    )
+    .min(1)
+    .optional(),
+  /** The slides' words for a screen reader: the group, the 2 buttons and each dot. */
+  slides: z
+    .object({
+      label: z.string().min(1),
+      prev: z.string().min(1),
+      next: z.string().min(1),
+      go: z.string().min(1),
+    })
+    .optional(),
   link: z
     .object({ href: z.string().regex(/^(\/[a-z0-9-]+)+$/), label: z.string().min(1) })
     .optional(),
