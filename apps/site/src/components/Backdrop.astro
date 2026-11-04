@@ -239,7 +239,10 @@ const pieces = [
 </script>
 
 <style>
-  /* As tall as the page and scrolling with it (the body is its containing block). */
+  /* As tall as the page and scrolling with it (the body is its containing block). Never a scroll
+     anchor: the pieces land in a new random place on every load, so a reload that restored the scroll
+     by one of them jumped down the page (dl-w0b4.144). */
+  .backdrop, .backdrop * { overflow-anchor: none; }
   .backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
   /* A faint glow, the evening lamp over the table: the page's own quiet paper tone, barely there. */
   .glow {
