@@ -76,16 +76,24 @@ ai:
   heading: Jadwigo AI
   intro: Dziś nie masz czasu, a praca domowa nie poszła dobrze. Zrób zdjęcie tego, co było trudne, i poproś o pomoc. Po kilku minutach czeka na Ciebie lekcja ułożona dla Twojego dziecka, w Jadwigo albo w aplikacji AI, której już używasz.
   connectLink: Połącz swoją aplikację AI
-  # The picture beside the intro: a chat window with the court on top of it. Drawn in HTML, so these
+  # The picture beside the intro: a short conversation with a made-up child. Drawn in HTML, so these
   # words follow the language. `alt` tells the whole picture.
   chat:
-    alt: "Okno rozmowy, a na nim królowa i jej dwór z piórnika. Rodzic wysyła zdjęcie pracy domowej i prosi o lekcję. W odpowiedzi przychodzi pytanie: 7 × 8 = 56. Dobrze! Pod oknem są nazwy ChatGPT, Claude i Muse."
-    ask: Ta praca domowa nie poszła dobrze. Ułożysz lekcję?
-    say: Ile to jest siedem razy osiem? Napisz odpowiedź.
-    sum: "7 × 8 ="
-    answer: "56"
-    well: Dobrze!
-    next: Dalej
+    alt: "Okno rozmowy, a na nim królowa i jej dwór z piórnika. Rodzic wysyła zdjęcie sprawdzonej pracy domowej Tymka z matematyki i pyta, co mu nie poszło. Aplikacja odpowiada, że 38 z 42 działań jest dobrze, wymienia 4 do poprawy i proponuje lekcję. Rodzic się zgadza i dostaje link do lekcji dla Tymka."
+    caption: Przykład z wymyślonym dzieckiem, Tymkiem.
+    ask: To dzisiejsza praca domowa Tymka z matematyki, sprawdzona przez nauczycielkę. Widzisz, co mu nie poszło? Ułóż krótką lekcję właśnie z tego.
+    found: Tymek ma dobrze 38 z 42 działań. Do poprawy są 4
+    columns: [Mnożenie, Dzielenie]
+    rows:
+      - ["7 × 8 = 56", "56 : 7 = 8"]
+      - ["6 × 9 = 54", "54 : 9 = 6"]
+    note: Gdzie indziej na kartce ma dobrze 6 × 9, więc to może być przeoczenie. Lekcja ćwiczy te działania i sprawdzanie dzielenia mnożeniem.
+    yes: Tak, daj ją Tymkowi.
+    lesson:
+      title: Mnożenie i dzielenie przez 7 i 9
+      meta: 8 pytań, około 5 minut
+      link: "Link dla Tymka:"
+      url: app.jadwigo.pl/play/…
   features:
     heading: Co dostajesz
     items:

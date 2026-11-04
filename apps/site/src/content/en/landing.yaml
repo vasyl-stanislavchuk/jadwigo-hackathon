@@ -74,16 +74,24 @@ ai:
   heading: Jadwigo AI
   intro: You have no time tonight, and the homework didn't go well. Take a photo of the part that was hard and ask for help. A few minutes later, a lesson made for your child is waiting for you, in Jadwigo or in the AI app you already use.
   connectLink: Connect your AI app
-  # The picture beside the intro: a chat window with the court on top of it. Drawn in HTML, so these
+  # The picture beside the intro: a short conversation with a made-up child. Drawn in HTML, so these
   # words follow the language. `alt` tells the whole picture.
   chat:
-    alt: "A chat window with the Queen and her pencil-case court standing on top of it. A parent sends a photo of homework and asks for a lesson, and a question comes back: 7 × 8 = 56. Well done! Below it are the names ChatGPT, Claude and Muse."
-    ask: This homework went badly. Can you make a lesson?
-    say: How much is seven times eight? Write the answer.
-    sum: "7 × 8 ="
-    answer: "56"
-    well: Well done!
-    next: Next
+    alt: "A chat window with the Queen and her pencil-case court standing on top of it. A parent sends a photo of Tymek's marked math homework and asks what he got wrong. The app answers that he got 38 of 42 right, lists the 4 facts to fix, and proposes a lesson. The parent says yes and gets Tymek's play link."
+    caption: An example with a made-up child, Tymek.
+    ask: This is Tymek's math homework from today, marked by his teacher. Can you see what he got wrong? Make him a short lesson on just that.
+    found: Tymek got 38 of 42 right. The 4 to fix are
+    columns: [Multiplication, Division]
+    rows:
+      - ["7 × 8 = 56", "56 ÷ 7 = 8"]
+      - ["6 × 9 = 54", "54 ÷ 9 = 6"]
+    note: He got 6 × 9 right elsewhere on the page, so that one may be a slip. The lesson practices these facts and checking division with multiplication.
+    yes: Yes, give it to Tymek.
+    lesson:
+      title: Multiplying and dividing by 7 and 9
+      meta: 8 questions, about 5 minutes
+      link: "Tymek's link:"
+      url: app.jadwigo.pl/play/…
   features:
     heading: What you get
     items:
