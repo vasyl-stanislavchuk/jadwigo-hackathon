@@ -24,7 +24,7 @@ converter_image_tag = "prod-8d82ddb7"
 # The print Lambda's image (dl-1eieq.8.3): blank makes its ECR repo only. The owner sets the tag
 # `make -C apps/print push` prints, then applies again; the api's print route then invokes it
 # (dl-1eieq.8.5).
-print_image_tag = "prod-9dff2d28"
+print_image_tag = "prod-fc0cdc57"
 
 # Supabase Auth's custom domain (dl-e8ov.2.65). The TXT records come from
 # `infra/supabase-auth/domain.sh status` after the owner creates the domain; none are needed before.
