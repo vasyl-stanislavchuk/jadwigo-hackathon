@@ -1,6 +1,6 @@
 ---
 title: O nas · Jadwigo
-description: "Jadwigo budują rodzice, którzy korzystają z niego z własnym synem. Ze zdjęcia pracy domowej powstaje lekcja dla Twojego dziecka."
+description: "Jest nas 4 i 3 lata temu przeprowadziliśmy się do Polski. Jadwigo zbudowaliśmy dla syna, potem dla jego klasy."
 heading: O nas
 path: /o-nas
 translation: /en/about
@@ -13,22 +13,8 @@ photosLabel: Zdjęcia naszej rodziny
 link: { href: /lekcje, label: Zagraj lekcję }
 ---
 
-Korzystamy z Jadwigo z własnym synem.
+Jest nas 4. 3 lata temu przeprowadziliśmy się do Polski: nowy kraj, nowy język, żadnych dziadków do pomocy (haha), żadnych bliskich znajomych. Sporo wyzwań, kiedy rośnie 2 dzieci ;)
 
-Mamy 2 szalonych chłopaków 🛴, niedawno przeprowadziliśmy się do Polski i nie mamy tu dziadków. Kiedy praca domowa nie idzie, zostajemy z tym sami, wieczorem. U Davida to mnożenie i ortografia.
+Dlatego jesteśmy idealnymi odbiorcami Jadwigo. Mamy mało czasu, a mimo to chcemy być obecni w nauce naszych dzieci. I właśnie dzięki temu ten projekt błyszczy :)
 
-## Dlaczego Jadwigo
-
-Cała klasa dostaje tę samą pracę domową, a każde dziecko utyka gdzie indziej. Wyślij jej zdjęcie, a po kilku minutach masz lekcję dla swojego dziecka.
-
-Pytania pochodzą z banku zadań, każde z podanym źródłem. Lekcję najpierw widzisz Ty. Dziecko dostaje link albo kartkę papieru, bez punktów.
-
-## Skąd nazwa
-
-To gra słów: Jadwiga, królowa i patronka szkoły, oraz angielskie „go”, czyli ruch. Iść naprzód i rosnąć pod jej ciepłymi skrzydłami.
-
-W testamencie zapisała swoje klejnoty na odnowienie Akademii Krakowskiej, dzisiejszego Uniwersytetu Jagiellońskiego. Ona oddała na naukę klejnoty. My oddajemy wieczory.
-
-## Co dalej
-
-Najpierw klasa Davida, potem jego szkoła. A potem może Wy ;)
+Zbudowałem je dla naszego syna, potem dla jego klasy. Wkrótce dla jego szkoły, a później może dla Was?
