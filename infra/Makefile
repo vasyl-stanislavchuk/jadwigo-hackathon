@@ -9,7 +9,7 @@ export PATH := $(MISE_BIN_PATHS)$(PATH)
 ENV ?= prod
 TF := AWS_PROFILE=$(AWS_PROFILE) terraform -chdir=terraform
 
-.PHONY: init plan apply output site-deploy deploy deploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test probe-step-host-plan probe-step-host-apply probe-step-host-destroy runner-deploy runner-rollback runner-status
+.PHONY: init plan apply output site-deploy site-photos deploydeploy-all prod-status api-deploy web-deploy web-build docs-deploy auth-diff auth-apply fmt validate test probe-step-host-plan probe-step-host-apply probe-step-host-destroy runner-deploy runner-rollback runner-status
 
 init:
 	$(TF) init -input=false -reconfigure -backend-config=environments/$(ENV).backend.hcl
@@ -45,8 +45,19 @@ site-deploy:
 	$(STAMP) > $(SITE)/dist/version.txt
 	bucket=$$($(TF) output -raw site_bucket) && dist_id=$$($(TF) output -raw site_distribution_id) && \
 	{ [ ! -d $(SITE)/dist/_astro ] || $(AWS) s3 sync $(SITE)/dist/_astro s3://$$bucket/_astro --cache-control "public, max-age=31536000, immutable"; } && \
-	$(AWS) s3 sync $(SITE)/dist s3://$$bucket --delete --exclude "_astro/*" --cache-control "public, max-age=300" && \
+	$(AWS) s3 sync $(SITE)/dist s3://$$bucket --delete --exclude "_astro/*" --exclude "about-photos/*" --cache-control "public, max-age=300" && \
 	$(AWS) cloudfront create-invalidation --distribution-id $$dist_id --paths "/*"
+
+# O nas's family photos (dl-w0b4.42): never in git, so they are uploaded on their own, and site-deploy's
+# --delete leaves the prefix alone. The owner runs it before the page that shows them deploys. The
+# files come from jadwigo-art, resized and without metadata. Then each one is fetched from the site.
+PHOTOS ?= $(HOME)/projects/jadwigo-art/marketing/about-photos
+site-photos:
+	@$(NOT_FROM_AGENT)
+	bucket=$$($(TF) output -raw site_bucket) && \
+	$(AWS) s3 sync $(PHOTOS) s3://$$bucket/about-photos --exclude "*" --include "*.webp" --content-type image/webp --cache-control "public, max-age=86400" && \
+	$(AWS) s3 sync $(PHOTOS) s3://$$bucket/about-photos --exclude "*" --include "*.mp4" --content-type video/mp4 --cache-control "public, max-age=86400"
+	for f in $$(ls $(PHOTOS)/*.webp $(PHOTOS)/*.mp4 2>/dev/null); do curl -fsS -o /dev/null -w "%{http_code} $$(basename $$f)\n" https://jadwigo.pl/about-photos/$$(basename $$f) || exit 1; done
 
 # The service at app.<apex> (dl-5ssh.2): `make -C infra deploy` is the api, then the web app. The
 # owner runs it after an apply, from a terminal; a merge deploys nothing

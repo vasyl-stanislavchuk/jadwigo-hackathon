@@ -1,20 +1,23 @@
 ---
 title: O nas · Jadwigo
-description: Jadwigo budujemy jako rodzina, mama, tata i nasz syn. Najpierw dla niego, teraz dla jego klasy.
+description: "Jest nas 4 i 3 lata temu przeprowadziliśmy się do Polski. Jadwigo zbudowaliśmy dla syna, potem dla jego klasy."
 heading: O nas
 path: /o-nas
 translation: /en/about
 reviewed: true
-photos: ["Zdjęcie: rodzina", "Zdjęcie: syn przy lekcji", "Zdjęcie: klasa"]
+photos:
+  - { file: photo-2, width: 1280, height: 1690, alt: "Jesienne selfie: tata, mama i David, a za nimi pomarańczowe drzewa." }
+  - { file: photo-3, width: 1280, height: 1678, alt: "David i jego młodszy brat jadą na hulajnogach po chodniku." }
+  - { file: photo-1, width: 1280, height: 1090, alt: "Nasza czwórka przy stoliku przed kawiarnią: mama i tata stoją, chłopcy siedzą na krzesłach, tata pokazuje kciuk w górę." }
+photosLabel: Zdjęcia naszej rodziny
+video: { links: "Przydatne linki:", heading: Demo z hackathonu, cta: Demo z hackathonu, close: Zamknij, docs: Dokumentacja, file: film.mp4 }
 link: { href: /lekcje, label: Zagraj lekcję }
 ---
 
-Jesteśmy rodziną: mama, tata i nasz syn. Jadwigo zbudowaliśmy najpierw dla niego, żeby uczyć się razem z nim w domu.
+Jest nas 4. 3 lata temu przeprowadziliśmy się do Polski: nowy kraj, nowy język, żadnych dziadków do pomocy (haha), żadnych bliskich znajomych. Sporo wyzwań, kiedy rośnie 2 dzieci ;)
 
-Zaczęliśmy od tabliczki mnożenia i ortografii, w której syn często się myli. Po każdej lekcji Jadwigo zapisuje, co poszło dobrze, gdzie syn miał trudność i w czym się mylił. Z tego układa następną lekcję.
+Dlatego jesteśmy idealnymi odbiorcami Jadwigo
 
-Syn może się pomylić, poprosić o więcej albo powiedzieć, że na dziś wystarczy. My widzimy, co już umie.
+Mamy mało czasu, a mimo to chcemy być obecni w nauce naszych dzieci. I właśnie dzięki temu ten projekt błyszczy :)
 
-**Skąd nazwa.** Jadwigo to królowa Jadwiga, patronka szkoły naszego syna, i angielskie „go”, czyli „naprzód”. Razem: iść naprzód i rosnąć pod jej ciepłymi skrzydłami. Na rysunkach Jadwiga jest małą królową, a obok niej stoi jej dwór z piórnika: Gumka, Ołówek i Linijka.
-
-**Co dalej.** Teraz zapraszamy klasę syna, potem całą szkołę. A potem może i Was.
+Zbudowałem je dla naszego syna, potem dla jego klasy. Wkrótce dla jego szkoły, a później może dla Was?

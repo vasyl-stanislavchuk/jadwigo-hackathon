@@ -46,6 +46,11 @@ const landing: readonly DistCheck[] = [
     ["sitemap-0.xml", `<loc>https://jadwigo.pl/${p}/</loc>`],
   ]),
   ["lekcje/index.html", 'href="https://app.jadwigo.pl/play/asg_'],
+  // O nas shows the family's photos, served from the bucket's about-photos/ (dl-w0b4.42).
+  ["o-nas/index.html", "/about-photos/photo-1-640.webp"],
+  // And the film, with the link to the docs.
+  ["o-nas/index.html", "/about-photos/film.mp4"],
+  ["o-nas/index.html", 'href="https://docs.jadwigo.pl/"'],
   // A lesson card opens the lesson in a new tab, so the site stays where it was (dl-w0b4.140).
   ["index.html", 'target="_blank" rel="noopener"'],
   ["lekcje/index.html", 'target="_blank" rel="noopener"'],
@@ -107,6 +112,8 @@ const hidden: readonly DistCheck[] = [
   ["sitemap-0.xml", "https://jadwigo.pl/porownanie/"],
   ["index.html", "Źródła zadań"],
   ["index.html", "Odpowiedzi dziecka widzisz tylko Ty"],
+  // The school is named only after it consents (dl-w0b4.89).
+  ["o-nas/index.html", "szkoły naszego syna"],
 ];
 const mustNot = [...paged.mustNot, ...signIn.mustNot, ...hidden];
 

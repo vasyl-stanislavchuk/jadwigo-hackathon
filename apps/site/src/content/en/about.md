@@ -1,21 +1,24 @@
 ---
 title: About us · Jadwigo
-description: "We build Jadwigo as a family: a mom, a dad and our son. First for him, now for his class."
+description: "We're a family of 4 who moved to Poland 3 years ago. We built Jadwigo for our son, then for his class."
 heading: About us
 lang: en
 path: /en/about
 translation: /o-nas
 reviewed: true
-photos: ["Photo: our family", "Photo: our son learning", "Photo: the class"]
+photos:
+  - { file: photo-2, width: 1280, height: 1690, alt: "An autumn selfie of dad, mom and David, with orange trees behind them." }
+  - { file: photo-3, width: 1280, height: 1678, alt: "David and his little brother riding scooters on a sidewalk." }
+  - { file: photo-1, width: 1280, height: 1090, alt: "Our family of 4 at a café table outdoors: mom and dad standing, the 2 boys on chairs, dad with his thumb up." }
+photosLabel: Our family's photos
+video: { links: "Useful links:", heading: Hackathon demo, cta: Hackathon demo, close: Close, docs: Documentation, file: film.mp4 }
 link: { href: /en/lessons, label: Play a lesson }
 ---
 
-We are a family: a mom, a dad and our son. We built Jadwigo for him first, so we could learn together with him at home.
+We're a family of 4. We moved to Poland 3 years ago: new country, new language, no grandparents to help (haha), no close friends. That's a lot of challenges when you have 2 kids growing ;)
 
-We started with the times tables and the Polish spelling our son often gets wrong. After each lesson Jadwigo notes what went well, where he found it hard and which mistakes he made. The next lesson is built from that.
+So we're actually the perfect audience for Jadwigo
 
-Our son can get things wrong, ask for more or say that's enough for today. We see what he can already do.
+We have little time, and we still want to be present in our kids' learning. That's what makes this project shine :)
 
-**Where the name comes from.** Jadwigo is Queen Jadwiga, a school's patron, and the English "go". Together: moving forward and growing under her warm wings. In the pictures Jadwiga is a little queen, and her pencil-case court stands beside her: Gumka the eraser, Ołówek the pencil and Linijka the ruler.
-
-**What's next.** Now we are inviting our son's class, then the whole school. And then maybe you.
+I built it for our son, then for his class. Soon for his school and, later, maybe for you?

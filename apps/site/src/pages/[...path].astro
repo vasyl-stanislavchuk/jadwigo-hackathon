@@ -4,6 +4,10 @@
 // the page's stable URL, so a link handed to Meta or Google keeps working. A prod build leaves out
 // the ones not yet reviewed (servedPathPages) and builds the rest of the site.
 import { type CollectionEntry, getCollection, render } from "astro:content";
+import { hosts } from "@jadwigo/config";
+import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
+import FilmModal from "../components/FilmModal.astro";
+import PhotoCollage from "../components/PhotoCollage.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { languageOf, servedLanguages } from "../lib/i18n.ts";
@@ -24,25 +28,34 @@ interface Props {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { photos, link, heading } = entry.data;
+const { photos, photosLabel, video, link, heading } = entry.data;
+const docsHost = hosts.prod.docs;
+// In O nas's words, the name is the wordmark itself, and its crown tips on hover as it does in the header.
+const story = (entry.rendered?.html ?? "").replace(
+  /\bJadwigo\b/g,
+  `<span class="word-logo">${wordmark}</span>`,
+);
 ---
 
 {
-  photos ? (
+  photos && photosLabel ? (
     <Base page={entry.data} path={entry.data.path ?? "/"}>
       <section class="about wrap">
         <div class="words">
           <h1>{heading}</h1>
-          <Content />
-          {link && <a class="link" href={`${link.href}/`}>{link.label}</a>}
+          <Fragment set:html={story} />
+          {video && (
+            <>
+              <p class="links-title">{video.links}</p>
+              <ul class="links">
+                <li><FilmModal words={video} /></li>
+                <li><a href={`https://${docsHost}/`}>{video.docs}</a></li>
+                {link && <li><a href={`${link.href}/`}>{link.label}</a></li>}
+              </ul>
+            </>
+          )}
         </div>
-        <div class="photos">
-          {photos.map((label) => (
-            <figure class="photo">
-              <figcaption>{label}</figcaption>
-            </figure>
-          ))}
-        </div>
+        <PhotoCollage photos={photos} label={photosLabel} />
       </section>
     </Base>
   ) : (
@@ -53,21 +66,27 @@ const { photos, link, heading } = entry.data;
 }
 
 <style is:global>
-  /* O nas (design handoff "landing 3", dl-5ssh.4.15): the words on the left, the 3 photo frames on the
-     right, a wide one over 2 squares. A phone reads the words, then the frames. Global under .about,
+  /* O nas (design handoff "landing 3", dl-5ssh.4.15): the words on the left, the photo collage on the
+     right. A phone reads the words, then the collage. Global under .about,
      so the h1 stays a bare <h1>, as check:dist reads it (src/lib/dist.ts). */
-  .about { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; padding-top: clamp(2rem, 5vw, 4rem); }
+  .about.wrap { padding-top: clamp(2rem, 5vw, 4rem); overflow-x: clip; }
+  .about { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
   @media (min-width: 56rem) { .about { grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: start; } }
   .about h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
-  .about .words p { margin-top: 1rem; max-width: 36rem; }
+  .about .words { max-width: 34rem; }
+  .about .words p { margin-top: 1rem; font-size: 1.125rem; line-height: 1.6; }
   /* The first paragraph is the page's lead. */
-  .about .words p:first-of-type { font-size: 1.3rem; font-weight: 700; line-height: 1.4; }
-  .about .link { display: inline-block; margin-top: 1.5rem; font-weight: 700; }
-  .about .photos { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-  .about .photo {
-    display: grid; place-items: center; margin: 0; padding: 1rem; aspect-ratio: 1;
-    border: 1px dashed var(--input); border-radius: var(--jw-radius-card);
-    color: var(--jw-ink-soft); text-align: center;
+  .about .words p:first-of-type { font-size: 1.35rem; font-weight: 500; line-height: 1.45; }
+  /* The wordmark sits on the text's baseline at the letters' size. Its box is 180 units tall with the
+     crown's room, the letters stand 72 tall on a baseline 24 above its bottom. The negative margin keeps
+     that room out of the line's height. */
+  .about .word-logo { rotate: -4deg; display: inline-block; margin: -0.8em -0.05em 0; line-height: 0; vertical-align: -0.28em; }
+  .about .word-logo svg { display: block; height: 2.1em; width: auto; overflow: visible; }
+  .about .word-logo .crown { transform-origin: -12.5px 2.15px; transition: transform 320ms cubic-bezier(.34, 1.8, .5, 1); }
+  .about .word-logo:hover .crown { transform: translateY(-12.5px) rotate(-18deg); }
+  @media (prefers-reduced-motion: reduce) {
+    .about .word-logo .crown, .about .word-logo:hover .crown { transition: none; transform: none; }
   }
-  .about .photo:first-child { grid-column: 1 / -1; aspect-ratio: 4 / 3; }
+  .about .words .links-title { margin-top: 1.75rem; font-size: 1rem; color: var(--jw-ink-soft); }
+  .about .links { list-style: "-  "; margin: 0.5rem 0 0; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem; }
 </style>
