@@ -84,7 +84,7 @@
     "@jadwigo/contracts": "workspace:*",
     "@jadwigo/lesson-kit": "workspace:*",
     "@jadwigo/ui": "workspace:*",
-    "astro": "7.4.3",
+    "astro": "7.4.4",
     "hast-util-select": "6.0.4",
     "mermaid": "12.2.0",
     "rehype-parse": "9.0.1",
