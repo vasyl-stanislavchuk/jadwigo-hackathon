@@ -1,9 +1,8 @@
 ---
 // The picture beside /jadwigo-ai's intro (dl-w0b4.127): a short conversation from homework to analysis
 // to a lesson link, one message at a time in a chat window with the court standing on top of it, after
-// the film's "Also in your own AI app" frame. It moves by itself and pauses under the pointer. A dot jumps
-// to a message and stops it. With reduced motion only the dots move it, and with no script the
-// messages stack. Tymek and his numbers are made up, and `caption` says so: a real child's homework never
+// the film's "Also in your own AI app" frame. It moves by itself, and a dot jumps to a message and holds it
+// for a while. With reduced motion the messages swap with no movement, and with no script they stack. Tymek and his numbers are made up, and `caption` says so: a real child's homework never
 // enters this repo. Drawn in HTML so its words follow the language.
 import { Image } from "astro:assets";
 import { courtArt } from "../lib/illustrations.ts";
@@ -82,7 +81,6 @@ const steps = [0, 1, 2, 3];
     nav.hidden = false;
     let at = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    let stopped = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const show = (i: number) => {
       at = i;
       slides.forEach((slide, n) => {
@@ -93,28 +91,23 @@ const steps = [0, 1, 2, 3];
         else dot.removeAttribute("aria-current");
       });
     };
-    const wait = () => {
+    const wait = (ms: number) => {
       clearTimeout(timer);
-      if (stopped) return;
-      timer = setTimeout(
-        () => {
-          show((at + 1) % slides.length);
-          wait();
-        },
-        Number(slides[at]?.dataset["hold"] ?? 4000),
-      );
+      timer = setTimeout(() => {
+        const next = (at + 1) % slides.length;
+        show(next);
+        wait(Number(slides[next]?.dataset["hold"] ?? 4000));
+      }, ms);
     };
+    // A dot holds its message long enough to read, then the conversation carries on.
     dots.forEach((dot, i) => {
       dot.addEventListener("click", () => {
-        stopped = true;
-        clearTimeout(timer);
         show(i);
+        wait(12000);
       });
     });
-    root.addEventListener("pointerenter", () => clearTimeout(timer));
-    root.addEventListener("pointerleave", wait);
     show(0);
-    wait();
+    wait(Number(slides[0]?.dataset["hold"] ?? 4000));
   }
 </script>
 
