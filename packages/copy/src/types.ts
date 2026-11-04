@@ -497,6 +497,10 @@ export const COPY_KEYS = [
   "play_intro_name",
   "play_intro_start",
   "play_intro_anonymous",
+  "play_print",
+  "play_print_preparing",
+  "play_print_failed",
+  "play_print_slow",
   "play_intro_name_missing",
   "play_intro_questions",
   // end the lesson player

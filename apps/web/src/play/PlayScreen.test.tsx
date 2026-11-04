@@ -23,6 +23,7 @@ import {
   LearnerId,
   LessonQuestionId,
   type PageAttemptQuestion,
+  type PrintStatus,
 } from "@jadwigo/contracts";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -889,5 +890,66 @@ describe("a given lesson's first screen", () => {
       />,
     );
     expect(await screen.findByText("Tej lekcji tu nie ma.")).toBeTruthy();
+  });
+});
+
+// Decision dl-3h2e8, dl-1eieq.8.17: the first screen prints the link's lesson, with no sign-in.
+describe("Wydrukuj lekcję on the first screen", () => {
+  const given = { ...INTRO, identity: "pick" as const };
+  const READY = {
+    status: "ready" as const,
+    print_id: "a".repeat(64),
+    url: "https://bucket.test/p.pdf",
+    expires_at: "2026-11-04T12:05:00.000Z",
+  };
+  const openWith = (startAssignmentPrint: () => Promise<PrintStatus>) => {
+    window.history.replaceState(null, "", playPath(ASSIGNMENT));
+    const tab = { location: { href: "about:blank" }, opener: {}, close: vi.fn() };
+    const opened = vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+    render(
+      <PlayScreen
+        assignmentId={ASSIGNMENT}
+        language="pl"
+        client={{
+          ...client({ getAssignmentIntro: async () => given }),
+          startAssignmentPrint: vi.fn(startAssignmentPrint),
+          getAssignmentPrint: refused,
+        }}
+      />,
+    );
+    return { tab, opened };
+  };
+  afterEach(() => vi.restoreAllMocks());
+
+  it("opens a tab inside the tap and sends it to the lesson's PDF", async () => {
+    const { tab, opened } = openWith(async () => READY);
+    fireEvent.click(await screen.findByRole("button", { name: "Wydrukuj lekcję" }));
+    expect(opened).toHaveBeenCalledWith("about:blank", "_blank");
+    await vi.waitFor(() => expect(tab.location.href).toBe(READY.url));
+    expect(tab.opener).toBeNull();
+  });
+
+  it("closes the tab and says so kindly when the sheet does not come", async () => {
+    const { tab } = openWith(async () => ({
+      status: "failed",
+      print_id: READY.print_id,
+      reason: "render_failed",
+    }));
+    fireEvent.click(await screen.findByRole("button", { name: "Wydrukuj lekcję" }));
+    expect(await screen.findByText("Kartka się nie udała. Spróbuj jeszcze raz.")).toBeTruthy();
+    expect(tab.close).toHaveBeenCalled();
+  });
+
+  it("shows no print key where the client cannot print", async () => {
+    window.history.replaceState(null, "", playPath(ASSIGNMENT));
+    render(
+      <PlayScreen
+        assignmentId={ASSIGNMENT}
+        language="pl"
+        client={client({ getAssignmentIntro: async () => given })}
+      />,
+    );
+    await screen.findByLabelText("Jak masz na imię?");
+    expect(screen.queryByRole("button", { name: "Wydrukuj lekcję" })).toBeNull();
   });
 });
