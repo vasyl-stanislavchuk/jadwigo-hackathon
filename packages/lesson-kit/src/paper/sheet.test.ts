@@ -133,6 +133,11 @@ describe("the mixed lesson's sheet", () => {
       items: [
         { content: "\\small{5}", coordinates: [0, 5] as [number, number], alignment: "left" },
         {
+          content: "\\text{\\small{cm}}",
+          coordinates: [0, 0] as [number, number],
+          alignment: "right",
+        },
+        {
           content: "\\text{Break}<br>\\text{dance}",
           coordinates: [1, 0] as [number, number],
           alignment: "below",
@@ -157,8 +162,9 @@ describe("the mixed lesson's sheet", () => {
     };
     const { html } = sheetOf([pictured]);
     expect(html["$\\small{5}$"]).toBe('<span class="formula">5</span>');
-    expect(html["$\\text{Break}$"]).toContain("Break");
+    expect(html["$\\text{Break}$"]).toBe("Break");
     expect(html["dance"]).toBe("dance");
+    expect(html["$\\text{\\small{cm}}$"]).toBe("cm");
     expect(html["Liczba dni"]).toBe("Liczba dni");
     expect(html["\\small{5}"]).toBeUndefined();
   });

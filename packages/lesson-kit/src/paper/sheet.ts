@@ -273,8 +273,11 @@ function labelStrings(labels: unknown, strings: Set<string>, sources: Map<string
       // Keyed by the line as the lesson wrote it; drawn without Khan's `\small{…}`, so a tick's
       // number prints in the sheet's face at the label size, not as KaTeX's smaller serif.
       strings.add(`$${line}$`);
-      sources.set(`$${line}$`, `$${line.replace(SMALL, "$1")}$`);
-      const words = textOnly(line);
+      // A line that is only words (`\text{cm}`, `\text{\small{cm}}`, a bar's name) prints as those
+      // words in the sheet's face too, never in KaTeX's serif.
+      const bare = line.replace(SMALL, "$1");
+      const words = textOnly(bare);
+      sources.set(`$${line}$`, words ?? `$${bare}$`);
       if (words !== null) strings.add(words);
     }
   }

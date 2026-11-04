@@ -87,7 +87,7 @@ def _line(label: PictureLabel, line: str, wrap: float | None, text: Text) -> Mar
         return escape(words)
     drawn = text.html.get(f"${line}$")
     # A sheet built before the builder drew labels: its words or number, without the TeX around them.
-    return Markup(drawn) if drawn is not None else escape(text_only(line) or SMALL.sub(r"\1", line))
+    return Markup(drawn) if drawn is not None else escape(text_only(SMALL.sub(r"\1", line)) or SMALL.sub(r"\1", line))
 
 
 def placed(picture: Picture, text: Text) -> list[Placed]:
