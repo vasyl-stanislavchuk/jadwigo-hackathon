@@ -8,8 +8,9 @@
  * `aria-expanded`; "Rozwiń wszystkie" opens or closes them all; the rows this revision added or
  * changed carry a tag in words, "nowe" or "zmienione", until the parent opens them (chat handoff
  * dl-uukj.47.71 S20); dashed ghost rows say how many steps are still coming. An opened step shows the
- * child's view on the left, and on the right the right answer, the help, the skill (only with a
- * child), where it came from, and Zmień ten krok. A row slides in with Zeszyt's `jw-step-in` only
+ * child's view once, on the left, with the right answers marked in it while the pane's "Pokaż
+ * odpowiedzi" switch is on (design review 2026-11-03), and on the right the help, the skill (only
+ * with a child), where it came from, and Zmień ten krok. A row slides in with Zeszyt's `jw-step-in` only
  * when the system allows motion.
  *
  * A parent never edits the lesson by hand (owner, 2026-11-03, decision 2026-11-03-the-lesson-
@@ -32,7 +33,7 @@ import {
   pageSpec,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import { Button, RegisterProvider } from "@jadwigo/ui";
+import { Button, RegisterProvider, Switch } from "@jadwigo/ui";
 import { ChevronRight } from "lucide-react";
 import {
   type FormEvent,
@@ -199,6 +200,8 @@ function Revision({
   bare: boolean;
 }): ReactElement {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
+  // One view of each step, the child's, with the right answers marked in it while this is on.
+  const [answers, setAnswers] = useState(false);
   // The steps the parent opened in this revision: their tag has been read, so it goes.
   const [seen, setSeen] = useState<{ revision: number; ids: ReadonlySet<string> }>({
     revision: lesson.revision,
@@ -252,13 +255,22 @@ function Revision({
             </span>
           )}
           {openable.length > 0 && (
+            <Switch
+              checked={answers}
+              onCheckedChange={setAnswers}
+              className="ml-auto w-auto min-h-8 gap-2 text-jw-page-small"
+              data-show-answers
+            >
+              {say("parent_show_answers")}
+            </Switch>
+          )}
+          {openable.length > 0 && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
               data-expand-all={allOpen ? "close" : "open"}
               onClick={() => setOpen(allOpen ? new Set() : new Set(openable))}
-              className="ml-auto"
             >
               {say(allOpen ? "parent_collapse_all" : "parent_expand_all")}
             </Button>
@@ -273,6 +285,7 @@ function Revision({
             number={i + 1}
             open={open.has(step.step_id)}
             onToggle={() => toggle(step.step_id)}
+            showAnswers={answers}
             changed={changed.has(step.step_id)}
             tag={tagOf(step.step_id)}
             say={say}
@@ -297,6 +310,7 @@ function StepRow({
   number,
   open,
   onToggle,
+  showAnswers,
   changed,
   tag,
   say,
@@ -309,6 +323,8 @@ function StepRow({
   number: number;
   open: boolean;
   onToggle: () => void;
+  /** The pane's Pokaż odpowiedzi: the step's view with its right answers marked. */
+  showAnswers: boolean;
   changed: boolean;
   /** The row's tag in words, until it is opened. */
   tag: Tag | null;
@@ -388,11 +404,10 @@ function StepRow({
           data-step-body
           className={`grid gap-4 border-t border-jw-line p-3 md:grid-cols-2 ${ENTER}`}
         >
-          <div data-child-view>{view(false)}</div>
+          <div data-child-view data-answers-shown={showAnswers || undefined}>
+            {view(showAnswers)}
+          </div>
           <div className="flex flex-col gap-3" data-step-facts>
-            <Fact title={say("parent_step_answer")}>
-              <div data-answer>{view(true)}</div>
-            </Fact>
             <p className="text-jw-page-small text-jw-ink-soft" data-help>
               {say("parent_step_help", { n: rungsWritten(step.spec) })}
             </p>

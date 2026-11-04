@@ -1,0 +1,657 @@
+{
+  "experiment": "E7 (dl-5ssh.90.53.9): judging a child's freeform answer. All tasks, criteria and answers are invented for this run; no text comes from a real child. Criteria were written before the answers. Hand labels: per criterion, met or not; the overall label is derived (every criterion met = correct, at least one met = partly, none met = not_yet).",
+  "criteria_version": "e7-2026-11-03",
+  "tasks": [
+    {
+      "id": "mult-as-groups",
+      "grade": 2,
+      "language": "pl",
+      "skill": "mnożenie jako równe grupy",
+      "prompt": "Wyjaśnij własnymi słowami, co znaczy 3 × 4.",
+      "min_words": 4,
+      "criteria": [
+        {
+          "id": "c1",
+          "text": "Mówi o równych grupach albo o dodawaniu tej samej liczby",
+          "cite": "podstawa programowa, klasa 2: mnożenie jako skrócone dodawanie równych składników"
+        },
+        {
+          "id": "c2",
+          "text": "Używa liczb 3 i 4 zgodnie z działaniem (3 grupy po 4 albo 4 + 4 + 4, albo odwrotnie z uzasadnieniem)",
+          "cite": "karta zadania w banku: znaczenie symbolu x"
+        }
+      ],
+      "answers": [
+        {
+          "id": "a1",
+          "kind": "right",
+          "text": "To znaczy 3 grupy po 4, czyli 4 i 4 i 4 to razem 12.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a2",
+          "kind": "right-other-words",
+          "text": "Bierzesz czwórkę trzy razy i dodajesz do siebie.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a3",
+          "kind": "right-answer-no-reason",
+          "text": "3 razy 4 to 12.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a4",
+          "kind": "partly",
+          "text": "To jest dodawanie tej samej liczby kilka razy.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a5",
+          "kind": "right-misspelt",
+          "text": "To som 3 grupy po 4 klocki, razem dwanaście klockuf.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a6",
+          "kind": "wrong",
+          "text": "To znaczy, że dodajesz 3 i 4 i wychodzi 7.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a7",
+          "kind": "off-topic",
+          "text": "Lubię mnożenie, bo jest łatwe i pani je lubi.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a8",
+          "kind": "too-short",
+          "text": "Grupy.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a9",
+          "kind": "partly-numbers-swapped-unexplained",
+          "text": "To 4 grupy po 3, bo kolejność nie ma znaczenia, wynik ten sam.",
+          "labels": { "c1": true, "c2": true }
+        },
+        { "id": "a10", "kind": "empty", "text": "", "labels": { "c1": false, "c2": false } }
+      ]
+    },
+    {
+      "id": "even-number",
+      "grade": 2,
+      "language": "pl",
+      "skill": "liczby parzyste",
+      "prompt": "Dlaczego 14 jest liczbą parzystą? Wyjaśnij.",
+      "min_words": 4,
+      "criteria": [
+        {
+          "id": "c1",
+          "text": "Odwołuje się do dzielenia na 2 równe części, par albo do ostatniej cyfry 0, 2, 4, 6, 8",
+          "cite": "podstawa programowa, klasa 2: liczby parzyste i nieparzyste"
+        },
+        {
+          "id": "c2",
+          "text": "Stosuje tę zasadę do liczby 14 (np. 14 to 7 i 7, albo kończy się na 4)",
+          "cite": "karta zadania w banku: uzasadnianie na przykładzie"
+        }
+      ],
+      "answers": [
+        {
+          "id": "a1",
+          "kind": "right",
+          "text": "Bo 14 dzieli się na dwie równe części po 7, nic nie zostaje.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a2",
+          "kind": "right-other-words",
+          "text": "Kończy się na 4, a liczby kończące się na 4 są parzyste.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a3",
+          "kind": "right-answer-wrong-reason",
+          "text": "Jest parzysta, bo jest większa od 10.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a4",
+          "kind": "partly",
+          "text": "Bo można ją podzielić na pary.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a5",
+          "kind": "right-misspelt",
+          "text": "Bo 14 to siedem par, każda para ma po 2, i nic nie zostaje samo.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a6",
+          "kind": "wrong",
+          "text": "14 nie jest parzysta, bo 1 i 4 to razem 5.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a7",
+          "kind": "off-topic",
+          "text": "14 to moja ulubiona liczba, bo tyle mam kredek.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a8",
+          "kind": "too-short",
+          "text": "Bo tak.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a9",
+          "kind": "partly-vague",
+          "text": "Parzyste liczby idą co drugą: 2, 4, 6, 8, 10, 12, 14.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a10",
+          "kind": "wrong",
+          "text": "Bo 14 jest w tabliczce mnożenia przez 3.",
+          "labels": { "c1": false, "c2": false }
+        }
+      ]
+    },
+    {
+      "id": "regrouping-add",
+      "grade": 3,
+      "language": "pl",
+      "skill": "dodawanie z przekroczeniem progu dziesiątkowego",
+      "prompt": "Policz 27 + 15 i wyjaśnij, jak to robisz.",
+      "min_words": 5,
+      "criteria": [
+        {
+          "id": "c1",
+          "text": "Podaje poprawny wynik 42",
+          "cite": "karta zadania w banku: wynik działania"
+        },
+        {
+          "id": "c2",
+          "text": "Opisuje sensowny sposób: rozkład na dziesiątki i jedności, dopełnienie do pełnej dziesiątki albo dodawanie częściami",
+          "cite": "podstawa programowa, klasa 3: strategie dodawania w zakresie 100"
+        }
+      ],
+      "answers": [
+        {
+          "id": "a1",
+          "kind": "right",
+          "text": "27 i 10 to 37, a jeszcze 5 to 42.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a2",
+          "kind": "right",
+          "text": "Dodaję dziesiątki: 20 i 10 to 30. Jedności: 7 i 5 to 12. Razem 42.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a3",
+          "kind": "right-answer-no-reason",
+          "text": "42.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a4",
+          "kind": "right-answer-wrong-reason",
+          "text": "Wychodzi 42, bo zawsze dodaję 15 do każdej liczby.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a5",
+          "kind": "wrong-carry-missed",
+          "text": "7 i 5 to 12, 2 i 1 to 3, więc 312.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a6",
+          "kind": "partly-good-plan-slip",
+          "text": "27 + 10 = 37, plus 5 to 43.",
+          "labels": { "c1": false, "c2": true }
+        },
+        {
+          "id": "a7",
+          "kind": "right-misspelt",
+          "text": "Najpjerw robie 27 + 3 = 30, potem dodaje reszte 12 i jest 42.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a8",
+          "kind": "off-topic",
+          "text": "Nie lubię dodawania, wolę odejmowanie.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a9",
+          "kind": "wrong",
+          "text": "27 + 15 to 32, bo 7 + 5 to 2.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a10",
+          "kind": "too-short",
+          "text": "Liczyłem na palcach.",
+          "labels": { "c1": false, "c2": false }
+        }
+      ]
+    },
+    {
+      "id": "half-meaning",
+      "grade": 3,
+      "language": "pl",
+      "skill": "połowa jako część całości",
+      "prompt": "Co to znaczy, że coś jest połową pizzy? Wyjaśnij.",
+      "min_words": 4,
+      "criteria": [
+        {
+          "id": "c1",
+          "text": "Mówi o podziale całości na 2 części",
+          "cite": "podstawa programowa, klasa 3: połowa i ćwierć całości"
+        },
+        {
+          "id": "c2",
+          "text": "Zaznacza, że części muszą być równe",
+          "cite": "karta zadania w banku: równość części przy dzieleniu na połowy"
+        }
+      ],
+      "answers": [
+        {
+          "id": "a1",
+          "kind": "right",
+          "text": "Pizza jest przecięta na dwie równe części i jedna z nich to połowa.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a2",
+          "kind": "partly",
+          "text": "To jeden z dwóch kawałków pizzy.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a3",
+          "kind": "wrong",
+          "text": "Połowa to mały kawałek, mniejszy niż reszta.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a4",
+          "kind": "right-other-words",
+          "text": "Jak podzielisz pizzę sprawiedliwie między dwie osoby, każda dostaje połowę.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a5",
+          "kind": "right-misspelt",
+          "text": "Polowa to jedna z dwuh takich samyh czenści.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a6",
+          "kind": "off-topic",
+          "text": "Najlepsza pizza jest z serem i pieczarkami.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a7",
+          "kind": "partly",
+          "text": "To 50 procent pizzy.",
+          "labels": { "c1": false, "c2": false }
+        },
+        { "id": "a8", "kind": "too-short", "text": "Pół.", "labels": { "c1": false, "c2": false } },
+        {
+          "id": "a9",
+          "kind": "right",
+          "text": "Dwie połowy razem dają całą pizzę, więc obie muszą być takie same.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a10",
+          "kind": "wrong",
+          "text": "Połowa znaczy, że pizza jest przecięta na 4 kawałki.",
+          "labels": { "c1": false, "c2": false }
+        }
+      ]
+    },
+    {
+      "id": "spelling-rz",
+      "grade": 3,
+      "language": "pl",
+      "skill": "pisownia rz po spółgłoskach",
+      "prompt": "Dlaczego w słowie 'drzewo' piszemy 'rz'? Wyjaśnij.",
+      "min_words": 4,
+      "criteria": [
+        {
+          "id": "c1",
+          "text": "Odwołuje się do zasady: rz piszemy po spółgłoskach (tu po d), albo do wymiany rz na r w pokrewnym słowie",
+          "cite": "podstawa programowa, klasa 3: pisownia rz i ż"
+        },
+        {
+          "id": "c2",
+          "text": "Łączy zasadę ze słowem 'drzewo' (wskazuje literę d przed rz albo słowo pokrewne)",
+          "cite": "karta zadania w banku: uzasadnianie pisowni na przykładzie"
+        }
+      ],
+      "answers": [
+        {
+          "id": "a1",
+          "kind": "right",
+          "text": "Bo rz piszemy po spółgłosce, a w drzewie przed rz jest d.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a2",
+          "kind": "partly",
+          "text": "Bo jest taka zasada z rz po spółgłoskach.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a3",
+          "kind": "right-answer-wrong-reason",
+          "text": "Piszemy rz, bo drzewo rośnie w lesie.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a4",
+          "kind": "wrong",
+          "text": "Bo słychać ż, więc piszemy rz.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a5",
+          "kind": "right-misspelt",
+          "text": "Psze spułgłosce d zawsze jest rz, tak jak w drzewie.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a6",
+          "kind": "off-topic",
+          "text": "Drzewa są zielone i dają cień latem.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a7",
+          "kind": "too-short",
+          "text": "Bo tak się pisze.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a8",
+          "kind": "right-other-words",
+          "text": "Po literach takich jak d, b, p, t piszemy rz, a drzewo ma d.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a9",
+          "kind": "wrong",
+          "text": "Bo rz wymienia się na sz, jak w słowie drzesz.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a10",
+          "kind": "partly",
+          "text": "W drzewie jest d, a po nim rz.",
+          "labels": { "c1": false, "c2": true }
+        }
+      ]
+    },
+    {
+      "id": "word-problem-plan",
+      "grade": 3,
+      "language": "pl",
+      "skill": "zadanie tekstowe dwudziałaniowe",
+      "prompt": "W koszyku były 24 jabłka. Połowę dano kolegom, a potem dołożono 5. Ile jabłek jest teraz? Wyjaśnij, jak liczysz.",
+      "min_words": 5,
+      "criteria": [
+        {
+          "id": "c1",
+          "text": "Najpierw liczy połowę z 24, czyli 12",
+          "cite": "karta zadania w banku: kolejność działań w zadaniu tekstowym"
+        },
+        {
+          "id": "c2",
+          "text": "Potem odejmuje połowę od 24 (zostaje 12) i dodaje 5",
+          "cite": "karta zadania w banku: drugie działanie na wyniku pierwszego"
+        },
+        {
+          "id": "c3",
+          "text": "Podaje poprawny wynik końcowy 17",
+          "cite": "karta zadania w banku: odpowiedź na pytanie zadania"
+        }
+      ],
+      "answers": [
+        {
+          "id": "a1",
+          "kind": "right",
+          "text": "Połowa z 24 to 12. Zostało 12, plus 5 to 17.",
+          "labels": { "c1": true, "c2": true, "c3": true }
+        },
+        {
+          "id": "a2",
+          "kind": "right-answer-no-reason",
+          "text": "Teraz jest 17 jabłek.",
+          "labels": { "c1": false, "c2": false, "c3": true }
+        },
+        {
+          "id": "a3",
+          "kind": "wrong-order",
+          "text": "24 + 5 to 29, a połowa z 29 to niecałe 15.",
+          "labels": { "c1": false, "c2": false, "c3": false }
+        },
+        {
+          "id": "a4",
+          "kind": "partly",
+          "text": "Najpierw połowa z 24 to 12 i tyle zostało.",
+          "labels": { "c1": true, "c2": false, "c3": false }
+        },
+        {
+          "id": "a5",
+          "kind": "right-misspelt",
+          "text": "Oddali 12, bo to połowa, zostało 12, dołożyli 5, wyszło 17.",
+          "labels": { "c1": true, "c2": true, "c3": true }
+        },
+        {
+          "id": "a6",
+          "kind": "wrong",
+          "text": "24 - 5 to 19 jabłek.",
+          "labels": { "c1": false, "c2": false, "c3": false }
+        },
+        {
+          "id": "a7",
+          "kind": "off-topic",
+          "text": "Jabłka są zdrowe i mają witaminy.",
+          "labels": { "c1": false, "c2": false, "c3": false }
+        },
+        {
+          "id": "a8",
+          "kind": "partly-slip-at-end",
+          "text": "24 : 2 = 12, 24 - 12 = 12, 12 + 5 = 16.",
+          "labels": { "c1": true, "c2": true, "c3": false }
+        },
+        {
+          "id": "a9",
+          "kind": "right-other-words",
+          "text": "Z 24 znika połowa, czyli 12. W koszyku jest 12, a po dołożeniu pięciu jest 17.",
+          "labels": { "c1": true, "c2": true, "c3": true }
+        },
+        {
+          "id": "a10",
+          "kind": "too-short",
+          "text": "17.",
+          "labels": { "c1": false, "c2": false, "c3": true }
+        }
+      ]
+    },
+    {
+      "id": "en-past-tense",
+      "grade": 3,
+      "language": "en",
+      "skill": "past simple with -ed",
+      "prompt": "Why does 'I played' talk about yesterday, but 'I play' talks about now? Explain.",
+      "min_words": 5,
+      "criteria": [
+        {
+          "id": "c1",
+          "text": "Points to the -ed ending as the change between the two forms",
+          "cite": "core curriculum, grade 3 English: past simple of regular verbs"
+        },
+        {
+          "id": "c2",
+          "text": "Says the -ed form is for things already done / in the past, and the plain form is for now or usually",
+          "cite": "bank task card: form carries time meaning"
+        }
+      ],
+      "answers": [
+        {
+          "id": "a1",
+          "kind": "right",
+          "text": "Played has -ed at the end, and -ed means it already happened. Play is for now.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a2",
+          "kind": "partly",
+          "text": "Because played is about the past.",
+          "labels": { "c1": false, "c2": true }
+        },
+        {
+          "id": "a3",
+          "kind": "right-answer-wrong-reason",
+          "text": "Played is longer, so it is about a longer time ago.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a4",
+          "kind": "right-misspelt",
+          "text": "The ed at the end shows it is finisht, not now.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a5",
+          "kind": "wrong",
+          "text": "They mean the same, played is just spelled nicer.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a6",
+          "kind": "off-topic",
+          "text": "I play football every Saturday with my friends.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a7",
+          "kind": "too-short",
+          "text": "The ed.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a8",
+          "kind": "right-other-words",
+          "text": "When something is done and finished we add -ed. Without it, it happens now or every day.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a9",
+          "kind": "wrong",
+          "text": "I played means I will play tomorrow.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a10",
+          "kind": "partly",
+          "text": "Play is now, played is not now.",
+          "labels": { "c1": false, "c2": true }
+        }
+      ]
+    },
+    {
+      "id": "en-why-plants",
+      "grade": 2,
+      "language": "en",
+      "skill": "what plants need to grow",
+      "prompt": "A plant on the windowsill is green and tall. The same plant in a dark cupboard turned yellow. Why? Explain.",
+      "min_words": 5,
+      "criteria": [
+        {
+          "id": "c1",
+          "text": "Names light (the sun / daylight) as what the cupboard plant is missing",
+          "cite": "early science, grade 2: plants need light and water"
+        },
+        {
+          "id": "c2",
+          "text": "Links light to the plant staying green and growing (light helps it make food / stay healthy)",
+          "cite": "bank task card: cause and effect in nature"
+        }
+      ],
+      "answers": [
+        {
+          "id": "a1",
+          "kind": "right",
+          "text": "The cupboard plant got no light. Plants need light to stay green and grow.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a2",
+          "kind": "partly",
+          "text": "Because it was dark in the cupboard.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a3",
+          "kind": "right-answer-wrong-reason",
+          "text": "It turned yellow because cupboards are for plates, not plants.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a4",
+          "kind": "right-other-words",
+          "text": "With no sun the plant cannot make its food, so it goes yellow and weak.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a5",
+          "kind": "wrong",
+          "text": "The plant was sad and missed the other plants.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a6",
+          "kind": "off-topic",
+          "text": "We have a plant at home and it has red flowers.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a7",
+          "kind": "right-misspelt",
+          "text": "No lite in the cuboard, and plants need lite to be green.",
+          "labels": { "c1": true, "c2": true }
+        },
+        {
+          "id": "a8",
+          "kind": "partly-other-need",
+          "text": "Maybe nobody watered it in the cupboard.",
+          "labels": { "c1": false, "c2": false }
+        },
+        {
+          "id": "a9",
+          "kind": "too-short",
+          "text": "No sun.",
+          "labels": { "c1": true, "c2": false }
+        },
+        {
+          "id": "a10",
+          "kind": "wrong",
+          "text": "Yellow is just its autumn colour, it happens to every plant.",
+          "labels": { "c1": false, "c2": false }
+        }
+      ]
+    }
+  ]
+}

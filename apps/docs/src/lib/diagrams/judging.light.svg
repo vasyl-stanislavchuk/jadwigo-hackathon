@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1188 264" role="img" aria-labelledby="judging-light-title judging-light-desc">
+<title id="judging-light-title">Judging an answer</title>
+<desc id="judging-light-desc">Criteria written first, a code check that only asks for more, then an AI judge with a reason per criterion and kind feedback.</desc>
+<defs><marker id="a-judging-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#50535c"/></marker></defs>
+<rect x="0" y="0" width="1188" height="264" fill="#ffffff"/>
+<line x1="180" y1="88" x2="210" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-judging-light)"/>
+<line x1="366" y1="88" x2="396" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-judging-light)"/>
+<line x1="552" y1="88" x2="582" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-judging-light)"/>
+<line x1="738" y1="88" x2="768" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-judging-light)"/>
+<line x1="924" y1="88" x2="954" y2="88" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-judging-light)"/>
+<path d="M 474 120 L 474 208 L 552 208" fill="none" stroke="#50535c" stroke-width="1.5"/>
+<line x1="552" y1="208" x2="554" y2="208" stroke="#50535c" stroke-width="1.5" marker-end="url(#a-judging-light)"/>
+<rect x="404" y="128" width="120" height="18" fill="#ffffff"/><text x="474" y="141" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#726f68">if too short</text>
+<rect x="24" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="102" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Criteria first</text>
+<text x="102" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">written before the task</text>
+<rect x="210" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="288" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Child's answer</text>
+<text x="288" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">in their own words</text>
+<rect x="396" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="474" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Code check</text>
+<text x="474" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">empty or too short?</text>
+<rect x="582" y="56" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="660" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Kept unjudged</text>
+<text x="660" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">no code verdict</text>
+<rect x="768" y="56" width="156" height="64" rx="6" fill="#dce8fb" stroke="#3a5fa8" stroke-width="1.5"/>
+<text x="846" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">AI judge</text>
+<text x="846" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">a verdict per criterion</text>
+<rect x="954" y="56" width="156" height="64" rx="6" fill="#dce8fb" stroke="#3a5fa8" stroke-width="1.5"/>
+<text x="1032" y="84" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Kind feedback</text>
+<text x="1032" y="102" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">short, one next step</text>
+<rect x="396" y="176" width="156" height="64" rx="6" fill="#ffffff" stroke="#50535c" stroke-width="1.5"/>
+<text x="474" y="204" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="13" font-weight="700" fill="#22252d">Ask for a little more</text>
+<text x="474" y="222" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">never a bare wrong</text>
+</svg>

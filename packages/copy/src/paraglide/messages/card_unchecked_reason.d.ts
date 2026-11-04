@@ -3,7 +3,7 @@
 /**
 * | output |
 * | --- |
-* | "This version hasn't been checked. “Fix it for me” will check and fix it." |
+* | "Nobody has checked this lesson yet. “Fix it for me” will check and fix it." |
 *
 * @param {Card_Unchecked_ReasonInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
