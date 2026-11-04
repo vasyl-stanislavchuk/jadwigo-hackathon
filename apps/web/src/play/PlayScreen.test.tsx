@@ -539,13 +539,30 @@ describe("PlayScreen", () => {
       },
     });
 
+    /** The attempt's coin (celebration.ts firstCast): the queen goes first on one, Pani Iwona on the other. */
+    const QUEEN_FIRST = ATTEMPT;
+    const IWONA_FIRST = FRESH;
+
+    /** A clean right at `seq`, as a snapshot after a reload carries it. */
+    const done = (seq: number): unknown => ({
+      ...(chosen(seq) as object),
+      ended: "correct",
+      tries: 1,
+    });
+
     /** A double that marks the first try at each seq in `misses` wrong, and every other try right. */
     function lesson(
       misses: readonly number[],
-      lessonLanguage: "pl" | "en" = "pl",
+      {
+        id = QUEEN_FIRST,
+        lessonLanguage = "pl",
+      }: { id?: AttemptId; lessonLanguage?: "pl" | "en" } = {},
     ): AttemptClient & AssignmentIntroClient {
       return client({
-        startAttempt: async () => snapshot(FRESH, "in_progress", [chosen(1)], lessonLanguage),
+        startAttempt: async () => snapshot(id, "in_progress", [chosen(1)], lessonLanguage),
+        // A reload after 3 clean rights: the attempt resumes on its 4th question.
+        getAttempt: async () =>
+          snapshot(id, "in_progress", [done(1), done(2), done(3), chosen(4)], lessonLanguage),
         answer: async (_id, body: AttemptAnswerRequest) => {
           const right = !(misses.includes(body.seq) && body.try_no === 1);
           return AttemptAnswerResult.parse({
@@ -593,19 +610,10 @@ describe("PlayScreen", () => {
       }
     }
 
-    /** The coin Math.random gives the page: under 0.5 the queen goes first, else Pani Iwona. */
-    function coin(draw: number): void {
-      vi.spyOn(Math, "random").mockReturnValue(draw);
-    }
-
     beforeEach(() => {
       vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
-      coin(0);
     });
-    afterEach(() => {
-      vi.unstubAllGlobals();
-      vi.restoreAllMocks();
-    });
+    afterEach(() => vi.unstubAllGlobals());
 
     it("plays at a later run of three after a miss, goes on Dalej, then once more, and not again", async () => {
       render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={lesson([2])} />);
@@ -647,8 +655,13 @@ describe("PlayScreen", () => {
     });
 
     it("Pani Iwona can go first, then the queen", async () => {
-      coin(0.9);
-      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={lesson([])} />);
+      render(
+        <PlayScreen
+          assignmentId={ASSIGNMENT}
+          language="pl"
+          client={lesson([], { id: IWONA_FIRST })}
+        />,
+      );
       await quiet([1, 2]);
       await answer(3);
       expect(iwona()).not.toBeNull();
@@ -661,8 +674,13 @@ describe("PlayScreen", () => {
     });
 
     it("Pani Iwona speaks the page's language, not the lesson's", async () => {
-      coin(0.9);
-      render(<PlayScreen assignmentId={ASSIGNMENT} language="en" client={lesson([], "pl")} />);
+      render(
+        <PlayScreen
+          assignmentId={ASSIGNMENT}
+          language="en"
+          client={lesson([], { id: IWONA_FIRST, lessonLanguage: "pl" })}
+        />,
+      );
       await quiet([1, 2]);
       await answer(3);
       const sources = [...document.querySelectorAll("[data-iwona] source")].map(
@@ -670,6 +688,21 @@ describe("PlayScreen", () => {
       );
       expect(sources).toHaveLength(2);
       expect(sources.every((src) => src.includes("iwona-en"))).toBe(true);
+    });
+
+    // The steward's case on #871: a reload between the two must not let the same one play twice.
+    it("after a reload between the two, the second is still the other one", async () => {
+      const double = lesson([]);
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={double} />);
+      await quiet([1, 2]);
+      await answer(3);
+      expect(queen()).not.toBeNull();
+      cleanup();
+      render(<PlayScreen assignmentId={ASSIGNMENT} language="pl" client={double} />);
+      await quiet([4, 5]);
+      await answer(6);
+      expect(iwona()).not.toBeNull();
+      expect(queen()).toBeNull();
     });
 
     it("a tap hides her", async () => {

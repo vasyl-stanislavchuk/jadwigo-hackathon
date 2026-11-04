@@ -51,68 +51,71 @@ test("a celebration plays at the third right answer in a row in a given lesson",
   await expect(celebration(page)).toHaveCount(0);
 });
 
-// dl-7wlo.43: each character over the lesson on a phone and a laptop, the coin pinned by
-// Math.random. Chromium skips the .mov and plays the .webm with its alpha; Safari's HEVC alpha is
-// not run here and needs a real Safari smoke. The checks are taken at once: the clip ends in 4 s.
-for (const [cast, draw] of [
-  ["queen", 0.1],
-  ["iwona", 0.9],
+// dl-7wlo.43: the celebration over the lesson on a phone and a laptop. Who plays first is the
+// attempt's coin (celebration.ts), so each run checks whichever comes, queen or Pani Iwona; the unit
+// tests cover both. Chromium skips the .mov and plays the .webm with its alpha; Safari's HEVC alpha
+// is not run here and needs a real Safari smoke. The checks are taken at once: the clip ends in 4 s.
+for (const [device, viewport] of [
+  ["phone", { width: 390, height: 844 }],
+  ["laptop", { width: 1280, height: 800 }],
 ] as const) {
-  for (const [device, viewport] of [
-    ["phone", { width: 390, height: 844 }],
-    ["laptop", { width: 1280, height: 800 }],
-  ] as const) {
-    test(`${cast} on a ${device}: whole, above the footer, no overflow, and a tap on Dalej goes through`, async ({
-      page,
-    }) => {
-      await page.setViewportSize(viewport);
-      await page.addInitScript((d) => {
-        Math.random = () => d;
-      }, draw);
-      await page.goto(await giveLesson(page, LESSON));
-      await confirmChild(page);
-      for (const [sum, value] of [
-        ["7 + 5", "12"],
-        ["8 + 6", "14"],
-      ] as const) {
-        await answer(page, sum, value);
-        await page.locator("[data-next]").click();
-      }
-      await answer(page, "9 + 4", "13");
-      const shown = page.locator(`[data-celebration="${cast}"]`);
-      await expect(shown).toBeVisible();
-      const video = shown.locator("video");
-      await expect
-        .poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState))
-        .toBeGreaterThan(0);
-      const box = await video.evaluate((v: HTMLVideoElement) => {
-        const r = v.getBoundingClientRect();
-        const bar =
-          document.querySelector("[data-bar]")?.getBoundingClientRect().top ?? innerHeight;
-        return {
-          src: v.currentSrc,
-          shown: r.width / r.height,
-          natural: v.videoWidth / v.videoHeight,
-          left: r.left,
-          right: r.right,
-          bottom: r.bottom,
-          bar,
-          overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        };
-      });
-      // The build hashes the name: iwona-pl-<hash>.webm.
-      if (cast === "iwona") expect(box.src).toMatch(/\/iwona-pl[-.][^/]*webm$/);
-      expect(Math.abs(box.shown - box.natural)).toBeLessThan(0.02);
-      expect(box.left).toBeGreaterThanOrEqual(0);
-      expect(box.right).toBeLessThanOrEqual(viewport.width + 0.5);
-      expect(box.bottom).toBeLessThanOrEqual(box.bar + 1);
-      expect(box.overflow).toBeLessThanOrEqual(0);
-      // The tap reaches Dalej through her and hides her.
+  test(`the celebration on a ${device}: whole, above the footer, no overflow, and a tap on Dalej goes through`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(await giveLesson(page, LESSON));
+    await confirmChild(page);
+    for (const [sum, value] of [
+      ["7 + 5", "12"],
+      ["8 + 6", "14"],
+    ] as const) {
+      await answer(page, sum, value);
       await page.locator("[data-next]").click();
-      await expect(shown).toHaveCount(0);
-      await expect(page.locator("[data-step-shell]").getByText("6 + 6").first()).toBeVisible();
+    }
+    await answer(page, "9 + 4", "13");
+    const shown = celebration(page);
+    await expect(shown).toBeVisible();
+    const cast = await shown.getAttribute("data-celebration");
+    expect(["queen", "iwona"]).toContain(cast);
+    const video = shown.locator("video");
+    await expect
+      .poll(() => video.evaluate((v: HTMLVideoElement) => v.readyState))
+      .toBeGreaterThan(0);
+    const box = await video.evaluate((v: HTMLVideoElement) => {
+      const r = v.getBoundingClientRect();
+      const bar = document.querySelector("[data-bar]")?.getBoundingClientRect().top ?? innerHeight;
+      return {
+        src: v.currentSrc,
+        shown: r.width / r.height,
+        natural: v.videoWidth / v.videoHeight,
+        left: r.left,
+        right: r.right,
+        bottom: r.bottom,
+        bar,
+        overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      };
     });
-  }
+    // The build hashes the name: iwona-pl-<hash>.webm, the page's language.
+    if (cast === "iwona") expect(box.src).toMatch(/\/iwona-pl[-.][^/]*webm$/);
+    expect(Math.abs(box.shown - box.natural)).toBeLessThan(0.02);
+    expect(box.left).toBeGreaterThanOrEqual(0);
+    expect(box.right).toBeLessThanOrEqual(viewport.width + 0.5);
+    // On the footer's top line, once its band has risen.
+    await expect
+      .poll(() =>
+        video.evaluate((v: HTMLVideoElement) => {
+          const bar =
+            document.querySelector("[data-bar]")?.getBoundingClientRect().top ?? innerHeight;
+          return v.getBoundingClientRect().bottom - bar;
+        }),
+      )
+      .toBeLessThanOrEqual(1);
+    expect(box.overflow).toBeLessThanOrEqual(0);
+    // The tap reaches Dalej through the clip and hides it.
+    await page.locator("[data-next]").click();
+    await expect(shown).toHaveCount(0);
+    await expect(page.locator("[data-step-shell]").getByText("6 + 6").first()).toBeVisible();
+  });
 }
 
 // dl-1eieq.3: the credit travels from the lesson question to the page and into lesson-kit's

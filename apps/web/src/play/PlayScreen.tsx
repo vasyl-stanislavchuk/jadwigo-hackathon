@@ -231,8 +231,8 @@ function PlayerScreen({
     (to: number) => navigate(withQuery(reviewPath(assignmentId, to))),
     [assignmentId, withQuery],
   );
-  // Who plays first is a coin per page, and the second celebration is the other one (dl-7wlo.43).
-  const [first] = useState(() => firstCast(Math.random()));
+  // Who plays first is the attempt's coin, the same after a reload; the second is the other one.
+  const first = firstCast(player.attemptId ?? assignmentId);
   // Once a clip is gone (it ended, a tap) it stays gone; celebrationDue holds for one praise only.
   const due = celebrationDue(player.state);
   const dueSeq = due === null ? null : player.state.seq;

@@ -64,9 +64,20 @@ describe("celebrationDue", () => {
 });
 
 describe("who plays", () => {
-  it("the first is a coin, the second the other one", () => {
-    expect(firstCast(0)).toBe("queen");
-    expect(firstCast(0.99)).toBe("iwona");
+  it("the first is the attempt's coin, the same every time for one attempt", () => {
+    expect(firstCast("att_43007b83dp9w2tnfjxhha74cyq")).toBe("queen");
+    expect(firstCast("att_2h4m8gyw0fb1cvz2nkqw0px8fq")).toBe("iwona");
+    expect(firstCast("att_2h4m8gyw0fb1cvz2nkqw0px8fq")).toBe("iwona");
+  });
+
+  it("falls either way across attempts, about half each", () => {
+    const ids = Array.from({ length: 400 }, (_, i) => `att_${(i * 2654435761).toString(36)}`);
+    const queens = ids.filter((id) => firstCast(id) === "queen").length;
+    expect(queens).toBeGreaterThan(160);
+    expect(queens).toBeLessThan(240);
+  });
+
+  it("the second is the other one", () => {
     expect([castOf(0, "queen"), castOf(1, "queen")]).toEqual(["queen", "iwona"]);
     expect([castOf(0, "iwona"), castOf(1, "iwona")]).toEqual(["iwona", "queen"]);
   });

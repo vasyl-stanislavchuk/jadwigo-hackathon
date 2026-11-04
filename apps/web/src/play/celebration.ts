@@ -7,7 +7,8 @@
  * again. A held verdict never says "correct", so it never gives one away.
  *
  * Who plays (the owner, 2026-11-03): the queen or Pani Iwona, the first picked at random, the
- * second the other one.
+ * second the other one. The coin is the attempt's id, so it lands the same way after a reload and
+ * the second is still the other one; across attempts it falls either way.
  */
 
 import type { PageAttemptQuestion } from "@jadwigo/contracts";
@@ -41,9 +42,15 @@ export function celebrationDue(state: RunnerState): number | null {
   return at === -1 ? null : at;
 }
 
-/** A coin for the first celebration; `draw` is a number in [0, 1), Math.random's. */
-export function firstCast(draw: number): Cast {
-  return draw < 0.5 ? "queen" : "iwona";
+/** The coin for the attempt's first celebration: a hash (FNV-1a) of its id, so a reload keeps it. */
+export function firstCast(attemptId: string): Cast {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < attemptId.length; i++) {
+    hash ^= attemptId.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  // A high bit: the lowest is only the parity of the characters.
+  return ((hash >>> 16) & 1) === 0 ? "queen" : "iwona";
 }
 
 /** Who plays the celebration at `index`: the first cast, then the other one. */
