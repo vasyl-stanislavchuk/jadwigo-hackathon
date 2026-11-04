@@ -56,6 +56,7 @@ module "converter" {
   environment         = var.environment
   uploads_bucket_name = module.uploads.bucket_name
   image_tag           = var.converter_image_tag
+  posthog_key         = var.posthog_key
 }
 
 # The print Lambda (dl-1eieq.8.3, decision dl-o05aa): apps/print's image, which the api invokes with
@@ -67,6 +68,7 @@ module "print" {
   environment         = var.environment
   uploads_bucket_name = module.uploads.bucket_name
   image_tag           = var.print_image_tag
+  posthog_key         = var.posthog_key
 }
 
 # The service at app.<apex>: apps/web, and /api/* to the one Lambda (dl-5ssh.3.3).

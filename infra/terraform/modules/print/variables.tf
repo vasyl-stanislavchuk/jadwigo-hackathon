@@ -52,3 +52,9 @@ variable "log_retention_days" {
   type        = number
   default     = 14
 }
+
+variable "posthog_key" {
+  description = "PostHog's public project key, where this function reports errors (dl-5ssh.160). The browser holds the same key; blank reports nothing"
+  type        = string
+  default     = ""
+}
