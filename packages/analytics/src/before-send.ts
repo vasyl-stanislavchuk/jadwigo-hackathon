@@ -6,7 +6,7 @@
  */
 import type { CaptureResult } from "posthog-js";
 import { CATALOG, isEventName, type PropSpec, type Surface } from "./catalog.ts";
-import { cutPath, ID_ANYWHERE, scrubExceptionList } from "./scrub.ts";
+import { cutPath, ID_ANYWHERE, isExceptionLevel, scrubExceptionList } from "./scrub.ts";
 
 /** PostHog events we never send: identity calls carry a person. */
 const DROPPED_SYSTEM_EVENTS = new Set([
@@ -113,7 +113,7 @@ function exceptionProps(props: Record<string, unknown>): Record<string, unknown>
     if (!key.startsWith("$exception_")) out[key] = value;
   }
   out["$exception_list"] = list;
-  if (typeof props["$exception_level"] === "string")
+  if (isExceptionLevel(props["$exception_level"]))
     out["$exception_level"] = props["$exception_level"];
   return out;
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scrubExceptionList, scrubMessage } from "./scrub.ts";
+import { scrubExceptionList, scrubMessage, scrubType, THROWN_VALUE } from "./scrub.ts";
 
 describe("scrubMessage", () => {
   it.each([
@@ -38,12 +38,79 @@ describe("scrubMessage", () => {
     );
   });
 
+  it.each([
+    ["a JSON body's escaped quote", 'Muse: {"error":"Content flagged: \\"Zosia: lubi koty\\""}'],
+    ["an escaped quote alone", 'Content flagged: \\"Zosia: lubi koty\\"'],
+    ["Polish quotes", "Nie ma ucznia „Zosia”"],
+    ["English curly quotes", "answer “Zosia” is off"],
+    ["single curly quotes", "answer ‘Zosia’ is off"],
+    ["guillemets", "answer «Zosia» is off"],
+    ["an unclosed Polish quote", "Nie ma ucznia „Zosia"],
+    ["a rejected string", "Non-Error promise rejection captured with value: Zosia lubi koty"],
+    ["a thrown string", "Non-Error exception captured with value: Zosia"],
+    ["a thrown object's keys", "Object captured as exception with keys: Zosia, koty"],
+  ])("takes the text out of %s", (_name, message) => {
+    expect(scrubMessage(message)).not.toMatch(/Zosia|koty/);
+  });
+
+  it("keeps the words a rejection is known by", () => {
+    expect(scrubMessage("Non-Error promise rejection captured with value: Zosia")).toBe(
+      'Non-Error promise rejection captured: "…"',
+    );
+    expect(scrubMessage("Primitive value captured as exception: Zosia")).toBe(
+      'Primitive value captured: "…"',
+    );
+  });
+
+  it("stays quick on a very long unbroken message", () => {
+    const started = performance.now();
+    scrubMessage("a".repeat(5_000_000));
+    scrubMessage(`"${"\\".repeat(5_000_000)}`);
+    expect(performance.now() - started).toBeLessThan(500);
+  });
+
   it("stops at 200 characters", () => {
     expect(scrubMessage("x".repeat(500))).toHaveLength(200);
   });
 });
 
+describe("scrubType", () => {
+  it.each([
+    ["Error", "Error"],
+    ["TypeError", "TypeError"],
+    ["ZodError", "ZodError"],
+    ["DOMException", "DOMException"],
+    ["MuseFailed", "MuseFailed"],
+    ["UnhandledRejection", "UnhandledRejection"],
+    ["Zosia", "Error"],
+    ["Zosia Kowalska", "Error"],
+    ["Zosia Error", "Error"],
+  ])("%s stays as %s", (from, to) => {
+    expect(scrubType(from)).toBe(to);
+  });
+});
+
 describe("scrubExceptionList", () => {
+  it("sends none of a thrown value's text, which the SDKs mark synthetic", () => {
+    const list = scrubExceptionList([
+      { type: "Error", value: "Zosia lubi koty", mechanism: { synthetic: true, handled: false } },
+    ]);
+    expect(list).toEqual([
+      {
+        type: "Error",
+        value: THROWN_VALUE,
+        mechanism: { synthetic: true, handled: false },
+      },
+    ]);
+  });
+
+  it("empties a data: URL frame", () => {
+    const list = scrubExceptionList([
+      { stacktrace: { type: "raw", frames: [{ filename: "data:text/javascript,Zosia" }] } },
+    ]);
+    expect(JSON.stringify(list)).not.toContain("Zosia");
+  });
+
   it("is null for anything but a list", () => {
     expect(scrubExceptionList(undefined)).toBeNull();
     expect(scrubExceptionList("Ala")).toBeNull();
