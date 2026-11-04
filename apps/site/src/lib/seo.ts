@@ -95,7 +95,17 @@ export function headTags(page: Page, path: string): HeadTag[] {
       { kind: "meta", name: "twitter:image", content: image },
     );
   } else {
-    tags.push({ kind: "meta", name: "twitter:card", content: "summary" });
+    // No picture of its own (the 1200x630 card is dl-w0b4.74's): the app icon, with the small card,
+    // so a shared link never previews bare (dl-w0b4.128).
+    const icon = `${origin}/icon-512.png`;
+    tags.push(
+      { kind: "property", property: "og:image", content: icon },
+      { kind: "property", property: "og:image:width", content: "512" },
+      { kind: "property", property: "og:image:height", content: "512" },
+      { kind: "property", property: "og:image:alt", content: siteName },
+      { kind: "meta", name: "twitter:card", content: "summary" },
+      { kind: "meta", name: "twitter:image", content: icon },
+    );
   }
   return tags;
 }

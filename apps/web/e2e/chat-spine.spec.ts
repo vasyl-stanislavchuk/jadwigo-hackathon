@@ -112,7 +112,7 @@ const windowStill = async (page: Page) =>
 
 /** The open stage shows at most 3 lines (D3), and no sentence twice in a row (S2). */
 async function openStageHolds(page: Page): Promise<void> {
-  const open = spineOf(page).locator("[data-stage='active'] > [data-lines] > [data-line]");
+  const open = spineOf(page).locator("[data-spine-stage='active'] > [data-lines] > [data-line]");
   expect(await open.count()).toBeLessThanOrEqual(3);
   const said = await spineOf(page).locator("[data-line] [data-words]").allTextContents();
   for (let i = 1; i < said.length; i++) expect(said[i]).not.toBe(said[i - 1]);
@@ -153,7 +153,7 @@ async function threeTurns(page: Page, size: Size): Promise<void> {
 async function openEveryStage(page: Page): Promise<void> {
   const turn = chatOf(page).locator("[data-turn='current']");
   await turn.locator("[data-summary-row]").click();
-  for (const row of await turn.locator("[data-stage='done'] [data-stage-row]").all())
+  for (const row of await turn.locator("[data-spine-stage='done'] [data-stage-row]").all())
     await row.click();
 }
 
@@ -192,9 +192,9 @@ for (const size of SIZES) {
       await page.clock.install();
       await open(page, "s03", size);
       await phase(page, "tool");
-      await expect(spineOf(page).locator("[data-stage='done']")).toHaveCount(1);
-      await expect(spineOf(page).locator("[data-stage='active']")).toHaveCount(1);
-      await expect(spineOf(page).locator("[data-stage='todo']")).toHaveCount(1);
+      await expect(spineOf(page).locator("[data-spine-stage='done']")).toHaveCount(1);
+      await expect(spineOf(page).locator("[data-spine-stage='active']")).toHaveCount(1);
+      await expect(spineOf(page).locator("[data-spine-stage='todo']")).toHaveCount(1);
       await openStageHolds(page);
       await wordsHold(page);
       await shoot(page, info, "s03-tool-running-plan", size.name);
@@ -228,9 +228,6 @@ for (const size of SIZES) {
     test("s06: the second visit of a stage reads 'drugi raz' (dl-uukj.47.71.36)", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.36: every call lands one stage early, so the check's second visit
-      // never opens its stage. Remove this mark in the PR that fixes it.
-      test.fail();
       await atSecondCheck(page, size);
       await expect(spineOf(page).getByText("drugi raz")).toBeVisible();
     });
@@ -243,7 +240,7 @@ for (const size of SIZES) {
       const row = chatOf(page).locator("[data-turn='current'] [data-summary-row]");
       await expect(row).toHaveCount(1);
       await expect(row).toHaveAttribute("aria-expanded", "false");
-      await expect(chatOf(page).locator("[data-turn='current'] [data-stage]")).toHaveCount(0);
+      await expect(chatOf(page).locator("[data-turn='current'] [data-spine-stage]")).toHaveCount(0);
       await wordsHold(page);
       // Focus stays in the composer when a turn ends (§3).
       await expect(composerOf(page)).toBeFocused();
@@ -253,7 +250,7 @@ for (const size of SIZES) {
       await page.keyboard.press("Enter");
       await expect(row).toHaveAttribute("aria-expanded", "true");
       await expect(
-        chatOf(page).locator("[data-turn='current'] [data-stage]").first(),
+        chatOf(page).locator("[data-turn='current'] [data-spine-stage]").first(),
       ).toBeVisible();
       await shoot(page, info, "s09-turn-expanded", size.name);
       await page.keyboard.press(" ");
@@ -262,7 +259,7 @@ for (const size of SIZES) {
       // A done stage row toggles on Enter too, with aria-expanded.
       await page.keyboard.press("Enter");
       const stage = chatOf(page).locator(
-        "[data-turn='current'] [data-stage='done'] [data-stage-row]",
+        "[data-turn='current'] [data-spine-stage='done'] [data-stage-row]",
       );
       await stage.first().focus();
       await expect(stage.first()).toHaveAttribute("aria-expanded", "false");
@@ -283,11 +280,9 @@ for (const size of SIZES) {
     test("s11: the retry is a quiet line in the open stage (dl-uukj.47.71.36)", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.36: the retry lands in the stage before. Remove this mark then.
-      test.fail();
       await atRetry(page, size);
       await expect(
-        spineOf(page).locator("[data-stage='active'] [data-line='retry']"),
+        spineOf(page).locator("[data-spine-stage='active'] [data-line='retry']"),
       ).toBeVisible();
     });
 
@@ -300,7 +295,7 @@ for (const size of SIZES) {
       // Shown only after the turn (S13), and only inside its opened stage.
       await expect(turn.getByText(RECOVERED_TYPES)).toHaveCount(0);
       await turn.locator("[data-summary-row]").click();
-      const search = turn.locator("[data-stage]", { hasText: "Szukanie zadań w banku" });
+      const search = turn.locator("[data-spine-stage]", { hasText: "Szukanie zadań w banku" });
       await search.locator("[data-stage-row]").click();
       await expect(search.locator("[data-line='skip']")).toHaveText(RECOVERED_TYPES);
       await wordsHold(page);
@@ -357,11 +352,9 @@ for (const size of SIZES) {
     test("s14: the running stage takes the square, the rest stay hollow (dl-uukj.47.71.37)", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.37. Remove this mark in the PR that fixes it.
-      test.fail();
       await stopped(page, size);
-      await expect(spineOf(page).locator("[data-stage='stopped']")).toHaveCount(1);
-      await expect(spineOf(page).locator("[data-stage='failed']")).toHaveCount(0);
+      await expect(spineOf(page).locator("[data-spine-stage='stopped']")).toHaveCount(1);
+      await expect(spineOf(page).locator("[data-spine-stage='failed']")).toHaveCount(0);
     });
 
     test("s14: a turn stopped before any lesson says 'Zatrzymane.' and no lesson words", async ({
@@ -379,8 +372,6 @@ for (const size of SIZES) {
     });
 
     test("s14: no reply under a turn stopped mid-call (dl-uukj.47.71.38)", async ({ page }) => {
-      // Red until dl-uukj.47.71.38: the sentence before the held call shows as the reply.
-      test.fail();
       await stopped(page, size);
       await expect(chatOf(page).locator("[data-reply='current']")).toHaveCount(0);
     });
@@ -446,8 +437,6 @@ for (const size of SIZES) {
     test("s18: a steer is a line in the open stage, in the parent's words (dl-uukj.47.71.36)", async ({
       page,
     }) => {
-      // Red until dl-uukj.47.71.36: the steer lands in the stage before. Remove this mark then.
-      test.fail();
       await open(page, "s18", size);
       await expect(spineOf(page)).not.toHaveAttribute("data-spine", /done|queued/, {
         timeout: 20_000,
@@ -456,7 +445,7 @@ for (const size of SIZES) {
       await page.keyboard.press("Enter");
       await chatOf(page).locator("[data-queue] [data-send-now]").click();
       await expect(
-        spineOf(page).locator("[data-stage='active'] [data-line='steer']"),
+        spineOf(page).locator("[data-spine-stage='active'] [data-line='steer']"),
       ).toContainText("Dodaj jeszcze 2 zadania.");
     });
 

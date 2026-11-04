@@ -12,3 +12,7 @@ output "database_url_param" {
   description = "The SecureString the owner sets to jadwigo_runner's pooler URL"
   value       = aws_ssm_parameter.database_url.name
 }
+
+output "log_group_name" {
+  value = aws_cloudwatch_log_group.runner.name
+}

@@ -1,17 +1,300 @@
 {
   "id": "e5",
-  "title": "Golden-set evals: the bank gate and the brain's eval set",
-  "status": "running",
+  "title": "Golden-set evals: the bank gate and the brain's first golden set",
   "model": "none",
   "calls": 0,
   "tokens": {
     "input": 0,
     "output": 0
   },
-  "usd": 0,
+  "usd": 0.08,
   "cost_source": "ledger",
-  "wall_s": 0,
-  "commit": "f4b1194c",
-  "commands": [],
-  "results": []
+  "wall_s": 563.9,
+  "commit": "f4b1194cc0fd4b83a1fb7a3957cfb49cad4aa48a",
+  "bank_commit": "803a979e123e2a06893e181e6c63dff92b4c8045",
+  "commands": [
+    "make gate (in jadwigo-bank, lane/e4-e5)",
+    "make gate GATE_ARGS=\"--holdout --reason dl-5ssh.90.53.7-E5-judges-docs\" (in jadwigo-bank)",
+    "md context eval record --project jadwigo-hackathon --question ... --cite <slug> (20 cases)",
+    "md context eval --project jadwigo-hackathon --runs 3 --save-baseline"
+  ],
+  "detail": {
+    "bank_gate": {
+      "index": "index/klasa3-enriched (411 sets, 5,677 vectors, built 2026-11-02)",
+      "thresholds_points": {
+        "recall_at_10_max_drop_points": 2,
+        "ndcg_at_10_max_drop_points": 3,
+        "abstain_precision_max_drop_points": 20,
+        "abstain_recall_max_drop_points": 15
+      },
+      "tune": {
+        "baseline": {
+          "recall": {
+            "@1": 0.4861,
+            "@3": 0.6944,
+            "@5": 0.8056,
+            "@10": 0.8611,
+            "@20": 0.9028
+          },
+          "mrr": 0.6137,
+          "ndcg@10": 0.6704,
+          "abstain_precision": 0.7143,
+          "abstain_recall_gaps": 0.5556,
+          "cases": 150,
+          "answerable": 72
+        },
+        "now": {
+          "recall": {
+            "@1": 0.4861,
+            "@3": 0.7222,
+            "@5": 0.8472,
+            "@10": 0.9167,
+            "@20": 0.9722
+          },
+          "mrr": 0.6344,
+          "ndcg@10": 0.6871,
+          "abstain_precision": 1.0,
+          "abstain_recall_gaps": 0.3333,
+          "cases": 150,
+          "answerable": 72
+        },
+        "verdict": "BLOCK: abstain recall (gaps) 0.5556 -> 0.3333, a drop of 22.23 points against a limit of 15; recall@10, nDCG@10 and abstain precision pass. 1 case lost its top-10 hit: need-parent-words-014 (rank 9 -> 12)."
+      },
+      "holdout": {
+        "baseline": {
+          "recall": {
+            "@1": 0.6957,
+            "@3": 0.8696,
+            "@5": 0.9565,
+            "@10": 0.9565,
+            "@20": 0.9565
+          },
+          "mrr": 0.7899,
+          "ndcg@10": 0.7724,
+          "abstain_precision": 0.8,
+          "abstain_recall_gaps": 0.8,
+          "cases": 65,
+          "answerable": 23
+        },
+        "now": {
+          "recall": {
+            "@1": 0.7037,
+            "@3": 0.8519,
+            "@5": 0.9259,
+            "@10": 0.963,
+            "@20": 0.963
+          },
+          "mrr": 0.7831,
+          "ndcg@10": 0.7398,
+          "abstain_precision": 0.75,
+          "abstain_recall_gaps": 0.75,
+          "cases": 65,
+          "answerable": 27
+        },
+        "verdict": "CANNOT JUDGE: the baseline scores golden version 3ae6859540ebe7ca, the current set is ddff18d6d3168080. The run's own numbers sit beside the baseline's and are not a like-for-like verdict until the baseline is updated in the same change."
+      }
+    },
+    "brain_eval": {
+      "set": "jadwigo-hackathon/evals/cutover.json, 20 cases recorded for this experiment",
+      "runs": 3,
+      "totals": {
+        "cases": 20,
+        "pass": 20,
+        "fail": 0,
+        "degraded": 0,
+        "recall": {
+          "1": 0.6,
+          "3": 0.75,
+          "5": 0.75,
+          "10": 0.85,
+          "20": 0.95
+        },
+        "mrr": 0.6817,
+        "magnet_rate": 0.0,
+        "abstained": 0,
+        "split": 0,
+        "marked_magnet": 0,
+        "top_mentions": 10,
+        "top_marked": 0,
+        "cut_by_merge": 0,
+        "bot_rows": 0,
+        "absent_ok": 20,
+        "contains_ok": 20
+      },
+      "baseline": "saved on the second scored run (the first save was refused: 1 case, how-does-a-parent-s-own-ai-app-connect-to-jadwigo, disagreed with itself across passes, ranks [absent, 28, 28])",
+      "cases": [
+        {
+          "id": "happy-path",
+          "question": "What is the parent happy path for the 4 November demo?",
+          "must_cite_rank": 3,
+          "ok": true
+        },
+        {
+          "id": "who-decided-that-printing-is-in-the-demo-scope-and-what-was-deci",
+          "question": "Who decided that printing is in the demo scope, and what was decided?",
+          "must_cite_rank": 2,
+          "ok": true
+        },
+        {
+          "id": "how-is-the-print-pdf-rendered",
+          "question": "How is the print PDF rendered?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "what-does-the-dream-do-and-how-is-it-run",
+          "question": "What does the dream do, and how is it run?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "may-a-learner-s-data-names-included-reach-a-meta-model",
+          "question": "May a learner's data, names included, reach a Meta model?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "what-does-docs-jadwigo-pl-show-for-the-judges-vision-or-only-wha",
+          "question": "What does docs.jadwigo.pl show for the judges: vision or only what is live?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "which-domains-does-jadwigo-run-on-jadwigo-pl-or-jadwigo-kids",
+          "question": "Which domains does Jadwigo run on: jadwigo.pl or jadwigo.kids?",
+          "must_cite_rank": 16,
+          "ok": true
+        },
+        {
+          "id": "is-the-goals-loop-part-of-the-4-november-submission",
+          "question": "Is the goals loop part of the 4 November submission?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "can-a-parent-set-many-goals-for-one-child",
+          "question": "Can a parent set many goals for one child?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "how-does-a-parent-s-own-ai-app-connect-to-jadwigo",
+          "question": "How does a parent's own AI app connect to Jadwigo?",
+          "must_cite_rank": 28,
+          "ok": true
+        },
+        {
+          "id": "what-happens-when-a-play-link-carries-a-learner-in-it",
+          "question": "What happens when a play link carries a learner in it?",
+          "must_cite_rank": 7,
+          "ok": true
+        },
+        {
+          "id": "how-many-questions-may-one-lesson-hold-at-most",
+          "question": "How many questions may one lesson hold at most?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "is-the-parent-app-chat-first",
+          "question": "Is the parent app chat-first?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "does-posthog-session-replay-run-in-the-app-and-under-what-consen",
+          "question": "Does PostHog session replay run in the app, and under what consent?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "are-lessons-in-polish-only-for-now",
+          "question": "Are lessons in Polish only for now?",
+          "must_cite_rank": 12,
+          "ok": true
+        },
+        {
+          "id": "is-voice-input-in-scope-for-children",
+          "question": "Is voice input in scope for children?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "how-is-the-jadwigo-hackathon-organised-one-project-or-many",
+          "question": "How is the Jadwigo hackathon organised: one project or many?",
+          "must_cite_rank": 1,
+          "ok": true
+        },
+        {
+          "id": "what-happens-when-a-merge-breaks-main-revert-or-fix-forward",
+          "question": "What happens when a merge breaks main: revert or fix forward?",
+          "must_cite_rank": 3,
+          "ok": true
+        },
+        {
+          "id": "is-the-curriculum-shared-across-pods-or-private-to-each-family",
+          "question": "Is the curriculum shared across pods or private to each family?",
+          "must_cite_rank": 7,
+          "ok": true
+        },
+        {
+          "id": "what-did-the-demo-scope-add-about-using-jadwigo-with-ai",
+          "question": "What did the demo scope add about using Jadwigo with AI?",
+          "must_cite_rank": 1,
+          "ok": true
+        }
+      ]
+    }
+  },
+  "status": "done",
+  "results": [
+    {
+      "label": "Bank gate, tune (150 needs): verdict",
+      "value": "BLOCK on abstain recall (gaps)"
+    },
+    {
+      "label": "Bank gate, tune: recall@10",
+      "value": "0.8611 -> 0.9167 (pass)"
+    },
+    {
+      "label": "Bank gate, tune: nDCG@10",
+      "value": "0.6704 -> 0.6871 (pass)"
+    },
+    {
+      "label": "Bank gate, tune: abstain precision",
+      "value": "0.7143 -> 1.0000 (pass)"
+    },
+    {
+      "label": "Bank gate, tune: abstain recall (gaps)",
+      "value": "0.5556 -> 0.3333, drop 22.23 points, limit 15 (block)"
+    },
+    {
+      "label": "Bank gate, holdout (65 needs): verdict",
+      "value": "CANNOT JUDGE: golden version moved, baseline stale"
+    },
+    {
+      "label": "Holdout run's own recall@10 and nDCG@10",
+      "value": "0.963 and 0.7398 (baseline 0.9565 and 0.7724, other golden version)"
+    },
+    {
+      "label": "Brain golden set",
+      "value": "20 cases, new, project jadwigo-hackathon"
+    },
+    {
+      "label": "Brain eval, 3 runs: cases passed",
+      "value": "20 of 20"
+    },
+    {
+      "label": "Brain eval: recall at rank 1 / 10 / 20",
+      "value": "0.60 / 0.85 / 0.95"
+    },
+    {
+      "label": "Brain eval: MRR",
+      "value": 0.6817
+    },
+    {
+      "label": "Brain baseline",
+      "value": "saved (second scoring; the first save was refused for 1 unstable case)"
+    }
+  ]
 }

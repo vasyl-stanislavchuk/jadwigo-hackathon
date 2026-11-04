@@ -218,7 +218,7 @@ function OpenLines({
   const older = lines.slice(0, Math.max(0, lines.length - OPEN_LINES));
   const recent = lines.slice(older.length);
   return (
-    <ul className="flex flex-col gap-1.5 py-1 pr-3.5 pl-10" data-lines>
+    <ul className="flex flex-col gap-1.5 py-1 pr-2 pl-8.5" data-lines>
       {older.length > 0 && (
         <li>
           <Collapsible>
@@ -273,7 +273,7 @@ function StageHead({
   return (
     <>
       <Mark mark={STAGE_MARK[stage.status]} />
-      <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 text-left">
+      <span className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-left leading-snug">
         <span
           className={cn(
             "text-jw-page-body",
@@ -298,7 +298,7 @@ function StageHead({
   );
 }
 
-const ROW = "flex w-full items-center gap-2.5 px-3.5 py-1.5";
+const ROW = "flex w-full items-center gap-2.5 px-2 py-2";
 
 /**
  * One stage (§4.1). A done stage is a button that opens its lines (Collapsible, `aria-expanded`);
@@ -315,7 +315,7 @@ function StageView({
 }): ReactElement {
   if (stage.status === "done" && stage.lines.length > 0)
     return (
-      <li data-stage={stage.status}>
+      <li data-spine-stage={stage.status}>
         <Collapsible className="group/stage">
           <CollapsibleTrigger
             className={cn(ROW, "rounded-jw-control hover:bg-jw-hover", HALO)}
@@ -332,7 +332,7 @@ function StageView({
             />
           </CollapsibleTrigger>
           <CollapsibleContent>
-            <ul className="flex flex-col gap-1.5 py-1 pr-3.5 pl-10" data-lines>
+            <ul className="flex flex-col gap-1.5 py-1 pr-2 pl-8.5" data-lines>
               {stage.lines.map((line, i) => (
                 <Line key={`line-${i}`} line={line} now={now} language={language} />
               ))}
@@ -343,7 +343,7 @@ function StageView({
     );
   const open = stage.status === "active" || stage.status === "waiting";
   return (
-    <li data-stage={stage.status}>
+    <li data-spine-stage={stage.status}>
       <div className={ROW} data-stage-row>
         <StageHead stage={stage} language={language} chevron={open ? "down" : undefined} />
       </div>
@@ -489,7 +489,7 @@ export function SpineBody({
     spine.phase === "queued" && spine.stages.length === 0 && spine.looseLines.length === 0;
   const body =
     spine.stages.length > 0 ? (
-      <ol className="flex flex-col py-1.5" data-stages>
+      <ol className="flex flex-col gap-0.5 p-1.5" data-stages>
         {spine.stages.map((stage) => (
           // A stage's id is its plan index (types.ts): stable within the turn.
           <StageView key={stage.id} stage={stage} now={now} language={language} />
