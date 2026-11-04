@@ -41,6 +41,8 @@ const landing: readonly DistCheck[] = [
   ["lekcje/index.html", 'href="https://app.jadwigo.pl/play/asg_'],
   // O nas shows the family's photos, served from the bucket's about-photos/ (dl-w0b4.42).
   ["o-nas/index.html", "/about-photos/photo-1-640.webp"],
+  // And the place for the film, with the link to the docs.
+  ["o-nas/index.html", 'href="https://docs.jadwigo.pl/"'],
   // A lesson card opens the lesson in a new tab, so the site stays where it was (dl-w0b4.140).
   ["index.html", 'target="_blank" rel="noopener"'],
   ["lekcje/index.html", 'target="_blank" rel="noopener"'],

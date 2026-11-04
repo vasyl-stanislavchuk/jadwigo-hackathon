@@ -4,8 +4,10 @@
 // the page's stable URL, so a link handed to Meta or Google keeps working. A prod build leaves out
 // the ones not yet reviewed (servedPathPages) and builds the rest of the site.
 import { type CollectionEntry, getCollection, render } from "astro:content";
+import { hosts } from "@jadwigo/config";
 import wordmark from "@jadwigo/ui/brand/wordmark.svg?raw";
 import PhotoCollage from "../components/PhotoCollage.astro";
+import Pic from "../components/Pic.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { languageOf, servedLanguages } from "../lib/i18n.ts";
@@ -26,7 +28,8 @@ interface Props {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { photos, photosLabel, link, heading } = entry.data;
+const { photos, photosLabel, video, link, heading } = entry.data;
+const docsHost = hosts.prod.docs;
 // In O nas's words, the name is the wordmark itself, and its crown tips on hover as it does in the header.
 const story = (entry.rendered?.html ?? "").replace(
   /\bJadwigo\b/g,
@@ -45,6 +48,17 @@ const story = (entry.rendered?.html ?? "").replace(
         </div>
         <PhotoCollage photos={photos} label={photosLabel} />
       </section>
+      {video && (
+        <section class="film wrap" aria-labelledby="film-title">
+          <h2 id="film-title">{video.heading}</h2>
+          {video.file ? (
+            <video class="player" controls preload="metadata" playsinline src={`/about-photos/${video.file}`} aria-label={video.heading}></video>
+          ) : (
+            <Pic label={video.label} screen ratio="16 / 9" class="player" />
+          )}
+          <p>{video.docs} <a href={`https://${docsHost}/`}>{docsHost}</a></p>
+        </section>
+      )}
     </Base>
   ) : (
     <Base page={entry.data} path={entry.data.path ?? "/"} prose>
@@ -75,5 +89,9 @@ const story = (entry.rendered?.html ?? "").replace(
   @media (prefers-reduced-motion: reduce) {
     .about .word-logo .crown, .about .word-logo:hover .crown { transition: none; transform: none; }
   }
+  .film { margin-top: clamp(2.5rem, 6vw, 4rem); }
+  .film h2 { font-size: 1.75rem; }
+  .film .player { display: block; width: 100%; max-width: 48rem; margin-top: 1rem; border-radius: var(--jw-radius-card); }
+  .film p { margin-top: 1rem; font-size: 1.125rem; }
   .about .link { display: inline-block; margin-top: 1.5rem; font-weight: 700; }
 </style>

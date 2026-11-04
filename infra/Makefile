@@ -49,8 +49,9 @@ PHOTOS ?= $(HOME)/projects/jadwigo-art/marketing/about-photos
 site-photos:
 	@$(NOT_FROM_AGENT)
 	bucket=$$($(TF) output -raw site_bucket) && \
-	$(AWS) s3 sync $(PHOTOS) s3://$$bucket/about-photos --exclude "*" --include "*.webp" --content-type image/webp --cache-control "public, max-age=86400"
-	for f in $(PHOTOS)/*.webp; do curl -fsS -o /dev/null -w "%{http_code} $$(basename $$f)\n" https://jadwigo.pl/about-photos/$$(basename $$f) || exit 1; done
+	$(AWS) s3 sync $(PHOTOS) s3://$$bucket/about-photos --exclude "*" --include "*.webp" --content-type image/webp --cache-control "public, max-age=86400" && \
+	$(AWS) s3 sync $(PHOTOS) s3://$$bucket/about-photos --exclude "*" --include "*.mp4" --content-type video/mp4 --cache-control "public, max-age=86400"
+	for f in $$(ls $(PHOTOS)/*.webp $(PHOTOS)/*.mp4 2>/dev/null); do curl -fsS -o /dev/null -w "%{http_code} $$(basename $$f)\n" https://jadwigo.pl/about-photos/$$(basename $$f) || exit 1; done
 
 # The service at app.<apex> (dl-5ssh.2): `make -C infra deploy` is the api, then the web app. The
 # owner runs it after an apply, from a terminal; a merge deploys nothing
