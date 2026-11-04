@@ -38,7 +38,7 @@ import { IntroScreen, type Who } from "./IntroScreen.tsx";
 import { Column, KidPage } from "./KidPage.tsx";
 import { Iwona, Queen } from "./Queen.tsx";
 import { Results } from "./Results.tsx";
-import { playLearner, playPath, playRoute, reviewPath } from "./route.ts";
+import { playLearner, playPath, playQuestion, playRoute, reviewPath } from "./route.ts";
 import { currentOf, progressOf } from "./runner.ts";
 import { storedAttempt } from "./storedAttempt.ts";
 import { type Player, usePlayer } from "./usePlayer.ts";
@@ -214,7 +214,7 @@ function PlayerScreen({
   client?: AttemptClient;
 }): ReactElement {
   const { path, query } = useLocation();
-  const player = usePlayer(assignmentId, client, who.learner, who.playerName);
+  const player = usePlayer(assignmentId, client, who.learner, who.playerName, playQuestion(query));
   const { stage } = player;
   const seq = playRoute(path)?.review;
   // The page's own query (the language) rides along from the list to a step and back.
