@@ -139,6 +139,30 @@ describe("PlayScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
   });
 
+  // dl-7wlo.44: while the attempt starts, one status in the page's words with Ołówek, decorative;
+  // the question replaces it the moment it arrives, with no wait for the drawing.
+  it("waits with Ołówek while the attempt starts, then shows the question at once", async () => {
+    let start: (s: AttemptSnapshot) => void = () => undefined;
+    const startAttempt = vi.fn(
+      () =>
+        new Promise<AttemptSnapshot>((resolve) => {
+          start = resolve;
+        }),
+    );
+    const { container } = render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    await vi.waitFor(() => expect(startAttempt).toHaveBeenCalledTimes(1));
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status", { name: "Chwileczkę…" })).toBeTruthy();
+    const art = container.querySelector("[data-slot=loading] img");
+    expect(art?.getAttribute("data-character")).toBe("olowek");
+    expect(art?.getAttribute("alt")).toBe("");
+    await act(async () => start(snapshot(FRESH, "in_progress", [question(1)])));
+    expect(screen.getAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+    expect(container.querySelector("[data-slot=loading]")).toBeNull();
+  });
+
   // dl-uukj.60: ?q=3 opens a fresh preview at planned question 3, the two before it skipped, and
   // leaves the tab's own attempt where it was.
   it("opens a preview at the question ?q= names, skipping the ones before it", async () => {

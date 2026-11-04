@@ -16,7 +16,8 @@
       "!apps/print/tests/fixtures/*.sheet.json",
       "!packages/contracts/openapi.json",
       "!bun.lock",
-      "!packages/copy/src/paraglide"
+      "!packages/copy/src/paraglide",
+      "!packages/ui/src/brand/loading-*.svg"
     ]
   },
   "formatter": {

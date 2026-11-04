@@ -26,7 +26,7 @@ import {
   StepFrame,
   ViewMode,
 } from "@jadwigo/lesson-kit";
-import { Button, Spinner } from "@jadwigo/ui";
+import { Button, Loading } from "@jadwigo/ui";
 import { type ReactElement, useCallback, useEffect, useMemo, useState } from "react";
 import { withMedia } from "../media.ts";
 import { navigate, useLocation } from "../nav/location.ts";
@@ -194,9 +194,7 @@ export function PlayScreen({
   if (intro === null)
     return (
       <KidPage>
-        <Column>
-          <Spinner label={copy(language, "loading")} />
-        </Column>
+        <Loading character="olowek" label={copy(language, "loading")} />
       </KidPage>
     );
   return <IntroScreen intro={intro} learner={learner} language={language} onStart={setWho} />;
@@ -248,18 +246,14 @@ function PlayerScreen({
     case "loading":
       return (
         <KidPage>
-          <Column>
-            <Spinner label={copy(language, "loading")} />
-          </Column>
+          <Loading character="olowek" label={copy(language, "loading")} />
         </KidPage>
       );
     case "playing":
       return (
         <KidPage>
           {player.state.phase === "resyncing" || currentOf(player.state) === null ? (
-            <Column>
-              <Spinner label={copy(language, "loading")} />
-            </Column>
+            <Loading character="olowek" label={copy(language, "loading")} />
           ) : (
             <Question player={player} language={language} />
           )}

@@ -6,7 +6,7 @@
  */
 
 import { copy, type Language } from "@jadwigo/copy";
-import { Button, Spinner } from "@jadwigo/ui";
+import { Button, Loading } from "@jadwigo/ui";
 import { type ReactElement, useEffect } from "react";
 import { Column } from "../play/KidPage.tsx";
 import type { Review } from "../play/usePlayer.ts";
@@ -36,11 +36,7 @@ export function ChildReview({
   }, [missing, onAll]);
 
   if (load.kind === "loading") {
-    return (
-      <Column>
-        <Spinner label={copy(language, "loading")} />
-      </Column>
-    );
+    return <Loading character="linijka" label={copy(language, "loading")} />;
   }
   if (load.kind === "failed") {
     return (

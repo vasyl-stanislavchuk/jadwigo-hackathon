@@ -248,6 +248,7 @@ describe("primitive sources", () => {
         "input-otp.tsx",
         "input.tsx",
         "kbd.tsx",
+        "loading.tsx",
         "empty.tsx",
         "pagination.tsx",
         "panel-toggle.tsx",
@@ -273,7 +274,7 @@ describe("primitive sources", () => {
         "toggle-group.tsx",
         "toggle.tsx",
         "tooltip.tsx",
-      ].sort(), // checkbox, combobox, input-otp, radio-cards, select and textarea: the adult form controls (dl-uukj.47.67.3); alert-dialog, context-menu, disabled-reason, dropdown-menu, kbd, toast and tooltip: the adult overlays (dl-uukj.47.67.2); popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1); chip, empty, pagination, result-bar, skeleton and status: the adult kit's display parts (dl-uukj.47.67.4)
+      ].sort(), // checkbox, combobox, input-otp, radio-cards, select and textarea: the adult form controls (dl-uukj.47.67.3); alert-dialog, context-menu, disabled-reason, dropdown-menu, kbd, toast and tooltip: the adult overlays (dl-uukj.47.67.2); popover: the chosen-gap menu (dl-w3.37.16); switch: the pause sheet's Dźwięk (dl-uukj.29.55); sheet and table: the lesson overview's question sheet and heatmap (dl-uukj.30.4); radio-group, segmented-control, tabs and side-menu: the settings and navigation controls (dl-uukj.32.3); breadcrumb, dialog, disc and panel-toggle: the parent app frame (dl-uukj.47.1); chip, empty, pagination, result-bar, skeleton and status: the adult kit's display parts (dl-uukj.47.67.4); loading: a page or a block that waits, centred, with the loading cast (dl-7wlo.44)
     );
   });
 

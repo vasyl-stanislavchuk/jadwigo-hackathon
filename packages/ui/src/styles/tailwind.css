@@ -216,6 +216,12 @@
   --spacing-jw-shell-band: var(--jw-shell-band);
   --spacing-jw-shell-box: var(--jw-shell-box);
   --spacing-jw-dialog: var(--jw-dialog-width);
+  /* The loading cast: max-w-jw-loading-art-large, w-jw-loading-art-small, min-h-jw-loading-page. */
+  --spacing-jw-loading-art-large: var(--jw-loading-art-large);
+  --spacing-jw-loading-art-large-min: var(--jw-loading-art-large-min);
+  --spacing-jw-loading-art-small: var(--jw-loading-art-small);
+  --spacing-jw-loading-page: var(--jw-loading-page);
+  --spacing-jw-loading-block: var(--jw-loading-block);
   --radius-jw-card: var(--jw-radius-card);
   --radius-jw-control: var(--jw-radius-control);
   --radius-jw-small: var(--jw-radius-small);
