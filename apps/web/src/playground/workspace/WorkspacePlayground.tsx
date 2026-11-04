@@ -10,6 +10,7 @@
  * Daj lekcję answers a made-up assignment (fixtures.ts madeUpGiven), with no network.
  */
 
+import { createClient } from "@jadwigo/api-client";
 import type { LearnerId } from "@jadwigo/contracts";
 import { Conversation, ConversationId } from "@jadwigo/contracts/run";
 import { copy, type Language } from "@jadwigo/copy";
@@ -53,6 +54,9 @@ function devEngine(transport: EngineTransport): LessonEngine {
     consent: null,
     ratings: null,
     give: { giveLesson: async () => madeUpGiven(), renameLesson: async () => ({ revision: 2 }) },
+    // The real print routes on the page's own origin: the dev server answers none, so Drukuj says
+    // it failed, and the e2e stubs them to get a PDF (dl-1eieq.8.11).
+    print: createClient({ base: "", token: async () => "playground" }),
   };
 }
 
