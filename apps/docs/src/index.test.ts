@@ -16,13 +16,12 @@ describe("apiBase", () => {
 describe("SIDEBAR", () => {
   it("reads judges first, then the developer sections, every slug once", () => {
     expect(SIDEBAR.map((group) => group.label)).toEqual([
-      "What Jadwigo is",
+      "Start",
       "Features",
-      "The story",
+      "How it is built",
       "Vision",
       "Experiments",
-      "How it is built",
-      "Start here",
+      "API guides",
       "Use with agents",
       "API reference",
       "TypeScript client",
@@ -41,7 +40,8 @@ describe("SIDEBAR", () => {
     const byLabel = (label: string) => SIDEBAR.find((group) => group.label === label)?.items;
     expect(byLabel("Features")).toHaveLength(10);
     expect(byLabel("Features")?.every((slug) => slug.startsWith("features/"))).toBe(true);
-    expect(byLabel("Vision")).toHaveLength(7);
+    expect(byLabel("Vision")).toHaveLength(4);
+    expect(byLabel("Start")).toEqual(["index", "what-is-real", "story"]);
     expect(byLabel("Experiments")).toEqual([
       "experiments",
       "experiments/e1",
@@ -62,7 +62,9 @@ describe("SIDEBAR", () => {
   });
 
   it("lists the MCP tool pages the build generates after the agents page and the MCP overview", () => {
-    expect(sidebar.find((group) => group.label === "Use with agents")?.items).toEqual([
+    const agents = sidebar.find((group) => group.label === "Use with agents");
+    expect(agents?.collapsed).toBe(true);
+    expect(agents?.items).toEqual([
       { slug: "guides/agents" },
       { slug: "mcp" },
       { label: "MCP tools", items: [{ autogenerate: { directory: "mcp" } }] },

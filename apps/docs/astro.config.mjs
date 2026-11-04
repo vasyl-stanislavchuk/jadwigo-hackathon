@@ -31,6 +31,13 @@ export default defineConfig({
   output: "static",
   trailingSlash: "ignore",
   build: { format: "directory" },
+  // The 4 learning-loop pages became one (dl-5ssh.90.53.19); an old link still lands on it.
+  redirects: {
+    "/vision/learner-knowledge": "/vision/learning-loop/",
+    "/vision/next-lesson": "/vision/learning-loop/",
+    "/vision/dreaming": "/vision/learning-loop/",
+    "/vision/goals-loop": "/vision/learning-loop/",
+  },
   // starlight-openapi ships TypeScript, so Vite bundles it and, through it, satteri, whose native
   // binding then can't be found from dist/. Left external, it loads from node_modules.
   // md's DOCS_PORT, strict: a taken port fails loudly instead of moving to the next one.
@@ -46,15 +53,15 @@ export default defineConfig({
       description: "How to call Jadwigo's API and MCP server, and how its design system is built.",
       // The crown favicon (dl-5ssh.90.34); public/ holds what tools/src/brand-icons.ts writes.
       favicon: "/favicon.svg",
-      // The app's design system: Andika, Zeszyt's roles, and the --sl-* names mapped onto them
-      // (src/styles/theme.css). Its night roles sit on [theme="dark"], which the bridge copies
-      // from Starlight's data-theme before the first paint.
-      // Andika's files are resolved here, not named, so knip sees the dependency.
+      // The adult audience of the app's design system: Geist, the adult type scale, 1px lines and
+      // flat controls, on Zeszyt's day and night roles (src/styles/theme.css). The night roles sit
+      // on [theme="dark"], which the bridge copies from Starlight's data-theme before first paint.
+      // Geist's files are resolved here, not named, so knip sees the dependency.
       customCss: [
-        fileURLToPath(import.meta.resolve("@fontsource/andika/400.css")),
-        fileURLToPath(import.meta.resolve("@fontsource/andika/700.css")),
-        fileURLToPath(import.meta.resolve("@fontsource/andika/400-italic.css")),
-        fileURLToPath(import.meta.resolve("@fontsource/andika/700-italic.css")),
+        fileURLToPath(import.meta.resolve("@fontsource/geist/400.css")),
+        fileURLToPath(import.meta.resolve("@fontsource/geist/500.css")),
+        fileURLToPath(import.meta.resolve("@fontsource/geist/600.css")),
+        fileURLToPath(import.meta.resolve("@fontsource/geist-mono/400.css")),
         "@jadwigo/ui/foundation.css",
         "./src/styles/theme.css",
       ],
