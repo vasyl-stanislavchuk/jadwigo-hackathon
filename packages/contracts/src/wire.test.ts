@@ -6,11 +6,15 @@ import {
   AccountCreate,
   AttemptAnswerRequest,
   AttemptClaim,
+  adapted,
+  creditLicence,
   GoalPatch,
   LearnerCreate,
+  namesOwnSource,
   PageAttemptResult,
   ParentReviewQuestion,
   pageAttemptResult,
+  pageCredit,
   pageEnded,
   ReportCreate,
   ReportPatch,
@@ -292,5 +296,91 @@ describe("the learner knowledge base", () => {
     expect(ProposalId.safeParse("p1").success).toBe(true);
     for (const id of ["p0", "p10", "P1", "1"])
       expect(ProposalId.safeParse(id).success, id).toBe(false);
+  });
+});
+
+describe("a borrowed question's credit (dl-1eieq.6.2)", () => {
+  // Made up: no bank item has this ref.
+  const credit = {
+    source: "khan",
+    ref: "x0000000000000001",
+    licence: "cc-by-nc-sa-4.0",
+    original_lang: "en",
+    checked: "2026-11-04",
+  } as const;
+  const change = (kind: "wording" | "tutor_notes") => ({
+    question: "khan:x0000000000000001",
+    changes: [{ change: kind, why: "made up", reviewed: false }],
+  });
+
+  it("shows a question as it came when nothing changed", () => {
+    expect(pageCredit({ credit, based_on: { question: "khan:x1", changes: [] } })).toEqual({
+      source: "khan",
+      ref: "x0000000000000001",
+      licence: "cc-by-nc-sa-4.0",
+      original_lang: "en",
+      adapted: false,
+    });
+  });
+
+  it("counts new hints alone as adapted, the one rule screen and paper read", () => {
+    expect(adapted(change("tutor_notes"))).toBe(true);
+    expect(adapted(change("wording"))).toBe(true);
+    expect(adapted({ question: "khan:x1", changes: [] })).toBe(false);
+    expect(adapted(null)).toBe(false);
+    expect(pageCredit({ credit, based_on: change("tutor_notes") })?.adapted).toBe(true);
+  });
+
+  it("gives a model-written twin its question's source and licence, adapted", () => {
+    expect(pageCredit({ credit: null, based_on: null }, { credit })).toEqual({
+      source: "khan",
+      ref: "x0000000000000001",
+      licence: "cc-by-nc-sa-4.0",
+      original_lang: "en",
+      adapted: true,
+    });
+  });
+
+  it("keeps a sibling twin's own credit", () => {
+    const own = { ...credit, ref: "x0000000000000002" };
+    expect(pageCredit({ credit: own, based_on: null }, { credit })).toMatchObject({
+      ref: "x0000000000000002",
+      adapted: false,
+    });
+  });
+
+  it("does not credit a twin that names its own source to its question's", () => {
+    for (const question of ["authored:twin-of-s02", "bank:made-up-1"]) {
+      expect(
+        pageCredit({ credit: null, based_on: { question, changes: [] } }, { credit }),
+      ).toBeNull();
+    }
+    expect(namesOwnSource({ question: "khan:x1", changes: [] })).toBe(false);
+    expect(namesOwnSource(null)).toBe(false);
+  });
+
+  it("credits a twin whose based_on is Khan's but has no credit to its question's, adapted", () => {
+    const khan = { question: "khan:x0000000000000001", changes: [] };
+    expect(pageCredit({ credit: null, based_on: khan }, { credit })).toMatchObject({
+      source: "khan",
+      licence: "cc-by-nc-sa-4.0",
+      adapted: true,
+    });
+  });
+
+  it("shows no credit for our own question or its twin", () => {
+    expect(pageCredit({ credit: null, based_on: null })).toBeNull();
+    expect(pageCredit({ credit: null, based_on: null }, { credit: null })).toBeNull();
+  });
+
+  it("reads a licence written as a sentence as the source's own", () => {
+    const note = { source: "khan", licence: "Khan Academy's licence was checked on 2026-10-18" };
+    expect(creditLicence(note)).toBe("cc-by-nc-sa-4.0");
+    expect(pageCredit({ credit: { ...credit, ...note }, based_on: null })?.licence).toBe(
+      "cc-by-nc-sa-4.0",
+    );
+    expect(creditLicence({ source: "khan", licence: "CC-BY-NC-SA-3.0" })).toBe("cc-by-nc-sa-3.0");
+    expect(creditLicence({ source: "elsewhere", licence: "their terms" })).toBe("their terms");
+    expect(creditLicence({ source: "toString", licence: "their terms" })).toBe("their terms");
   });
 });

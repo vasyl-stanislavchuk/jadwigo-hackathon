@@ -11,8 +11,10 @@
  */
 
 import {
+  adapted,
   type BasedOn,
   type Credit,
+  creditLicence,
   type Language,
   PAPER_FORMS,
   type PageFamilyQuestion,
@@ -192,19 +194,20 @@ function creditOf(
   basedOn: BasedOn | null,
   language: Language,
 ): Omit<PrintCredit, "n"> {
-  const licence = licenceName(credit.licence);
+  const licence = licenceName(creditLicence(credit));
   const from =
     credit.source === "alfik"
       ? copy(language, "credit_from_alfik")
       : copy(language, "credit_from", { source: SOURCE_NAMES[credit.source] ?? credit.source });
   const translated = credit.original_lang !== language;
-  const adapted = basedOn?.changes.some((c) => c.change !== "tutor_notes") === true;
+  // The page's rule (dl-1eieq.6.2): a rewritten hint is a change, and the licence says so.
+  const changed = adapted(basedOn);
   const key: CopyKey =
-    translated && adapted
+    translated && changed
       ? "credit_both"
       : translated
         ? "credit_translated"
-        : adapted
+        : changed
           ? "credit_adapted"
           : "credit_shared";
   const head = from.charAt(0).toUpperCase() + from.slice(1);

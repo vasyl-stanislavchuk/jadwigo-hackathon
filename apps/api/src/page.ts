@@ -68,13 +68,19 @@ export function pageQuestion(
 ): PageAttemptQuestion {
   const question = lessonQuestion(version, asked.lesson_question_id);
   const own = answers.filter((a) => a.seq === asked.seq);
+  // A twin with no credit of its own shows its question's, adapted (dl-1eieq.6.2).
+  const original =
+    question.twin_of === null
+      ? null
+      : (version.questions.find((v) => v.lesson_question_id === question.twin_of)?.question ??
+        null);
   return {
     seq: asked.seq,
     lesson_question_id: asked.lesson_question_id,
     question_type: question.question_type,
     say: question.say,
     question: pageFamilyQuestion(question),
-    credit: pageCredit(question),
+    credit: pageCredit(question, original),
     added: asked.added,
     placed: asked.placed,
     added_for: asked.added_for,
