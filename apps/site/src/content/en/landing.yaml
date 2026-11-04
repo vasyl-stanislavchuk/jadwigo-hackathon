@@ -112,13 +112,13 @@ ai:
     text: Agents do the work. You and your child get the time. In our pictures, the agents are the Queen and her pencil-case court.
   steps:
     - title: Jadwiga reads
-      text: She reads your photo or your words, for example “Making change, like in the workbook. Mixes up dollars and cents.” She also reads what Jadwigo already knows about your child, such as their grade, their goals and the mistakes from recent lessons. Then she looks for questions in the bank.
+      text: She reads your photo or your words, and what Jadwigo already knows about your child. Then she looks for questions in the bank.
     - title: Ołówek writes
       text: The pencil writes only what the bank lacks, such as a missing question or a hint where a question has none.
     - title: Gumka checks
       text: The eraser checks that every answer is right and that every line your child reads is short and kind.
     - title: Linijka measures
-      text: The ruler measures the lesson against your child. The questions fit what your child can already do, they go from easier to harder, and there are at most 20.
+      text: "The ruler measures the lesson against your child: what they can already do, easier to harder, at most 20 questions."
   connect:
     heading: In your own AI app
     text: Jadwigo can live in ChatGPT, Claude or Muse. You connect it once, then ask for lessons there without opening Jadwigo. You need a Jadwigo account, and you sign in to it once, when you connect.

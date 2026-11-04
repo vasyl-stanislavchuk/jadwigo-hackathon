@@ -114,13 +114,13 @@ ai:
     text: Agenci wykonują pracę, a Ty i dziecko zyskujecie czas. Na naszych rysunkach agenci to królowa i jej dwór z piórnika.
   steps:
     - title: Jadwiga czyta
-      text: Czyta Twoje zdjęcie albo Twoje słowa, na przykład „Zadania o wydawaniu reszty. Myli złote z groszami”. Czyta też to, co Jadwigo już wie o dziecku, czyli klasę, cele i pomyłki z ostatnich lekcji. Potem szuka pytań w banku zadań.
+      text: Czyta Twoje zdjęcie albo Twoje słowa i to, co Jadwigo już wie o dziecku. Potem szuka pytań w banku zadań.
     - title: Ołówek pisze
       text: Ołówek pisze tylko to, czego w banku brakuje, na przykład brakujące pytanie albo podpowiedź tam, gdzie jej nie ma.
     - title: Gumka sprawdza
       text: Gumka sprawdza, czy każda odpowiedź się zgadza i czy każde zdanie dla dziecka jest krótkie i życzliwe.
     - title: Linijka mierzy
-      text: Linijka mierzy, czy lekcja pasuje do dziecka. Pytania pasują do tego, co dziecko już umie, idą od łatwiejszych do trudniejszych, a jest ich najwyżej 20.
+      text: "Linijka mierzy, czy lekcja pasuje do dziecka: do tego, co już umie, od łatwiejszych pytań do trudniejszych, najwyżej 20."
   connect:
     heading: W Twojej aplikacji AI
     text: Jadwigo może działać w ChatGPT, Claude albo Muse. Łączysz je raz, a potem prosisz tam o lekcje, bez otwierania Jadwigo. Potrzebujesz konta w Jadwigo i logujesz się na nie raz, przy łączeniu.
