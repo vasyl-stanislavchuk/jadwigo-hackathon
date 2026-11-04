@@ -2,7 +2,12 @@
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- interactive-widget: on Android Chrome the page shrinks above the system keyboard, so Sprawdź
+         and the field stay in view; iOS ignores it (dl-uukj.29.176). -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content"
+    />
     <title>Jadwigo</title>
     <!-- The crown favicon (dl-uukj.32.28); public/ is written by tools/src/brand-icons.ts. -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
