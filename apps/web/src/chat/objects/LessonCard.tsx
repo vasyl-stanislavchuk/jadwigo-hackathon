@@ -432,8 +432,13 @@ function FixFoot({
   // Questions but nothing listed: no check stands on this version (a turn that was stopped, a check
   // that could not run), so no question is named as wrong. Nothing is on its way either: a turn
   // that ends checks its lesson by itself, so never ask the parent to wait (dl-uukj.47.71.48).
-  const reason =
-    findings === 0 && questions > 0 ? say("card_unchecked_reason") : say("card_fix_reason");
+  // The line names Popraw za mnie only when the button is drawn (dl-uukj.47.71.53).
+  const unchecked = findings === 0 && questions > 0;
+  const reason = !unchecked
+    ? say("card_fix_reason")
+    : onFix === undefined
+      ? say("card_unchecked_plain")
+      : say("card_unchecked_reason");
   return (
     <div
       className="flex flex-wrap items-center gap-2 border-t-jw border-jw-line bg-jw-side px-4 py-2.5"

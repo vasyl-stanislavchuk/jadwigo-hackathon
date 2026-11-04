@@ -287,6 +287,18 @@ describe("the lesson card (dl-uukj.47.71 S16, S7; the owner's card delta C1-C5)"
     );
   });
 
+  it("without onFix, the unchecked fix card's reason names no Popraw za mnie, in its line or Daj lekcję's (dl-uukj.47.71.53)", () => {
+    drawn({ ...BASE, kind: "fix", count: 4, preview: PREVIEW, findings: [] }, { onFix: undefined });
+    expect(card()?.querySelector("[data-fix]")).toBeNull();
+    const reason = card()?.querySelector("[data-fix-reason]")?.textContent ?? "";
+    expect(reason).toBe("Tej lekcji nikt jeszcze nie sprawdził.");
+    expect(card()?.textContent).not.toContain("Popraw za mnie");
+    const give = card()?.querySelector("[data-give]") as HTMLElement;
+    expect(document.getElementById(give.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+      reason,
+    );
+  });
+
   it("no card state names a version, in pl or en (delta C5, dl-uukj.47.71.52)", () => {
     const states: LessonCardState[] = [
       { ...BASE, kind: "ready", count: 4, preview: PREVIEW },
