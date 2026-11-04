@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 import { mcpTools, toolPage } from "./lib/mcp.ts";
 import { MCP_OUTPUT } from "./lib/mcp-output.ts";
 
-// Every page reads in one order (dl-5ssh.90.31, decision
-// jadwigo-platform/notes/2026-10-30-docs-jadwigo-pl-wears-the-app-s-design-system-in-andika-day-and):
-// it opens with a sentence on what it is for, explains before it lists, puts its tables last under
-// "Every <thing>", and ends with a Next section of 1 to 3 links.
+// Every page reads in one order (dl-5ssh.90.31): it opens with a sentence on what it is for,
+// explains before it lists, puts its tables last under "Every <thing>", and ends with a Next
+// section of 1 to 3 links. The docs now wear the adult design system, in Geist (dl-5ssh.90.53.19).
+// The order dates from the 2026-10-30 decision that dressed them in Andika, and it still holds.
 
 const content = fileURLToPath(new URL("./content/docs/", import.meta.url));
 

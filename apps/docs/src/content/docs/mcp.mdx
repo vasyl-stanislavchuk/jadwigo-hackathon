@@ -1,26 +1,34 @@
 ---
 title: MCP
-description: How to register Jadwigo's MCP server with an agent, how an agent drafts a lesson with it, and every tool it gives.
+description: Jadwigo's 2 MCP servers, the local one for lesson authors and the remote one for a parent's own AI app, and every tool the local one gives.
 ---
 
 import Generated from "../../components/Generated.astro";
 import McpToolTable from "../../components/McpToolTable.astro";
 
-This page is for anyone connecting an AI agent to `jw mcp serve`, Jadwigo's MCP server: how to
-register it, how an agent drafts a lesson with it, and every tool it gives.
+Jadwigo has 2 MCP servers. This page is for anyone connecting an AI agent to either of them: how
+to register each one, how an agent drafts a lesson, and every tool the local server gives.
 
-The server speaks MCP on stdio. An agent uses it to search the question bank and to draft a lesson
-for a parent. Each tool calls the same function as a `jw` command, so a tool's JSON is that
-command's `--json` output. A call that fails comes back as a tool error. Its text is the error and
-a hint.
+- **`jw mcp serve`** runs on your own machine, on stdio, for a lesson author. It searches the
+  question bank and drafts a lesson, and it publishes only to the local app.
+- **`https://app.jadwigo.pl/api/mcp`** is the remote server, for a parent's own AI app. The app
+  signs in by OAuth 2.1 and acts as that parent, inside their family's data.
 
-## Register the server
+The table under "Every server" puts the 2 side by side.
+
+## The local server
+
+`jw mcp serve` speaks MCP on stdio. Each tool calls the same function as a `jw` command, so a
+tool's JSON is that command's `--json` output. A call that fails comes back as a tool error. Its
+text is the error and a hint.
+
+### Register the server
 
 The server runs from a checkout of the repo through `uv`. It finds the bank's URL and token in
 `~/.config/jadwigo-bank/bank.env`. `JADWIGO_BANK_DIR` can sit in that file too, in place of the
 `env` entry. Replace the 3 paths below with your own.
 
-### Claude Code
+#### Claude Code
 
 Put the name before the `-e` flags, and give each variable its own `-e`. The flag takes every
 value up to `--`, so a name after it is read as a variable.
@@ -52,7 +60,7 @@ Or check it in for a project as `.mcp.json`:
 }
 ```
 
-### Codex
+#### Codex
 
 ```sh
 codex mcp add jadwigo \
@@ -60,28 +68,7 @@ codex mcp add jadwigo \
   -- uv --directory /path/to/jadwigo/apps/cli run jw mcp serve
 ```
 
-### Muse Code :badge[Unconfirmed]{variant=caution}
-
-Muse has no `mcp add` command. A stdio server is an entry under `mcpServers` in
-`~/.config/muse/settings.json`, whose top level also needs `"schema_version": 1` (line 2 below).
-The entry's field names, on lines 5 to 8, are not confirmed yet: Muse does not warn on a wrong
-one. Lines 6 to 8, folded, are the same `command`, `args` and `env` as in `.mcp.json` above.
-
-```json showLineNumbers collapse={6-8}
-{
-  "schema_version": 1,
-  "mcpServers": {
-    "jadwigo": {
-      "transport": "stdio",
-      "command": "uv",
-      "args": ["--directory", "/path/to/jadwigo/apps/cli", "run", "jw", "mcp", "serve"],
-      "env": { "JADWIGO_BANK_DIR": "/path/to/jadwigo-bank" }
-    }
-  }
-}
-```
-
-## Draft a lesson
+### Draft a lesson
 
 A lesson from the bank copies each question whole, its help included, and plays as copied. The
 agent writes only what the bank does not have.
@@ -90,7 +77,6 @@ agent writes only what the bank does not have.
    the family uses in `names`. The tool replaces them before anything leaves the machine. Pass
    the `topic` in a few words, with no count, grade or name (`mnożenie`): the bank searches it.
    The draft stays on the server's machine under a `draft_id`, and a short view of it comes back.
-   The draft is on disk from this first call (see below).
 2. **Write what is missing.** Each question's `you_write` lists it: the `twin` when the bank has
    no sibling item to copy as one (`twin_source` names the bank's), `boost_by_mistake` for the
    classes in `cards_to_write`, and any rung the copy leaves empty. Write it in the lesson's
@@ -109,16 +95,16 @@ agent writes only what the bank does not have.
    `based_on.changes`. The answer is that step's findings and card. A later `lesson_check` keeps
    the edit, less any part that check's words for that step set. To put the steps in another
    order, easy to harder, call [`lesson_move`](/mcp/lesson_move/) with a step and `before` or
-   `after` another; every later check keeps the order. To take a step out, call
-   [`lesson_drop`](/mcp/lesson_drop/); a draft keeps at least one step.
+   `after` another. Every later check keeps the order. To take a step out, call
+   [`lesson_drop`](/mcp/lesson_drop/). A draft keeps at least one step.
 5. **Publish, then play.** Once a check answers `ok`, call [`lesson_publish`](/mcp/lesson_publish/)
    with the `draft_id`, without asking. It imports the lesson into the local database `make dev`
    serves. Then it checks that the api answers, that a preview attempt starts with every question,
    and that the play page answers. It returns the absolute `play_url` for the parent. It publishes
-   only locally: for jadwigo-dev it refuses and names the owner's command, and the live app is
-   never published from here.
+   only locally. For the dev environment it refuses and names the command to run instead, and the
+   live app is never published from here.
 
-### Lesson-ready questions
+#### Lesson-ready questions
 
 A draft copies only a lesson-ready question: the bank checked that it compiles, that its key
 grades its own answer, that every picture loads and that the page draws it without an error. Each
@@ -130,44 +116,50 @@ item the draft did not use is in `left_out` with a reason about the item, never 
 - The converter's own reason: the bank cannot make it yet.
 - `no item is lesson-ready in <lang>`: a whole set has none in the lesson's language.
 
-[`question_gaps`](/mcp/question_gaps/) counts such a set as a gap, and its reason goes on to name
-the cause most of the set's items share and the bead fixing it, as in `no item is lesson-ready in
-pl; most: a picture was not pulled, 12 of 12 items (<bead>)`.
-[`question_item`](/mcp/question_item/) answers with the same reason as an error. Fixing a refused
-item happens at its source, on the command line: `jw question readiness` counts, per language,
-what is ready, waiting and refused, by cause and with each cause's bead; `jw question refusals`
-lists the shapes, the converter's refusals among them; and `jw question flag` pulls one item.
+[`question_gaps`](/mcp/question_gaps/) counts such a set as a gap, and its reason names the cause
+most of the set's items share, as in `no item is lesson-ready in pl; most: a picture was not
+pulled, 12 of 12 items`. [`question_item`](/mcp/question_item/) answers with the same reason as an
+error. A refused item is fixed at its source, on the command line. `jw question readiness` counts
+what is ready, waiting and refused in each language, by cause. `jw question refusals` lists the
+shapes, the converter's refusals among them. `jw question flag` pulls one item.
 
-### The draft on disk
+## The remote server
 
-Both lesson tools write the draft into one directory, `JADWIGO_DRAFTS_DIR`, read from the server's
-environment only, with `~` expanded. It defaults to `~/.local/state/jadwigo/drafts` on the server's
-machine, and only its owner can read it. A `title` or `reasoning` you pass to `lesson_check` has
-the `names` you pass replaced before it is written. Each call writes 2 files there before it
-returns:
+`https://app.jadwigo.pl/api/mcp` is how a parent's own AI app, such as claude.ai, ChatGPT or Muse,
+makes lessons in Jadwigo. It's on `main` and not yet live on prod.
+[Connect your AI](/features/connect-your-ai/) walks a parent through it.
 
-- `<draft_id>.json` is the lesson file as far as it goes. `lesson_draft` writes the copy, with its
-  empty rungs. Every `lesson_check` call rewrites it with your words, even when it refuses them.
-  The result names it `draft_path`.
-- `<draft_id>.check.json` is the check beside it: `ok`, `findings`, `mistake_classes` by step id,
-  and `checked_at`.
+- **Transport.** Streamable HTTP, stateless, with JSON replies and no server-sent events. Only
+  `POST` is served, and a `GET` or `DELETE` is `405`. A request body is at most 256 KiB, and a
+  batch of messages is refused.
+- **Sign-in.** OAuth 2.1, with Supabase Auth as the authorization server. A call without a valid
+  token is `401`, and its `WWW-Authenticate` header names the protected-resource metadata at
+  `/.well-known/oauth-protected-resource`. The client follows it, the parent signs in and approves
+  the app on the consent page, and the client gets a token. [Authentication](/guides/authentication/)
+  has the details.
+- **Rights.** The token carries the same rights as the parent's own token in the web app. The AI
+  reads only that parent's family, plus the question bank.
+- **Tools.** The read tools cover everything the parent can read in the app: `me`, the children's
+  attempts, skills, goals and reports, the conversations and their runs. `question_search`,
+  `question_set` and `question_show` read the bank. The lesson tools are `lesson_draft`,
+  `lesson_check`, `lesson_show`, `lesson_edit` and `lesson_publish`. Here `lesson_publish`
+  publishes for real, for 1 named child, and answers that child's play link.
 
-`lesson_edit` rewrites both too. The lesson builder's page writes a third file when it draws the
-draft, `<draft_id>.render.json`: what it found wrong on the page. `lesson_check`, `lesson_edit`
-and `lesson_show` return its findings as `render`, with `rendered_at`, and `stale` when the page
-drew an older version. `render` is null when no page has drawn the draft. `lesson_publish` writes
-`<draft_id>.publish.json`, readable by its owner only: the same record it returns, with the
-`play_url` and what was verified.
+## Every server
 
-A finding has a `step_id`, a `path` into the lesson file, a `level` (`error` or `warn`), a `rule`,
-its `text` and a `fix`. `ok` is true while no finding is an error. The live lesson builder reads
-these files, so a draft renders while you write it.
+| | `jw mcp serve` | `/api/mcp` |
+| --- | --- | --- |
+| Who uses it | A lesson author, on their own machine | A parent's own AI app |
+| Transport | stdio | Streamable HTTP, JSON replies |
+| Sign-in | None: the bank's token in a local file | OAuth 2.1, the parent's own account |
+| Reads | The question bank | The parent's family and the question bank |
+| Publishes | To the local app only | To the app it serves, for 1 named child |
 
 ## Every tool
 
 <McpToolTable />
 
-<Generated from="the server's own tool list">
+<Generated from="the local server's own tool list">
   The list is also served as it is, at <a href="/mcp-tools.json"><code>/mcp-tools.json</code></a>.
 </Generated>
 

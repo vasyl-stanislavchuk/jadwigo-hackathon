@@ -24,7 +24,7 @@ curl -X PATCH https://app.jadwigo.pl/api/v1/pods/$POD_ID \
 
 A parent gives consent once, for the whole family's pod, after the client has shown what the AI
 reads and where it goes. The pod's id is in [`GET /api/v1/me`](/api/operations/getme/). The reply is
-the pod, with `ai_consent_at` set; sending it again keeps the first time.
+the pod, with `ai_consent_at` set. Sending it again keeps the first time.
 
 Until then, starting a conversation or sending a message is `409` `AiConsentMissing`, and nothing
 is stored. `{"ai_consented": false}` withdraws it: `ai_consent_at` is null again, and the same
@@ -103,10 +103,12 @@ photo no message has carried expires after a day (`409` `AttachmentExpired`). A 
 short-lived link. Ask again after `expires_at`. Its `preview_url` is null for a photo, which is its
 own preview.
 
-The contract also names 3 kinds a client sends as they are, with a `name` and no `width` or
-`height`: `image/heic`, `application/pdf` and a DOCX, up to 10 MB. They are not taken yet: creating
-one is `409` `AttachmentMismatch`. Once they are, the server turns each into page images for the AI,
-and `preview_url` links the first page.
+A parent can also attach a HEIC the page can't decode, a PDF or a DOCX. The client sends each as
+it is, with a `name` and no `width` or `height`, up to 10 MB. When a turn reads the file, a
+converter on the server turns each page into a JPEG, and the AI sees only those JPEGs. A file of
+more than 10 pages, an encrypted one or one it can't read is refused. The parent is told,
+and the turn goes on without it. Once a turn has converted the file, `preview_url` links the first
+page. Before that, `preview_url` is null.
 
 ## 3. Read the answer
 
