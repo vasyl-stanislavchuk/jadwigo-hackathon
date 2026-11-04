@@ -117,27 +117,52 @@ const SYSTEM_KEYBOARD_MIN = 120;
  * keyboard was up. A system keyboard is up when the visual viewport is more than 120 px shorter
  * than the tallest it has been at this width: that holds on iOS, which pans the page under its
  * keyboard (so `offsetTop` says nothing), and on Android Chrome, whose page shrinks with it
- * (`interactive-widget=resizes-content`, so `innerHeight` says nothing). Keyed by width, so a
- * turn of the phone is not taken for a keyboard. Android's on-screen keys mostly send
+ * (`interactive-widget=resizes-content`, so `innerHeight` says nothing). Heights are noted only
+ * while no field has the focus, by width; a width never noted counts as a keyboard up, so turning
+ * or zooming the phone with its keyboard up never marks it. Android's on-screen keys mostly send
  * "Unidentified" (keyCode 229) too. Once seen it holds for the page. Under `data-input-touch`
  * (the page says touch) only a typed key counts.
  */
-/** The tallest the visual viewport has been on this page, by the window's width. */
+/** The tallest the visual viewport has been on this page, by the window's width, measured only
+ * while no field had the focus, so with no system keyboard up. */
 const tallest = new Map<number, number>();
 
-/** The visual viewport's height now, after noting it as the tallest at this width if it is. */
-function viewportHeight(): number {
-  const height = window.visualViewport?.height ?? window.innerHeight;
-  const width = Math.round(window.innerWidth);
-  tallest.set(width, Math.max(tallest.get(width) ?? 0, height));
-  return height;
+const widthNow = (): number => Math.round(window.innerWidth);
+const heightNow = (): number => window.visualViewport?.height ?? window.innerHeight;
+const typing = (): boolean => {
+  const el = document.activeElement;
+  return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement;
+};
+
+/** Note the viewport's height as the tallest at this width, unless a field has the focus. */
+function noteHeight(): void {
+  if (typing()) return;
+  const width = widthNow();
+  tallest.set(width, Math.max(tallest.get(width) ?? 0, heightNow()));
 }
 
-/** Whether a system keyboard is up now: the viewport is well short of its tallest at this width. */
+/**
+ * Whether a system keyboard may be up now: the viewport is well short of its tallest at this
+ * width, or no height was ever measured at this width with nothing focused (the phone turned, or
+ * was pinch-zoomed, while its keyboard was up). Unknown counts as up, so a key is never marked.
+ */
 function systemKeyboardUp(): boolean {
-  const height = viewportHeight();
-  return (tallest.get(Math.round(window.innerWidth)) ?? height) - height > SYSTEM_KEYBOARD_MIN;
+  const known = tallest.get(widthNow());
+  return known === undefined || known - heightNow() > SYSTEM_KEYBOARD_MIN;
 }
+
+let noting = false;
+
+/** From the page's first load, before any step focuses a field: note the height now, and again on
+ * every viewport resize and every blur. */
+function startNoting(): void {
+  if (noting || typeof window === "undefined" || typeof document === "undefined") return;
+  noting = true;
+  noteHeight();
+  (window.visualViewport ?? window).addEventListener("resize", noteHeight);
+  document.addEventListener("focusout", () => setTimeout(noteHeight, 0), true);
+}
+startNoting();
 
 export function useHardwareKeyboard(ref: RefObject<HTMLElement>): boolean {
   const [hardware, setHardware] = useState(false);
@@ -162,19 +187,13 @@ export function useHardwareKeyboard(ref: RefObject<HTMLElement>): boolean {
       root.dataset[HARDWARE] = "";
       read();
     };
-    // The page opens with no keyboard up: its height then is the tallest to measure against.
-    const note = (): void => {
-      viewportHeight();
-    };
-    note();
+    startNoting();
     read();
     pointer?.addEventListener?.("change", read);
     document.addEventListener("keydown", typed, true);
-    window.visualViewport?.addEventListener("resize", note);
     return () => {
       pointer?.removeEventListener?.("change", read);
       document.removeEventListener("keydown", typed, true);
-      window.visualViewport?.removeEventListener("resize", note);
     };
   }, [ref]);
   return hardware;

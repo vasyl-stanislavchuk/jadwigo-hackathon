@@ -1552,6 +1552,19 @@ describe("on a phone in a lesson the answer sits in the page", () => {
       }
     });
 
+  it("does not take a key for a hardware keyboard at a width never measured (the phone turned)", () => {
+    const width = Object.getOwnPropertyDescriptor(window, "innerWidth");
+    const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);
+    // Turned with its keyboard up: the new width's height was never measured with nothing focused.
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 844 });
+    try {
+      fireEvent.keyDown(screen.getByRole("textbox", { name: "answer" }), { key: "a" });
+      expect(container.querySelector("[data-letters]")).toBeNull();
+    } finally {
+      if (width) Object.defineProperty(window, "innerWidth", width);
+    }
+  });
+
   it("does not take the on-screen keys for a hardware keyboard", () => {
     const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);
     const answer = screen.getByRole("textbox", { name: "answer" });
