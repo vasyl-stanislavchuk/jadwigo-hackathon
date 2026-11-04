@@ -75,8 +75,10 @@ approved final art enters the app.
 | **Marko** | A hero. A cheerful joker who waves hello in 2 languages. | A pointed hat folded from white paper, a wide blue cape |
 
 Jadwiga is named after Queen Jadwiga. The name Jadwigo is a play on words: Jadwiga, the queen, and
-go, moving: moving forward and growing under her warm wings. A teacher
-character may join the class later, but only with the teacher's written consent.
+go, moving: moving forward and growing under her warm wings.
+
+Pani Iwona, the class's real teacher, joined the cast with her consent. After 3 right answers in
+a row, a short video plays: the queen gives a thumbs-up, or Pani Iwona says "Brawo!".
 
 ## Next
 

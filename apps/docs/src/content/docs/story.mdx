@@ -5,10 +5,13 @@ description: Why Jadwigo exists, what was built in 10 days, how agents built it,
 
 import Diagram from "../../components/Diagram.astro";
 
-Jadwigo started with one family: a mum, a dad and their son in the first school grades, with 2
-goals his parents set, multiplication and Polish spelling. The homework page was the only plan
-anyone had. Making practice that fits it, and then the next practice from what he got wrong, used
-to take a private tutor.
+Jadwigo started with one family of 4 that moved to Poland 3 years ago: a new country, a new
+language, no grandparents nearby to help and no close friends yet. Their son is in the first school
+grades, with 2 goals his parents set, multiplication and Polish spelling. The parents have little
+time, and they still want to be there for his learning.
+
+The homework page was the only plan anyone had. Making practice that fits it, and then the next
+practice from what he got wrong, used to take a private tutor.
 
 ## Problem
 
@@ -35,6 +38,10 @@ In 10 days, from 2026-10-26 to 2026-11-04, the happy path went live on
 [app.jadwigo.pl](https://app.jadwigo.pl): photo, lesson, share, play, print.
 [What's built](/built/) lists every feature.
 
+The lessons are in real use. On demo day the whole class plays them to practise for tomorrow's
+test, and their teacher likes it. She joined the cast too: after 3 right answers in a row, Pani
+Iwona may pop up and say "Brawo!".
+
 Around it sit a chat-first parent app, a question bank of Khan Academy and Alfik sets indexed by
 Meta models, a remote MCP server so a parent's own AI app can make lessons, and these docs, which
 build their API and MCP pages from the code.
@@ -42,10 +49,10 @@ build their API and MCP pages from the code.
 ## How it was built
 
 Agents wrote the code: Meta's Muse, OpenAI's Codex and Anthropic's Claude Code each did part of
-it. One person, the owner, made the product decisions, planned the work and ran every deploy.
+it. One person, Vasyl, made the product decisions, planned the work and ran every deploy.
 
-The repo took 878 commits in those 10 days, 872 of them squash-merged pull requests. Each agent
-worked in its own copy of the repo on one issue, and a guard refused the unsafe moves: a force
+The repo took almost 900 commits in those 10 days, nearly all of them squash-merged pull requests.
+Each agent worked in its own git worktree on one issue, and a guard refused the unsafe moves: a force
 push, a deploy, a change to `main` without review. [Building with
 agents](/architecture/building-with-agents/) shows that loop.
 
@@ -58,8 +65,10 @@ agents](/architecture/building-with-agents/) shows that loop.
 ## What's next
 
 The [learning loop](/vision/learning-loop/): each answer becomes what Jadwigo knows about the
-child, the next lesson is drawn from it, and the parent gets a short weekly report. Then the family's
-class, the school, and anyone who finds it.
+child, the next lesson is drawn from it, and the parent gets a short weekly report.
+
+Jadwigo was built for one boy, then for his class. His school is next, and later any family short
+on time that still wants to be there for their child's learning.
 
 ## Every decision
 
