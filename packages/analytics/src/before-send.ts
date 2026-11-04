@@ -103,7 +103,7 @@ function ownProps(
 }
 
 /** Where a caught error was reported from (`reportError`). */
-export const ERROR_SOURCES = ["error_boundary"] as const;
+const ERROR_SOURCES = ["error_boundary"] as const;
 export type ErrorSource = (typeof ERROR_SOURCES)[number];
 
 /** An exception's scrubbed list and level, its known source, and PostHog's other `$` keys: every
