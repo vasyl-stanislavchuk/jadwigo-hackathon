@@ -16,6 +16,8 @@ link: { href: /lekcje, label: Zagraj lekcję }
 
 Jest nas 4. 3 lata temu przeprowadziliśmy się do Polski: nowy kraj, nowy język, żadnych dziadków do pomocy (haha), żadnych bliskich znajomych. Sporo wyzwań, kiedy rośnie 2 dzieci ;)
 
-Dlatego jesteśmy idealnymi odbiorcami Jadwigo. Mamy mało czasu, a mimo to chcemy być obecni w nauce naszych dzieci. I właśnie dzięki temu ten projekt błyszczy :)
+Dlatego jesteśmy idealnymi odbiorcami Jadwigo
+
+Mamy mało czasu, a mimo to chcemy być obecni w nauce naszych dzieci. I właśnie dzięki temu ten projekt błyszczy :)
 
 Zbudowałem je dla naszego syna, potem dla jego klasy. Wkrótce dla jego szkoły, a później może dla Was?

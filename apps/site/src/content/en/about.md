@@ -17,6 +17,8 @@ link: { href: /en/lessons, label: Play a lesson }
 
 We're a family of 4. We moved to Poland 3 years ago: new country, new language, no grandparents to help (haha), no close friends. That's a lot of challenges when you have 2 kids growing ;)
 
-So we're actually the perfect audience for Jadwigo. We have little time, and we still want to be present in our kids' learning. That's what makes this project shine :)
+So we're actually the perfect audience for Jadwigo
+
+We have little time, and we still want to be present in our kids' learning. That's what makes this project shine :)
 
 I built it for our son, then for his class. Soon for his school and, later, maybe for you?
