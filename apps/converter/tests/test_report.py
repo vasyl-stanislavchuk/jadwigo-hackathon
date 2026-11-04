@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import time
 from typing import Any
 
 import pytest
@@ -90,6 +92,37 @@ def test_a_broken_network_never_raises(monkeypatch: pytest.MonkeyPatch) -> None:
     reporting._client.cache_clear()
     reporting.report(_failing("x"), "converter", "convert")
 
+
+
+def test_a_failed_send_logs_no_word_of_the_error(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def batch_post(*_args: object, **_kwargs: object) -> None:
+        raise ConnectionError("down")
+
+    monkeypatch.setattr("posthog.client.batch_post", batch_post)
+    monkeypatch.setenv("JW_POSTHOG_KEY", "phc_test")
+    reporting._client.cache_clear()
+    caplog.set_level(logging.DEBUG)
+    # As the handler reports: inside its except, so a failed send's traceback would chain the error.
+    try:
+        raise _failing("Zosia napisała kot")
+    except ValueError as exc:
+        reporting.report(exc, "converter", "convert")
+    assert "Zosia" not in caplog.text
+    assert "napisała" not in caplog.text
+
+
+def test_a_send_that_trickles_holds_the_caller_no_longer_than_the_deadline(monkeypatch: pytest.MonkeyPatch) -> None:
+    def batch_post(*_args: object, **_kwargs: object) -> None:
+        time.sleep(5)
+
+    monkeypatch.setattr("posthog.client.batch_post", batch_post)
+    monkeypatch.setenv("JW_POSTHOG_KEY", "phc_test")
+    reporting._client.cache_clear()
+    started = time.monotonic()
+    reporting.report(_failing("x"), "converter", "convert")
+    assert time.monotonic() - started < 2.5
 
 def test_the_handler_reports_an_unexpected_failure_once_and_still_raises(
     monkeypatch: pytest.MonkeyPatch,
