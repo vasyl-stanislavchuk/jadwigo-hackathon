@@ -1,53 +1,58 @@
 ---
 title: "E7: judging a freeform answer"
-description: 80 invented explain answers judged by code, muse-spark and muse-wonder against hand labels.
+description: 80 answers the team wrote, judged by code and 2 Meta models against the team's own labels.
 ---
 
 import ExperimentResult from "../../../components/ExperimentResult.astro";
 
-This experiment is for a judge marking explanations: 80 invented answers, criteria written first,
-judged by code and by 2 models, and compared on agreement with hand labels and on kind reasons.
+This run tests whether a model can judge a child's own-words answer against criteria written
+first, and do it kindly. It's the evidence behind [judging answers](/vision/judging-answers/).
 
 <ExperimentResult id="e7" />
 
-The tasks are 8 invented explain tasks for grades 2 and 3, in Polish and English: multiplication
-as groups, even numbers, adding past a ten, halves, the rz spelling rule, a 2-step word problem,
-the English past tense, and why a plant turns yellow. Each carries 2 or 3 criteria with a cited
-source, written before any answer. The 80 answers are invented and hand-labelled per criterion:
-right, partly right, right answer with a wrong reason, off-topic, right but misspelt, and too
-short. No text comes from a real child.
+## Question
 
-3 judges saw the same criteria. Code alone has no verdict for a freeform answer: the product's
-judge refuses this family by design, so code can only ask for a little more when an answer is
-empty or under the soft minimum, and keep the rest unjudged for the tutor. Muse-spark judged 1
-answer per call through the product's model API; muse-wonder judged 1 task's 10 answers per
-call through the Muse CLI, the only route to that model. Every model verdict is 1 decision per
-criterion with its reason, plus the feedback line the child would read. The score below counts
-a reason as written when it has at least 3 words; nothing here verifies that a reason quotes
-the child's own words.
+Given an explain task and its criteria, does a model's verdict agree with a careful human's, and
+does its feedback stay kind?
+
+## Setup
+
+The team wrote 8 explain tasks for grades 2 and 3, in Polish and English, such as multiplication
+as groups, the rz spelling rule, and why a plant turns yellow. Each task has 2 or 3 criteria,
+written before any answer. The team then wrote 80 answers and labelled each one per criterion:
+right, partly right, right answer with a wrong reason, off-topic, right but misspelt, or too short.
+No text came from a real child. 3 judges saw the same criteria: code alone,
+`muse-spark-1.3-contributor` and `muse-wonder-full-1.0`.
+
+## Result
+
+The 2 models agreed with the team's labels on 95.0% and 93.8% of the 80 answers. Both gave a
+reason for all 170 criterion verdicts. No feedback line was a bare „wrong", and none ran past 30
+words.
+
+## What failed
+
+- **Code alone can't judge.** It only asks for more when an answer is short. It did that on 10
+  answers, and only 5 of them were really not there yet.
+- **Both models made the same false „wrong"** on 1 borderline answer: a bare list of even numbers
+  that shows the rule without saying it.
+- **The agreement is with the team, not with teachers.** The answers and labels are the team's
+  own. A reason counts as written when it has 3 words or more, and nothing checks that it quotes
+  the child.
+
+## Cost
+
+$0.0231 for spark's 80 verdicts. Wonder is billed by subscription, so its cost is in tokens only.
 
 ## Every judge against the hand labels
 
 | Judge | Criterion agreement | Overall agreement | False „wrong" | Reasons per criterion | Bare „wrong" feedback |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Code only | no verdict exists | — | 0 | — | — |
+| Code only | no verdict | n/a | 0 | n/a | n/a |
 | muse-spark-1.3-contributor | 97.1% | 95.0% | 1 of 80 | 170 of 170 | 0 of 80 |
 | muse-wonder-full-1.0 | 96.5% | 93.8% | 1 of 80 | 170 of 170 | 0 of 80 |
 
-The code check asked for more on 10 answers; only 5 of them were hand-labelled as not there
-yet, so length alone is a blunt gate and 70 answers waited for a model. Both models spent their
-one false „wrong" on the same borderline answer, a bare list of the even numbers that states
-the rule without saying it. The other disagreements are strictness about where one criterion
-ends and the next begins, not misreading: misspelt but right answers were judged right, and
-right answers with wrong reasons were not waved through. Spark judged all 80 answers for
-$0.0231; wonder's tokens are captured per call from its `muse exec` trace events, and most of
-its input is CLI session overhead.
-
-Feedback held the house rule mechanically: every line the child would read names a strength or
-one next step, none is a bare „wrong", and none runs past 30 words. The full judgements, all
-170 per model, are committed beside the fixtures they were scored against.
-
 ## Next
 
-- [Judging answers](/vision/judging-answers/): what this run seeds.
+- [Judging answers](/vision/judging-answers/): what this run is for, with its diagram.
 - [Experiments](/experiments/): the other runs.

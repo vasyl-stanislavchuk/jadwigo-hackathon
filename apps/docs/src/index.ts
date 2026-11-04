@@ -32,8 +32,6 @@ export const SIDEBAR: readonly SidebarGroup[] = [
       "features/chat-and-workspace",
       "features/share-and-play",
       "features/player-and-families",
-      "features/celebration",
-      "features/credits",
       "features/print",
       "features/connect-your-ai",
       "features/sign-in-and-consent",

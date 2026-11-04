@@ -38,8 +38,8 @@ These are the gaps we know about today:
 | [Chat](/features/chat-and-workspace/) | Live | The parent app is one chat, and a lesson arrives as a card in it. |
 | [Share and play](/features/share-and-play/) | Live | A play link starts as the child, with no sign-in. |
 | [Player](/features/player-and-families/) | Live | One question at a time, in 7 kinds of interaction. |
-| [Celebration](/features/celebration/) | Live | A short video after 3 right answers in a row. |
-| [Credits](/features/credits/) | Live | Every borrowed question names its source and licence. |
+| [Celebration](/features/player-and-families/) | Live | A short video after 3 right answers in a row. |
+| [Credits](/features/question-bank/) | Live | Every borrowed question names its source and licence. |
 | [Print](/features/print/) | Live | A lesson prints as a PDF the server renders. |
 | [Sign-in and consent](/features/sign-in-and-consent/) | Live | Parents sign in with an email code. Children never sign in. |
 | [Question bank](/features/question-bank/) | Live | Lessons draw from credited Khan Academy and Alfik question sets. |

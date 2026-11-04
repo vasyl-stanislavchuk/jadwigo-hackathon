@@ -37,6 +37,8 @@ export default defineConfig({
     "/vision/next-lesson": "/vision/learning-loop/",
     "/vision/dreaming": "/vision/learning-loop/",
     "/vision/goals-loop": "/vision/learning-loop/",
+    "/features/credits": "/features/question-bank/",
+    "/features/celebration": "/features/player-and-families/",
   },
   // starlight-openapi ships TypeScript, so Vite bundles it and, through it, satteri, whose native
   // binding then can't be found from dist/. Left external, it loads from node_modules.

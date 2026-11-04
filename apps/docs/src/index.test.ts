@@ -36,9 +36,9 @@ describe("SIDEBAR", () => {
     expect(sidebar[0]?.items[0]).toEqual({ slug: "index" });
   });
 
-  it("lists the 10 features, the vision pages and the 7 experiments a judge walks", () => {
+  it("lists the 8 features, the vision pages and the 7 experiments a judge walks", () => {
     const byLabel = (label: string) => SIDEBAR.find((group) => group.label === label)?.items;
-    expect(byLabel("Features")).toHaveLength(10);
+    expect(byLabel("Features")).toHaveLength(8);
     expect(byLabel("Features")?.every((slug) => slug.startsWith("features/"))).toBe(true);
     expect(byLabel("Vision")).toHaveLength(4);
     expect(byLabel("Start")).toEqual(["index", "what-is-real", "story"]);

@@ -1,59 +1,62 @@
 ---
 title: "E6: the cost of one lesson"
-description: 3 invented worksheets through the local runner, timed and priced from the ledger.
+description: 3 worksheets the team drew, sent through the local runner from photo to lesson, timed and priced from the ledger.
 ---
 
 import ExperimentResult from "../../../components/ExperimentResult.astro";
 
-This experiment is for a judge pricing the happy path: 3 homework worksheets we drew ourselves go
-from photo to lesson through the local runner, with the time, the model cost and the checks
-recorded.
+This run prices the happy path: a homework photo in, a playable lesson out. It's the evidence
+behind [photo to lesson](/features/photo-to-lesson/).
 
 <ExperimentResult id="e6" />
 
-Each worksheet is an invented grade 2 or 3 homework page, drawn as HTML and rendered to a photo:
-multiplication, Polish spelling, and a shopping word problem. A parent message with the photo is
-accepted exactly as the API accepts it, then drained by the runner's own engine on the local
-database with the product model. The one stand-in is the photo reader: on prod the bytes come
-from the uploads bucket, here from the worksheet file; the JPEG the model reads is the same
-either way. Cost and tokens come from each run's own model records, the rows the ledger sums
-per run.
+## Question
+
+What does one lesson cost and how long does it take, from a parent's photo to a lesson a child can
+play?
+
+## Setup
+
+The team drew 3 homework worksheets as HTML and rendered each to a photo: multiplication for grade
+2, Polish spelling for grade 3, and a shopping word problem for grade 3. Each photo went in as a
+parent's message, exactly as the API takes one, and the runner's own engine turned it into a
+lesson on a local database with the product's model. The one stand-in is where the photo comes
+from: a file here, the uploads bucket on prod. Cost and tokens come from each run's own model
+records.
 
 ![The invented grade 2 multiplication worksheet: 8 sums, 4 already answered, 1 of them
 wrong](../../../assets/experiments/e6/w1-mnozenie.png)
 
-The multiplication and word-problem worksheets became lessons. The agent searched the bank,
-drafted, checked, and presented a card; each lesson was then played once by grading every step
-with the player's own judge and the key's solution. The multiplication lesson's check reported
-18 contract findings and a skill id that is not a skill id, and the card was still presented:
-the check informs the parent, it does not gate the lesson. That draft also fails to compile
-(its help words have the wrong shape), so its play graded the file's own steps directly, not a
-compiled lesson. The spelling worksheet became no
-lesson at all: the bank holds no Polish spelling questions, the follow-up call threw on a
-missing bank route, and the turn ended with no error for the parent. That failure is filed as
-issue `dl-r2pla`.
+## Result
+
+2 of 3 worksheets became lessons, in 38 to 44 seconds and for about $0.0024 each. Played with the
+key's own solution, every step of both lessons graded correct.
+
+## What failed
+
+- **The spelling worksheet got nothing, and no error.** The bank has no Polish spelling questions.
+  The next call failed on a missing bank route, and the run ended with nothing shown to the parent.
+- **The multiplication draft doesn't compile.** Its help words have the wrong shape, so its play
+  graded the draft's own steps, not a compiled lesson. Its check also reported 18 problems and a
+  bad skill id, and the lesson card was shown anyway.
+
+So only 1 of the 3 worksheets became a lesson that compiles and plays as a child would see it. A
+lesson is cheap, at about a quarter of a cent, but this path isn't reliable yet.
+
+## Cost
+
+$0.0048 for 19 calls across the 3 runs: 162,303 input tokens, 134,386 of them cached, and 8,808
+output tokens.
 
 ## Every worksheet in the run
 
 | Worksheet | Grade | Wall time | Model calls | Cost (USD) | What came out |
 | --- | --- | ---: | ---: | ---: | --- |
-| Multiplication | 2 | 44.2 s | 9 | 0.0024 | A 6-step draft; its steps played 6 of 6 correct (draft itself fails compile) |
-| Polish spelling: rz/ż, ó/u | 3 | 5.7 s | 2 | 0.0001 | No lesson: no bank questions, then a dead-lettered step |
+| Multiplication | 2 | 44.2 s | 9 | 0.0024 | A 6-step draft that fails to compile. Its steps played 6 of 6 correct |
+| Polish spelling: rz/ż, ó/u | 3 | 5.7 s | 2 | 0.0001 | No lesson: no bank questions, then a failed step and no error |
 | Word problems: shopping and money | 3 | 38.3 s | 8 | 0.0023 | A 6-step lesson, played 6 of 6 correct |
-
-![The invented grade 3 spelling worksheet: rz/ż and ó/u gaps, some already
-answered](../../../assets/experiments/e6/w2-ortografia.png)
-
-![The invented grade 3 word-problem worksheet: shopping, change from
-50 zł](../../../assets/experiments/e6/w3-zadanie.png)
-
-Per family, one lesson from a photo costs about a quarter of a cent and under a minute of wall
-time: 162,303 input tokens across the 3 runs, 134,386 of them cached, and 8,808 output tokens.
-That is the number per-family pricing and credits can be seeded
-from, and it says the light-to-run value is real. The full per-run steps, findings and plays
-are under `detail` in this experiment's JSON.
 
 ## Next
 
-- [From a photo to a lesson](/features/photo-to-lesson/): what this run seeds.
+- [Photo to lesson](/features/photo-to-lesson/): the feature this run prices.
 - [Experiments](/experiments/): the other runs.

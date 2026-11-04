@@ -13,10 +13,8 @@
   "commit": "f4b1194cc0fd4b83a1fb7a3957cfb49cad4aa48a",
   "bank_commit": "803a979e123e2a06893e181e6c63dff92b4c8045",
   "commands": [
-    "make gate (in jadwigo-bank, lane/e4-e5)",
-    "make gate GATE_ARGS=\"--holdout --reason dl-5ssh.90.53.7-E5-judges-docs\" (in jadwigo-bank)",
-    "md context eval record --project jadwigo-hackathon --question ... --cite <slug> (20 cases)",
-    "md context eval --project jadwigo-hackathon --runs 3 --save-baseline"
+    "make gate (in jadwigo-bank)",
+    "make gate GATE_ARGS=\"--holdout --reason <why>\" (in jadwigo-bank)"
   ],
   "detail": {
     "bank_gate": {
@@ -275,26 +273,6 @@
     {
       "label": "Holdout run's own recall@10 and nDCG@10",
       "value": "0.963 and 0.7398 (baseline 0.9565 and 0.7724, other golden version)"
-    },
-    {
-      "label": "Brain golden set",
-      "value": "20 cases, new, project jadwigo-hackathon"
-    },
-    {
-      "label": "Brain eval, 3 runs: cases passed",
-      "value": "20 of 20"
-    },
-    {
-      "label": "Brain eval: recall at rank 1 / 10 / 20",
-      "value": "0.60 / 0.85 / 0.95"
-    },
-    {
-      "label": "Brain eval: MRR",
-      "value": 0.6817
-    },
-    {
-      "label": "Brain baseline",
-      "value": "saved (second scoring; the first save was refused for 1 unstable case)"
     }
   ]
 }
