@@ -139,6 +139,30 @@ describe("PlayScreen", () => {
     expect(storedAttempt.get(ASSIGNMENT)).toBe(FRESH);
   });
 
+  // dl-7wlo.44: while the attempt starts, one status in the page's words with Ołówek, decorative;
+  // the question replaces it the moment it arrives, with no wait for the drawing.
+  it("waits with Ołówek while the attempt starts, then shows the question at once", async () => {
+    let start: (s: AttemptSnapshot) => void = () => undefined;
+    const startAttempt = vi.fn(
+      () =>
+        new Promise<AttemptSnapshot>((resolve) => {
+          start = resolve;
+        }),
+    );
+    const { container } = render(
+      <PlayScreen assignmentId={ASSIGNMENT} language="pl" client={client({ startAttempt })} />,
+    );
+    await vi.waitFor(() => expect(startAttempt).toHaveBeenCalledTimes(1));
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status", { name: "Chwileczkę…" })).toBeTruthy();
+    const art = container.querySelector("[data-slot=loading] img");
+    expect(art?.getAttribute("data-character")).toBe("olowek");
+    expect(art?.getAttribute("alt")).toBe("");
+    await act(async () => start(snapshot(FRESH, "in_progress", [question(1)])));
+    expect(screen.getAllByText("Ile to jest dwa razy pięć? (1)")).not.toHaveLength(0);
+    expect(container.querySelector("[data-slot=loading]")).toBeNull();
+  });
+
   // dl-1eieq.3: a borrowed question draws its credit in the instruction row; our own draw none.
   it("draws 'z Khan Academy' on a borrowed question, and its card on a tap", async () => {
     const borrowed = {

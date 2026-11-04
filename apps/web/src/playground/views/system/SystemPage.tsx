@@ -44,6 +44,7 @@ import { DESIGN_LINES, METAPHOR, ZONES } from "./data.ts";
 import { Colour, Motion, SpaceAndShape, Sub, subId, Type } from "./Foundations.tsx";
 import { FRAME_SECTIONS, FrameSection } from "./frame/sections.tsx";
 import { Actions, Bands, Fields, Help, Icons, KeyboardFocus, Options, Tiles } from "./Gallery.tsx";
+import { LoadingKit } from "./LoadingKit.tsx";
 import { SystemLanguage } from "./lang.ts";
 import { TilesAndStillAnswers } from "./Outcomes.tsx";
 import { Settings } from "./SettingsDemo.tsx";
@@ -82,6 +83,7 @@ export const MENU: readonly MenuEntry[] = [
   sub("Typed answers"),
   sub("Tiles"),
   sub("Icons"),
+  page("Loading", "loading"),
   page("Help ladder", "help"),
   page("Tiles and still answers", "still-answers"),
   {
@@ -592,6 +594,14 @@ export function SystemPage(): JSX.Element {
                 <Fields />
                 <Tiles />
                 <Icons />
+              </Section>
+
+              <Section
+                id="loading"
+                title="Loading"
+                lead="A page or a block that waits (dl-7wlo.44): one status in the page's words, centred both ways in the room it holds. Ołówek, Gumka and Linijka wait with the child, large on a page and small in a block, after 300 ms, and hold still under reduced motion. Without a character it is the plain spinner. A button or a row keeps its own small spinner."
+              >
+                <LoadingKit />
               </Section>
 
               <Section id="help" title="Help" lead="The help ladder in its three drawings, live.">

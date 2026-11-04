@@ -110,6 +110,11 @@ export { Empty } from "./primitives/empty.tsx";
 export { Input } from "./primitives/input.tsx";
 export { InputOtp } from "./primitives/input-otp.tsx";
 export { Kbd } from "./primitives/kbd.tsx";
+export {
+  Loading,
+  type LoadingCharacter,
+  type LoadingSize,
+} from "./primitives/loading.tsx";
 export { Pagination } from "./primitives/pagination.tsx";
 export { PanelToggle } from "./primitives/panel-toggle.tsx";
 export { Popover, PopoverContent, PopoverTrigger } from "./primitives/popover.tsx";

@@ -27,7 +27,7 @@ import {
   TileBank,
   Tooltip,
 } from "@jadwigo/lesson-kit";
-import { Button, Spinner } from "@jadwigo/ui";
+import { Button, Loading } from "@jadwigo/ui";
 import { ArrowUp, Calculator, Delete, RotateCcw, Turtle, Volume2, X } from "lucide-react";
 import { type ComponentProps, type CSSProperties, type ReactNode, useMemo, useState } from "react";
 import { useExamples } from "../../examples/index.ts";
@@ -536,7 +536,7 @@ function useStageQuestion(): StageQuestion | null {
 /** Where the stage stands while its question is read. */
 function StageWaiting(): JSX.Element {
   const LANG = useSystemLanguage();
-  return <Spinner label={copy(LANG, "loading")} />;
+  return <Loading size="block" label={copy(LANG, "loading")} />;
 }
 
 /** The stage as a lesson plays it: pick, Sprawdź, the band, help, and on. Sprawdź shows the written
