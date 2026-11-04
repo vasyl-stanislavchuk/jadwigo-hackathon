@@ -201,13 +201,44 @@ function withId(
   } as CompiledQuestion["question"];
 }
 
+/** The change a twin written from a borrowed question records: its words are new. */
+const TWIN_WRITTEN = "a twin written from this question";
+
+/**
+ * A twin's credit and based_on (dl-1eieq.6.2, decision `dl-0qsjc`): its own when it has a credit;
+ * else its question's credit, with a `wording` change on the question's source, so the page and the
+ * paper say it was adapted. A question with no credit leaves its twin as written.
+ */
+function twinCredence(
+  basedOn: BasedOn | null,
+  credit: Credit | null,
+  question: Pick<NewLessonQuestion, "credit" | "based_on">,
+): { based_on: BasedOn | null; credit: Credit | null } {
+  if (credit !== null || question.credit === null) return { based_on: basedOn, credit };
+  const { credit: from } = question;
+  const source =
+    basedOn?.question ??
+    question.based_on?.question ??
+    (from.source === "khan" ? `khan:${from.ref}` : null);
+  const written = { change: "wording" as const, why: TWIN_WRITTEN, reviewed: false };
+  return {
+    credit: from,
+    based_on:
+      source === null
+        ? null
+        : { question: source, changes: [...(basedOn?.changes ?? []), written] },
+  };
+}
+
 /**
  * Compiles a lesson file into what the import writes, in the file's own language. Teaching steps,
  * `can_do`, each step's `reason` and `scenarios` are dropped (decision
  * `2026-10-27-the-v0-attempt-rules-questions-only-on-the-wire-the-api-v1-route`), and each
  * `help.twin` becomes a spare lesson question with `twin_of`. A twin keeps its own `credit` and
  * `based_on` when it has them, so a sibling bank item taken as the twin carries its attribution into
- * the stored question (dl-a38n.46), and null when not, as the playground writes none.
+ * the stored question (dl-a38n.46). A twin with no credit of its own was written from its question,
+ * so it takes that question's credit and says it was adapted (dl-1eieq.6.2, `inheritedBasedOn`);
+ * our own question's twin keeps none, as the playground writes none.
  */
 export function compileLessonFile(raw: unknown, pod: PodId = FEATURED_POD.id): CompiledLesson {
   return compile(parseLessonFile(raw), pod, (problem) => {
@@ -323,17 +354,20 @@ function compile(
         body(file.id, twinStep, step, twinQuestion, say, {
           ...shared,
           twin_of: question.id,
-          based_on: strictly(
-            BasedOn.nullable(),
-            twinBasedOn ?? null,
-            `lesson file ${file.id}, step ${twinStep} based_on`,
-            "question",
-          ),
-          credit: strictly(
-            Credit.nullable(),
-            twinCredit ?? null,
-            `lesson file ${file.id}, step ${twinStep} credit`,
-            "question",
+          ...twinCredence(
+            strictly(
+              BasedOn.nullable(),
+              twinBasedOn ?? null,
+              `lesson file ${file.id}, step ${twinStep} based_on`,
+              "question",
+            ),
+            strictly(
+              Credit.nullable(),
+              twinCredit ?? null,
+              `lesson file ${file.id}, step ${twinStep} credit`,
+              "question",
+            ),
+            question,
           ),
         }),
       report,

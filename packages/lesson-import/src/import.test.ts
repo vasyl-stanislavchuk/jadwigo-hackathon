@@ -1,4 +1,4 @@
-import { ID_PREFIXES, idOf, PodId } from "@jadwigo/contracts";
+import { ID_PREFIXES, idOf, PodId, pageCredit } from "@jadwigo/contracts";
 import { InMemoryStore } from "@jadwigo/store";
 import { FIXED_NOW, LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
@@ -143,6 +143,39 @@ describe("compiling a lesson file", () => {
     expect(byStep.get("s02")?.question).toEqual(
       compileLessonFile(file("equal-groups")).questions.find((q) => q.step_id === "s02")?.question,
     );
+  });
+
+  it("gives a model-written twin its credited question's credit, marked adapted (dl-1eieq.6.2)", () => {
+    const raw = file("equal-groups");
+    // Made up: no bank item has this ref.
+    const credit = {
+      source: "khan",
+      ref: "x0000000000000001",
+      licence: "cc-by-nc-sa-4.0",
+      original_lang: "en",
+      checked: "2026-11-04",
+    };
+    Object.assign(step(raw, "s02"), {
+      credit,
+      based_on: { question: "khan:x0000000000000001", changes: [] },
+    });
+    const compiled = compileLessonFile(raw);
+    const byStep = new Map(compiled.questions.map((q) => [q.step_id, q.question]));
+    const twin = byStep.get("s02t");
+    expect(twin?.credit).toEqual(credit);
+    expect(twin?.based_on).toEqual({
+      question: "khan:x0000000000000001",
+      changes: [{ change: "wording", why: "a twin written from this question", reviewed: false }],
+    });
+    expect(pageCredit(twin ?? { credit: null, based_on: null })).toEqual({
+      source: "khan",
+      ref: "x0000000000000001",
+      licence: "cc-by-nc-sa-4.0",
+      original_lang: "en",
+      adapted: true,
+    });
+    // Our own question's twin stays our own.
+    expect(byStep.get("s05t")?.credit).toBeNull();
   });
 
   it("refuses a twin's credit the contract does not take, naming the step", () => {

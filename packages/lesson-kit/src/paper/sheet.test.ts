@@ -1,4 +1,4 @@
-import { PAPER_FORMS, PrintSheet, QuestionType } from "@jadwigo/contracts";
+import { PAPER_FORMS, PrintSheet, pageCredit, QuestionType } from "@jadwigo/contracts";
 import { MIXED_PRINT_LESSON, type MixedPrintQuestion, PRINT_SECRET } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import { QUESTION_TYPES } from "../families/questionTypes.ts";
@@ -82,6 +82,38 @@ describe("the mixed lesson's sheet", () => {
       },
     ]);
     expect(sheet.questions.filter((q) => q.credit_n === 1).map((q) => q.n)).toEqual([3, 16]);
+  });
+
+  it("says a question was adapted on paper as the page does, new hints alone included (dl-1eieq.6.2)", () => {
+    const borrowed = MIXED_PRINT_LESSON.questions.find((q) => q.credit !== null);
+    if (!borrowed?.credit) throw new Error("fixture");
+    const notes = {
+      question: `khan:${borrowed.credit.ref}`,
+      changes: [{ change: "tutor_notes" as const, why: "made up", reviewed: false }],
+    };
+    const withNotes = { ...borrowed, based_on: notes };
+    const sheet = sheetOf([withNotes]);
+    expect(sheet.credits[0]?.line).toBe(
+      "Z Khan Academy. Przetłumaczone i dostosowane przez Jadwigo na licencji CC BY-NC-SA 4.0.",
+    );
+    expect(pageCredit(withNotes)?.adapted).toBe(true);
+    const asWritten = {
+      ...withNotes,
+      credit: { ...borrowed.credit, original_lang: "pl" as const },
+    };
+    expect(sheetOf([asWritten]).credits[0]?.line).toBe(
+      "Z Khan Academy. Dostosowane przez Jadwigo na licencji CC BY-NC-SA 4.0.",
+    );
+  });
+
+  it("prints a licence stored as a sentence as its source's licence", () => {
+    const borrowed = MIXED_PRINT_LESSON.questions.find((q) => q.credit !== null);
+    if (!borrowed?.credit) throw new Error("fixture");
+    const noted = {
+      ...borrowed,
+      credit: { ...borrowed.credit, licence: "Khan Academy's licence was checked on 2026-10-18" },
+    };
+    expect(sheetOf([noted]).credits[0]?.short).toBe("Z Khan Academy · CC BY-NC-SA 4.0");
   });
 
   it("gives every picture an absolute address and nothing else", () => {

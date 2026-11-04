@@ -25,6 +25,7 @@ import {
   Attempt,
   AttemptAnswer,
   AttemptResult,
+  type BasedOn,
   Brief,
   Credit,
   Ended,
@@ -148,18 +149,52 @@ export const PageCredit = Credit.pick({
 }).extend({ adapted: z.boolean() });
 export type PageCredit = z.infer<typeof PageCredit>;
 
-/** A lesson question's credit as the page sees it, or null for our own and bank questions. */
+/**
+ * Whether a lesson changed a borrowed question: any change recorded in `based_on`, a rewritten
+ * hint (`tutor_notes`) included, since the licence asks that every change is said (decision
+ * `2026-10-27-khan-academy-items-carry-cc-by-nc-sa-4-0-named-on-every-page-wit`). The one rule the
+ * page and the paper sheet both read (dl-1eieq.6.2).
+ */
+export function adapted(basedOn: BasedOn | null | undefined): boolean {
+  return (basedOn?.changes.length ?? 0) > 0;
+}
+
+/** Each source's own licence, by the source key a credit names: the licence is the source's. */
+const SOURCE_LICENCE: Readonly<Record<string, string>> = { khan: "cc-by-nc-sa-4.0" };
+
+/**
+ * A credit's licence as an id (`cc-by-nc-sa-4.0`). A stored licence that is not one, such as the
+ * sentence jw drafts wrote in its place (dl-hin8.58), reads as its source's own licence, so a
+ * lesson already stored shows the right card; an unknown source's licence stays as stored.
+ */
+export function creditLicence(credit: Pick<Credit, "source" | "licence">): string {
+  const licence = credit.licence.trim();
+  if (/^cc-[a-z]+(?:-[a-z]+)*-\d+\.\d+$/i.test(licence)) return licence.toLowerCase();
+  return (
+    (Object.hasOwn(SOURCE_LICENCE, credit.source) ? SOURCE_LICENCE[credit.source] : undefined) ??
+    credit.licence
+  );
+}
+
+/**
+ * A lesson question's credit as the page sees it, or null for our own and bank questions. A twin
+ * with no credit of its own that was written from a credited question (`original`, the question
+ * its `twin_of` names) shows that question's credit, adapted (dl-1eieq.6.2): the model rewrote it.
+ * A twin with its own credit, a sibling taken from the bank, keeps its own.
+ */
 export function pageCredit(
   question: Pick<LessonQuestion, "credit" | "based_on">,
+  original?: Pick<LessonQuestion, "credit"> | null,
 ): PageCredit | null {
-  const { credit } = question;
+  const inherited = question.credit === null ? (original?.credit ?? null) : null;
+  const credit = question.credit ?? inherited;
   if (credit === null) return null;
   return {
     source: credit.source,
     ref: credit.ref,
-    licence: credit.licence,
+    licence: creditLicence(credit),
     original_lang: credit.original_lang,
-    adapted: (question.based_on?.changes.length ?? 0) > 0,
+    adapted: inherited !== null || adapted(question.based_on),
   };
 }
 

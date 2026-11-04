@@ -1,4 +1,4 @@
-import type { PageCredit } from "@jadwigo/contracts";
+import { type PageCredit, pageCredit } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
 import { creditShown } from "./credit.ts";
 
@@ -29,6 +29,25 @@ describe("creditShown", () => {
     expect(creditShown(KHAN, "en")?.line).toBe("shared");
     expect(creditShown({ ...KHAN, adapted: true }, "en")?.line).toBe("adapted");
     expect(creditShown({ ...KHAN, adapted: true }, "pl")?.line).toBe("both");
+  });
+
+  it("draws a featured lesson's card from what the page sends, a twin and a sentence licence included (dl-1eieq.6.2)", () => {
+    // How jw drafts store a Khan credit: the licence is a note sentence, not an id.
+    const stored = {
+      source: "khan",
+      ref: "xmadeup0001",
+      licence: "Khan Academy's licence was checked by the owner on 2026-10-18",
+      original_lang: "pl" as const,
+      checked: "2026-10-18",
+    };
+    const asked = pageCredit({ credit: stored, based_on: null });
+    expect(creditShown(asked, "pl")).toMatchObject({ licence: "CC BY-NC-SA 4.0", line: "shared" });
+    const twin = pageCredit({ credit: null, based_on: null }, { credit: stored });
+    expect(creditShown(twin, "pl")).toMatchObject({
+      source: "Khan Academy",
+      licence: "CC BY-NC-SA 4.0",
+      line: "adapted",
+    });
   });
 
   it("shows nothing for our own questions, or a source or licence it does not know", () => {
