@@ -363,6 +363,32 @@ describe("check.ts --json", () => {
       );
     });
 
+    it("reads a choose question's sum in its words too: other numbers there make a real twin (the steward's input)", () => {
+      /** s03 ('Ile to jest 2 razy 8?', options 10/14/16/18) with a twin on its own options and key. */
+      const withSay = (twinSay: (own: unknown) => unknown) =>
+        check(
+          plantedIn("multiplication-times-four", (steps) => {
+            const s03 = steps["s03"] as unknown as Step & { say: unknown };
+            s03.question.help = {
+              ...s03.question.help,
+              twin: {
+                say: twinSay(structuredClone(s03.say)),
+                data: structuredClone(s03.question.data),
+                key: s03.question.key,
+              },
+            };
+          }),
+        ).out;
+      const repeats = (out: Record<string, unknown>) =>
+        rulesOf(out).filter((f) => f.rule === "twin-repeats" && f.step_id === "s03t");
+      // 'Ile to jest 4 razy 4?' over the same options: a real twin.
+      expect(repeats(withSay(() => ({ pl: "Ile to jest 4 razy 4? Wybierz liczbę." })))).toEqual([]);
+      // Its own words again over its own options: it asks its question again.
+      expect(repeats(withSay((own) => own))).toContainEqual(
+        expect.objectContaining({ rule: "twin-repeats", level: "error" }),
+      );
+    });
+
     it("warns on a first hint that holds the answer, and leaves one that does not", () => {
       const hint = (text: string) =>
         planted((raw) => {

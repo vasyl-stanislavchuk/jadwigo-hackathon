@@ -528,7 +528,9 @@ function twinRepeats(steps: readonly RawStep[]): Finding[] {
     // A typed answer's sum is its numbers, whatever the words around it: the ones its data shows, or,
     // where the data shows none, the ones its words say ("Ile to 3 + 4?"). With no number anywhere it
     // repeats only with the same data and the same words. Any other family's data is its words: 2
-    // spelling lines can share a number and a key and ask different things.
+    // spelling lines can share a number and a key and ask different things. Its sum may still be in
+    // its words alone ("Ile to jest 2 razy 8?" over the same 4 options), so other numbers there make
+    // it another question too.
     const shown = (data: unknown, say: unknown): string[] => {
       const inData = numbersIn(data);
       return inData.length > 0 ? inData : numbersIn(say);
@@ -537,7 +539,8 @@ function twinRepeats(steps: readonly RawStep[]): Finding[] {
     const theirs = shown(twin["data"], twin["say"]);
     const same =
       step.question["family"] !== "enter"
-        ? canonical(step.question["data"]) === canonical(twin["data"])
+        ? canonical(step.question["data"]) === canonical(twin["data"]) &&
+          canonical(numbersIn(step.say)) === canonical(numbersIn(twin["say"]))
         : ours.length > 0 || theirs.length > 0
           ? canonical(ours) === canonical(theirs)
           : canonical([step.question["data"], step.say]) === canonical([twin["data"], twin["say"]]);
