@@ -21,7 +21,17 @@ CloudWatch holds the full line.
 
 ## Before
 
-- The PRs for `dl-w0b4.148`, `dl-5ssh.158` and `dl-5ssh.160` are on `main`: `git log origin/main --grep dl-5ssh.158`.
+- Every PR this runbook describes is on `main`. Each id below prints a commit with
+  `git log origin/main --oneline --grep <id>`, or all at once:
+  `for id in dl-5ssh.158 dl-5ssh.159 dl-5ssh.160 dl-5ssh.161 dl-w0b4.149 dl-uukj.69; do git log origin/main --oneline --grep "$id" | grep -q . || echo "missing $id"; done`
+  prints nothing.
+  - `dl-5ssh.158` (#929): the api and the runner report, and the browser's reporting from
+    `dl-w0b4.148`, which landed inside it.
+  - `dl-5ssh.159` (#930): a release uploads the source maps.
+  - `dl-5ssh.160` (#936): print and converter report.
+  - `dl-5ssh.161` (#935): `operation`, `request_id` and `run_id` on server reports.
+  - `dl-w0b4.149` (#933): browser notices and extension errors are dropped.
+  - `dl-uukj.69` (#934): the crash screen and `source: error_boundary`.
 - The DPA in `dl-w0b4.12` is signed, and the privacy pages in `dl-w0b4.142` say errors are reported.
 
 ## Steps
