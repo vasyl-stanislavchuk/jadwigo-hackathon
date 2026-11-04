@@ -11,11 +11,13 @@
  * sent again, per instance (owner, 2026-11-02: no shared store); an address's domain reaches SES
  * as Punycode; a signed body that is not JSON is 400.
  */
+
 import { domainToASCII } from "node:url";
 import { SESv2Client, SendEmailCommand } from "@aws-sdk/client-sesv2";
 import { AuthEmailAction, AuthEmailHook } from "@jadwigo/contracts";
 import { Webhook } from "standardwebhooks";
 import { type ReadParameter, readSsm, sendEmailHookSecretParam } from "../config.ts";
+import { reportFailure } from "../report.ts";
 import { pickLanguage } from "./language.ts";
 import { renderAuthEmail } from "./render.ts";
 
@@ -186,6 +188,7 @@ export async function handleSendEmail(
           error: name,
         }),
       );
+      await reportFailure(error, { operation: "auth_mail" });
       return failed(500, "the mail could not be sent");
     }
     log(

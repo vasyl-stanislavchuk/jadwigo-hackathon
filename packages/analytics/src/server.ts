@@ -10,8 +10,24 @@ import { scrubExceptionList } from "./scrub.ts";
 
 export type ServerSurface = "api" | "runner";
 
-/** Reports one failure. `route` names a route, never a value from a request. */
-export type ReportError = (error: unknown, context?: { route?: string }) => Promise<void>;
+/**
+ * What a report may say besides the error, to find its cause: the route or operation that failed,
+ * how bad it is, the Lambda request id that finds its CloudWatch line (`request_id`), and the run
+ * `make run-timeline` opens (`run_id`). Only values that look like a name or an id leave.
+ */
+export interface ReportContext {
+  route?: string;
+  operation?: string;
+  level?: "error" | "warning";
+  request_id?: string | undefined;
+  run_id?: string | undefined;
+}
+
+/** Reports one failure. */
+export type ReportError = (error: unknown, context?: ReportContext) => Promise<void>;
+
+const CONTEXT_KEYS = ["route", "operation", "request_id", "run_id"] as const;
+const SAFE_VALUE = /^[A-Za-z0-9_.:-]{1,80}$/;
 
 export interface ReporterOptions {
   /** The project's public key. Without one, every report is a no-op. */
@@ -32,7 +48,11 @@ function beforeSendFor(surface: ServerSurface) {
     const props = event.properties ?? {};
     const list = scrubExceptionList(props["$exception_list"]);
     if (list === null) return null;
-    const route = props["route"];
+    const context: Record<string, string> = {};
+    for (const key of CONTEXT_KEYS) {
+      const value = props[key];
+      if (typeof value === "string" && SAFE_VALUE.test(value)) context[key] = value;
+    }
     return {
       ...event,
       properties: {
@@ -43,7 +63,7 @@ function beforeSendFor(surface: ServerSurface) {
         ...(typeof props["$exception_level"] === "string"
           ? { $exception_level: props["$exception_level"] }
           : {}),
-        ...(typeof route === "string" ? { route } : {}),
+        ...context,
       },
     };
   };
@@ -55,7 +75,7 @@ export function serverErrorReporter(options: ReporterOptions): ReportError {
   const timeout_ms = options.timeout_ms ?? TIMEOUT_MS;
   let client: PostHog | undefined;
 
-  const send = (error: unknown, route: string | undefined): Promise<void> => {
+  const send = (error: unknown, context: ReportContext = {}): Promise<void> => {
     client ??= new PostHog(key, {
       host: posthogHosts.ingest,
       disableGeoip: true,
@@ -66,11 +86,11 @@ export function serverErrorReporter(options: ReporterOptions): ReportError {
       before_send: beforeSendFor(surface),
       ...(options.fetch === undefined ? {} : { fetch: options.fetch, disableCompression: true }),
     });
-    return client.captureExceptionImmediate(
-      error,
-      `server:${surface}`,
-      route === undefined ? {} : { route },
-    );
+    const { level, ...rest } = context;
+    return client.captureExceptionImmediate(error, `server:${surface}`, {
+      ...rest,
+      ...(level === undefined ? {} : { $exception_level: level }),
+    });
   };
 
   return async (error, context) => {
@@ -79,7 +99,7 @@ export function serverErrorReporter(options: ReporterOptions): ReportError {
       timer = setTimeout(resolve, timeout_ms);
     });
     try {
-      await Promise.race([send(error, context?.route).catch(() => {}), timeout]);
+      await Promise.race([send(error, context).catch(() => {}), timeout]);
     } catch {
       // Building the client or the event failed: the failure is already in the function's log.
     } finally {

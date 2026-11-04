@@ -19,7 +19,8 @@ import type { HostReport } from "./host.ts";
 export function createRunnerHandler(
   host: () => Promise<HostReport>,
   log: (line: string) => void,
-  report: (error: unknown) => Promise<void> = () => Promise.resolve(),
+  report: (error: unknown, context: { operation: string }) => Promise<void> = () =>
+    Promise.resolve(),
 ): (event: unknown) => Promise<HostReport> {
   return async (event) => {
     const poke = RunStepInput.safeParse(event);
@@ -28,7 +29,7 @@ export function createRunnerHandler(
       drained = await host();
     } catch (error) {
       // The host could not open or drain: the Lambda still fails, as the Errors alarm expects.
-      await report(error);
+      await report(error, { operation: "host_drain" });
       throw error;
     }
     log(

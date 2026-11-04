@@ -63,6 +63,25 @@ describe("serverErrorReporter", () => {
     expect(wire).not.toContain("pre_context");
   });
 
+  it("sends the context that finds a cause, and only values shaped like a name or an id", async () => {
+    const network = capturing();
+    const report = serverErrorReporter({ key: "phc_test", surface: "api", fetch: network.fetch });
+    await report(planted(), {
+      operation: "mastery_rebuild",
+      level: "warning",
+      request_id: "0b0e6f6e-7f3a-4a57",
+      run_id: "Ala ma kota",
+    });
+    const properties = network.sent()[0]?.["properties"] as Record<string, unknown>;
+    expect(properties).toMatchObject({
+      operation: "mastery_rebuild",
+      request_id: "0b0e6f6e-7f3a-4a57",
+      $exception_level: "warning",
+    });
+    expect(properties).not.toHaveProperty("run_id");
+    expect(JSON.stringify(properties)).not.toContain("Ala");
+  });
+
   it("gives up on a network that hangs, at its timeout", async () => {
     const hang: Fetch = () => new Promise(() => {});
     const report = serverErrorReporter({

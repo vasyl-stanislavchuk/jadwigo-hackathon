@@ -51,8 +51,8 @@ export interface HostDeps {
   dead_letters?: () => Promise<number>;
   /** Where a stuck queue is reported. Ids only: never a message, a name or a payload. */
   warn: (line: string) => void;
-  /** Where a step that threw is reported, scrubbed (dl-5ssh.158). Never throws. */
-  report?: (error: unknown) => Promise<void>;
+  /** Where a step that threw is reported, scrubbed, by its run (dl-5ssh.158). Never throws. */
+  report?: (error: unknown, context: { operation: string; run_id: string }) => Promise<void>;
 }
 
 export interface HostReport {
@@ -129,7 +129,8 @@ export function createHost(
       onError: (error, step) => {
         failed.push(step);
         host.warn(failure(error, step));
-        if (host.report) reports.push(host.report(error));
+        if (host.report)
+          reports.push(host.report(error, { operation: "agent_step", run_id: step.run_id }));
       },
       onRead: (run_id, waited_s) => {
         runs.add(run_id);

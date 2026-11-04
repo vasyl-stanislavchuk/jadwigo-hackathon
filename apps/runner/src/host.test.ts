@@ -192,18 +192,21 @@ describe("the step host", () => {
     const t = await setup({ respond: () => Promise.reject(failure) });
     await t.say("one");
     const reported: unknown[] = [];
+    const contexts: string[] = [];
     const report = await createHost(
       () =>
         Promise.resolve({
           ...t.deps(),
-          report: async (error: unknown) => {
+          report: async (error: unknown, context: { run_id: string }) => {
             reported.push(error);
+            contexts.push(context.run_id);
           },
         }),
       fakeMeter(),
     )();
     expect(report.failed.length).toBeGreaterThan(0);
     expect(reported).toEqual(report.failed.map(() => failure));
+    expect(contexts).toEqual(report.failed.map((step) => step.run_id));
   });
 
   it("logs a failed model call's code and never its words", async () => {
