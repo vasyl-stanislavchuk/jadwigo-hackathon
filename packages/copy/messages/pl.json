@@ -508,6 +508,10 @@
   "play_intro_name": "Jak masz na imię?",
   "play_intro_start": "Zaczynamy",
   "play_intro_anonymous": "Zagraj bez imienia",
+  "play_print": "Wydrukuj lekcję",
+  "play_print_preparing": "Przygotowuję kartkę…",
+  "play_print_failed": "Kartka się nie udała. Spróbuj jeszcze raz.",
+  "play_print_slow": "Kartka jeszcze się robi. Spróbuj za chwilę.",
   "play_intro_name_missing": "Napisz swoje imię albo zagraj bez imienia.",
   "play_intro_questions": [
     {

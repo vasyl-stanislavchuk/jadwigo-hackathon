@@ -576,6 +576,33 @@ export const ROUTES = {
     description:
       "A print is read in the caller's pod only, so another pod's print id is 404 `NotFound`, as is an id no `startPrint` made. The page asks again about once a second while it is `pending`.",
   },
+  startAssignmentPrint: {
+    method: "POST",
+    path: "/api/v1/assignments/{id}/prints",
+    params: z.object({ id: AssignmentId }),
+    body: null,
+    response: PrintStatus,
+    status: 200,
+    auth: "none",
+    summary: "Starts the PDF of a play link's lesson, or answers the one already made.",
+    tag: "attempts",
+    description:
+      "Holding the link is the access, as for its first screen (decision dl-3h2e8): the assignment's pinned lesson version, else its latest, printed without key, hint or solution. An unknown assignment, or one with no published version, is 404 `NotFound`; a lesson with no question that has a paper form is 409 `LessonNotPrintable`. As `startPrint`: `ready` with a link that reads the PDF for 5 minutes, else `pending`, to be followed with `getAssignmentPrint`. 502 `PrintUnavailable` where no print Lambda is set up.",
+  },
+  getAssignmentPrint: {
+    method: "GET",
+    path: "/api/v1/assignments/{id}/prints/{print_id}",
+    params: z.object({ id: AssignmentId, print_id: PrintId }),
+    body: null,
+    response: PrintStatus,
+    status: 200,
+    auth: "none",
+    summary:
+      "Answers where a play link's print stands: pending, ready with a 5-minute link, or failed.",
+    tag: "attempts",
+    description:
+      "Read in the assignment's pod only: a print id no `startAssignmentPrint` or `startPrint` made there is 404 `NotFound`. The page asks again about once a second while it is `pending`.",
+  },
   createAttachment: {
     method: "POST",
     path: "/api/v1/attachments",

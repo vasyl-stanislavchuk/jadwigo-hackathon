@@ -492,6 +492,10 @@
   "play_intro_name": "What's your name?",
   "play_intro_start": "Let's start",
   "play_intro_anonymous": "Play without a name",
+  "play_print": "Print the lesson",
+  "play_print_preparing": "Getting the sheet ready…",
+  "play_print_failed": "The sheet didn't come out. Try again.",
+  "play_print_slow": "The sheet is still on its way. Try again in a moment.",
   "play_intro_name_missing": "Type your name, or play without one.",
   "play_intro_questions": [
     {

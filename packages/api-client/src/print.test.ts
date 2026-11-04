@@ -1,9 +1,10 @@
-import { ConversationId, type PrintStatus } from "@jadwigo/contracts";
+import { AssignmentId, ConversationId, type PrintStatus } from "@jadwigo/contracts";
 import { describe, expect, it } from "vitest";
-import { createClient, waitForPrint } from "./client.ts";
+import { createClient, waitForAssignmentPrint, waitForPrint } from "./client.ts";
 
 const CONVERSATION = ConversationId.parse("cnv_0ectzj2evqb95a3v1v6wewjzy3");
 const ID = "a".repeat(64);
+const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
 const pending: PrintStatus = { status: "pending", print_id: ID };
 const ready: PrintStatus = {
   status: "ready",
@@ -52,5 +53,28 @@ describe("printing a lesson (dl-1eieq.8.4)", () => {
     const { client, asked } = scripted(Array.from({ length: 50 }, () => pending));
     expect(await waitForPrint(client, CONVERSATION, {}, async () => {})).toEqual(pending);
     expect(asked).toHaveLength(46);
+  });
+});
+
+describe("printing a play link (dl-1eieq.8.15)", () => {
+  it("starts it with no token and asks about it under the link", async () => {
+    const asked: { url: string; auth: string | null }[] = [];
+    const replies = [pending, ready];
+    const client = createClient({
+      base: "https://api.test",
+      token: async () => null,
+      fetch: async (url, init) => {
+        asked.push({
+          url: `${init?.method} ${String(url)}`,
+          auth: new Headers(init?.headers).get("authorization"),
+        });
+        return new Response(JSON.stringify(replies.shift()), { status: 200 });
+      },
+    });
+    expect(await waitForAssignmentPrint(client, ASSIGNMENT, async () => {})).toEqual(ready);
+    expect(asked).toEqual([
+      { url: `POST https://api.test/api/v1/assignments/${ASSIGNMENT}/prints`, auth: null },
+      { url: `GET https://api.test/api/v1/assignments/${ASSIGNMENT}/prints/${ID}`, auth: null },
+    ]);
   });
 });

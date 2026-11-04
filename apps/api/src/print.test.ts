@@ -2,8 +2,13 @@
 import { randomUUID } from "node:crypto";
 import type { InvokeCommand } from "@aws-sdk/client-lambda";
 import {
+  AssignmentId,
   type ErrorEnvelope,
   EventId,
+  ID_PREFIXES,
+  idOf,
+  type LessonGiven,
+  type LessonVersionId,
   type Me,
   type PodId,
   PrintSheet,
@@ -12,7 +17,7 @@ import {
   toolView,
 } from "@jadwigo/contracts";
 import { InMemoryRunQueue } from "@jadwigo/jadwigo-ai";
-import { InMemoryStore } from "@jadwigo/store";
+import { InMemoryStore, type LessonVersionWithQuestions } from "@jadwigo/store";
 import { LESSON_FILES } from "@jadwigo/testing";
 import { describe, expect, it } from "vitest";
 import { lambdaPrint, type PrintBucket, printMediaSrc } from "./print.ts";
@@ -106,7 +111,10 @@ function setUp({ wired = true }: { readonly wired?: boolean } = {}) {
       );
     const status = (id: string) =>
       call<PrintStatus & ErrorEnvelope>("GET", pathOf("getPrint", { id }));
-    return { pod, print, status };
+    /** Gives the checked lesson: a published version and an assignment, its play link. */
+    const give = async () =>
+      (await call<LessonGiven>("POST", pathOf("giveLesson", { id: conversation.id }), {})).body;
+    return { pod, print, status, give };
   }
   return { s, bucket, started, parent, failStarts };
 }
@@ -189,6 +197,131 @@ describe("the print routes", () => {
 
     const bare = await setUp({ wired: false }).parent();
     const off = await bare.print();
+    expect(off.status).toBe(502);
+    expect(off.body.error.type).toBe("PrintUnavailable");
+  });
+});
+
+// Decision dl-3h2e8, dl-1eieq.8.15: anyone holding a play link prints its lesson, with no sign-in.
+describe("printing a play link", () => {
+  /** The public routes, called with no token at all. */
+  const open = (s: ReturnType<typeof setUp>["s"]) => ({
+    print: (id: string) =>
+      s.call<PrintStatus & ErrorEnvelope>(
+        "POST",
+        pathOf("startAssignmentPrint", { id }),
+        undefined,
+      ),
+    status: (id: string, printId: string) =>
+      s.call<PrintStatus & ErrorEnvelope>(
+        "GET",
+        pathOf("getAssignmentPrint", { id, print_id: printId }),
+      ),
+  });
+
+  it("prints the given version with no sign-in: pending, then ready with its 5-minute link", async () => {
+    const { s, bucket, started, parent } = setUp();
+    const a = await parent();
+    const { assignment } = await a.give();
+    const link = open(s);
+    const first = await link.print(assignment.id);
+    expect(first.status).toBe(200);
+    expect(first.body.status).toBe("pending");
+    const key = `pods/${a.pod}/prints/${first.body.print_id}.json`;
+    expect(started).toEqual([`uploads.test/${key}`]);
+    const sheet = PrintSheet.parse(JSON.parse(bucket.objects.get(key) ?? "{}"));
+    expect(sheet.questions).toHaveLength(10);
+    // The same lesson as the parent's own print of that revision: one PDF, made once.
+    expect((await a.print({ revision: 1 })).body.print_id).toBe(first.body.print_id);
+
+    bucket.objects.set(`pods/${a.pod}/prints/${first.body.print_id}.pdf`, "%PDF");
+    expect((await link.status(assignment.id, first.body.print_id)).body).toMatchObject({
+      status: "ready",
+      url: `https://bucket.test/pods/${a.pod}/prints/${first.body.print_id}.pdf?expires=300`,
+    });
+  });
+
+  it("reads a print in the link's pod only, and 404s an unknown link", async () => {
+    const { s, parent } = setUp();
+    const a = await parent();
+    const b = await parent();
+    const mine = (await a.give()).assignment.id;
+    const theirs = (await b.give()).assignment.id;
+    const link = open(s);
+    const { print_id } = (await link.print(mine)).body;
+    const across = await link.status(theirs, print_id);
+    expect(across.status).toBe(404);
+    expect(across.body.error.type).toBe("NotFound");
+    const unknown = await link.print(idOf(ID_PREFIXES.assignment, randomUUID()));
+    expect(unknown.status).toBe(404);
+  });
+
+  /** A second version of the given lesson, published after the first, from some of its rows. */
+  async function republish(
+    s: ReturnType<typeof setUp>["s"],
+    pod: PodId,
+    given: LessonGiven,
+    keep: (row: LessonVersionWithQuestions["questions"][number]) => boolean,
+  ) {
+    const first = await s.store.getLessonVersion(pod, given.lesson_version.id);
+    const later = await s.store.publishLessonVersion(pod, {
+      lesson_id: given.assignment.lesson_id,
+      questions: first.questions
+        .filter(keep)
+        .map((row) => ({ lesson_question_id: row.question.id, role: row.role })),
+    });
+    const link = (lesson_version_id?: LessonVersionId) =>
+      s.store.putAssignment(pod, {
+        id: AssignmentId.parse(idOf(ID_PREFIXES.assignment, randomUUID())),
+        lesson_id: given.assignment.lesson_id,
+        audience: "anyone",
+        identity: "pick",
+        ...(lesson_version_id === undefined ? {} : { lesson_version_id }),
+      });
+    return { later, link };
+  }
+
+  it("prints a pinned link's own version, and an unpinned link's latest", async () => {
+    const { s, bucket, parent } = setUp();
+    const a = await parent();
+    const given = await a.give();
+    let printable = 0;
+    const { later, link } = await republish(
+      s,
+      a.pod,
+      given,
+      (row) => row.role === "planned" && row.question.family !== "explain" && ++printable <= 3,
+    );
+    expect(later.id).not.toBe(given.lesson_version.id);
+    const sheetOf = async (id: string) => {
+      const { print_id } = (await open(s).print(id)).body;
+      const key = `pods/${a.pod}/prints/${print_id}.json`;
+      return PrintSheet.parse(JSON.parse(bucket.objects.get(key) ?? "{}"));
+    };
+    const pinned = await link(given.lesson_version.id);
+    expect((await sheetOf(pinned.id)).questions).toHaveLength(10);
+    const unpinned = await link();
+    expect((await sheetOf(unpinned.id)).questions).toHaveLength(3);
+  });
+
+  it("refuses a lesson with nothing to print on paper: 409 LessonNotPrintable", async () => {
+    const { s, parent } = setUp();
+    const a = await parent();
+    const { link } = await republish(
+      s,
+      a.pod,
+      await a.give(),
+      (row) => row.question.family === "explain",
+    );
+    const refused = await open(s).print((await link()).id);
+    expect(refused.status).toBe(409);
+    expect(refused.body.error.type).toBe("LessonNotPrintable");
+  });
+
+  it("answers 502 where printing is not set up", async () => {
+    const { s, parent } = setUp({ wired: false });
+    const { assignment } = await (await parent()).give();
+    const off = await open(s).print(assignment.id);
     expect(off.status).toBe(502);
     expect(off.body.error.type).toBe("PrintUnavailable");
   });

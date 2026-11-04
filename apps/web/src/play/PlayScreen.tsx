@@ -11,6 +11,7 @@
 import {
   ApiError,
   type AssignmentIntroClient,
+  type AssignmentPrintClient,
   type AttemptClient,
   createClient,
   TransientError,
@@ -36,6 +37,7 @@ import { castOf, celebrationDue, firstCast } from "./celebration.ts";
 import { creditShown } from "./credit.ts";
 import { IntroScreen, type Who } from "./IntroScreen.tsx";
 import { Column, KidPage } from "./KidPage.tsx";
+import { printedUrl } from "./PrintLesson.tsx";
 import { Iwona, Queen } from "./Queen.tsx";
 import { Results } from "./Results.tsx";
 import { playLearner, playPath, playQuestion, playRoute, reviewPath } from "./route.ts";
@@ -143,8 +145,9 @@ export function PlayScreen({
 }: {
   assignmentId: AssignmentId;
   language: Language;
-  /** The API, for tests; the page's own origin when absent. */
-  client?: AttemptClient & AssignmentIntroClient;
+  /** The API, for tests; the page's own origin when absent. A client with no print calls shows no
+   * print key. */
+  client?: AttemptClient & AssignmentIntroClient & Partial<AssignmentPrintClient>;
 }): ReactElement {
   const { query } = useLocation();
   const learner = playLearner(query);
@@ -197,7 +200,21 @@ export function PlayScreen({
         <Loading character="olowek" label={copy(language, "loading")} />
       </KidPage>
     );
-  return <IntroScreen intro={intro} learner={learner} language={language} onStart={setWho} />;
+  const { startAssignmentPrint, getAssignmentPrint } = reader;
+  // Wydrukuj lekcję (decision dl-3h2e8): the link prints its own lesson, with no sign-in.
+  const print =
+    startAssignmentPrint === undefined || getAssignmentPrint === undefined
+      ? undefined
+      : () => printedUrl({ startAssignmentPrint, getAssignmentPrint }, assignmentId);
+  return (
+    <IntroScreen
+      intro={intro}
+      learner={learner}
+      language={language}
+      onStart={setWho}
+      print={print}
+    />
+  );
 }
 
 function PlayerScreen({

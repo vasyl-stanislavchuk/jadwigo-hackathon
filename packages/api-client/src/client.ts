@@ -131,6 +131,17 @@ export interface AssignmentIntroClient {
   ): Promise<AssignmentIntro>;
 }
 
+/**
+ * A play link's PDF (decision dl-3h2e8, dl-1eieq.8.15): holding the link is the access, so no
+ * token. `waitForAssignmentPrint` starts it and asks until it is ready.
+ */
+export interface AssignmentPrintClient {
+  /** `ready` when this lesson was printed before, else `pending` while the print Lambda renders. */
+  startAssignmentPrint(assignmentId: AssignmentId): Promise<PrintStatus>;
+  /** Where it stands, read in the link's pod only. */
+  getAssignmentPrint(assignmentId: AssignmentId, printId: PrintId): Promise<PrintStatus>;
+}
+
 /** The home page's call: the lessons anyone may play now, oldest first. */
 export interface FeaturedClient {
   featuredLessons(): Promise<Featured>;
@@ -274,6 +285,7 @@ export type Client = AttemptClient &
   ConversationListClient &
   LessonGiveClient &
   LessonPrintClient &
+  AssignmentPrintClient &
   RunRatingClient &
   AttachmentClient;
 
@@ -397,6 +409,10 @@ export function createClient({
     renameLesson: (conversationId, body) => call(ROUTES.renameLesson, { id: conversationId }, body),
     startPrint: (conversationId, body) => call(ROUTES.startPrint, { id: conversationId }, body),
     getPrint: (printId) => call(ROUTES.getPrint, { id: printId }, undefined),
+    startAssignmentPrint: (assignmentId) =>
+      call(ROUTES.startAssignmentPrint, { id: assignmentId }, undefined),
+    getAssignmentPrint: (assignmentId, printId) =>
+      call(ROUTES.getAssignmentPrint, { id: assignmentId, print_id: printId }, undefined),
     rateRun: (runId, body) => call(ROUTES.rateRun, { id: runId }, body),
     createAttachment: (body) => call(ROUTES.createAttachment, {}, body),
     getAttachment: (attachmentId) => call(ROUTES.getAttachment, { id: attachmentId }, undefined),
@@ -407,6 +423,23 @@ export function createClient({
 const PRINT_POLL_MS = 1000;
 const PRINT_POLLS = 45;
 
+type Sleep = (ms: number) => Promise<void>;
+const wait: Sleep = (ms) => new Promise((done) => setTimeout(done, ms));
+
+/** Asks about a started print once a second until it is `ready` or `failed`, for at most 45 asks. */
+async function untilDone(
+  first: PrintStatus,
+  read: (printId: PrintId) => Promise<PrintStatus>,
+  sleep: Sleep,
+): Promise<PrintStatus> {
+  let status = first;
+  for (let ask = 0; status.status === "pending" && ask < PRINT_POLLS; ask++) {
+    await sleep(PRINT_POLL_MS);
+    status = await read(status.print_id);
+  }
+  return status;
+}
+
 /**
  * Starts the conversation's print and asks about it once a second until it is `ready` or
  * `failed`, for at most 45 asks; past that it answers the last `pending`, and the page says the
@@ -416,12 +449,24 @@ export async function waitForPrint(
   client: LessonPrintClient,
   conversationId: ConversationId,
   body: PrintStart,
-  sleep: (ms: number) => Promise<void> = (ms) => new Promise((done) => setTimeout(done, ms)),
+  sleep: Sleep = wait,
 ): Promise<PrintStatus> {
-  let status = await client.startPrint(conversationId, body);
-  for (let ask = 0; status.status === "pending" && ask < PRINT_POLLS; ask++) {
-    await sleep(PRINT_POLL_MS);
-    status = await client.getPrint(status.print_id);
-  }
-  return status;
+  return untilDone(
+    await client.startPrint(conversationId, body),
+    (printId) => client.getPrint(printId),
+    sleep,
+  );
+}
+
+/** The same for a play link's print: started with no token, asked about in the link's pod. */
+export async function waitForAssignmentPrint(
+  client: AssignmentPrintClient,
+  assignmentId: AssignmentId,
+  sleep: Sleep = wait,
+): Promise<PrintStatus> {
+  return untilDone(
+    await client.startAssignmentPrint(assignmentId),
+    (printId) => client.getAssignmentPrint(assignmentId, printId),
+    sleep,
+  );
 }

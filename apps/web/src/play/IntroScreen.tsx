@@ -12,6 +12,7 @@ import { copy, type Language } from "@jadwigo/copy";
 import { Button, Heading, Input, Label } from "@jadwigo/ui";
 import { type FormEvent, type ReactElement, useId, useState } from "react";
 import { Column, KidPage } from "./KidPage.tsx";
+import { PrintLesson } from "./PrintLesson.tsx";
 
 /** Who is playing: the link's child, a typed name, or neither. */
 export interface Who {
@@ -26,12 +27,15 @@ export function IntroScreen({
   learner,
   language,
   onStart,
+  print,
 }: {
   intro: AssignmentIntro;
   /** The child the link names. */
   learner: LearnerId | null;
   language: Language;
   onStart: (who: Who) => void;
+  /** Wydrukuj lekcję (dl-1eieq.8.17): the lesson's PDF, or why there is none; absent, no key. */
+  print?: (() => Promise<string | "failed" | "slow">) | undefined;
 }): ReactElement {
   const named = learner !== null && intro.first_name !== null ? intro.first_name : null;
   const [notThem, setNotThem] = useState(false);
@@ -68,6 +72,9 @@ export function IntroScreen({
             </p>
           )}
         </div>
+        {print !== undefined && intro.question_count > 0 && (
+          <PrintLesson language={language} print={print} />
+        )}
         {asksName ? (
           <form className="flex w-full flex-col items-start gap-4" onSubmit={submit} noValidate>
             <div className="flex w-full max-w-sm flex-col gap-2">
