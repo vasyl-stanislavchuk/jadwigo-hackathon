@@ -256,11 +256,12 @@ export function runner(state: RunnerState, action: RunnerAction): RunnerState {
       }));
       if (result.ended === null) return { ...state, questions, help, helpRefused: false };
       // Rung 4 ended the question and asked its twin: the step stays on its worked solution until
-      // the child presses Dalej, and the twin then opens clean (owner 2026-11-04, dl-uukj.64).
+      // the child presses Dalej, and the twin then opens clean (owner 2026-11-04, dl-uukj.64). The
+      // note keeps the rung before, so it never repeats the solution card under it.
       return {
         ...state,
         questions,
-        help,
+        help: state.help,
         helpRefused: false,
         phase: "feedback",
         feedback: movedOn(result.ended),

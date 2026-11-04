@@ -1038,14 +1038,16 @@ export function StepShell({
           )}
         </div>
         <div data-area="help" className="flex flex-col gap-4">
-          {open && !ended && (
+          {/* A step that ended on its solution keeps the note above it, with nothing left to press
+              (owner 2026-11-04, dl-uukj.64): the help the child had stays beside the answer. */}
+          {open && (!ended || verdict === "solution") && (
             <HelpLadder
               language={language}
               cards={cards}
               of={help?.hintsTotal ?? (help?.more ? null : cards.length)}
-              more={help !== null && ask ? ask.press : null}
-              dontKnow={leaving?.press ?? null}
-              refused={ladder?.refused === true}
+              more={!ended && help !== null && ask ? ask.press : null}
+              dontKnow={ended ? null : (leaving?.press ?? null)}
+              refused={!ended && ladder?.refused === true}
             />
           )}
           {hint && !workedSolution && help === null && !ended && (

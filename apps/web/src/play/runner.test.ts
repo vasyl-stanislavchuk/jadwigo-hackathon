@@ -193,7 +193,7 @@ describe("runner", () => {
     const refused = runner(start, { type: "help", result: help({ released: null }) });
     expect(refused.helpRefused).toBe(true);
     const twin = question(2, { added: "twin" });
-    const four = runner(start, {
+    const four = runner(one, {
       type: "help",
       result: help({
         help_released: 4,
@@ -207,6 +207,8 @@ describe("runner", () => {
     expect(four.seq).toBe(1);
     expect(four.phase).toBe("feedback");
     expect(four.workedSolution).toEqual(["2 × 5 = 10"]);
+    // The note keeps the rung the child had, above the solution.
+    expect(four.help?.rung).toBe(1);
     const after = runner(four, { type: "advance" });
     expect(after.seq).toBe(2);
     expect(after.help).toBeNull();
