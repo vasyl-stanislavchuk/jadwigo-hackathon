@@ -1,5 +1,5 @@
 import type { Load } from "@jadwigo/analytics";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConsentBanner } from "./ConsentBanner.tsx";
 import { resetAppAnalyticsForTests, startAppAnalytics } from "./start.ts";
@@ -42,22 +42,20 @@ describe("the cookie banner", () => {
     expect(document.querySelector("[data-analytics-consent]")).toBeNull();
   });
 
-  it("asks while consent is pending, and a yes opts in and hides it", async () => {
+  it("opts a visitor who has not answered in, and never asks (dl-w0b4.129)", async () => {
     const { client, load } = posthogDouble();
     render(<ConsentBanner language="en" />);
     await act(() => startAppAnalytics("/parent", "phc_test", load));
-    expect(screen.getByRole("heading", { name: "Cookies" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
     expect(client.opt_in_capturing).toHaveBeenCalledTimes(1);
     expect(document.querySelector("[data-analytics-consent]")).toBeNull();
   });
 
-  it("the × is a no: it opts out, which still counts the visit cookieless, and hides it", async () => {
+  it("leaves a browser that said no opted out, and does not ask again", async () => {
     const { client, load } = posthogDouble();
+    client.opt_out_capturing();
     render(<ConsentBanner language="pl" />);
     await act(() => startAppAnalytics("/parent", "phc_test", load));
-    fireEvent.click(screen.getByRole("button", { name: "Zamknij" }));
-    expect(client.opt_out_capturing).toHaveBeenCalledTimes(1);
+    expect(client.opt_in_capturing).not.toHaveBeenCalled();
     expect(document.querySelector("[data-analytics-consent]")).toBeNull();
   });
 });

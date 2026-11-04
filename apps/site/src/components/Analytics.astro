@@ -1,9 +1,9 @@
 ---
 // The one cookie banner (decision dl-376c8, dl-w0b4.118), the same as the app's
-// (apps/web/src/analytics/ConsentBanner.tsx), through packages/analytics: nothing is captured until
-// the visitor answers. Accept turns on the cookie and session replay with every input masked; the ×
-// is a no, which counts the visit cookieless. The answer lives in a .jadwigo.pl cookie, so it holds
-// on app.jadwigo.pl too. With no key in the build, nothing loads and the banner is never written.
+// (apps/web/src/analytics/ConsentBanner.tsx), through packages/analytics. It shows only while the
+// visitor has not answered; since dl-w0b4.129 startAnalytics opts every such browser in, so it stays
+// hidden until consent-first returns. Accept opts in, the × opts out, in a .jadwigo.pl cookie that
+// holds on app.jadwigo.pl too. With no key in the build, nothing loads and the banner is never written.
 import type { Language } from "@jadwigo/config";
 import { m } from "@jadwigo/copy/messages";
 import { posthogKey } from "../config.ts";
