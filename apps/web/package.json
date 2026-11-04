@@ -46,7 +46,7 @@
     "typescript": "tsc for this package's typecheck script",
     "vite": "serves and builds the app (vite.config.ts)",
     "vitest": "runs this package's unit test with the root vitest.config.ts",
-    "@jadwigo/jadwigo-ai": "the engine dev/engine-plugin.ts runs in the dev server for /playground/chat: acceptMessage, drain, ScriptedMuse, createVerbs, fixtureBank, InMemoryRunQueue (dl-z5ja.17); and movePlan, which spine/movePlan.test.ts checks the chat's port against (dl-uukj.47.71.36)",
+    "@jadwigo/jadwigo-ai": "the engine dev/engine-plugin.ts runs in the dev server for /playground/chat: acceptMessage, drain, ScriptedMuse, createVerbs, fixtureBank, InMemoryRunQueue (dl-z5ja.17)",
     "@jadwigo/store": "InMemoryStore, the store dev/engine-plugin.ts keeps the chat page's runs in (dl-z5ja.17)",
     "pg": "e2e/realtime-server.ts, make dev-all's Realtime stand-in: checks a join against the run_join policy and reads the broadcasts realtime.messages keeps (dl-uukj.47.14.1)",
     "@types/pg": "types for pg"
