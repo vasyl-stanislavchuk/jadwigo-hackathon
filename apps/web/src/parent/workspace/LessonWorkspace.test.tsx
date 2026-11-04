@@ -496,7 +496,11 @@ describe("opening things from the chat (dl-uukj.47.58, dl-1eieq.1)", () => {
 });
 
 describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
-  beforeEach(() => window.history.replaceState(null, "", `/parent/lessons/${CONVERSATION}`));
+  beforeEach(() => {
+    window.history.replaceState(null, "", `/parent/lessons/${CONVERSATION}`);
+    // Daj lekcję opens a tab; a unit test opens none (no network).
+    vi.spyOn(window, "open").mockReturnValue(null);
+  });
   // A made-up child of the family, and the happy turn with its lesson_check passed, so it can be given.
   const ola = {
     id: LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq"),
@@ -561,7 +565,9 @@ describe("Daj lekcję from the card (dl-uukj.47.55; steward on #747)", () => {
       revision: SHOWN_REVISION,
       learner_id: ola.id,
     });
-    expect(document.querySelector("[data-given]")?.textContent).toContain("Lekcja czeka na: Ola.");
+    expect(document.querySelector("[data-give-state='given']")?.textContent).toContain(
+      "Lekcja czeka na: Ola.",
+    );
     expect(screen.getByRole("link", { name: "Otwórz lekcję" }).getAttribute("href")).toBe(
       `/play/${ASSIGNMENT}?learner=${ola.id}`,
     );

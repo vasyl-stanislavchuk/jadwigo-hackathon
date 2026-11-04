@@ -66,6 +66,19 @@ export const VerbName = z.enum([
 export type VerbName = z.infer<typeof VerbName>;
 
 /**
+ * Which stage of a lesson-building turn's plan a verb works on, by the stage's place in the plan
+ * (dl-hin8.19): finding questions 0, drafting the lesson 1, checking it 2. A verb outside the table
+ * moves no stage. The engine moves its plan by it (jadwigo-ai `run/plan.ts`), and the chat places
+ * each call in its stage by the same table (dl-uukj.47.71.36). A plain constant, not a schema, so
+ * no snapshot holds it.
+ */
+export const PLAN_STAGE_OF: Readonly<Partial<Record<VerbName, 0 | 1 | 2>>> = {
+  question_search: 0,
+  lesson_draft: 1,
+  lesson_check: 2,
+};
+
+/**
  * Which model tier a call went to. `private` asks for a model that trains on nothing it is sent;
  * `contributor` may train on what it is sent. A learner's data, names included, may reach either
  * (decision `dl-uafq`, 2026-11-01, which supersedes `dl-2uq1`:

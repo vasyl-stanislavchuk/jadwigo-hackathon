@@ -63,6 +63,8 @@ export interface Player {
   state: RunnerState;
   /** The lesson's language from the last snapshot (dl-9t2o.3), or null before the first. */
   lessonLanguage: Language | null;
+  /** The attempt being played, or null before the first snapshot. */
+  attemptId: AttemptId | null;
   commit(value: unknown, t1: Instant): void;
   skip(at: Instant): void;
   askHelp(): void;
@@ -140,6 +142,7 @@ export function usePlayer(
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
   const [review, setReview] = useState<Review>({ kind: "loading" });
   const [lessonLanguage, setLessonLanguage] = useState<Language | null>(null);
+  const [attemptId, setAttemptId] = useState<AttemptId | null>(null);
   const attempt = useRef<AttemptId | null>(null);
   const alive = useRef(true);
   /** When the question on screen was shown: asked_at and the latency are measured from it. */
@@ -183,6 +186,7 @@ export function usePlayer(
   const take = useCallback(
     (snapshot: AttemptSnapshot) => {
       attempt.current = snapshot.attempt.id;
+      setAttemptId(snapshot.attempt.id);
       setLessonLanguage(snapshot.language);
       dispatch({ type: "loaded", snapshot });
       if (snapshot.attempt.status === "finished") finish(snapshot.attempt.id);
@@ -349,6 +353,7 @@ export function usePlayer(
     review,
     state,
     lessonLanguage,
+    attemptId,
     commit,
     skip,
     askHelp,

@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 700" role="img" aria-labelledby="bank-pipeline-light-title bank-pipeline-light-desc">
+<title id="bank-pipeline-light-title">The bank pipeline</title>
+<desc id="bank-pipeline-light-desc">How Khan and Alfik questions become set pages, are enriched by Meta Muse, indexed, searched and held to a golden-set gate before a lesson uses them.</desc>
+<defs><marker id="bp-a-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#50535c"/></marker><marker id="bp-b-light" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#3a5fa8"/></marker></defs>
+<rect x="0" y="0" width="640" height="700" fill="#ffffff"/>
+<rect x="140" y="32" width="280" height="60" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="280" y="54" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Sources, read in place</text>
+<text x="280" y="70" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">Khan Academy exercises</text>
+<text x="280" y="83" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">and Alfik contest tasks</text>
+<polyline points="280,92 280,128" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#bp-a-light)"/>
+<rect x="140" y="128" width="280" height="60" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="280" y="150" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Set pages</text>
+<text x="280" y="166" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">one page per exercise;</text>
+<text x="280" y="179" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">source fields never rewritten</text>
+<polyline points="280,188 280,224" fill="none" stroke="#3a5fa8" stroke-width="1.2" marker-end="url(#bp-b-light)"/>
+<rect x="140" y="224" width="280" height="60" rx="6" fill="#dce8fb" stroke="#22252d" stroke-width="1"/>
+<text x="280" y="246" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Muse enrichment</text>
+<text x="280" y="262" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">3 drafts, a critic, then code</text>
+<text x="280" y="275" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">checks every quote</text>
+<polyline points="280,284 280,320" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#bp-a-light)"/>
+<rect x="140" y="320" width="280" height="60" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="280" y="342" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">The index</text>
+<text x="280" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">OpenAI embeddings,</text>
+<text x="280" y="371" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">about 13 vectors a set</text>
+<polyline points="280,380 280,416" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#bp-a-light)"/>
+<rect x="140" y="416" width="280" height="60" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="280" y="438" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Search</text>
+<text x="280" y="454" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">hybrid arm C with</text>
+<text x="280" y="467" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">a Voyage rerank</text>
+<polyline points="280,476 280,512" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#bp-a-light)"/>
+<rect x="140" y="512" width="280" height="60" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="280" y="534" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">The gate</text>
+<text x="280" y="550" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">recall, nDCG and abstaining</text>
+<text x="280" y="563" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">held to the baseline</text>
+<polyline points="280,572 280,608" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#bp-a-light)"/>
+<rect x="140" y="608" width="280" height="60" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="280" y="630" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Lessons</text>
+<text x="280" y="646" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">drawn from the bank</text>
+<text x="280" y="659" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">for a child</text>
+<polyline points="448,542 420,542" fill="none" stroke="#50535c" stroke-width="1.2" marker-end="url(#bp-a-light)"/>
+<rect x="448" y="512" width="150" height="60" rx="6" fill="#ffffff" stroke="#22252d" stroke-width="1"/>
+<text x="523" y="534" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#22252d">Golden sets</text>
+<text x="523" y="550" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">215 needs, labelled</text>
+<text x="523" y="563" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#726f68">3 times, split frozen</text>
+</svg>

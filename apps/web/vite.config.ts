@@ -8,6 +8,7 @@ import { builderPlugin } from "./dev/builder-plugin.ts";
 import { enginePlugin } from "./dev/engine-plugin.ts";
 import { analyticsKey, apiTarget, authConfig, webPort } from "./src/config.ts";
 import { devMediaUrl, NO_MEDIA_URL } from "./src/media.ts";
+import { shareTags } from "./src/shareTags.ts";
 
 // The lesson player calls /api on its own origin; locally the api is another port (src/config.ts).
 const proxy = { "/api": { target: apiTarget(), changeOrigin: true } };
@@ -44,6 +45,12 @@ function mediaGuard(media: string): Plugin {
   };
 }
 
+/** The link preview's tags in index.html (src/shareTags.ts, dl-w0b4.128), in dev and in the build. */
+const shareTagsPlugin: Plugin = {
+  name: "jadwigo-share-tags",
+  transformIndexHtml: () => shareTags(),
+};
+
 export default defineConfig(({ command, mode }) => {
   // In dev, an unset VITE_MEDIA_URL takes .env.example's, so a fresh checkout's pictures load. The
   // build takes only what it is given: the app's deploy sets it.
@@ -62,6 +69,7 @@ export default defineConfig(({ command, mode }) => {
       tailwindcss(),
       builderPlugin(),
       enginePlugin(),
+      shareTagsPlugin,
       ...(media === undefined ? [] : [mediaGuard(media)]),
     ],
     define: {
