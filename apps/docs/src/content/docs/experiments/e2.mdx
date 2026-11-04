@@ -1,65 +1,63 @@
 ---
 title: "E2: the next lesson, drawn"
-description: From each invented learner's state, the next lesson drawn from the real bank, with reasons.
+description: From each invented learner's state, the next lesson drawn from the real bank, with a reason for every question.
 ---
 
-import Diagram from "../../../components/Diagram.astro";
 import ExperimentResult from "../../../components/ExperimentResult.astro";
 
-This experiment is for a judge asking what a learner should meet tomorrow: from each cohort
-learner's state, the draw picks the next lesson from the real bank and gives a reason for every
-question in or out.
+This run tests whether the next lesson can be drawn from what code knows about a child, with a
+reason for every question in or out. It's the second step of
+[the learning loop](/vision/learning-loop/).
 
 <ExperimentResult id="e2" />
 
-Each learner's brief from [E1](/experiments/e1/) becomes needs in brief order, and the lesson
-takes the first 3 entries that draw questions. Bank sets are found by skill code in a local
-checkout of the real bank (412 set pages scanned), so no hosted search ran and that step cost $0.
-`jw draw` does the picking with its provisional rules (`rule_settled: false`): unseen questions
-for practice, due-or-twin for review, spacing held. Only item ids, skills and reasons are
-recorded here, never bank question text. A panel of 3 judges then rates each lesson for fit to
-its learner (1 to 5, with reasons); every judge call ran through the Meta API on
-`muse-spark-1.3-contributor` and is in the product ledger.
+## Question
 
-<Diagram name="next-lesson" caption="From a brief to a lesson, with a reason for every question." />
+Given a learner's brief from [E1](/experiments/e1/), can a draw from the real question bank make a
+lesson that fits that learner?
 
-What the run seeds is the next-lesson button and the goals loop: a brief that becomes a lesson a
-parent can check line by line before a child sees it.
+## Setup
+
+Each of the 12 briefs from E1 becomes a list of needs, and the lesson takes the first 3 needs that
+draw questions. Bank sets are found by skill in a local copy of the real bank, 412 set pages in
+all. The draw rules are provisional: unseen questions for practice, a due question or its twin for
+review, and spacing kept. Then 3 model judges rated each lesson's fit to its learner from 1 to 5,
+with reasons. The learners are the team's inventions, and the judges are models, not teachers.
+
+## Result
+
+11 of 12 learners got a lesson of 15 to 18 questions, 183 questions in all, each with its reason.
+
+## What failed
+
+- **The fit is poor: 2.39 of 5.** The judges gave the same reasons again and again. The draw
+  reteaches a skill the learner already does well while a weaker one is ignored, and 18 questions
+  is long for one sitting.
+- **1 learner got no lesson.** That learner's brief is 4 Polish spelling skills, and no bank set
+  carries those skills yet. The reasons the draw recorded say exactly that.
+
+## Cost
+
+$0.09 for the 36 judge calls. The draw itself ran locally, for $0.
 
 ## Every learner's next lesson
 
-The panel column is the contributor panel's mean. The same draws were also rated by an earlier
-`muse-wonder` panel, run before the owner's rule that scripted calls use the contributor models
-on the API; its mean is kept here for a brief comparison, and in full in the JSON under
-`detail.wonder_comparison`.
-
-| Learner | Profile | Questions drawn | Fit, contributor panel | Fit, wonder panel |
-| --- | --- | ---: | ---: | ---: |
-| Learner A | steady | 18 | 3 | 2.67 |
-| Learner B | forgetful | 15 | 2.33 | 2.67 |
-| Learner C | guesser | 18 | 3.33 | 2.33 |
-| Learner D | slow-then-click | 18 | 2 | 3 |
-| Learner E | help-heavy | 15 | 2 | 2 |
-| Learner F | rusher | 18 | 3.33 | 2.67 |
-| Learner G | perfectionist | 18 | 3 | 3.67 |
-| Learner H | early-plateau | 15 | 1.33 | 2 |
-| Learner I | weekend-only | 18 | 3.33 | 2 |
-| Learner J | uneven | 0 | 1 | 1 |
-| Learner K | comeback | 15 | 2 | 2 |
-| Learner L | new-and-keen | 15 | 2 | 2 |
-
-3 readings a judge can check in the JSON:
-
-- 11 of 12 learners get a lesson of 15 to 18 questions. The uneven learner gets none: their
-  brief is 4 Polish spelling skills, and no bank set carries those codes yet, plus a review
-  entry with nothing due. The left-out reasons say exactly that.
-- Both panels land in the same place: mean fit 2.39 (contributor) against 2.33 (wonder), and
-  often for the same stated reason, that reteaching a skill already at proficient wastes the
-  lesson while a weaker one is ignored, and that 18 questions is long for one sitting.
-- The cheapest step was the draw itself. The 36 judge calls cost $0.0893 in the ledger; the
-  bank lookup was local and free.
+| Learner | Profile | Questions drawn | Fit (of 5) |
+| --- | --- | ---: | ---: |
+| Learner A | steady | 18 | 3 |
+| Learner B | forgetful | 15 | 2.33 |
+| Learner C | guesser | 18 | 3.33 |
+| Learner D | slow-then-click | 18 | 2 |
+| Learner E | help-heavy | 15 | 2 |
+| Learner F | rusher | 18 | 3.33 |
+| Learner G | perfectionist | 18 | 3 |
+| Learner H | early-plateau | 15 | 1.33 |
+| Learner I | weekend-only | 18 | 3.33 |
+| Learner J | uneven | 0 | 1 |
+| Learner K | comeback | 15 | 2 |
+| Learner L | new-and-keen | 15 | 2 |
 
 ## Next
 
-- [The learning loop](/vision/learning-loop/): what this run seeds.
-- [Experiments](/experiments/): the other runs.
+- [The learning loop](/vision/learning-loop/): what this run is for, with its diagram.
+- [E3: the parent's report](/experiments/e3/): the same learners, written up for a parent.
