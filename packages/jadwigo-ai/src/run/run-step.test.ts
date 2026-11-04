@@ -854,6 +854,16 @@ describe("runStep and drain", () => {
     });
   });
 
+  it("tells the model what to do with a child's marked work (dl-hin8.50)", async () => {
+    const t = await setup([{ text: "Done." }]);
+    await t.say("Go.");
+    await drain(t.deps);
+    const said = t.muse.calls[0]?.instructions ?? "";
+    expect(said).toContain("read the wrong answers");
+    expect(said).toContain("not a diagnosis");
+    expect(said).toContain("more than one question type");
+  });
+
   describe("a step that throws (dl-hin8.51)", () => {
     /** A model that throws `fails` times, then answers. */
     async function throwing(fails: number) {

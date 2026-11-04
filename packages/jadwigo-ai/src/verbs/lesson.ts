@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 import { ID_PREFIXES, PROPOSED_SKILL_MARK, SkillId, toolView, uuidOf } from "@jadwigo/contracts";
 import type { ToolView } from "@jadwigo/contracts/run";
+import { catalogue } from "@jadwigo/core";
 import { type Finding, parseLessonFileLenient } from "@jadwigo/lesson-import/file";
 import type { BankLanguage, BankPort, BankQuery } from "./bank.ts";
 import { Input, isObject, type Json, mergePatch } from "./input.ts";
@@ -388,7 +389,7 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   input.strings("names", false); // see NAMES_UNUSED
   const step = stepOf(file, step_id);
 
-  const refused = Object.keys(patch).filter((k) => k !== "say" && k !== "question");
+  const refused = Object.keys(patch).filter((k) => !["say", "question", "skill_ids"].includes(k));
   const question = patch["question"];
   if (question !== undefined && !isObject(question)) refused.push("question");
   if (isObject(question)) {
@@ -401,10 +402,33 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
   if (refused.length > 0) {
     throw new VerbError(
       "edit",
-      `a patch sets say and question's data, key and help, not ${refused.join(", ")}; twin changes belong in question.help.twin, not question.family; nothing changed`,
+      `a patch sets say, skill_ids and question's data, key and help, not ${refused.join(", ")}; twin changes belong in question.help.twin, not question.family; nothing changed`,
     );
   }
 
+  const skills = patch["skill_ids"];
+  if (skills !== undefined) {
+    // Every element a string first: lessonSkillIds reads each as one, and a number thrown there is
+    // a fault the step retries with the same input, not a refusal the model corrects.
+    if (
+      !Array.isArray(skills) ||
+      !skills.every((id): id is string => typeof id === "string") ||
+      lessonSkillIds(skills).length !== skills.length
+    ) {
+      throw new VerbError(
+        "edit",
+        "skill_ids is a list of skill ids, from curriculum_topics; nothing changed",
+      );
+    }
+    // A child's answers count for these skills, so each is one the curriculum holds.
+    const unknown = lessonSkillIds(skills).filter((id) => !curriculumSkills().has(id));
+    if (unknown.length > 0) {
+      throw new VerbError(
+        "edit",
+        `skill_ids names skills the curriculum does not hold: ${unknown.join(", ")}; take them from curriculum_topics; nothing changed`,
+      );
+    }
+  }
   const merged = mergePatch(step, patch) as Step;
   const helpPatch = isObject(question) && isObject(question["help"]) ? question["help"] : {};
   const edited = helpPatch["twin"] === undefined ? merged : inheritTwinFamily(merged);
@@ -468,6 +492,12 @@ export function lessonEdit(context: VerbContext, raw: Json): Promise<VerbEffect>
         ok: !findings.some((f) => f.level === "error"),
         step_id,
         findings,
+        // A copied item's skills describe the item as the bank had it (dl-hin8.49).
+        ...(change === "numbers" && patch["skill_ids"] === undefined
+          ? {
+              skills_note: `this step still counts as ${JSON.stringify(edited["skill_ids"] ?? [])}: if its numbers now practise another skill, pass patch.skill_ids, from curriculum_topics, or a child's answers will count for the wrong skill`,
+            }
+          : {}),
         card: card(edited),
         lesson_ok: checks.publishable,
       },
@@ -525,6 +555,13 @@ export async function questionTypes(bank: BankPort, raw: Json): Promise<VerbEffe
   const types = (await bank.types(grade, language)).map((t) => ({ ...t }));
   const view = toolView("question_types", { grade, language, types });
   return { output: { grade, language, types }, view };
+}
+
+let known: ReadonlySet<string> | null = null;
+/** The curriculum's skill codes and their aliases, read once from the catalogue's seed. */
+function curriculumSkills(): ReadonlySet<string> {
+  known ??= new Set(catalogue().skills.flatMap((skill) => [skill.code, ...(skill.aliases ?? [])]));
+  return known;
 }
 
 /**

@@ -244,6 +244,49 @@ describe("the card names a step's fields as lesson_edit takes them (dl-hin8.45)"
   });
 });
 
+describe("a rewritten question's skill (dl-hin8.49)", () => {
+  const edit = async (patch: Record<string, unknown>) => {
+    const { verbs, run, at } = await drafted();
+    return verbs.lesson_edit.run(at("call_skill"), {
+      draft_id: run,
+      names: [],
+      step_id: "s01",
+      why: "the parent's ask",
+      change: "numbers",
+      patch,
+    });
+  };
+
+  it("takes new skills in the patch, and they reach the step", async () => {
+    const effect = await edit({ say: "Ile to 49 : 7?", skill_ids: ["maths.division.divide-by-7"] });
+    expect(stepsOf(effect.lesson_file)[0]).toMatchObject({
+      skill_ids: ["maths.division.divide-by-7"],
+    });
+    expect(effect.output).not.toHaveProperty("skills_note");
+  });
+
+  it("tells the model when new numbers keep the old skills", async () => {
+    const effect = await edit({ say: "Ile to 49 : 7?" });
+    expect(effect.output).toHaveProperty("skills_note", expect.stringContaining("patch.skill_ids"));
+  });
+
+  it("refuses a skill id that does not parse", async () => {
+    await expect(edit({ skill_ids: ["Not An Id"] })).rejects.toMatchObject({ type: "edit" });
+  });
+
+  it("refuses a skill_ids element that is not a string, as an edit the model corrects", async () => {
+    for (const bad of [7, null, {}])
+      await expect(edit({ skill_ids: [bad] })).rejects.toMatchObject({ type: "edit" });
+  });
+
+  it("refuses a well-formed skill the curriculum does not hold", async () => {
+    await expect(edit({ skill_ids: ["maths.made.up"] })).rejects.toMatchObject({
+      type: "edit",
+      message: expect.stringContaining("maths.made.up"),
+    });
+  });
+});
+
 describe("lesson_check", () => {
   it("refuses a rung the bank's copy holds, and fills one it leaves empty", async () => {
     const { verbs, run, at, lesson_file } = await drafted();
