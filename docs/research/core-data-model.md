@@ -85,7 +85,7 @@ Columns marked *(Names)* use the word the drop's Names page fixes.
 
 ### Who it goes to
 
-**`assignment`**: `id`, `pod_id`, `lesson_id`, `lesson_version_id` (null serves the latest published version), `audience` (learners or anyone), `identity` (pick, type or none), `after_not_sure` (next, twin_now or review_round) and `hold_verdicts`, the growth settings, so one version can be sent with different rules, then `opens_at`, `closes_at`, `created_at`. A featured lesson is an assignment in Jadwigo's pod with audience `anyone` and identity `none`. Closing an assignment stops new attempts and keeps every old one.
+**`assignment`**: `id`, `pod_id`, `lesson_id`, `lesson_version_id` (null serves the latest published version), `audience` (learners or anyone), `identity` (pick, type or none), `after_not_sure` (next, twin_now or review_round) and `hold_verdicts`, the growth settings, so one version can be sent with different rules, then `opens_at`, `closes_at`, `created_at`. A featured lesson is an assignment in Jadwigo's pod with audience `anyone` and identity `type`: it asks who is playing, so a parent can keep the attempt at the end (owner 2026-11-04, `dl-5ssh.156`; it was `none`). Closing an assignment stops new attempts and keeps every old one.
 
 ### Evidence
 
