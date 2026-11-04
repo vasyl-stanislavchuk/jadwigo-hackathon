@@ -11,7 +11,7 @@ import { Component, type ReactElement, type ReactNode } from "react";
 /** The language the page last showed; the boundary sits outside the app that chooses it. */
 const pageLanguage = (): Language => (document.documentElement.lang === "en" ? "en" : "pl");
 
-export function CrashScreen({ onRetry }: { onRetry: () => void }): ReactElement {
+function CrashScreen({ onRetry }: { onRetry: () => void }): ReactElement {
   const language = pageLanguage();
   return (
     <RegisterProvider value="app">
