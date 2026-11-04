@@ -1,0 +1,53 @@
+---
+// O nas's family photos as one collage, after the film's family scene (dl-w0b4.42): small tilted paper
+// cards that overlap and settle into place, all seen at once. They are served from the site's bucket
+// under about-photos/, never from git (make -C infra site-photos). The cards' order in `photos` is
+// their place: the first top left, the second top right, the third in front.
+import type { Page } from "../lib/seo.ts";
+
+interface Props {
+  photos: NonNullable<Page["photos"]>;
+  label: string;
+}
+
+const { photos, label } = Astro.props;
+const src = (file: string, width: number) => `/about-photos/${file}-${width}.webp`;
+---
+
+<ul class="collage" aria-label={label}>
+  {
+    photos.map((p) => (
+      <li class="card">
+        <img
+          src={src(p.file, 640)}
+          srcset={`${src(p.file, 640)} 640w, ${src(p.file, 1280)} 1280w`}
+          sizes="(max-width: 56rem) 60vw, 22rem"
+          alt={p.alt}
+          width={p.width}
+          height={p.height}
+        />
+      </li>
+    ))
+  }
+</ul>
+
+<style>
+  .collage { position: relative; aspect-ratio: 1 / 1; width: 100%; max-width: 36rem; margin: 0 auto; padding: 0; list-style: none; }
+  .card {
+    --tilt: 0deg;
+    position: absolute; padding: 0.4rem; background: var(--jw-card); border: 1px solid var(--jw-line);
+    border-radius: var(--jw-radius-small); box-shadow: 0 0.25rem 1rem color-mix(in srgb, var(--jw-ink) 18%, transparent);
+    rotate: var(--tilt); animation: settle 500ms cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards; transition: rotate 200ms;
+  }
+  .card:hover { rotate: 0deg; }
+  .card img { display: block; width: 100%; height: auto; border-radius: calc(var(--jw-radius-small) - 2px); }
+  .card:nth-child(1) { --tilt: -4deg; top: 1%; left: 1%; width: 43%; }
+  .card:nth-child(2) { --tilt: 3.5deg; top: 3%; right: 1%; width: 40%; animation-delay: 120ms; }
+  .card:nth-child(3) { --tilt: -1.5deg; bottom: 1%; left: 17%; width: 66%; animation-delay: 240ms; }
+  @keyframes settle {
+    from { opacity: 0; scale: 1.12; rotate: calc(var(--tilt) * 3); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card { animation: none; transition: none; }
+  }
+</style>

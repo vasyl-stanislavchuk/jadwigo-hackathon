@@ -4,7 +4,7 @@
 // the page's stable URL, so a link handed to Meta or Google keeps working. A prod build leaves out
 // the ones not yet reviewed (servedPathPages) and builds the rest of the site.
 import { type CollectionEntry, getCollection, render } from "astro:content";
-import PhotoSlides from "../components/PhotoSlides.astro";
+import PhotoCollage from "../components/PhotoCollage.astro";
 import Base from "../layouts/Base.astro";
 import { strictBuild } from "../lib/build.ts";
 import { languageOf, servedLanguages } from "../lib/i18n.ts";
@@ -25,11 +25,11 @@ interface Props {
 
 const { entry } = Astro.props;
 const { Content } = await render(entry);
-const { photos, slides, link, heading } = entry.data;
+const { photos, photosLabel, link, heading } = entry.data;
 ---
 
 {
-  photos && slides ? (
+  photos && photosLabel ? (
     <Base page={entry.data} path={entry.data.path ?? "/"}>
       <section class="about wrap">
         <div class="words">
@@ -37,7 +37,7 @@ const { photos, slides, link, heading } = entry.data;
           <Content />
           {link && <a class="link" href={`${link.href}/`}>{link.label}</a>}
         </div>
-        <PhotoSlides photos={photos} words={slides} />
+        <PhotoCollage photos={photos} label={photosLabel} />
       </section>
     </Base>
   ) : (
@@ -48,15 +48,16 @@ const { photos, slides, link, heading } = entry.data;
 }
 
 <style is:global>
-  /* O nas (design handoff "landing 3", dl-5ssh.4.15): the words on the left, the photo slides on the
-     right. A phone reads the words, then the slides. Global under .about,
+  /* O nas (design handoff "landing 3", dl-5ssh.4.15): the words on the left, the photo collage on the
+     right. A phone reads the words, then the collage. Global under .about,
      so the h1 stays a bare <h1>, as check:dist reads it (src/lib/dist.ts). */
-  .about.wrap { padding-top: clamp(2rem, 5vw, 4rem); }
+  .about.wrap { padding-top: clamp(2rem, 5vw, 4rem); overflow-x: clip; }
   .about { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2.5rem; }
   @media (min-width: 56rem) { .about { grid-template-columns: 1fr 1fr; gap: 3.5rem; align-items: start; } }
   .about h1 { font-size: clamp(2.2rem, 5vw, 3.25rem); }
   .about .words p { margin-top: 1rem; max-width: 36rem; }
   /* The first paragraph is the page's lead. */
   .about .words p:first-of-type { font-size: 1.3rem; font-weight: 700; line-height: 1.4; }
+  .about .words ul { margin: 0.75rem 0 0; padding-left: 1.25rem; max-width: 36rem; display: flex; flex-direction: column; gap: 0.6rem; }
   .about .link { display: inline-block; margin-top: 1.5rem; font-weight: 700; }
 </style>
