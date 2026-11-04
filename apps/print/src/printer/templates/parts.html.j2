@@ -9,9 +9,10 @@
 {% set replaced = stem is not none and stem.text_replaces_say and stem.text %}
 <section class="card" id="q{{ q.n }}">
   <div class="top">
-    <span class="badge">{{ q.n }}</span>{{ icons.action(q.action) }}
+    <span class="badge">{{ q.n }}</span>
     <div class="say">{{ text.rich(stem.text if replaced else q.say) }}
     {%- if q.question_type == "multi_select" %} <span class="many">{{ sheet.labels.many }}</span>{% endif %}</div>
+    <span class="act">{{ icons.action(q.action) }}<span class="word">{{ sheet.labels.legend[q.action] }}</span></span>
   </div>
   <div class="body">{{ form(q, text, sheet) }}</div>
   {% if q.credit_n %}
@@ -71,7 +72,7 @@
   <h2>{{ sheet.labels.card_title }} <small>{{ sheet.labels.card_note }}</small></h2>
   <table class="ticks">
   {% for chunk in sheet.questions|batch(geom.TICKS_PER_ROW) %}
-    <tr{% if loop.index is even %} class="shade"{% endif %}>
+    <tr>
     {% for q in chunk %}<td>{{ q.n }}<span class="tick"></span></td>{% endfor %}
     </tr>
   {% endfor %}

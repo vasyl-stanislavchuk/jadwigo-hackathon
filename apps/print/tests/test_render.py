@@ -80,3 +80,19 @@ def test_pictures_from_two_origins_are_refused() -> None:
     raw["media"] = {"a.png": f"{MEDIA}/a.png", "b.png": "https://other.test/b.png"}
     with pytest.raises(FetchRefused):
         media_origin_of(PrintSheet.model_validate(raw))
+
+
+def test_a_line_with_a_slot_keeps_the_builders_maths() -> None:
+    """The builder draws a whole line; the slot is filled inside that drawing, so its TeX and its
+    notation print (a split line printed `$\\frac{1}{2}$` raw, dl-1eieq.8.13)."""
+    from markupsafe import Markup
+
+    from printer.render import Text
+
+    line = "$\\frac{1}{2}$ {pick} $\\frac{1}{4}$"
+    text = Text({line: '<span class="tex">½</span> {pick} <span class="tex">¼</span>',
+                 "{g1} + 5 = 7": '<span class="slot" data-slot="g1"></span> + 5 = 7'}, {})  # fmt: skip
+    assert text.fill(line, {"pick": Markup("<b>?</b>")}) == '<span class="tex">½</span> <b>?</b> <span class="tex">¼</span>'
+    assert text.fill("{g1} + 5 = 7", {"g1": Markup("[ ]")}) == "[ ] + 5 = 7"
+    assert text.fill("{g1} + 5 = 7", {}) == "{g1} + 5 = 7"
+    assert text.fill("a < {x}", {"x": Markup("<i>b</i>")}) == "a &lt; <i>b</i>"

@@ -48,6 +48,8 @@ PX_PER_MM = 96 / 25.4
 
 #: A marker in a template: `{g1}` for a gap, `{o2}` for an inline option, `{pick}` for a line's pick.
 MARKER = re.compile(r"\{([A-Za-z][A-Za-z0-9_]*)\}")
+#: A slot in the builder's drawn HTML (lesson-kit paper/text.ts), or a `{marker}` it left as text.
+DRAWN_SLOT = re.compile(r'<span class="slot" data-slot="([^"]*)"></span>|\{([A-Za-z][A-Za-z0-9_]*)\}')
 
 
 class FetchRefused(FatalURLFetchingError):
@@ -176,6 +178,25 @@ class Text:
             parts.append(("text", template[pos:]))
         return parts
 
+    def fill(self, template: str, markers: dict[str, Any]) -> Markup:
+        """The template as the builder drew it (maths and notation kept), each slot or `{marker}`
+        replaced by its markup. A marker with no markup prints as written, `{name}`."""
+        drawn = self.html.get(template)
+        if drawn is None:
+            return Markup("").join(
+                escape(piece) if kind == "text" else markers.get(piece, "{" + piece + "}")
+                for kind, piece in self.split(template)
+            )
+
+        def put(m: re.Match[str]) -> str:
+            name = m.group(1) if m.group(1) is not None else m.group(2)
+            value = markers.get(name)
+            if value is not None:
+                return str(value)
+            return m.group(0) if m.group(2) is not None else "{" + name + "}"
+
+        return Markup(DRAWN_SLOT.sub(put, drawn))
+
     def src(self, src: str) -> str:
         """A picture's absolute URL; one the API did not resolve is not drawn."""
         return self.media.get(src, "")
@@ -291,7 +312,7 @@ def _html(sheet: PrintSheet, rows: list[Row], breaks: set[str], last_page: int |
     css = ENV.get_template("paper.css.j2").render(sheet=sheet, last_page=last_page,
                                                   tex_colours=geom.TEX_COLOURS)  # fmt: skip
     return ENV.get_template("sheet.html.j2").render(
-        sheet=sheet, rows=rows, breaks=breaks, text=text, forms=forms(), css=Markup(css)
+        sheet=sheet, rows=rows, breaks=breaks, text=text, forms=forms(), css=Markup(css), pages=last_page
     )
 
 
@@ -349,7 +370,8 @@ def render(sheet: PrintSheet, fetcher: URLFetcher | None = None) -> Rendered:
         heights, end_h = _measure(rows, anchors)
         flow_top = geom.MARGIN_MM * PX_PER_MM
         cap = (geom.PAGE_H_MM - geom.MARGIN_MM - geom.MARGIN_MM - geom.FOOTER_H_MM) * PX_PER_MM
-        first_cap = cap - (anchors[rows[0].id][2] - flow_top)
+        # Page 1's footer is taller: it holds the legend under the title line.
+        first_cap = cap - (anchors[rows[0].id][2] - flow_top) - (geom.FIRST_FOOTER_H_MM - geom.FOOTER_H_MM) * PX_PER_MM
         breaks = plan_breaks(rows, heights, end_h, first_cap, cap, pages)
 
     final = _layout(sheet, rows, breaks, pages, fetcher)

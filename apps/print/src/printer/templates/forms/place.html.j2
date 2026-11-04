@@ -74,12 +74,12 @@
 {% macro money_pay(q, text, sheet) %}
 {{ parts.stem(q.data.stem, text) }}
 <p class="answer"><b>{{ text.rich(q.data.amount_label) }}</b></p>
-<div class="figure">{% for d in q.data.bank %}{% for _ in range(geom.PURSE_COPIES) %}{{ figures.coin(d) }} {% endfor %}{% endfor %}</div>
+<div class="figure purse">{% for d in q.data.bank %}<span class="purse-group">{% for _ in range(geom.PURSE_COPIES) %}{{ figures.coin(d) }}{% endfor %}</span>{% endfor %}</div>
 {%- endmacro %}
 
 {#- The shape split into outlined parts: the child colours the parts. -#}
 {% macro fraction_shade(q, text, sheet) %}
 {{ parts.stem(q.data.stem, text) }}
-{% if q.data.label %}<p class="answer"><b>{{ text.rich(q.data.label) }}</b></p>{% endif %}
+{% if q.data.label %}<p class="answer shade-label"><b>{{ text.rich(q.data.label) }}</b></p>{% endif %}
 <div class="figure">{{ figures.fraction_shape(q.data.shape, q.data.parts, 0, q.data.rows or 1) }}</div>
 {%- endmacro %}

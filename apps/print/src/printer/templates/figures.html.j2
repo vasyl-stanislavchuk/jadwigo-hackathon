@@ -124,7 +124,7 @@
 {% set dia = g.COIN_MIN_MM + rank * g.COIN_STEP_MM %}
 {% set fs = FS * (0.62 if value|length > 1 else 0.72) %}
 <svg width="{{ dia|mm }}" height="{{ dia|mm }}" viewBox="0 0 {{ dia }} {{ dia }}" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="{{ dia / 2 }}" cy="{{ dia / 2 }}" r="{{ dia / 2 - SW }}" fill="#fff" stroke="#000" stroke-width="{{ SW * 2 }}"/>
+  <circle cx="{{ dia / 2 }}" cy="{{ dia / 2 }}" r="{{ dia / 2 - SW }}" fill="{{ g.COIN_ZL_FILL if unit == 'zł' else g.COIN_GR_FILL }}" stroke="#000" stroke-width="{{ SW * 2 }}"/>
   {% if unit == "zł" %}<circle cx="{{ dia / 2 }}" cy="{{ dia / 2 }}" r="{{ dia / 2 - 1.2 }}" fill="none" stroke="#000" stroke-width="{{ SW }}"/>{% endif %}
   <text x="{{ dia / 2 }}" y="{{ dia / 2 - 0.2 }}" font-size="{{ fs }}" font-weight="700" text-anchor="middle">{{ value }}</text>
   <text x="{{ dia / 2 }}" y="{{ dia / 2 + fs * 0.85 }}" font-size="{{ fs * 0.7 }}" text-anchor="middle">{{ unit }}</text>
@@ -174,16 +174,17 @@
 {%- endmacro %}
 
 {#- An object over a ruler, both drawn to the figure's own scale: one unit is `unit_mm` on paper,
-    and the picture is drawn at pixels_per_unit to match, so "fit to page" changes nothing. -#}
+    and the picture is drawn at pixels_per_unit to match, so "fit to page" changes nothing. The
+    paper ruler cannot be dragged, so the picture's left edge sits at its zero; `start` (where the
+    screen's ruler waits, in picture pixels) is the screen's alone. -#}
 {% macro ruler(f, text) %}
 {% set ticks = (f.ticks or f.length)|int %}
 {% set avail = g.CONTENT_W_MM - 2 * g.CARD_PAD_MM - 10 %}
 {% set unit_mm = [avail / (ticks + 1), g.LINE_TICK_MIN_MM * 1.5]|min %}
 {% set img_w = f.picture.width / f.pixels_per_unit * unit_mm %}
 {% set w = (ticks + 1) * unit_mm %}
-{% set start = f.start or 0 %}
 <div style="width: {{ w|mm }}; margin: 0 auto; text-align: left">
-  {% if text.src(f.picture.src) %}<img src="{{ text.src(f.picture.src) }}" alt="{{ f.picture.alt }}" style="width: {{ img_w|mm }}; margin-left: {{ (unit_mm / 2 + start * unit_mm)|mm }}">{% endif %}
+  {% if text.src(f.picture.src) %}<img src="{{ text.src(f.picture.src) }}" alt="{{ f.picture.alt }}" style="display: block; width: {{ img_w|mm }}; margin-left: {{ (unit_mm / 2)|mm }}">{% endif %}
   <svg width="{{ w|mm }}" height="{{ g.RULER_H_MM|mm }}" viewBox="0 0 {{ w }} {{ g.RULER_H_MM }}" xmlns="http://www.w3.org/2000/svg">
     <rect x="{{ SW }}" y="{{ SW }}" width="{{ w - 2 * SW }}" height="{{ g.RULER_H_MM - 2 * SW }}" fill="#fff" stroke="#000" stroke-width="{{ SW * 1.5 }}"/>
     {% for i in range(ticks + 1) %}

@@ -16,14 +16,15 @@
 
 {% macro _letter(o, i) %}{{ o.letter or "ABCDE"[i] if i < 5 else (i + 1) }}{% endmacro %}
 
+{% macro _inline_option(o, text, sheet) %}<span class="inline-option">{{ _content(o.content, text, sheet)|trim }}</span>{% endmacro %}
+
 {#- The words around `{oN}` markers, each option printed underlined where it stands. -#}
 {% macro _inline(q, text, sheet) %}
 {% set by_id = {} %}
 {% for o in q.data.options %}{% set _ = by_id.update({o.id: o}) %}{% endfor %}
 <div class="template">
-{% for kind, piece in text.split(q.data.stem.text if q.data.stem and q.data.stem.text else "") %}
-{% if kind == "text" %}{{ text.rich(piece) }}{% elif piece in by_id %}<span class="inline-option">{{ _content(by_id[piece].content, text, sheet) }}</span>{% else %}{{ "{" ~ piece ~ "}" }}{% endif %}
-{% endfor %}
+{% set markers = {} %}{% for id, o in by_id.items() %}{% set _ = markers.update({id: _inline_option(o, text, sheet)}) %}{% endfor %}
+{{ text.fill(q.data.stem.text if q.data.stem and q.data.stem.text else "", markers) }}
 </div>
 {%- endmacro %}
 
@@ -85,7 +86,7 @@
 {% set signs %}<span class="signs">{% for o in q.data.options %}<span class="sign">{{ _content(o.content, text, sheet) }}</span>{% endfor %}</span>{% endset %}
 {% if q.data.line and "{pick}" in q.data.line %}
 {{ parts.stem(q.data.stem, text) }}
-<div class="template answer-line">{% for kind, piece in text.split(q.data.line) %}{% if kind == "text" %}{{ text.rich(piece) }}{% else %}{{ signs }}{% endif %}{% endfor %}</div>
+<div class="template answer-line">{{ text.fill(q.data.line, {"pick": signs}) }}</div>
 {% else %}
 {{ parts.stem(q.data.stem, text) }}
 {{ signs }}

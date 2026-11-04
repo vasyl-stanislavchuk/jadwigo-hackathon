@@ -10,7 +10,7 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 /**
 * | output |
 * | --- |
-* | "Tick ✓ each question you have done." |
+* | "If you like, tick ✓ the questions you have done." |
 *
 * @param {Print_Card_NoteInputs} inputs
 * @param {{ locale?: "pl" | "en" }} options
@@ -19,6 +19,6 @@ import { getLocale, experimentalStaticLocale } from '../runtime.js';
 export const print_card_note = /** @type {((inputs?: Print_Card_NoteInputs, options?: { locale?: "pl" | "en" }) => LocalizedString) & import('../runtime.js').MessageMetadata<Print_Card_NoteInputs, { locale?: "pl" | "en" }, {}>} */ ((inputs = {}, options = {}) => {
 	void inputs;
 	const locale = experimentalStaticLocale ?? options.locale ?? getLocale()
-	if (locale === "en") return /** @type {LocalizedString} */ ("Tick ✓ each question you have done.")
-	return /** @type {LocalizedString} */ ("Zaznacz ✓ każde zadanie, które masz już zrobione.")
+	if (locale === "en") return /** @type {LocalizedString} */ ("If you like, tick ✓ the questions you have done.")
+	return /** @type {LocalizedString} */ ("Jeśli chcesz, zaznacz ✓ zadania, które już masz.")
 });
