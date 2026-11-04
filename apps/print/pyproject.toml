@@ -15,7 +15,7 @@ dependencies = [
 dev = [
   "pytest==9.2.0", # the tests in tests/
   "moto[s3]==5.2.5", # an in-process S3 for the handler tests (tests/test_handler.py)
-  "pypdf==6.21.3", # reads the rendered PDF back: page size, fonts, text (tests/)
+  "pypdf==6.21.4", # reads the rendered PDF back: page size, fonts, text (tests/)
   "jsonschema==4.26.0", # checks the fixture against the contract's JSON Schema snapshot (tests/test_sheet.py)
 ]
 
