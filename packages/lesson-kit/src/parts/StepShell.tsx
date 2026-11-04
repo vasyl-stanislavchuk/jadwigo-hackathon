@@ -774,15 +774,19 @@ export function StepShell({
   const bulbPress: PressHandlers | null = ended ? null : ask ? ask.press : null;
   const wayOut: PressHandlers | null = ended || ask ? null : (leaving?.press ?? null);
   // A rung the api writes itself (look again, a smaller step) has its card and no hints: the card is
-  // the note's one card, or the note opened empty (owner 2026-10-29, dl-uukj.29.154).
+  // the note's one card, or the note opened empty (owner 2026-10-29, dl-uukj.29.154). Rung 3 comes
+  // as worked lines with no card (the almost-there, its last line blank): the lines are its card,
+  // or the note opened empty after a miss (dl-uukj.63).
+  const lines = help?.worked ?? [];
   const written: PageHintCard[] =
     (help?.hints?.length ?? 0) > 0
       ? (help?.hints ?? [])
-      : help?.card
+      : help?.card || lines.length > 0
         ? [
             {
-              text: help.card.text,
-              ...(help.card.picture === undefined ? {} : { picture: help.card.picture }),
+              text: help?.card?.text ?? "",
+              ...(help?.card?.picture === undefined ? {} : { picture: help.card.picture }),
+              ...(lines.length > 0 ? { lines, blank: help?.blank === true } : {}),
             },
           ]
         : [];
