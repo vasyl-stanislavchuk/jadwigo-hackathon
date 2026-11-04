@@ -52,6 +52,10 @@ flowchart LR
 
 All serverless: 5 Lambda functions, static files behind CloudFront, managed Postgres and sign-in. [Architecture](https://docs.jadwigo.pl/architecture/) goes from this picture down to each part.
 
+## Consent
+
+Everyone who appears in the docs, on the site or in Jadwigo's videos gave their consent. For a child, a parent gave it. The children in the experiments are invented, and no real child's answers are in this repo.
+
 ## Repo
 
 TypeScript with bun workspaces and Turborepo, plus a uv project for the `jw` CLI. Apps live in `apps/`, shared code in `packages/`, Terraform in `infra/` and migrations in `supabase/`.
