@@ -31,6 +31,7 @@ from typing import Any, Final, Literal, Protocol
 import boto3
 from pydantic import ValidationError
 
+from printer.report import report
 from printer.sheet import parse_sheet
 
 Code = Literal["bad_event", "invalid_sheet", "render_failed"]
@@ -152,6 +153,7 @@ def print_sheet(request: Request, s3: S3) -> dict[str, Any]:
         rendered = render(sheet)
     except Exception as exc:  # noqa: BLE001  (any layout fault is the sheet's answer, not a retry)
         _log(outcome="render_error", error=type(exc).__name__, print_id=request.print_id)
+        report(exc, "print", "render")
         return _fail(s3, request, RENDER_FAILED)
     s3.put_object(
         Bucket=request.bucket,
@@ -183,4 +185,8 @@ def lambda_handler(event: object, _context: object) -> dict[str, Any]:
     except Refused as exc:
         _log(outcome="refused", code=exc.code)
         raise
-    return print_sheet(request, _client())
+    try:
+        return print_sheet(request, _client())
+    except Exception as exc:
+        report(exc, "print", "print_sheet")
+        raise
