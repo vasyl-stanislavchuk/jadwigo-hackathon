@@ -1,0 +1,18 @@
+flowchart LR
+  routes["ROUTES<br/>method, path, credential, schemas"]
+  api["API Lambda<br/>parses every request"]
+  client["api-client<br/>typed calls, web app"]
+  infra["Terraform routes<br/>throttles, JWT check"]
+  openapi[("openapi.json<br/>snapshot, tested")]
+  other[("Other sources<br/>MCP tools, tokens, types")]
+  build["Docs build<br/>generated tables"]
+  check["check-dist<br/>pages, tables, links"]
+  site["docs.jadwigo.pl<br/>published by hand"]
+  routes --> api
+  routes --> client
+  routes -. equal .-> infra
+  routes --> openapi
+  openapi --> build
+  other --> build
+  build --> check
+  check --> site

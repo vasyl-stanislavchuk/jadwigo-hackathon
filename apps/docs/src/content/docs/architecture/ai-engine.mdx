@@ -5,49 +5,51 @@ description: A chat turn is 1 run. A run is steps. A step is 1 model call and th
 
 import Diagram from "../../../components/Diagram.astro";
 
-This page is for a judge who wants to see how a parent's chat message becomes a lesson, and what
-keeps that safe and priced.
+A parent's chat message becomes 1 run, and a run is a chain of steps. A step is 1 call to a Meta
+Muse model plus the lesson verbs that call asks for, given to the model as function tools. This
+page shows the engine's parts, then one turn through them.
 
-A conversation holds runs, 1 per turn. A run is made of steps. A step is 1 call to a Meta Muse
-model plus the lesson verbs that call asks for, given as function tools. Every effect a step has
-is a run event. The page folds those events into the chat and the lesson, so a reload rebuilds
-the same screen. The log is the draft: a verb that changes the lesson answers the whole file, and
-the runner writes it as a new lesson revision.
+<Diagram name="ai-engine" caption="Queue, step loop, guarded model call, verbs, run events." />
+
+## Parts
+
+The step loop takes 1 step from the queue and builds the model's input: the parent's words, any
+photos, and the verbs. It sends that through `GuardedMuse`, which checks the spend cap before the
+call and writes 1 ledger row after it, with the run's id as the trace. No call runs without a cap:
+the runner refuses to start when the cap is unset.
+
+The loop then runs each verb the model asked for. Every effect is a run event, and the log is the
+draft: a verb that changes the lesson writes a new lesson revision. The page folds the events into
+the chat and the lesson, so a reload rebuilds the same screen.
+
+## One turn
 
 <Diagram name="runner-turn" />
 
-The API never waits for the model. It writes the message and a `pgmq.send` into Postgres in 1
-transaction, then pokes the runner Lambda with an async invoke. The runner drains the
-`agent_step` queue as the `jadwigo_runner` database role. An EventBridge schedule pokes it every
-minute as a safety net, and a `pg_cron` sweep every 30 seconds enqueues steps for runs past a
-deadline. A redelivered step never pays twice and never writes twice: it reuses a recorded model
-response, skips a tool whose result exists, and fences every write on the run's attempt.
-Attachments ride along: a PDF, DOCX, or HEIC is converted to page JPEGs by the converter Lambda,
-invoked with S3 keys, never bytes.
+The API never waits for the model, and a step that runs twice never pays or writes twice: it reuses
+a recorded model response, skips a tool whose result exists, and fences every write on the run's
+attempt.
 
-The Muse client is 1 network call, `HttpMuse` to `/v1/responses`, wrapped in `GuardedMuse`.
-The guard checks the lane's spend before the call and writes 1 ledger row per call, with the run
-id as the trace. No call runs without a cap: the runner refuses to start when
-`JADWIGO_MUSE_CAP_USD` is unset. Bank-lane calls pass a name guard before they leave. A run's own
-prompt goes as it is, since a learner's data, names included, may reach any Meta model for the
-parent's own request. Text a child or a photo wrote goes inside an untrusted-content fence.
+## Safety
 
-2 family limits sit in the contracts, where the API enforces them before a run opens: 10 messages
-per minute, and 10 USD of model spend per pod per UTC day.
+A verb takes who it acts for from the run row, never from the model's arguments. A learner id from
+the model is only a choice inside the family's own data, and the verb checks it. A learner's data,
+names included, may reach the Meta model for the parent's own request. Text a child or a photo
+wrote goes to the model inside an untrusted-content fence, as data and never as instructions.
+
+The API holds 2 family limits before a run opens: 10 messages a minute, and 10 USD of model spend
+per family per UTC day.
 
 ## Every verb group
 
 | Group | What it does |
 | --- | --- |
-| `lesson` | Drafts, checks, edits, and moves lesson steps. |
-| `bank` | Searches the question bank and reads item bodies. |
-| `learner` | Reads the run's own pod: learners, goals, skills, reports. |
+| `lesson` | Drafts, shows, edits and checks a lesson. |
+| `bank` | Searches the question bank and reads question bodies. |
+| `learner` | Reads the family's own learners, goals, skills and reports. |
 | `review` | Reviews words a child or parent will read. |
-
-A verb takes who it acts for from the run row, never from the model's arguments. A learner id from
-the model is only a choice inside the run's pod, and the verb checks it.
 
 ## Next
 
-- [Architecture](/architecture/): where the runner sits among the containers.
+- [The happy path](/architecture/happy-path/): one turn inside the whole path, photo to play.
 - [Building with agents](/architecture/building-with-agents/): how this engine was built.

@@ -1,45 +1,46 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 700" role="img" aria-labelledby="bank-pipeline-dark-title bank-pipeline-dark-desc">
-<title id="bank-pipeline-dark-title">The bank pipeline</title>
-<desc id="bank-pipeline-dark-desc">How Khan and Alfik questions become set pages, are enriched by Meta Muse, indexed, searched and held to a golden-set gate before a lesson uses them.</desc>
-<defs><marker id="bp-a-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9b4a7"/></marker><marker id="bp-b-dark" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#7aa6f0"/></marker></defs>
-<rect x="0" y="0" width="640" height="700" fill="#1d1e22"/>
-<rect x="140" y="32" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
-<text x="280" y="54" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Sources, read in place</text>
-<text x="280" y="70" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">Khan Academy exercises</text>
-<text x="280" y="83" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">and Alfik contest tasks</text>
-<polyline points="280,92 280,128" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#bp-a-dark)"/>
-<rect x="140" y="128" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
-<text x="280" y="150" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Set pages</text>
-<text x="280" y="166" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">one page per exercise;</text>
-<text x="280" y="179" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">source fields never rewritten</text>
-<polyline points="280,188 280,224" fill="none" stroke="#7aa6f0" stroke-width="1.2" marker-end="url(#bp-b-dark)"/>
-<rect x="140" y="224" width="280" height="60" rx="6" fill="#1d3157" stroke="#ece8de" stroke-width="1"/>
-<text x="280" y="246" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Muse enrichment</text>
-<text x="280" y="262" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">3 drafts, a critic, then code</text>
-<text x="280" y="275" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">checks every quote</text>
-<polyline points="280,284 280,320" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#bp-a-dark)"/>
-<rect x="140" y="320" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
-<text x="280" y="342" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">The index</text>
-<text x="280" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">OpenAI embeddings,</text>
-<text x="280" y="371" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">about 13 vectors a set</text>
-<polyline points="280,380 280,416" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#bp-a-dark)"/>
-<rect x="140" y="416" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
-<text x="280" y="438" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Search</text>
-<text x="280" y="454" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">hybrid arm C with</text>
-<text x="280" y="467" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">a Voyage rerank</text>
-<polyline points="280,476 280,512" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#bp-a-dark)"/>
-<rect x="140" y="512" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
-<text x="280" y="534" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">The gate</text>
-<text x="280" y="550" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">recall, nDCG and abstaining</text>
-<text x="280" y="563" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">held to the baseline</text>
-<polyline points="280,572 280,608" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#bp-a-dark)"/>
-<rect x="140" y="608" width="280" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
-<text x="280" y="630" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Lessons</text>
-<text x="280" y="646" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">drawn from the bank</text>
-<text x="280" y="659" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">for a child</text>
-<polyline points="448,542 420,542" fill="none" stroke="#b9b4a7" stroke-width="1.2" marker-end="url(#bp-a-dark)"/>
-<rect x="448" y="512" width="150" height="60" rx="6" fill="#1d1e22" stroke="#ece8de" stroke-width="1"/>
-<text x="523" y="534" text-anchor="middle" font-family="'Andika', system-ui, sans-serif" font-size="12" font-weight="700" fill="#ece8de">Golden sets</text>
-<text x="523" y="550" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">215 needs, labelled</text>
-<text x="523" y="563" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#918c83">3 times, split frozen</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 368" role="img" aria-labelledby="bank-pipeline-dark-title bank-pipeline-dark-desc">
+<title id="bank-pipeline-dark-title">How the question bank grows</title>
+<desc id="bank-pipeline-dark-desc">Build: Khan Academy exercises and Alfik contest tasks become set pages, AI enriches each page and code checks every quote, and the pages go into a search index. Evaluate: needs from the curriculum become test questions labelled by hand, and a gate holds every new search to the baseline before lessons draw from it.</desc>
+<defs><marker id="bank-pipeline-dark-default" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#a8b6cc"/></marker><marker id="bank-pipeline-dark-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#6a7cff"/></marker><marker id="bank-pipeline-dark-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0, 8 3, 0 6" fill="#3db8b8"/></marker><marker id="bank-pipeline-dark-open" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><polyline points="0 0, 8 3, 0 6" fill="none" stroke="#a8b6cc" stroke-width="1.2"/></marker></defs>
+<rect x="8" y="16" width="944" height="192" rx="12" fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+<text x="24" y="36" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" font-weight="500" letter-spacing="0.18em" fill="#7f8fa8">BUILD</text>
+<rect x="8" y="224" width="944" height="128" rx="12" fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.10)" stroke-width="0.8"/>
+<text x="24" y="244" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" font-weight="500" letter-spacing="0.18em" fill="#7f8fa8">EVALUATE</text>
+<path d="M224,72 L236,72 Q244,72 244,80 L244,100 Q244,108 252,108 L264,108" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#bank-pipeline-dark-default)"/>
+<path d="M224,160 L236,160 Q244,160 244,152 L244,132 Q244,124 252,124 L264,124" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#bank-pipeline-dark-default)"/>
+<path d="M456,116 L496,116" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#bank-pipeline-dark-default)"/>
+<path d="M688,116 L728,116" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#bank-pipeline-dark-default)"/>
+<path d="M824,144 L824,236 Q824,244 816,244 L600,244 Q592,244 592,252 L592,268" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#bank-pipeline-dark-default)"/>
+<path d="M224,296 L264,296" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#bank-pipeline-dark-default)"/>
+<path d="M456,296 L496,296" fill="none" stroke="#a8b6cc" stroke-width="1.2" marker-end="url(#bank-pipeline-dark-default)"/>
+<path d="M688,296 L728,296" fill="none" stroke="#6a7cff" stroke-width="1.5" marker-end="url(#bank-pipeline-dark-accent)"/>
+<rect x="32" y="44" width="192" height="56" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="128" y="69.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Khan Academy</text>
+<text x="128" y="82.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">exercises, read in place</text>
+<rect x="32" y="132" width="192" height="56" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="128" y="157.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Alfik</text>
+<text x="128" y="170.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">contest tasks by grade</text>
+<rect x="264" y="88" width="192" height="56" rx="6" fill="rgba(168,182,204,0.12)" stroke="#93a1b8" stroke-width="1"/>
+<text x="360" y="113.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Set pages</text>
+<text x="360" y="126.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">1 a set, source kept</text>
+<rect x="496" y="88" width="192" height="56" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="592" y="113.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">AI enrichment</text>
+<text x="592" y="126.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">every quote checked by code</text>
+<rect x="728" y="88" width="192" height="56" rx="6" fill="rgba(168,182,204,0.12)" stroke="#93a1b8" stroke-width="1"/>
+<text x="824" y="113.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Search index</text>
+<text x="824" y="126.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">by meaning and by words</text>
+<rect x="32" y="268" width="192" height="56" rx="6" fill="#24262c" stroke="#7f8fa8" stroke-width="1"/>
+<text x="128" y="293.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Needs</text>
+<text x="128" y="306.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">from the curriculum</text>
+<rect x="264" y="268" width="192" height="56" rx="6" fill="rgba(168,182,204,0.12)" stroke="#93a1b8" stroke-width="1"/>
+<text x="360" y="293.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Test questions</text>
+<text x="360" y="306.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">labelled by hand</text>
+<rect x="496" y="268" width="192" height="56" rx="6" fill="rgba(106,124,255,0.14)" stroke="#6a7cff" stroke-width="1.5"/>
+<text x="592" y="293.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">The gate</text>
+<text x="592" y="306.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">must hold the baseline</text>
+<rect x="728" y="268" width="192" height="56" rx="6" fill="#24262c" stroke="#a8b6cc" stroke-width="1"/>
+<text x="824" y="293.5" text-anchor="middle" font-family="'Inter', 'Geist', system-ui, sans-serif" font-size="12" font-weight="600" fill="#ffffff">Lessons</text>
+<text x="824" y="306.5" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="9" fill="#a8b6cc">drawn from the bank</text>
+<rect x="667.04" y="227" width="81.92" height="12" fill="#1d1e22"/>
+<text x="708" y="236" text-anchor="middle" font-family="'Geist Mono', ui-monospace, monospace" font-size="8" letter-spacing="0.06em" fill="#a8b6cc">search results</text>
 </svg>

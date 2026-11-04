@@ -1,7 +1,7 @@
 flowchart LR
-  E["Evidence: every first try, help and skip"] --> F["Fold: one happening per question"]
+  E["Evidence: first tries, help, skips"] --> F["Fold: 1 happening a question"]
   F --> L["Mastery level: attempted to mastered"]
-  F --> S["FSRS card: the next due date"]
+  F --> C["Memory card: the next due date"]
   L --> B["Brief: reteach, review, new, recheck"]
-  S --> B
-  B --> N["The next lesson and the parent report"]
+  C --> B
+  B --> N["Next lesson and the parent's report"]
