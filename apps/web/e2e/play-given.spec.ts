@@ -28,6 +28,25 @@ const celebration = (page: Page) => page.locator("[data-celebration]");
 
 test.beforeEach(({ page }) => agreeToAi(page));
 
+// The lesson's first screen stands in the middle of the window, across and down, on a phone and
+// a laptop (owner's screenshot 2026-11-04: it sat in the top-left corner).
+for (const [device, viewport] of [
+  ["phone", { width: 390, height: 844 }],
+  ["laptop", { width: 1440, height: 900 }],
+] as const) {
+  test(`the first screen is centred in the window on a ${device}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.goto(await giveLesson(page, LESSON));
+    const intro = page.locator("[data-intro]");
+    await expect(intro).toBeVisible();
+    const box = await intro.boundingBox();
+    expect(box).not.toBeNull();
+    if (box === null) return;
+    expect(Math.abs(box.x + box.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2);
+    expect(Math.abs(box.y + box.height / 2 - viewport.height / 2)).toBeLessThanOrEqual(24);
+  });
+}
+
 // dl-1eieq.4: she came and went in about 2 ms in Chromium, which skips the .mov and fires `error`
 // at its <source>; the reducer's verdicts were never the cause.
 test("a celebration plays at the third right answer in a row in a given lesson", async ({
