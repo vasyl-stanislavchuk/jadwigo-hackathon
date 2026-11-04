@@ -28,6 +28,7 @@ from weasyprint.text.fonts import FontConfiguration
 from weasyprint.urls import FatalURLFetchingError, URLFetcher
 
 from printer import geometry as geom
+from printer import labels as picture_labels
 from printer.sheet import PrintQuestion, PrintSheet
 
 log = logging.getLogger(__name__)
@@ -116,6 +117,9 @@ def _env() -> Environment:
         stem.image or stem.pictures or stem.terminal or stem.figure or stem.reference
     )
     env.globals["gaps_by_id"] = lambda gaps: {gap.id: gap for gap in gaps}
+    env.globals["placed_labels"] = picture_labels.placed
+    env.globals["picture_width_mm"] = picture_labels.picture_width_mm
+    env.globals["label_pt"] = picture_labels.label_pt
     return env
 
 
