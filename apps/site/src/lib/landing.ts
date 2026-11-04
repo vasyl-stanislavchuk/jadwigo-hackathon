@@ -63,15 +63,46 @@ export const landingSchema = z.object({
       screencast: text,
     }),
   }),
-  // /jadwigo-ai (dl-w0b4.114; owner's call jadwigo-marketing/calls/2026-11-02-jadwigo-ai-gets-a-marketing-page):
-  // what Jadwigo AI does in 4 steps, what it reads about a child and where that goes (no claim about
-  // models either way, dl-w0b4.79; `more` points to the consent screen and the privacy page, dl-w0b4.116),
-  // what it never does, and that the parent checks, then gives.
+  // /jadwigo-ai (dl-w0b4.114, rewritten around outcomes in dl-w0b4.127; owner's call
+  // jadwigo-marketing/calls/2026-11-02-jadwigo-ai-gets-a-marketing-page): what a parent gets, what the
+  // court does in 4 steps, how to connect the parent's own AI app, what it reads about a child and where
+  // that goes (no claim about models either way, dl-w0b4.79; `more` points to the consent screen and the
+  // privacy page, dl-w0b4.116), what it never does, and that the parent checks, then gives.
   // `teaser` is the line that links the page from the landing page and /jak-to-dziala.
   ai: z.object({
     ...head,
     intro: text,
+    connectLink: text,
+    chat: z.object({
+      alt: text,
+      ask: text,
+      say: text,
+      sum: text,
+      answer: text,
+      well: text,
+      next: text,
+    }),
+    features: z.object({
+      heading: text,
+      items: z.array(item).length(4),
+      types: text,
+      link: text,
+      paper: text,
+    }),
+    how: z.object({ heading: text, text }),
     steps: z.array(item).length(4),
+    // The steps per client come only from what dl-1u6fn.12 and the owner's test on prod verified.
+    connect: z.object({
+      heading: text,
+      text,
+      urlLabel: text,
+      copy: text,
+      copied: text,
+      clientsLabel: text,
+      clients: z.array(z.object({ name: text, steps: z.array(text).min(1) })).min(1),
+      after: z.array(text).min(1),
+      docs: z.object({ text, link: text }),
+    }),
     data: z.object({
       heading: text,
       items: z.array(text).min(1),

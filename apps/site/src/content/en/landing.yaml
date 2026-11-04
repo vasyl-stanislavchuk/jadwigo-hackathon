@@ -29,6 +29,7 @@ links:
   - { href: /en/lessons, label: Lessons }
   - { href: /en/how-it-works, label: How it works }
   - { href: /en/compare, label: Compare }
+  - { href: /en/jadwigo-ai, label: Jadwigo AI }
   - { href: /en/about, label: About us }
 # /en/how-it-works in direction 1a (design handoff "landing 3", 2026-11-01; draft), in US English.
 steps:
@@ -68,23 +69,80 @@ steps:
 # site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
 # and the privacy page say the rest. Jadwigo AI's lines carry no person and no gender.
 ai:
-  title: "Jadwigo AI: a lesson built from your photo or your words"
-  description: Jadwigo AI reads what your child practices at school, finds questions in the question bank and builds a lesson. You check it before your child sees it.
+  title: "Jadwigo AI: a lesson from a photo of the homework, here or in your own AI app"
+  description: Send a photo of the homework that went badly. Jadwigo AI builds a lesson for your child, in Jadwigo or in the AI app you already use. You check it before your child sees it.
   heading: Jadwigo AI
-  intro: Jadwigo AI builds a lesson from a photo you send or from what you write. It takes its questions from the question bank, each with its source. You see the finished lesson first, and your child gets it only when you give it to them.
+  intro: You have no time tonight, and the homework didn't go well. Take a photo of the part that was hard and ask for help. A few minutes later, a lesson made for your child is waiting for you, in Jadwigo or in the AI app you already use.
+  connectLink: Connect your AI app
+  # The picture beside the intro: a chat window with the court on top of it. Drawn in HTML, so these
+  # words follow the language. `alt` tells the whole picture.
+  chat:
+    alt: "A chat window with the Queen and her pencil-case court standing on top of it. A parent sends a photo of homework and asks for a lesson, and a question comes back: 7 × 8 = 56. Well done! Below it are the names ChatGPT, Claude and Muse."
+    ask: This homework went badly. Can you make a lesson?
+    say: How much is seven times eight? Write the answer.
+    sum: "7 × 8 ="
+    answer: "56"
+    well: Well done!
+    next: Next
+  features:
+    heading: What you get
+    items:
+      - title: A lesson from one photo
+        text: Send a photo, a screenshot or a PDF of the homework. Jadwigo AI works out the topic and builds a lesson for this one child, with at most 20 questions. It takes a few minutes.
+      - title: Questions from a proven bank
+        text: Jadwigo AI takes questions from the question bank first and writes only what the bank lacks. Every question names its source, such as Alfik Matematyczny or Khan Academy.
+      - title: 29 question types
+        text: Clocks, number lines, coins, shapes and written answers are some of them. Jadwigo AI chooses what fits, so you never have to pick one.
+      - title: A link or a sheet of paper
+        text: Your child opens one link and starts, with no login and nothing to install. Or you print the lesson for quiet work on paper, with no screen and no points.
+    # The picture for the question types: 29 tiles and this label.
+    types: question types
+    link: One link
+    paper: One sheet
+  how:
+    heading: How it works
+    text: Agents do the work. You and your child get the time. In our pictures, the agents are the Queen and her pencil-case court.
   steps:
-    - title: Reads your request
-      text: You send a photo of the homework. You can also write in plain words what your child practices at school, for example “Making change, like in the workbook. Mixes up dollars and cents.” Jadwigo AI also reads what Jadwigo already knows about your child, such as their grade, their goals and the mistakes from recent lessons.
-    - title: Searches the question bank
-      text: It looks for questions that fit your request and what your child can already do. Every question names its source, such as Alfik Matematyczny or Khan Academy.
-    - title: Builds and checks the lesson
-      text: It puts the questions in order from easier to harder and writes hints where a question has none. Then it checks that every answer is right and that every line your child reads is short and kind.
-    - title: You decide
-      text: You see the whole lesson, question by question. You can change a question, ask for a different one or take it out. Your child gets only what you give them.
+    - title: Jadwiga reads
+      text: She reads your photo or your words, for example “Making change, like in the workbook. Mixes up dollars and cents.” She also reads what Jadwigo already knows about your child, such as their grade, their goals and the mistakes from recent lessons. Then she looks for questions in the bank.
+    - title: Ołówek writes
+      text: The pencil writes only what the bank lacks, such as a missing question or a hint where a question has none.
+    - title: Gumka checks
+      text: The eraser checks that every answer is right and that every line your child reads is short and kind.
+    - title: Linijka measures
+      text: The ruler measures the lesson against your child. The questions fit what your child can already do, they go from easier to harder, and there are at most 20.
+  connect:
+    heading: In your own AI app
+    text: Jadwigo can live in ChatGPT, Claude or Muse. You connect it once, then ask for lessons there without opening Jadwigo. You need a Jadwigo account, and you sign in to it once, when you connect.
+    urlLabel: The address to add
+    copy: Copy
+    copied: Copied
+    clientsLabel: Your AI app
+    clients:
+      - name: ChatGPT
+        steps:
+          - In ChatGPT, open Settings, then Apps and connectors.
+          - Add a new connector. Name it Jadwigo and paste the address above.
+      - name: Claude
+        steps:
+          - In Claude, open Settings, then Connectors.
+          - Choose Add custom connector. Name it Jadwigo and paste the address above.
+      - name: Muse
+        steps:
+          - In Muse, open the settings for MCP servers.
+          - Add a remote server. Name it Jadwigo and paste the address above.
+    after:
+      - Sign in to Jadwigo and approve. The page you approve on names the app your family's data goes to.
+      - Give the app a photo or a screenshot of the homework and ask for a lesson.
+      - Read the lesson in the chat. When you say yes, the app gives you your child's play link.
+    docs:
+      text: "More about the connection:"
+      link: Connect your AI
   data:
     heading: What Jadwigo AI reads about your child, and where it goes
     items:
       - "Jadwigo AI reads what your request needs: your child's data, names included."
+      - In your own AI app, your family's data, names included, goes to the app you connected.
       - The record of your conversations stays with your family's account until the account is deleted. An archived conversation does too.
       - Your child's name is never in the lesson your child gets.
     # The privacy page is linked after `text` (dl-w0b4.116).
@@ -102,7 +160,7 @@ ai:
         text: It gives no points or levels and never compares your child with other children. It tells you what went well and what to practice next.
   check:
     heading: You check it, then you give it
-    text: Jadwigo AI prepares the lesson, and the decision is yours. You look through the questions, fix what doesn't fit, and only then give the lesson to your child.
+    text: You see the whole lesson, question by question. You can change a question, ask for a different one or take it out. Your child gets only what you give them. In your own AI app, your yes in the chat is what gives the lesson.
     wrong: Jadwigo AI can make mistakes. That's why the last word is yours.
   # The line under the landing page's lessons and under /en/how-it-works's intro that links this page.
   teaser:

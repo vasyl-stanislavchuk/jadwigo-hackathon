@@ -29,6 +29,7 @@ links:
   - { href: /lekcje, label: Lekcje }
   - { href: /jak-to-dziala, label: Jak to działa }
   - { href: /porownanie, label: Porównanie }
+  - { href: /jadwigo-ai, label: Jadwigo AI }
   - { href: /o-nas, label: O nas }
 # /jak-to-dziala in direction 1a (design handoff "landing 3", 2026-11-01; draft). The owner's principle:
 # the parent is aware and close in a few minutes, never required to sit through a lesson together.
@@ -70,23 +71,80 @@ steps:
 # site, it makes no claim about models either way (dl-w0b4.79, dl-w0b4.116): the consent screen in the app
 # and the privacy page say the rest. Jadwigo AI's lines carry no person and no gender.
 ai:
-  title: "Jadwigo AI: lekcja ułożona z Twojego zdjęcia albo opisu"
-  description: Jadwigo AI czyta, co dziecko ćwiczy w szkole, szuka pytań w banku zadań i układa lekcję. Zanim trafi do dziecka, sprawdzasz ją Ty.
+  title: "Jadwigo AI: lekcja ze zdjęcia pracy domowej, tutaj albo w Twojej aplikacji AI"
+  description: Wyślij zdjęcie pracy domowej, która nie poszła dobrze. Jadwigo AI ułoży lekcję dla Twojego dziecka, w Jadwigo albo w aplikacji AI, której już używasz. Zanim trafi do dziecka, sprawdzasz ją Ty.
   heading: Jadwigo AI
-  intro: Jadwigo AI układa lekcję ze zdjęcia, które wyślesz, albo z tego, co napiszesz. Pytania bierze z banku zadań, każde ze źródłem. Gotową lekcję najpierw widzisz Ty, a dziecko dostaje ją dopiero wtedy, gdy mu ją dasz.
+  intro: Dziś nie masz czasu, a praca domowa nie poszła dobrze. Zrób zdjęcie tego, co było trudne, i poproś o pomoc. Po kilku minutach czeka na Ciebie lekcja ułożona dla Twojego dziecka, w Jadwigo albo w aplikacji AI, której już używasz.
+  connectLink: Połącz swoją aplikację AI
+  # The picture beside the intro: a chat window with the court on top of it. Drawn in HTML, so these
+  # words follow the language. `alt` tells the whole picture.
+  chat:
+    alt: "Okno rozmowy, a na nim królowa i jej dwór z piórnika. Rodzic wysyła zdjęcie pracy domowej i prosi o lekcję. W odpowiedzi przychodzi pytanie: 7 × 8 = 56. Dobrze! Pod oknem są nazwy ChatGPT, Claude i Muse."
+    ask: Ta praca domowa nie poszła dobrze. Ułożysz lekcję?
+    say: Ile to jest siedem razy osiem? Napisz odpowiedź.
+    sum: "7 × 8 ="
+    answer: "56"
+    well: Dobrze!
+    next: Dalej
+  features:
+    heading: Co dostajesz
+    items:
+      - title: Lekcja z jednego zdjęcia
+        text: Wyślij zdjęcie, zrzut ekranu albo PDF pracy domowej. Jadwigo AI rozpoznaje temat i układa lekcję dla tego jednego dziecka, najwyżej 20 pytań. Zajmuje to kilka minut.
+      - title: Pytania ze sprawdzonego banku
+        text: Jadwigo AI najpierw bierze pytania z banku zadań, a pisze tylko to, czego w banku brakuje. Każde pytanie ma podane źródło, na przykład Alfik Matematyczny albo Khan Academy.
+      - title: 29 typów pytań
+        text: Zegary, osie liczbowe, monety, figury i odpowiedzi pisane to tylko niektóre z nich. Jadwigo AI wybiera to, co pasuje, więc Ty nie musisz.
+      - title: Link albo kartka papieru
+        text: Dziecko otwiera jeden link i zaczyna, bez logowania i bez instalowania. Możesz też wydrukować lekcję do spokojnej pracy na papierze, bez ekranu i bez punktów.
+    # The picture for the question types: 29 tiles and this label.
+    types: typów pytań
+    link: Jeden link
+    paper: Jedna kartka
+  how:
+    heading: Jak to działa
+    text: Agenci wykonują pracę, a Ty i dziecko zyskujecie czas. Na naszych rysunkach agenci to królowa i jej dwór z piórnika.
   steps:
-    - title: Czyta zadanie
-      text: Wysyłasz zdjęcie pracy domowej. Możesz też napisać zwykłymi słowami, co dziecko ćwiczy w szkole, na przykład „Zadania o wydawaniu reszty. Myli złote z groszami”. Jadwigo AI czyta też to, co Jadwigo już wie o dziecku, czyli klasę, cele i pomyłki z ostatnich lekcji.
-    - title: Szuka w banku zadań
-      text: Szuka pytań, które pasują do Twojej prośby i do tego, co dziecko już umie. Każde pytanie ma podane źródło, na przykład Alfik Matematyczny albo Khan Academy.
-    - title: Układa i sprawdza lekcję
-      text: Układa pytania od łatwiejszych do trudniejszych i dopisuje podpowiedzi tam, gdzie ich brakuje. Potem sprawdza, czy każda odpowiedź się zgadza i czy każde zdanie dla dziecka jest krótkie i życzliwe.
-    - title: Ty decydujesz
-      text: Widzisz całą lekcję, pytanie po pytaniu. Możesz zmienić pytanie, poprosić o inne albo je usunąć. Do dziecka trafia tylko to, co mu dasz.
+    - title: Jadwiga czyta
+      text: Czyta Twoje zdjęcie albo Twoje słowa, na przykład „Zadania o wydawaniu reszty. Myli złote z groszami”. Czyta też to, co Jadwigo już wie o dziecku, czyli klasę, cele i pomyłki z ostatnich lekcji. Potem szuka pytań w banku zadań.
+    - title: Ołówek pisze
+      text: Ołówek pisze tylko to, czego w banku brakuje, na przykład brakujące pytanie albo podpowiedź tam, gdzie jej nie ma.
+    - title: Gumka sprawdza
+      text: Gumka sprawdza, czy każda odpowiedź się zgadza i czy każde zdanie dla dziecka jest krótkie i życzliwe.
+    - title: Linijka mierzy
+      text: Linijka mierzy, czy lekcja pasuje do dziecka. Pytania pasują do tego, co dziecko już umie, idą od łatwiejszych do trudniejszych, a jest ich najwyżej 20.
+  connect:
+    heading: W Twojej aplikacji AI
+    text: Jadwigo może działać w ChatGPT, Claude albo Muse. Łączysz je raz, a potem prosisz tam o lekcje, bez otwierania Jadwigo. Potrzebujesz konta w Jadwigo i logujesz się na nie raz, przy łączeniu.
+    urlLabel: Adres do dodania
+    copy: Kopiuj
+    copied: Skopiowano
+    clientsLabel: Twoja aplikacja AI
+    clients:
+      - name: ChatGPT
+        steps:
+          - W ChatGPT otwórz Ustawienia, a potem Aplikacje i konektory.
+          - Dodaj nowy konektor. Nazwij go Jadwigo i wklej adres podany wyżej.
+      - name: Claude
+        steps:
+          - W Claude otwórz Ustawienia, a potem Konektory.
+          - Wybierz dodawanie własnego konektora. Nazwij go Jadwigo i wklej adres podany wyżej.
+      - name: Muse
+        steps:
+          - W Muse otwórz ustawienia serwerów MCP.
+          - Dodaj serwer zdalny. Nazwij go Jadwigo i wklej adres podany wyżej.
+    after:
+      - Zaloguj się do Jadwigo i zatwierdź. Strona zatwierdzenia podaje nazwę aplikacji, do której trafią dane Twojej rodziny.
+      - Daj aplikacji zdjęcie albo zrzut ekranu pracy domowej i poproś o lekcję.
+      - Przeczytaj lekcję w rozmowie. Gdy się zgodzisz, aplikacja poda Ci link do lekcji dla dziecka.
+    docs:
+      text: "Więcej o połączeniu:"
+      link: Połącz swoje AI
   data:
     heading: Co Jadwigo AI czyta o dziecku i dokąd to trafia
     items:
       - "Jadwigo AI czyta to, czego potrzebuje Twoja prośba: dane dziecka, imiona też."
+      - W Twojej aplikacji AI dane rodziny, imiona też, trafiają do aplikacji, którą połączysz.
       - Zapis rozmów zostaje przy koncie rodziny, dopóki konto nie zostanie usunięte. Zarchiwizowana rozmowa też.
       - Imienia dziecka nie ma w lekcji, którą dziecko dostaje.
     # The privacy page is linked after `text` (dl-w0b4.116).
@@ -104,7 +162,7 @@ ai:
         text: Nie daje punktów ani poziomów i nie porównuje dziecka z innymi dziećmi. Mówi, co poszło dobrze i co ćwiczyć dalej.
   check:
     heading: Najpierw sprawdzasz, potem dajesz
-    text: Jadwigo AI przygotowuje lekcję, a decyzja należy do Ciebie. Przeglądasz pytania, poprawiasz to, co nie pasuje, i dopiero wtedy dajesz lekcję dziecku.
+    text: Widzisz całą lekcję, pytanie po pytaniu. Możesz zmienić pytanie, poprosić o inne albo je usunąć. Do dziecka trafia tylko to, co mu dasz. W Twojej aplikacji AI lekcję daje Twoje „tak” w rozmowie.
     wrong: Jadwigo AI może się pomylić. Dlatego ostatnie słowo masz Ty.
   # The line under the landing page's lessons and under /jak-to-dziala's intro that links this page.
   teaser:

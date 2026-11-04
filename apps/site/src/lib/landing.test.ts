@@ -92,12 +92,7 @@ describe("the card pictures' words", () => {
 describe("the Jadwigo AI page's steps (dl-w0b4.114)", () => {
   const steps = landingSchema.shape.ai.shape.steps;
   const step = (title: string) => ({ title, text: "Słowa." });
-  const four = [
-    "Czyta zadanie",
-    "Szuka w banku zadań",
-    "Układa i sprawdza lekcję",
-    "Ty decydujesz",
-  ];
+  const four = ["Jadwiga czyta", "Ołówek pisze", "Gumka sprawdza", "Linijka mierzy"];
 
   it("takes exactly 4 steps", () => {
     expect(steps.safeParse(four.map(step)).success).toBe(true);
