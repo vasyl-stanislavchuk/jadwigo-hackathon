@@ -1,11 +1,8 @@
 # Jadwigo
 
-A learning app for children in the first school grades, in Polish and English. A parent
-photographs a homework page, Jadwigo builds a lesson from a credited question bank, and the child
-plays it from a link, with no sign-in.
+A learning app for children in the first school grades, in Polish and English. A parent photographs a homework page, and Jadwigo builds a lesson from a credited question bank. The child plays it from a link, with no sign-in.
 
-Built in 10 days, from 2026-10-26 to 2026-11-04, by Vasyl and AI agents. On demo day a whole class
-used it to practise for a test.
+Built in 10 days, from 2026-10-26 to 2026-11-04, by Vasyl and AI agents. On demo day a whole class used it to practise for a test.
 
 ## Try it
 
@@ -23,7 +20,7 @@ used it to practise for a test.
 | How it's built | [Architecture](https://docs.jadwigo.pl/architecture/) · [Building with agents](https://docs.jadwigo.pl/architecture/building-with-agents/) · [Experiments](https://docs.jadwigo.pl/experiments/) |
 | For developers | [API reference](https://docs.jadwigo.pl/api/) · [MCP](https://docs.jadwigo.pl/mcp/) · [Design system](https://docs.jadwigo.pl/design-system/) |
 
-## How it works
+## Lesson flow
 
 ```mermaid
 flowchart LR
@@ -36,8 +33,7 @@ flowchart LR
   knows -. "next lesson (vision)" .-> engine
 ```
 
-Code computes every number about a child. A model only writes words from what code counted, and
-a parent says yes before anything changes.
+Meta Muse reads the photo, picks questions from the bank and drafts the lesson. Plain TypeScript then checks the lesson and grades each answer. The parent sees the lesson before the child does.
 
 ## Architecture
 
@@ -54,13 +50,11 @@ flowchart LR
   runner --> conv["Converter<br/>Lambda, PDF to pages"]
 ```
 
-All serverless: 5 Lambda functions, static files behind CloudFront, managed Postgres and sign-in.
-[Architecture](https://docs.jadwigo.pl/architecture/) goes from this picture down to each part.
+All serverless: 5 Lambda functions, static files behind CloudFront, managed Postgres and sign-in. [Architecture](https://docs.jadwigo.pl/architecture/) goes from this picture down to each part.
 
 ## Repo
 
-TypeScript with bun workspaces and Turborepo, plus a uv project for the `jw` CLI. Apps live in
-`apps/`, shared code in `packages/`, Terraform in `infra/` and migrations in `supabase/`.
+TypeScript with bun workspaces and Turborepo, plus a uv project for the `jw` CLI. Apps live in `apps/`, shared code in `packages/`, Terraform in `infra/` and migrations in `supabase/`.
 
 ```sh
 mise install                       # Node 24, bun, uv, gitleaks
@@ -68,5 +62,4 @@ bun install --frozen-lockfile
 make check                         # lint, typecheck and test what changed
 ```
 
-Agents build this repo: start with [AGENTS.md](AGENTS.md) for the commands and the rules, and
-[docs/README.md](docs/README.md) for the workstreams. Words are in [GLOSSARY.md](GLOSSARY.md).
+Agents build this repo: start with [AGENTS.md](AGENTS.md) for the commands and the rules, and [docs/README.md](docs/README.md) for the workstreams. Words are in [GLOSSARY.md](GLOSSARY.md). 
