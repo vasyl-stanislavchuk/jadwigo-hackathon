@@ -525,13 +525,22 @@ function twinRepeats(steps: readonly RawStep[]): Finding[] {
   for (const step of steps) {
     const twin = record(record(step.question["help"])?.["twin"]);
     if (twin === null || canonical(step.question["key"]) !== canonical(twin["key"])) continue;
-    // A typed answer's sum is its numbers, whatever the words around it. Any other family's data is
-    // its words: 2 spelling lines can share a number and a key and ask different things.
-    const ours = numbersIn(step.question["data"]);
+    // A typed answer's sum is its numbers, whatever the words around it: the ones its data shows, or,
+    // where the data shows none, the ones its words say ("Ile to 3 + 4?"). With no number anywhere it
+    // repeats only with the same data and the same words. Any other family's data is its words: 2
+    // spelling lines can share a number and a key and ask different things.
+    const shown = (data: unknown, say: unknown): string[] => {
+      const inData = numbersIn(data);
+      return inData.length > 0 ? inData : numbersIn(say);
+    };
+    const ours = shown(step.question["data"], step.say);
+    const theirs = shown(twin["data"], twin["say"]);
     const same =
-      step.question["family"] === "enter" && ours.length > 0
-        ? canonical(ours) === canonical(numbersIn(twin["data"]))
-        : canonical(step.question["data"]) === canonical(twin["data"]);
+      step.question["family"] !== "enter"
+        ? canonical(step.question["data"]) === canonical(twin["data"])
+        : ours.length > 0 || theirs.length > 0
+          ? canonical(ours) === canonical(theirs)
+          : canonical([step.question["data"], step.say]) === canonical([twin["data"], twin["say"]]);
     if (!same) continue;
     findings.push({
       step_id: `${step.id}t`,

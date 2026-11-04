@@ -332,6 +332,37 @@ describe("check.ts --json", () => {
       expect(rulesOf(out).filter((f) => f.rule === "twin-repeats")).toEqual([]);
     });
 
+    it("reads a typed question's numbers in its words when its data shows none (the steward's input)", () => {
+      const said = (say: string, twinSay: string) =>
+        check(
+          planted((raw) => {
+            const step = raw as unknown as Step & { say: unknown };
+            step.say = say;
+            step.question.family = "enter";
+            step.question.data = { stem: { text: "Wpisz wynik." } };
+            step.question.key = { accept: ["7"] };
+            step.question.help = {
+              ...step.question.help,
+              twin: {
+                say: twinSay,
+                data: { stem: { text: "Wpisz wynik." } },
+                key: { accept: ["7"] },
+              },
+            };
+          }),
+        ).out;
+      const repeats = (out: Record<string, unknown>) =>
+        rulesOf(out).filter((f) => f.rule === "twin-repeats");
+      // Other numbers in the words, the same answer: a real twin.
+      expect(repeats(said("Ile to 3 + 4?", "Ile to 2 + 5?"))).toEqual([]);
+      // Swapped factors are another question too.
+      expect(repeats(said("Ile to 4 razy 5?", "Ile to 5 razy 4?"))).toEqual([]);
+      // The same numbers in other words still repeat it.
+      expect(repeats(said("Ile to 3 + 4?", "Policz: 3 + 4."))).toContainEqual(
+        expect.objectContaining({ rule: "twin-repeats", level: "error" }),
+      );
+    });
+
     it("warns on a first hint that holds the answer, and leaves one that does not", () => {
       const hint = (text: string) =>
         planted((raw) => {
