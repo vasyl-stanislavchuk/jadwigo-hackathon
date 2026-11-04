@@ -9,6 +9,7 @@
  * is asked about it.
  */
 
+import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { Picture } from "../parts/Picture.tsx";
 import { PictureView } from "../parts/PictureSheet.tsx";
@@ -165,8 +166,10 @@ export function Instruction({ say }: { say: string }): JSX.Element {
 
 /** A reference the learner may open (stem/model.ts StemReference): a native disclosure, so the
  * keyboard opens it with Enter or Space and a screen reader announces it collapsed or expanded.
- * Closed at first, as on Khan; open on paper, where nothing can be tapped. It sits outside the
- * spoken line: the voice never reads it. */
+ * Open at first, a story to read before the question (owner 2026-11-04, dl-uukj.61), and open on
+ * paper; its header is a small label over a line, with a chevron at the row's end that turns as it
+ * folds, and the text below reads as text, not as a heading. It sits outside the spoken line: the
+ * voice never reads it. */
 function Reference({
   reference,
   paper,
@@ -175,15 +178,17 @@ function Reference({
   paper: boolean;
 }): JSX.Element {
   return (
-    <details
-      data-reference
-      open={paper || undefined}
-      className="rounded-xl border border-border bg-muted/40"
-    >
-      <summary className="flex min-h-kid-tap cursor-pointer items-center rounded-xl px-4 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-        {reference.prompt}
+    <details data-reference open className="group rounded-xl border border-border bg-muted/40">
+      <summary className="flex min-h-kid-tap cursor-pointer list-none items-center gap-2 rounded-xl px-4 font-semibold text-muted-foreground text-sm uppercase tracking-wide group-open:rounded-b-none group-open:border-border group-open:border-b focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
+        <span className="flex-1">{reference.prompt}</span>
+        {!paper && (
+          <ChevronDown
+            aria-hidden="true"
+            className="size-5 shrink-0 transition-transform group-open:rotate-180"
+          />
+        )}
       </summary>
-      <div className="px-4 pb-4">
+      <div className="px-4 pt-3 pb-4 font-normal leading-relaxed">
         <RichText text={reference.text} paper={paper} />
       </div>
     </details>

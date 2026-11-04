@@ -1,6 +1,6 @@
 /**
  * A stem's reference sheet (dl-w3.70.8): Khan's explanation in a question, folded behind its prompt.
- * The page draws it closed in play and open on paper, and validate refuses one that is empty or
+ * The page draws it open in play (dl-uukj.61), with a chevron to fold it, and open on paper, and validate refuses one that is empty or
  * holds the answer.
  */
 import { cleanup, render } from "@testing-library/react";
@@ -41,7 +41,7 @@ const rules = (spec: FamilySpec) =>
     .map((p) => p.rule);
 
 describe("a stem reference", () => {
-  it("is a closed fold-out in play, its prompt a button the keyboard opens", () => {
+  it("is an open fold-out in play, its prompt a button with a chevron that folds it", () => {
     const page = pageSpec(convert("21")) as PageSpecOf<typeof Family.Enter>;
     const { container } = render(
       <StepFrame stepId="ref-1">
@@ -61,8 +61,9 @@ describe("a stem reference", () => {
     );
     const details = must(container.querySelector<HTMLDetailsElement>("details[data-reference]"));
     expect(details).not.toBeNull();
-    expect(details.open).toBe(false);
+    expect(details.open).toBe(true);
     expect(must(details.querySelector("summary")).textContent).toBe("Reference sheet");
+    expect(details.querySelector("summary svg")).not.toBeNull();
     expect(details.querySelector("table")).not.toBeNull();
   });
 
