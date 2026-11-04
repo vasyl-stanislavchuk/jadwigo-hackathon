@@ -13,7 +13,7 @@
   },
   "//": {
     "@modelcontextprotocol/sdk": "the MCP server and stdio transport of the jadwigo-builder channel, tools/builder/channel.ts",
-    "@playwright/test": "renders the favicon PNGs from the brand SVGs in brand-icons.ts --write, and drives /playground/conformance in conformance/run.ts (Chromium)",
+    "@playwright/test": "renders the favicon PNGs from the brand SVGs in brand-icons.ts --write and the share picture in og-image.ts --write, and drives /playground/conformance in conformance/run.ts (Chromium)",
     "@types/node": "Node 24 types for this package's typecheck (tsconfig.base.json names them)",
     "typescript": "tsc for this package's typecheck script",
     "vitest": "runs this package's unit test with the root vitest.config.ts"

@@ -21,6 +21,10 @@ const landing: readonly DistCheck[] = [
   ["favicon.svg", "<svg"],
   ["favicon-32.png", "PNG"],
   ["apple-touch-icon.png", "PNG"],
+  // The landing page's 1200x630 share picture (dl-w0b4.141), in place of the icon.
+  ["index.html", '<meta property="og:image" content="https://jadwigo.pl/og.png"'],
+  ["index.html", '<meta property="og:image:alt"'],
+  ["og.png", "PNG"],
   ["index.html", '<p class="say" id="hero-say"'],
   ["index.html", 'id="lekcje"'],
   // Direction 1a (design handoff "landing 3", dl-5ssh.4.13): the example profile and the sign-up at the end.
@@ -48,7 +52,7 @@ const landing: readonly DistCheck[] = [
   ],
   ["index.html", "Alfik Matematyczny"],
   ["sitemap-0.xml", "<loc>https://jadwigo.pl/zaloguj/</loc>"],
-  ["404.html", "Tej strony tu nie ma."],
+  ["404.html", "Tej strony tu nie ma"],
   ["robots.txt", "Sitemap: https://jadwigo.pl/sitemap-index.xml"],
   ["sitemap-index.xml", "https://jadwigo.pl/sitemap-0.xml"],
   ["sitemap-0.xml", "<loc>https://jadwigo.pl/</loc>"],

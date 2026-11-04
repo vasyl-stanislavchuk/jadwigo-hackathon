@@ -48,11 +48,9 @@ export const landingSchema = z.object({
   steps: z.object({
     ...head,
     intro: text,
-    // The landing page's one line to the parent under its "Jak to działa" heading (dl-w0b4.123).
-    lead: text,
     pic: text,
     items: z.array(z.object({ who: text, title: text, text })).length(3),
-    request: z.object({ ask: text, lines: z.array(text).min(1), soon: text, screencast: text }),
+    request: z.object({ ask: text, lines: z.array(text).min(1), screencast: text }),
     card: z
       .object({ say: text, choices: z.array(text).min(2).max(4), hint: text, pic: text })
       .refine((c) => new Set(c.choices).size === c.choices.length, {

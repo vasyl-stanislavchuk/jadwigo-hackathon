@@ -76,6 +76,6 @@ describe("the frame's words", () => {
   it("come from the site_* messages in the page's language", () => {
     expect(m.site_nav_sign_in({}, { locale: "pl" })).toBe("Zaloguj się");
     expect(m.site_nav_sign_in({}, { locale: "en" })).toBe("Sign in");
-    expect(m.site_404_heading({}, { locale: "en" })).toBe("This page isn't here.");
+    expect(m.site_404_heading({}, { locale: "en" })).toBe("This page isn't here");
   });
 });

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   facebookSignInLive,
@@ -162,5 +163,26 @@ describe("the Facebook sign-in switch (dl-ovva)", () => {
       ["zaloguj/index.html", facebook],
     ]);
     expect(mustNot).toEqual([]);
+  });
+});
+
+describe("the site's headings (dl-w0b4.141)", () => {
+  // Every `heading` and `title` in landing.yaml is a heading on a page or a page's <title>, and
+  // `end.text` is the end band's h2. None of them ends in a full stop (owner, 2026-11-04).
+  const headings = (lang: string): string[] => {
+    const yaml = readFileSync(new URL(`../content/${lang}/landing.yaml`, import.meta.url), "utf8");
+    const lines = [...yaml.matchAll(/^\s*(?:- )?(?:heading|title): *"?(.+?)"?\s*$/gm)].map(
+      (m) => m[1] ?? "",
+    );
+    const end = /^end:\n {2}text: *(.+)$/m.exec(yaml)?.[1];
+    return end === undefined ? lines : [...lines, end];
+  };
+
+  it.each(["pl", "en"])("finds the headings in %s/landing.yaml", (lang) => {
+    expect(headings(lang).length).toBeGreaterThan(20);
+  });
+
+  it.each(["pl", "en"])("ends no heading in %s/landing.yaml with a full stop", (lang) => {
+    expect(headings(lang).filter((h) => h.endsWith("."))).toEqual([]);
   });
 });

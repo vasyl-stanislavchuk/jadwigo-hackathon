@@ -562,9 +562,11 @@ drops:
 	for d in docs/drops/*/; do [ -d "$$d" ] && md drops check "$$d"; done; true
 
 ## icons: render the crown favicon PNGs from packages/ui/src/brand into each app's public/
-## (tools/src/brand-icons.ts; make check fails when they are older than their SVGs)
+## (tools/src/brand-icons.ts; make check fails when they are older than their SVGs), and the
+## landing page's 1200x630 share picture into apps/site/public/og.png (tools/src/og-image.ts)
 icons:
 	bun tools/src/brand-icons.ts --write
+	bun tools/src/og-image.ts --write
 
 ## builder: the Claude Code session the live lesson builder talks to (dl-a38n.10): mints a session id,
 ## writes JADWIGO_DRAFTS_DIR/session.json, and starts claude with the jadwigo-builder channel loaded.

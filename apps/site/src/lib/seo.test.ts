@@ -95,6 +95,15 @@ describe("headTags", () => {
     const tags = headTags({ ...page, ogImage: "/og.png" }, "/");
     expect(find(tags, "og:image")).toMatchObject({ content: "https://jadwigo.pl/og.png" });
     expect(find(tags, "twitter:card")).toMatchObject({ content: "summary_large_image" });
+    expect(find(tags, "og:image:width")).toMatchObject({ content: "1200" });
+    expect(find(tags, "og:image:height")).toMatchObject({ content: "630" });
+    expect(find(tags, "og:image:alt")).toMatchObject({ content: "Jadwigo" });
+  });
+
+  it("says what the share picture shows when the page gives its alt text", () => {
+    const tags = headTags({ ...page, ogImage: "/og.png", ogImageAlt: "A parent and child" }, "/");
+    expect(find(tags, "og:image:alt")).toMatchObject({ content: "A parent and child" });
+    expect(find(tags, "twitter:image:alt")).toMatchObject({ content: "A parent and child" });
   });
 });
 

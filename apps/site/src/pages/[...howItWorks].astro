@@ -55,7 +55,6 @@ const [one, two, three] = s.items;
           <p class="ask">„{s.request.ask}”</p>
           <ul>{s.request.lines.map((l) => <li>{l}</li>)}</ul>
         </blockquote>
-        <p class="soon">{s.request.soon}</p>
       </div>
       <Pic label={s.request.screencast} screen ratio="16 / 10" class="side-pic" />
     </li>
@@ -123,7 +122,6 @@ const [one, two, three] = s.items;
   .request { margin: 0.5rem 0 0; padding: 0.25rem 0 0.25rem 1rem; border-left: 2px solid var(--primary); }
   .ask { font-weight: 700; }
   .request ul { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.95rem; color: var(--jw-ink-soft); }
-  .words > .soon { font-size: 0.9rem; }
 
   /* Step 2: a small question card overlapping its illustration, as a child sees one question. The
      picture takes the column's full width at its own height, and the card sits under it, overlapping only
