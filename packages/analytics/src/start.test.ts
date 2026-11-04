@@ -108,13 +108,33 @@ describe("posthogOptions", () => {
     });
   });
 
-  it("reports a caught error with its source, and does nothing before it starts", async () => {
+  it("reports a caught error with its source", async () => {
     const failure = new Error("crash");
-    reportError(failure, "error_boundary");
     const { client, load } = double();
     await startAnalytics("phc_key", "app", load);
     reportError(failure, "error_boundary");
     expect(client.captureException).toHaveBeenCalledTimes(1);
     expect(client.captureException).toHaveBeenCalledWith(failure, { source: "error_boundary" });
+  });
+
+  // dl-uukj.69: a crash in the app's first render comes before the SDK's dynamic import resolves.
+  it("holds an error reported before the start, and sends it once, when it starts", async () => {
+    const failure = new Error("first render");
+    reportError(failure, "error_boundary");
+    const { client, load } = double();
+    await startAnalytics("phc_key", "app", load);
+    expect(client.captureException).toHaveBeenCalledTimes(1);
+    expect(client.captureException).toHaveBeenCalledWith(failure, { source: "error_boundary" });
+    await startAnalytics("phc_key", "app", load);
+    expect(client.captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds at most 10 early errors, and sends none without a key", async () => {
+    for (let i = 0; i < 12; i++) reportError(new Error(`e${i}`), "error_boundary");
+    const { client, load } = double();
+    await startAnalytics(null, "app", load);
+    expect(load).not.toHaveBeenCalled();
+    await startAnalytics("phc_key", "app", load);
+    expect(client.captureException).toHaveBeenCalledTimes(10);
   });
 });

@@ -25,6 +25,11 @@ const loadPostHog: Load = () => import("posthog-js").then((module) => module.def
 
 let client: Client | null = null;
 
+/** Errors reported before the SDK loaded, such as a crash in the app's first render (dl-uukj.69):
+ * sent once it starts. A page with no key never starts, so the list is capped. */
+const EARLY_MAX = 10;
+let early: { error: unknown; source: ErrorSource }[] = [];
+
 /** `off` when PostHog never started (no key); otherwise the visitor's answer to the banner. */
 export type ConsentStatus = "off" | "pending" | "granted" | "denied";
 
@@ -40,6 +45,9 @@ export async function startAnalytics(
     loaded.init(key, posthogOptions(surface));
     if (loaded.get_explicit_consent_status() === "pending") loaded.opt_in_capturing();
     client = loaded;
+    const held = early;
+    early = [];
+    for (const { error, source } of held) loaded.captureException(error, { source });
   }
   return consentStatus();
 }
@@ -64,12 +72,14 @@ export function track<E extends EventName>(event: E, props: PropsOf<E>): void {
 }
 
 /** Reports an error our code caught, such as a crash an error boundary stopped. It leaves through
- * before_send, scrubbed like an uncaught one. */
+ * before_send, scrubbed like an uncaught one. Before the SDK has loaded it waits for the start. */
 export function reportError(error: unknown, source: ErrorSource): void {
-  client?.captureException(error, { source });
+  if (client !== null) client.captureException(error, { source });
+  else if (early.length < EARLY_MAX) early.push({ error, source });
 }
 
 /** Forgets the started client, for tests. */
 export function resetAnalyticsForTests(): void {
   client = null;
+  early = [];
 }
