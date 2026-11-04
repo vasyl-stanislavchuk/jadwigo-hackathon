@@ -141,11 +141,12 @@ function checkApi(dist: string): string[] {
 /**
  * Every built page but the API reference's, which starlight-llm-actions can't see (agents read
  * /openapi.json there), has its Markdown beside it: `guides/first-call/index.html` has
- * `guides/first-call.md` (dl-5ssh.90.32).
+ * `guides/first-call.md` (dl-5ssh.90.32). A redirect from an old slug is no page, so it has none.
  */
 function checkMarkdown(dist: string): string[] {
   return readdirSync(dist, { recursive: true, encoding: "utf8" })
     .filter((path) => path.endsWith("index.html") && !path.startsWith(`${API_REFERENCE_BASE}/`))
+    .filter((path) => !readFileSync(join(dist, path), "utf8").includes('http-equiv="refresh"'))
     .sort()
     .map((path) => (path === "index.html" ? "index.md" : `${dirname(path)}.md`))
     .filter((markdown) => !existsSync(join(dist, markdown)))

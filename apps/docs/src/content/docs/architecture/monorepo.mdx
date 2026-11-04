@@ -42,8 +42,7 @@ violation to prove the check still catches it.
 - **The environment is read in one file per app**, its `config.ts`. An error type, a route path
   or an id prefix is written through its constant from `contracts`, never retyped.
 - **No unused code.** An unused file, export or dependency fails.
-- **No question bank in git.** No question pages, Khan items, database files or media, and no
-  file over 1 MB.
+- **No file over 1 MB.** Media and data go to their own stores, never into a commit.
 - **Unit tests run offline.** A unit test fails on a network call, on real AWS and on an unpinned
   clock. Anything that needs those is an integration test.
 

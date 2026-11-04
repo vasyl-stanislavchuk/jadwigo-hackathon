@@ -16,6 +16,7 @@ import { lambdaMail, type MailDeps } from "./mail/hook.ts";
 import { lambdaPoke, type PokeStepHost } from "./poke.ts";
 import { lambdaPrint, s3Prints } from "./print.ts";
 import { type BankDeps, type BucketDeps, lambdaBank, lambdaBucket } from "./questions.ts";
+import { setReporter } from "./report.ts";
 
 export { createApp } from "./app.ts";
 
@@ -74,6 +75,7 @@ export function createHandler(
   print: AppDeps["print"] = { bucket: s3Prints(), start: lambdaPrint(), media: mediaUrl() },
   report: ReportError = serverErrorReporter({ key: posthogKey(), surface: "api" }),
 ) {
+  setReporter(report);
   let store: Promise<Store> | undefined;
   let failed = false;
   let failures = 0;

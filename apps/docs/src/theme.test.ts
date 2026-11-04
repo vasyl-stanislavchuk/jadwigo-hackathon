@@ -115,7 +115,8 @@ describe("theme.css", () => {
       if (name === "--sl-color-backdrop-overlay") continue;
       expect(value, name).toMatch(/^var\(--jw-[\w-]+\)$/);
     }
-    expect(ROOT.get("--sl-font")).toBe("var(--jw-font)");
+    expect(ROOT.get("--sl-font")).toBe("var(--jw-font-adult)");
+    expect(ROOT.get("--sl-font-mono")).toBe("var(--jw-font-mono)");
   });
 
   it("keeps green, the colour of right, off every aside", () => {

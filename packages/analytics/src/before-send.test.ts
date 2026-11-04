@@ -50,6 +50,41 @@ describe("beforeSend", () => {
     expect(beforeSend(event("$exception", { $exception_message: "Ala" }))).toBeNull();
   });
 
+  it.each([
+    ["a ResizeObserver notice", { type: "Error", value: "ResizeObserver loop limit exceeded" }],
+    ["an opaque error of another origin", { type: "Error", value: "Script error." }],
+    [
+      "a visitor's extension",
+      {
+        type: "TypeError",
+        value: "boom",
+        stacktrace: { type: "raw", frames: [{ filename: "chrome-extension://abc/inject.js" }] },
+      },
+    ],
+  ])("drops %s", (_name, exception) => {
+    expect(beforeSend(event("$exception", { $exception_list: [exception] }))).toBeNull();
+  });
+
+  it("keeps a known source and drops any other", () => {
+    const send = (source: string) =>
+      beforeSend(
+        event("$exception", { $exception_list: [{ type: "Error", value: "boom" }], source }),
+      )?.properties;
+    expect(send("error_boundary")).toMatchObject({ source: "error_boundary" });
+    expect(send("Ala")).not.toHaveProperty("source");
+  });
+
+  it("keeps a real error that only mentions a script", () => {
+    const list = [
+      {
+        type: "Error",
+        value: "Script error while loading a lesson",
+        stacktrace: { type: "raw", frames: [{ filename: "https://app.jadwigo.pl/assets/a.js" }] },
+      },
+    ];
+    expect(beforeSend(event("$exception", { $exception_list: list }))).not.toBeNull();
+  });
+
   it("drops a level the SDKs do not send", () => {
     const sent = beforeSend(
       event("$exception", { $exception_list: [{ type: "Error" }], $exception_level: "Ala" }),

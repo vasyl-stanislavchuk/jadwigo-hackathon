@@ -113,6 +113,16 @@ describe("checkDist", () => {
     ]);
   });
 
+  it("passes a redirect from an old slug, which has no Markdown", () => {
+    writeGoodDist();
+    mkdirSync(join(dist, "vision/old"), { recursive: true });
+    writeFileSync(
+      join(dist, "vision/old/index.html"),
+      '<meta http-equiv="refresh" content="0;url=/vision/">',
+    );
+    expect(checkDist(dist)).toEqual([]);
+  });
+
   it("fails a stray host in a page's Markdown", () => {
     writeGoodDist();
     writeFileSync(join(dist, "guides/errors.md"), "curl https://api.jadwigo.pl/api/health");

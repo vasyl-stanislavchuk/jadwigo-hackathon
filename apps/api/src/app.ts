@@ -182,7 +182,7 @@ export function createApp(
     const route: Route = ROUTES[name];
     const path = route.path.replace(/\{(\w+)\}/g, ":$1") as `/${string}`;
     const method = route.method.toLowerCase() as "get" | "post" | "patch";
-    app[method](path, async ({ req, params, event }) => {
+    app[method](path, async ({ req, params, event, context }) => {
       try {
         // A token route checks the token before anything else, so an unknown id is 401 too.
         const claims = route.auth === "token" ? await authenticate(req, event) : undefined;
@@ -206,7 +206,7 @@ export function createApp(
         // is what tells why. Never the request's body: it may carry a child's answer.
         logFailure(name, error);
         // Scrubbed, and it never throws or waits long (dl-5ssh.158).
-        await report?.(error, { route: name });
+        await report?.(error, { route: name, request_id: context?.awsRequestId });
         throw error;
       }
     });

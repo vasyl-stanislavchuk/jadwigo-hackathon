@@ -12,6 +12,8 @@ export interface SidebarGroup {
   readonly items: readonly string[];
   /** A directory whose pages follow the items, under its own label: pages the build generates. */
   readonly generated?: { readonly label: string; readonly directory: string };
+  /** Closed until the reader opens it: the developer reference, below the judges' path. */
+  readonly collapsed?: boolean;
 }
 
 /**
@@ -19,10 +21,10 @@ export interface SidebarGroup {
  * group here, and a new section is a new group. A slug with no page fails the build.
  */
 export const SIDEBAR: readonly SidebarGroup[] = [
-  // Judges first (dl-5ssh.90.53.1): what Jadwigo is and what is live, its story, where it is
-  // going and the experiments that show it, then how it is built. The developer sections follow
-  // in their old order. Every lane of the epic fills these pages; none edits this list.
-  { label: "What Jadwigo is", items: ["index"] },
+  // Judges first (dl-5ssh.90.53.19), at 3 depths: the home, a section's index, then its pages.
+  // What Jadwigo is and what is real, the product, how it is built, then the vision and the
+  // experiments behind it. The developer reference follows, closed until opened.
+  { label: "Start", items: ["index", "what-is-real", "story"] },
   {
     label: "Features",
     items: [
@@ -38,18 +40,19 @@ export const SIDEBAR: readonly SidebarGroup[] = [
       "features/question-bank",
     ],
   },
-  { label: "The story", items: ["story"] },
+  {
+    label: "How it is built",
+    items: [
+      "architecture",
+      "architecture/monorepo",
+      "architecture/contracts",
+      "architecture/ai-engine",
+      "architecture/building-with-agents",
+    ],
+  },
   {
     label: "Vision",
-    items: [
-      "vision",
-      "vision/learner-knowledge",
-      "vision/next-lesson",
-      "vision/dreaming",
-      "vision/goals-loop",
-      "vision/growing-the-bank",
-      "vision/judging-answers",
-    ],
+    items: ["vision", "vision/learning-loop", "vision/growing-the-bank", "vision/judging-answers"],
   },
   {
     label: "Experiments",
@@ -65,17 +68,8 @@ export const SIDEBAR: readonly SidebarGroup[] = [
     ],
   },
   {
-    label: "How it is built",
-    items: [
-      "architecture",
-      "architecture/monorepo",
-      "architecture/contracts",
-      "architecture/ai-engine",
-      "architecture/building-with-agents",
-    ],
-  },
-  {
-    label: "Start here",
+    label: "API guides",
+    collapsed: true,
     items: [
       "guides/introduction",
       "guides/authentication",
@@ -87,15 +81,17 @@ export const SIDEBAR: readonly SidebarGroup[] = [
   },
   {
     label: "Use with agents",
+    collapsed: true,
     items: ["guides/agents", "mcp"],
     generated: { label: "MCP tools", directory: "mcp" },
   },
   // Filled by starlight-openapi from public/openapi.json (astro.config.mjs).
   { label: "API reference", items: [] },
   // The intro, then a group per package that starlight-typedoc fills (astro.config.mjs).
-  { label: "TypeScript client", items: ["typescript"] },
+  { label: "TypeScript client", collapsed: true, items: ["typescript"] },
   {
     label: "Design system",
+    collapsed: true,
     items: [
       "design-system",
       "design-system/tokens",
@@ -110,6 +106,7 @@ export const SIDEBAR: readonly SidebarGroup[] = [
 /** SIDEBAR in the shape Starlight's `sidebar` option takes. */
 export const sidebar = SIDEBAR.map((group) => ({
   label: group.label,
+  ...(group.collapsed ? { collapsed: true } : {}),
   items: [
     ...group.items.map((slug) => ({ slug })),
     ...(group.generated

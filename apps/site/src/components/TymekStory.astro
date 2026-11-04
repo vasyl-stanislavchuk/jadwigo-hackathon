@@ -4,7 +4,7 @@
 // the app's own lists. The new-lesson button is pressed, a sheet drops onto the table (7 × 9 split into
 // 7 × 5 and 7 × 4), and Tymek fills it in. One 10 s CSS loop, no script. With reduced motion the loop
 // never runs and the last frame shows, still. The words are landing.yaml's; the art is H1's pose from
-// the film (jadwigo-art s04-anim tymek-solve-v8 and tymek-hands-v8), as WebP, with the sheet drawn here
+// the film (jadwigo-art s04-anim tymek-solve-v8, pupils removed, and tymek-hands-v8), as WebP, with the sheet drawn here
 // between its two layers so the sheet and its numbers stay sharp.
 import type { Language } from "@jadwigo/config";
 import hands from "../assets/illustrations/tymek-hands.webp";
@@ -103,8 +103,26 @@ const done = [48, 42, 36];
         <text class="hand a2" x="70" y="141">28</text>
       </g>
     </g>
+    {/* His eyes follow the story. The pose's own pupils were taken out of tymek-solve.webp (filled
+        with the eye's shading), and these move inside each lens, clipped so they never cross a frame. */}
+    <defs>
+      <clipPath id="ty-lens-l"><circle cx="697.5" cy="279.7" r="37" /></clipPath>
+      <clipPath id="ty-lens-r"><circle cx="800.4" cy="251.3" r="40" /></clipPath>
+    </defs>
+    <g clip-path="url(#ty-lens-l)">
+      <g class="pupil pl">
+        <circle cx="697.5" cy="279.7" r="13" fill="#000" />
+        <circle cx="700.5" cy="273.7" r="3.5" fill="#fff" />
+      </g>
+    </g>
+    <g clip-path="url(#ty-lens-r)">
+      <g class="pupil pr">
+        <circle cx="800.4" cy="251.3" r="13.5" fill="#000" />
+        <circle cx="803.4" cy="245.3" r="3.5" fill="#fff" />
+      </g>
+    </g>
     <image href={hands.src} x="0" y="0" width="1152" height="768" />
-    {/* The sheet on its way from the page above to the table. */}
+    {/* The sheet on its way from the page on the other side to the table. */}
     <g class="flyer">
       <rect class="paper" x="-145" y="-170" width="290" height="340" rx="18" />
       <path class="band" d="M-120 -148H55" />
@@ -162,6 +180,12 @@ const done = [48, 42, 36];
   .old, .flyer { opacity: 0; }
   .flyer { transform-box: view-box; transform-origin: 0 0; transform: translate(640px, 500px) scale(0.42); }
 
+  /* Where the eyes look: one direction for both, from the point between them, 21 and 22 px into each
+     lens. At rest, the sheet on the table. */
+  .pupil { transform-box: view-box; }
+  .pl { transform: translate(-8.4px, 19.2px); }
+  .pr { transform: translate(-8.8px, 20.1px); }
+
   @media (prefers-reduced-motion: no-preference) {
     /* One full shorthand each: a shorthand with no name minifies to "animation: none". */
     .r1 { animation: ty-r1 10s linear infinite both; }
@@ -174,6 +198,8 @@ const done = [48, 42, 36];
     .a2 { animation: ty-a2 10s linear infinite both; }
     .a3 { animation: ty-a3 10s linear infinite both; }
     .flyer { animation: ty-fly 10s ease-in-out infinite both; }
+    .pl { animation: ty-look-l 10s ease-in-out infinite both; }
+    .pr { animation: ty-look-r 10s ease-in-out infinite both; }
   }
   @keyframes ty-r1 { 0%, 3% { opacity: 0; transform: translateY(0.4rem); } 8%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
   @keyframes ty-r2 { 0%, 8% { opacity: 0; transform: translateY(0.4rem); } 13%, 93% { opacity: 1; transform: none; } 98%, 100% { opacity: 0; } }
@@ -184,6 +210,113 @@ const done = [48, 42, 36];
   @keyframes ty-a1 { 0%, 54% { opacity: 0; } 57%, 100% { opacity: 1; } }
   @keyframes ty-a2 { 0%, 65% { opacity: 0; } 68%, 100% { opacity: 1; } }
   @keyframes ty-a3 { 0%, 76% { opacity: 0; } 79%, 100% { opacity: 1; } }
+  /* He looks at the sheet he finished, the new one in flight, the box for 35, for 28, for 63, then at his dad. */
+  @keyframes ty-look-l {
+    0% {
+      transform: translate(-8.4px, 19.2px);
+    }
+    28% {
+      transform: translate(-8.4px, 19.2px);
+    }
+    31% {
+      transform: translate(-18.1px, -10.6px);
+    }
+    34% {
+      transform: translate(-11.2px, -17.7px);
+    }
+    37% {
+      transform: translate(-21.0px, 0.4px);
+    }
+    41% {
+      transform: translate(-8.4px, 19.2px);
+    }
+    50% {
+      transform: translate(-8.4px, 19.2px);
+    }
+    53% {
+      transform: translate(-2.2px, 20.9px);
+    }
+    61% {
+      transform: translate(-2.2px, 20.9px);
+    }
+    64% {
+      transform: translate(-14.1px, 15.6px);
+    }
+    72% {
+      transform: translate(-14.1px, 15.6px);
+    }
+    75% {
+      transform: translate(-10.9px, 18.0px);
+    }
+    81% {
+      transform: translate(-10.9px, 18.0px);
+    }
+    85% {
+      transform: translate(-21.0px, -0.7px);
+    }
+    92% {
+      transform: translate(-21.0px, -0.7px);
+    }
+    97% {
+      transform: translate(-8.4px, 19.2px);
+    }
+    100% {
+      transform: translate(-8.4px, 19.2px);
+    }
+  }
+  @keyframes ty-look-r {
+    0% {
+      transform: translate(-8.8px, 20.1px);
+    }
+    28% {
+      transform: translate(-8.8px, 20.1px);
+    }
+    31% {
+      transform: translate(-19.0px, -11.1px);
+    }
+    34% {
+      transform: translate(-11.8px, -18.6px);
+    }
+    37% {
+      transform: translate(-22.0px, 0.5px);
+    }
+    41% {
+      transform: translate(-8.8px, 20.1px);
+    }
+    50% {
+      transform: translate(-8.8px, 20.1px);
+    }
+    53% {
+      transform: translate(-2.3px, 21.9px);
+    }
+    61% {
+      transform: translate(-2.3px, 21.9px);
+    }
+    64% {
+      transform: translate(-14.7px, 16.3px);
+    }
+    72% {
+      transform: translate(-14.7px, 16.3px);
+    }
+    75% {
+      transform: translate(-11.4px, 18.8px);
+    }
+    81% {
+      transform: translate(-11.4px, 18.8px);
+    }
+    85% {
+      transform: translate(-22.0px, -0.8px);
+    }
+    92% {
+      transform: translate(-22.0px, -0.8px);
+    }
+    97% {
+      transform: translate(-8.8px, 20.1px);
+    }
+    100% {
+      transform: translate(-8.8px, 20.1px);
+    }
+  }
   @keyframes ty-fly {
     /* From the page on the left, over both heads, then down the gap between them: never across a face. */
     0%, 29% { opacity: 0; transform: translate(60px, -90px) rotate(-10deg) scale(0.5); }
