@@ -68,6 +68,11 @@ describe("the card pictures' words", () => {
     mierzenie: "Mierzenie.",
     czekolada: "Czekolada.",
     spacer: "Spacer.",
+    pl3_czytanie: "Książka nad głową.",
+    pl3_gloski: "Bąbelki w rzędzie.",
+    pl3_czesci_mowy: "Trzy przegródki.",
+    pl3_zdanie: "Klocki i kamyk.",
+    pl3_ortografia: "Pocztówka.",
   };
 
   it("takes alt text for every card picture", () => {
@@ -76,8 +81,10 @@ describe("the card pictures' words", () => {
 
   it("refuses a card picture with no words", () => {
     expect(pics.safeParse({ ...words, skoki: "" }).success).toBe(false);
-    const { spacer: _missing, ...five } = words;
-    expect(pics.safeParse(five).success).toBe(false);
+    const { spacer: _missing, ...rest } = words;
+    expect(pics.safeParse(rest).success).toBe(false);
+    const { pl3_zdanie: _gone, ...noZdanie } = words;
+    expect(pics.safeParse(noZdanie).success).toBe(false);
   });
 });
 
