@@ -1,5 +1,5 @@
 import { RunStepInput } from "@jadwigo/contracts/run";
-import type { HostReport } from "./host.ts";
+import { type HostReport, wordless } from "./host.ts";
 
 /**
  * How the host is invoked (dl-z5ja.20). Both callers only wake it; the queue is what it works from:
@@ -28,7 +28,7 @@ export function createRunnerHandler(
       drained = await host();
     } catch (error) {
       // The host could not open or drain: the Lambda still fails, as the Errors alarm expects.
-      await report(error);
+      await report(wordless(error));
       throw error;
     }
     log(
