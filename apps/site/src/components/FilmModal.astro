@@ -1,7 +1,7 @@
 ---
-// The hackathon film behind a button on O nas (dl-w0b4.42): the button opens a modal that plays it, and
+// The hackathon film behind a link on O nas (dl-w0b4.42): the link opens a modal that plays it, and
 // closing stops it. The page fetches no video until then. The film lives in the site bucket's
-// about-photos/, never in git. Without a script the button is a link to the file itself.
+// about-photos/, never in git. Without a script the link opens the file itself.
 interface Props {
   words: { heading: string; cta: string; close: string; file: string };
 }
@@ -10,7 +10,7 @@ const { words } = Astro.props;
 const src = `/about-photos/${words.file}`;
 ---
 
-<a class="btn" href={src} data-film-open>{words.cta}</a>
+<a href={src} data-film-open>{words.cta}</a>
 
 <dialog class="film" aria-label={words.heading} data-film>
   <button type="button" class="close" data-film-close aria-label={words.close}>×</button>

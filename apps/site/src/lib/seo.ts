@@ -52,11 +52,12 @@ export const pageSchema = z.object({
   /** The collage's name for a screen reader. */
   photosLabel: z.string().min(1).optional(),
   /**
-   * O nas's film and docs link (dl-w0b4.42). `cta` is the button that opens the film in a modal. `file`
+   * O nas's film and docs link (dl-w0b4.42). `links` heads the page's useful links, `cta` is the one that opens the film in a modal, `docs` names the docs. `file`
    * names the film in the site bucket's about-photos/, never in git, as the photos do.
    */
   video: z
     .object({
+      links: z.string().min(1),
       heading: z.string().min(1),
       cta: z.string().min(1),
       close: z.string().min(1),
