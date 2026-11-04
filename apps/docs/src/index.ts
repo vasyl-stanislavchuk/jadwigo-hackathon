@@ -24,7 +24,7 @@ export const SIDEBAR: readonly SidebarGroup[] = [
   // Judges first (dl-5ssh.90.53.19), at 3 depths: the home, a section's index, then its pages.
   // What Jadwigo is and what is real, the product, how it is built, then the vision and the
   // experiments behind it. The developer reference follows, closed until opened.
-  { label: "Start", items: ["index", "what-is-real", "story"] },
+  { label: "Start", items: ["index", "built", "next", "story"] },
   {
     label: "Features",
     items: [
@@ -51,7 +51,7 @@ export const SIDEBAR: readonly SidebarGroup[] = [
   },
   {
     label: "Vision",
-    items: ["vision", "vision/learning-loop", "vision/growing-the-bank", "vision/judging-answers"],
+    items: ["vision/learning-loop", "vision/growing-the-bank", "vision/judging-answers"],
   },
   {
     label: "Experiments",

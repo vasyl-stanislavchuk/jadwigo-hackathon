@@ -40,8 +40,8 @@ describe("SIDEBAR", () => {
     const byLabel = (label: string) => SIDEBAR.find((group) => group.label === label)?.items;
     expect(byLabel("Features")).toHaveLength(8);
     expect(byLabel("Features")?.every((slug) => slug.startsWith("features/"))).toBe(true);
-    expect(byLabel("Vision")).toHaveLength(4);
-    expect(byLabel("Start")).toEqual(["index", "what-is-real", "story"]);
+    expect(byLabel("Vision")).toHaveLength(3);
+    expect(byLabel("Start")).toEqual(["index", "built", "next", "story"]);
     expect(byLabel("Experiments")).toEqual([
       "experiments",
       "experiments/e1",

@@ -33,6 +33,9 @@ export default defineConfig({
   build: { format: "directory" },
   // The 4 learning-loop pages became one (dl-5ssh.90.53.19); an old link still lands on it.
   redirects: {
+    // "What's real" became "What's built", and the Vision overview became "What's next".
+    "/what-is-real": "/built/",
+    "/vision": "/next/",
     "/vision/learner-knowledge": "/vision/learning-loop/",
     "/vision/next-lesson": "/vision/learning-loop/",
     "/vision/dreaming": "/vision/learning-loop/",
