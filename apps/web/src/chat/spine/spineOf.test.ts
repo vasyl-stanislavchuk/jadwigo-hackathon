@@ -152,13 +152,31 @@ describe.each(ORDERS)("in %s", (_order, order) => {
       }
     });
 
-    it("re-opens the check stage a second time at seq 70, the edits inside it (s06)", () => {
-      const events = upTo("long-turn", 70);
+    it("draws s06 at seq 54: Sprawdzanie lekcji's second visit, the fixes in it, the check again at work", () => {
+      // The wave plan's s06 state (dl-uukj.47.71.49): the first check found 2 things, the fixes at
+      // seq 41 and 47 opened the check stage's second visit, and the second check runs now.
+      const events = upTo("long-turn", 54);
       const spine = spineOf(events, null, lastAt(events));
       expect(spine.stages.map((s) => [s.name, s.status, s.visit])).toEqual([
         ["Szukanie zadań w banku", "done", 1],
-        ["Układanie lekcji", "done", 2],
+        ["Układanie lekcji", "done", 1],
         ["Sprawdzanie lekcji", "active", 2],
+      ]);
+      const open = spine.stages[2]?.lines ?? [];
+      expect(open.some(isEdit)).toBe(true);
+      expect(open.at(-1)?.kind).toBe("now");
+    });
+
+    it("re-checks at seq 70: each fix after a check opens its next visit (s06, D1)", () => {
+      const events = upTo("long-turn", 70);
+      const spine = spineOf(events, null, lastAt(events));
+      // The golden log's plan re-opens Układanie lekcji, which the engine never writes; the stages
+      // come from the calls (dl-uukj.47.71.49). The first check, the fixes after it (its second
+      // visit), the second check, then a read and the fixes after that: a third ("trzeci raz").
+      expect(spine.stages.map((s) => [s.name, s.status, s.visit])).toEqual([
+        ["Szukanie zadań w banku", "done", 1],
+        ["Układanie lekcji", "done", 1],
+        ["Sprawdzanie lekcji", "active", 3],
       ]);
       const open = spine.stages[2]?.lines ?? [];
       expect(open.some(isEdit)).toBe(true);
@@ -185,9 +203,9 @@ describe.each(ORDERS)("in %s", (_order, order) => {
         values: { query: "mnożenie przez 10", grade: "2", n: 7 },
       });
       expect(search[0]?.tags?.map((t) => t.copyKey)).toEqual(Array(7).fill(SAY_KEY));
-      // One edit line per visit (S2): 2 drafting visits, then the edits of the re-check as one.
+      // One edit line per visit (S2): the drafting edits as one, then one per re-check visit.
       const edits = (i: number) => spine.stages[i]?.lines.filter(isEdit) ?? [];
-      expect([edits(1).length, edits(2).length]).toEqual([2, 1]);
+      expect([edits(1).length, edits(2).length]).toEqual([1, 2]);
     });
 
     it("folds at the end: every stage done, the reply, no now line (D4, D5)", () => {
@@ -282,8 +300,10 @@ describe.each(ORDERS)("in %s", (_order, order) => {
     it("waits on the parent with the person mark and the line below (S12, s10)", () => {
       const spine = spineOf(upTo("plan-and-cite", 12), null, 0);
       expect(spine.phase).toBe("awaiting_input");
-      expect(spine.stages[0]?.status).toBe("waiting");
-      expect(spine.stages[0]?.lines.at(-1)).toEqual({
+      // The search finished, so the open stage is the next one: the edit waiting for the parent's
+      // answer is drafting (dl-uukj.47.71.49).
+      expect(spine.stages.map((s) => s.status)).toEqual(["done", "waiting", "todo"]);
+      expect(spine.stages[1]?.lines.at(-1)).toEqual({
         kind: "wait",
         copyKey: "chat_line_waiting",
         values: {},
@@ -508,20 +528,72 @@ describe("the engine's own sequences", () => {
       result("call_5", "lesson_check", { publishable: true, findings: [] }),
     );
     expect(spineOf(done, null, lastAt(done)).stages[2]?.visit).toBe(2);
-    // An edit made while the lesson is drafted stays under Układanie lekcji, in its own visit.
-    const drafting = append(
+  });
+
+  it("marks a draft-first turn's search done: work reached past it (dl-uukj.47.71.49)", () => {
+    // No search: the draft draws from the bank itself, so the engine counts the search done too.
+    const events = append(
       start(),
-      ...searchedAndDrafted.slice(0, 9),
+      say("Układam lekcję."),
+      call("call_2", "lesson_draft", { topic: "dodawanie" }),
+      plan("done", "in_progress", "pending"),
+      result("call_2", "lesson_draft", { draft_id: "drf_demo" }),
+      plan("done", "done", "pending"),
+      say("Lekcja jest gotowa."),
+      ...ending("completed", "done", "done", "failed"),
+    );
+    const spine = spineOf(events, null, 0);
+    expect(spine.stages.map((s) => [s.status, s.visit])).toEqual([
+      ["done", 1],
+      ["done", 1],
+      ["todo", 1],
+    ]);
+  });
+
+  it("marks a stage only a read reached done on a completed turn (dl-uukj.47.71.49)", () => {
+    const events = append(
+      start(),
+      ...searchedAndDrafted.slice(0, 5),
+      call("call_9", "lesson_show", {}),
+      result("call_9", "lesson_show", { steps: ["s01"] }),
+      say("Wystarczy tak."),
+      ...ending("completed", "done", "failed", "failed"),
+    );
+    const spine = spineOf(events, null, 0);
+    expect(spine.stages.map((s) => s.status)).toEqual(["done", "done", "todo"]);
+    expect(spine.stages[1]?.lines.map((l) => l.copyKey)).toEqual(["chat_line_read"]);
+  });
+
+  it("reads edits as drafting until a check has run, and as fixing after it (engine order, s06)", () => {
+    // The engine's order: the draft's result and the plan marking it done, then an edit, with no
+    // check yet. Drafting: it continues Układanie lekcji's visit ("dodane…, poprawione…").
+    const drafted = append(
+      start(),
+      ...searchedAndDrafted,
+      say("Poprawiam podpowiedź."),
       call("call_6", "lesson_edit", { step_id: "s01" }),
       result("call_6", "lesson_edit", { changed_step_ids: ["s01"] }),
-      ...searchedAndDrafted.slice(9),
     );
-    const spine = spineOf(drafting, null, 0);
-    expect(spine.stages[1]).toMatchObject({ name: "Układanie lekcji", visit: 1 });
-    expect(spine.stages[1]?.lines.map((l) => l.copyKey)).toEqual([
+    const drafting = spineOf(drafted, null, lastAt(drafted));
+    expect(drafting.stages.map((s) => [s.name, s.visit])).toEqual([
+      ["Szukanie zadań w banku", 1],
+      ["Układanie lekcji", 1],
+      ["Sprawdzanie lekcji", 1],
+    ]);
+    expect(drafting.stages[1]?.lines.map((l) => l.copyKey)).toEqual([
       "chat_tool_lesson_draft_about",
       "chat_tool_lesson_edit",
     ]);
+    expect(drafting.stages[2]?.lines.filter(isEdit)).toEqual([]);
+    // After a check, an edit is fixing: it resumes Sprawdzanie lekcji, "drugi raz".
+    const fixing = append(start(), ...searchedAndDrafted, ...fixedAndCheckedAgain.slice(0, 8));
+    const spine = spineOf(fixing, null, lastAt(fixing));
+    expect(spine.stages.map((s) => [s.name, s.visit])).toEqual([
+      ["Szukanie zadań w banku", 1],
+      ["Układanie lekcji", 1],
+      ["Sprawdzanie lekcji", 2],
+    ]);
+    expect(spine.stages[2]?.lines.filter(isEdit)).toHaveLength(1);
   });
 
   it("reads a lesson_show between stages in the stage the plan opens next, which the draft continues", () => {
@@ -676,7 +748,7 @@ describe("the engine's own sequences", () => {
     expect(spine.stages.map((s) => s.status)).toEqual(["done", "done", "done"]);
   });
 
-  it("keeps a check that failed, then was stopped, failed: no settle was written", () => {
+  it("marks a check that failed, then was stopped, stopped: a stop never shows failed", () => {
     const events = append(
       start(),
       ...searchedAndDrafted,
@@ -696,8 +768,10 @@ describe("the engine's own sequences", () => {
       { type: "turn_complete", payload: {} },
     );
     const spine = spineOf(events, null, 0);
-    expect(spine.stages.map((s) => s.status)).toEqual(["done", "done", "failed"]);
-    expect(spine.stages.some((s) => s.status === "stopped")).toBe(false);
+    // Changed on purpose by dl-uukj.47.71.49 (was failed): a cancelled turn's working stage is
+    // stopped, and a stage reads failed only on a turn that ended failed.
+    expect(spine.stages.map((s) => s.status)).toEqual(["done", "done", "stopped"]);
+    expect(spine.stages.some((s) => s.status === "failed")).toBe(false);
   });
 
   it("stops in the running stage with the square and leaves the rest hollow (S15, dl-uukj.47.71.37)", () => {
