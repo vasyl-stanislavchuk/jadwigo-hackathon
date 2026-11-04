@@ -17,7 +17,7 @@ Drukuj on the lesson card opens the lesson's PDF. The play page's first screen h
 too, below the start. Printing doesn't give or publish the lesson, so a parent can print before
 giving it.
 
-### The sheet
+### Sheet
 
 The server draws the sheet from HTML and CSS with WeasyPrint. Each question is 1 card that never
 splits across pages. The child answers in place: circle, write, draw, join, or number the order.
@@ -38,5 +38,5 @@ question keeps its credit line on paper.
 ## Next
 
 - [Sharing and play links](/features/share-and-play/): the other way a lesson reaches a child.
-- [The player and its question families](/features/player-and-families/): the same questions on
+- [Player and question families](/features/player-and-families/): the same questions on
   screen.

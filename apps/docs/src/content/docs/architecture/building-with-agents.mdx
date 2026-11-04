@@ -20,7 +20,7 @@ The agents did the rest. A lead agent splits a plan into issues, and builder age
 each. An issue is a brief: what to read, the paths it owns, the tests it must not change, what
 done looks like, and when to stop and ask.
 
-## The loop
+## PR loop
 
 <Diagram name="pr-loop" caption="Every change takes the same road to main." />
 
@@ -30,7 +30,7 @@ code being written. GitHub merges the pull request once both checks are green. A
 back to the agent that wrote the code. The builder never reviews its own work: a builder reporting
 green is a claim, and a reviewer's re-run is the evidence.
 
-## The guard
+## Guard
 
 The guard is a script that runs before every command an agent types in Claude Code, and refuses
 the ones only a person should run. It blocks a force-push, a push to `main`, skipping the commit
@@ -51,5 +51,5 @@ CI and the reviewers, apply to every pull request whoever wrote it.
 
 ## Next
 
-- [The story](/story/): the decisions those agents worked under.
+- [Story](/story/): the decisions those agents worked under.
 - [Monorepo](/architecture/monorepo/): the layout the agents share.

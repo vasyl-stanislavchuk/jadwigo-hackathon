@@ -1,5 +1,5 @@
 ---
-title: The player and its question families
+title: Player and question families
 description: The child plays a lesson 1 question at a time, in 7 interaction families, with a short celebration after 3 clean answers.
 status: live
 as_of: 2026-11-04
@@ -52,4 +52,4 @@ count is never shown, and a reload never plays the same celebration twice.
 ## Next
 
 - [Sharing and play links](/features/share-and-play/): how the child gets here.
-- [The question bank](/features/question-bank/): whose question the child is answering.
+- [Question bank](/features/question-bank/): whose question the child is answering.

@@ -9,11 +9,11 @@ drawn in one style, **kredki**: coloured pencil and wax crayon on cream paper.
 
 ![The cast in kredki: Jadwiga with her crown and blue notebook, Ola with a high ponytail and a lined-page cape, Tymek with round glasses and a blue scarf, Zoja with two buns and paper-plane wings, and Marko with a folded paper hat and a wide blue cape](../../../assets/illustration/cast.webp)
 
-## The style
+## Style
 
-- **The medium:** coloured pencil and wax crayon on cream paper. Pencil strokes and paper tooth
+- **Medium:** coloured pencil and wax crayon on cream paper. Pencil strokes and paper tooth
   show, the edges are soft, and the outline is a confident dark pencil line of even weight.
-- **The feel:** a talented 10-year-old's drawing, tidied by a careful illustrator. Shapes are
+- **Feel:** a talented 10-year-old's drawing, tidied by a careful illustrator. Shapes are
   simple.
 - **Faces and bodies:** a big head on a small body, about 1 to 2.5. Dot eyes with a small white
   highlight, simple brows, a small mouth and a light rosy cheek.

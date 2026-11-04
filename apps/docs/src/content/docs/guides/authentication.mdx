@@ -66,7 +66,7 @@ curl https://app.jadwigo.pl/api/v1/questions/$QUESTION_ID \
 
 No error message ever names a token.
 
-## The remote MCP: an OAuth 2.1 token
+## Remote MCP: an OAuth 2.1 token
 
 The remote MCP at `https://app.jadwigo.pl/api/mcp` takes a Supabase Auth token too, but a
 parent's AI app gets it by OAuth 2.1, with Supabase Auth as the authorization server. An MCP
@@ -95,7 +95,7 @@ its current token until it expires, at most 1 hour later.
 
 <AccessTable credential="supabase" />
 
-### The bank's read token
+### Bank read token
 
 <AccessTable credential="bank" />
 
