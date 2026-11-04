@@ -19,7 +19,8 @@
  *
  * - On a touch device the Polish letter row is never drawn, docked or in place, and never
  *   registered, so no dock or fold arrow stands for it: the child types with the system keyboard,
- *   which has the Polish letters (decision dl-6ihrv, dl-uukj.29.174).
+ *   which has the Polish letters (decision dl-6ihrv, dl-uukj.29.174). Every touch device, an iPad
+ *   with a hardware keyboard included (owner, 2026-11-05: one simple rule, no keyboard detection).
  *
  * Outside a step frame (a part shown on its own) the tools are drawn as they are.
  */
