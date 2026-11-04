@@ -1,6 +1,7 @@
 // The public surface: the typed /api/v1 client the web app, the CLI and MCP share.
 export type {
   AssignmentIntroClient,
+  AssignmentPrintClient,
   AttachmentClient,
   AttemptClient,
   Client,
@@ -16,5 +17,11 @@ export type {
   PodClient,
   RunRatingClient,
 } from "./client.ts";
-export { ApiError, createClient, TransientError, waitForPrint } from "./client.ts";
+export {
+  ApiError,
+  createClient,
+  TransientError,
+  waitForAssignmentPrint,
+  waitForPrint,
+} from "./client.ts";
 export { apiUrl } from "./url.ts";

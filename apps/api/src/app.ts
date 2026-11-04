@@ -64,7 +64,13 @@ import {
 } from "./people.ts";
 import { playgroundExamples } from "./playground.ts";
 import { type PokeStepHost, pokeAll } from "./poke.ts";
-import { getPrint, type PrintDeps, startPrint } from "./print.ts";
+import {
+  getAssignmentPrint,
+  getPrint,
+  type PrintDeps,
+  startAssignmentPrint,
+  startPrint,
+} from "./print.ts";
 import {
   type BankDeps,
   type BucketDeps,
@@ -230,6 +236,15 @@ export function createApp(
   on("playgroundExamples", (params) => run((s) => playgroundExamples(s, params.language)));
   on("getAssignmentIntro", (params) =>
     run((s) => getAssignmentIntro(s, params.id, params.learner_id)),
+  );
+  // Public by design (decision dl-3h2e8): the link prints its lesson as the link plays it, with no
+  // key, hint, solution or learner's name on the sheet. The print Lambda's reserved concurrency
+  // caps the renders a flood of starts can run at once (dl-1eieq.8.16).
+  on("startAssignmentPrint", (params) =>
+    run((s) => startAssignmentPrint(s, { ...print, now }, params.id)),
+  );
+  on("getAssignmentPrint", (params) =>
+    run((s) => getAssignmentPrint(s, { ...print, now }, params.id, params.print_id)),
   );
   on("startAttempt", (params, body) => run((s) => startAttempt(s, params.id, body)));
   on("getAttempt", (params) => run((s) => getAttempt(s, params.id)));

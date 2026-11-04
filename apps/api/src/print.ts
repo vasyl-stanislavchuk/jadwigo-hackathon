@@ -8,6 +8,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import {
+  type AssignmentId,
   type ConversationId,
   ErrorType,
   type PodId,
@@ -17,7 +18,7 @@ import {
   PrintStart,
   type PrintStatus,
 } from "@jadwigo/contracts";
-import { buildPrintSheet, LessonNotPrintable } from "@jadwigo/lesson-kit/paper";
+import { buildPrintSheet, LessonNotPrintable, type PrintInput } from "@jadwigo/lesson-kit/paper";
 import type { Store } from "@jadwigo/store";
 import type { Claims } from "./auth.ts";
 import { authorizeMember } from "./authorize.ts";
@@ -137,26 +138,10 @@ function ready(deps: PrintDeps): { bucket: PrintBucket; start: StartPrint } {
   return { bucket: deps.bucket, start: deps.start };
 }
 
-/** `POST /api/v1/conversations/{id}/prints`. */
-export async function startPrint(
-  store: Store,
-  deps: PrintDeps,
-  claims: Claims,
-  conversationId: ConversationId,
-  body: unknown,
-): Promise<PrintStatus> {
-  const parsed = PrintStart.safeParse(body ?? {});
-  if (!parsed.success) throw badRequest(parsed.error.issues);
-  const { pod } = await authorizeMember(store, claims);
-  const { compiled } = await checkedLesson(store, pod, conversationId, parsed.data.revision);
-  let sheet: PrintSheet;
+/** A lesson's sheet, or 409 `LessonNotPrintable` when no question of it has a paper form. */
+function sheetOf(deps: PrintDeps, input: Omit<PrintInput, "media">): PrintSheet {
   try {
-    sheet = buildPrintSheet({
-      title: compiled.lesson.title,
-      language: compiled.lesson.language,
-      questions: compiled.questions,
-      media: (src) => printMediaSrc(src, deps.media),
-    });
+    return buildPrintSheet({ ...input, media: (src) => printMediaSrc(src, deps.media) });
   } catch (e) {
     if (e instanceof LessonNotPrintable)
       throw new ApiError(
@@ -165,6 +150,10 @@ export async function startPrint(
       );
     throw e;
   }
+}
+
+/** The PDF of `sheet` under `pod`: the one already made, or the sheet stored and the Lambda started. */
+async function printUnder(deps: PrintDeps, pod: PodId, sheet: PrintSheet): Promise<PrintStatus> {
   const { bucket, start } = ready(deps);
   const id = printIdOf(sheet);
   const now = deps.now();
@@ -179,6 +168,34 @@ export async function startPrint(
   return { status: "pending", print_id: id };
 }
 
+/** Where print `id` stands in `pod`: 404 when no route made it there. */
+async function readUnder(deps: PrintDeps, pod: PodId, id: PrintId): Promise<PrintStatus> {
+  const { bucket } = ready(deps);
+  const status = await statusOf(bucket, pod, id, deps.now());
+  if (status === undefined) throw new ApiError(ErrorType.enum.NotFound, "no such print");
+  return status;
+}
+
+/** `POST /api/v1/conversations/{id}/prints`. */
+export async function startPrint(
+  store: Store,
+  deps: PrintDeps,
+  claims: Claims,
+  conversationId: ConversationId,
+  body: unknown,
+): Promise<PrintStatus> {
+  const parsed = PrintStart.safeParse(body ?? {});
+  if (!parsed.success) throw badRequest(parsed.error.issues);
+  const { pod } = await authorizeMember(store, claims);
+  const { compiled } = await checkedLesson(store, pod, conversationId, parsed.data.revision);
+  const sheet = sheetOf(deps, {
+    title: compiled.lesson.title,
+    language: compiled.lesson.language,
+    questions: compiled.questions,
+  });
+  return printUnder(deps, pod, sheet);
+}
+
 /** `GET /api/v1/prints/{id}`: another pod's print, or one never started, is 404. */
 export async function getPrint(
   store: Store,
@@ -187,10 +204,48 @@ export async function getPrint(
   id: PrintId,
 ): Promise<PrintStatus> {
   const { pod } = await authorizeMember(store, claims);
-  const { bucket } = ready(deps);
-  const status = await statusOf(bucket, pod, id, deps.now());
-  if (status === undefined) throw new ApiError(ErrorType.enum.NotFound, "no such print");
-  return status;
+  return readUnder(deps, pod, id);
+}
+
+/** The assignment's pod, or 404 for an id no assignment has. */
+async function assignmentPod(store: Store, id: AssignmentId): Promise<PodId> {
+  const pod = await store.findAssignmentPod(id);
+  if (pod === undefined) throw new ApiError(ErrorType.enum.NotFound, "no such assignment");
+  return pod;
+}
+
+/**
+ * `POST /api/v1/assignments/{id}/prints` (decision dl-3h2e8, dl-1eieq.8.15): holding the play link
+ * is the access, as for its first screen (intro.ts). It prints the version a start would play:
+ * the assignment's pinned one, else the lesson's latest. The sheet carries no key, hint or
+ * solution, and no learner's name: nothing a child wrote reaches it.
+ */
+export async function startAssignmentPrint(
+  store: Store,
+  deps: PrintDeps,
+  id: AssignmentId,
+): Promise<PrintStatus> {
+  const pod = await assignmentPod(store, id);
+  const assignment = await store.getAssignment(pod, id);
+  const lesson = await store.getLesson(pod, assignment.lesson_id);
+  const version =
+    lesson === undefined
+      ? undefined
+      : (assignment.lesson_version_id ?? (await store.getLatestLessonVersion(pod, lesson.id))?.id);
+  if (lesson === undefined || version === undefined)
+    throw new ApiError(ErrorType.enum.NotFound, "no lesson to print");
+  const { language, questions } = await store.getLessonVersion(pod, version);
+  return printUnder(deps, pod, sheetOf(deps, { title: lesson.title, language, questions }));
+}
+
+/** `GET /api/v1/assignments/{id}/prints/{print_id}`: read in the assignment's pod only. */
+export async function getAssignmentPrint(
+  store: Store,
+  deps: PrintDeps,
+  id: AssignmentId,
+  printId: PrintId,
+): Promise<PrintStatus> {
+  return readUnder(deps, await assignmentPod(store, id), printId);
 }
 
 /** The print routes' bucket in the Lambda: the uploads bucket, by the same name lookup. */

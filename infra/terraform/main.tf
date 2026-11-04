@@ -91,6 +91,8 @@ module "app" {
     "GET /api/v1/playground-examples/{language}",
     "GET /api/v1/assignments/{id}",
     "POST /api/v1/assignments/{id}/attempts",
+    "POST /api/v1/assignments/{id}/prints",
+    "GET /api/v1/assignments/{id}/prints/{print_id}",
     "GET /api/v1/attempts/{id}",
     "PATCH /api/v1/attempts/{id}",
     "POST /api/v1/attempts/{id}/answers",
