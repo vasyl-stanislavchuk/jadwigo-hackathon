@@ -129,11 +129,18 @@ export function useHardwareKeyboard(ref: RefObject<HTMLElement>): boolean {
     const read = (): void =>
       setHardware((pointer?.matches === true && !said()) || HARDWARE in root.dataset);
     const typed = (event: KeyboardEvent): void => {
-      if (HARDWARE in root.dataset || event.isComposing || event.key.length !== 1) return;
+      if (event.isComposing || event.key.length !== 1) return;
+      // Already seen (by another step's listener, say): this one reads it too.
+      if (HARDWARE in root.dataset) {
+        read();
+        return;
+      }
       const target = event.target;
       if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) return;
+      // The room the visual viewport leaves, not keyboardInset: iOS pans the page under its
+      // keyboard (offsetTop grows), which shrinks the inset while the keyboard is still up.
       const viewport = window.visualViewport;
-      if (viewport && keyboardInset(window.innerHeight, viewport) > SYSTEM_KEYBOARD_MIN) return;
+      if (viewport && window.innerHeight - viewport.height > SYSTEM_KEYBOARD_MIN) return;
       root.dataset[HARDWARE] = "";
       read();
     };

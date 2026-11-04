@@ -1484,6 +1484,11 @@ describe("on a phone in a lesson the answer sits in the page", () => {
     </div>
   );
 
+  // Decision dl-6ihrv, dl-uukj.29.174: the phone's own keyboard has the Polish letters. A seen
+  // hardware keyboard is marked on <html> for the page, so each test starts without it.
+  afterEach(() => {
+    delete document.documentElement.dataset["hardwareKeys"];
+  });
   // Decision dl-6ihrv, dl-uukj.29.174: the phone's own keyboard has the Polish letters.
   const letters = (
     <>
@@ -1511,7 +1516,24 @@ describe("on a phone in a lesson the answer sits in the page", () => {
       fireEvent.keyDown(screen.getByRole("textbox", { name: "answer" }), { key: "l" });
     });
     expect(container.querySelector("[data-letters]")).not.toBeNull();
-    delete document.documentElement.dataset["hardwareKeys"];
+  });
+
+  it("does not take the iPhone's own keys for a hardware keyboard while iOS pans the page", () => {
+    const viewport = Object.assign(new EventTarget(), {
+      height: 844 - 300,
+      offsetTop: 290,
+      width: 390,
+    });
+    const was = Object.getOwnPropertyDescriptor(window, "visualViewport");
+    Object.defineProperty(window, "visualViewport", { configurable: true, value: viewport });
+    try {
+      const { container } = render(<div data-input-touch>{lesson({ answer: letters })}</div>);
+      fireEvent.keyDown(screen.getByRole("textbox", { name: "answer" }), { key: "a" });
+      expect(container.querySelector("[data-letters]")).toBeNull();
+    } finally {
+      if (was) Object.defineProperty(window, "visualViewport", was);
+      else delete (window as { visualViewport?: unknown }).visualViewport;
+    }
   });
 
   it("does not take the on-screen keys for a hardware keyboard", () => {
