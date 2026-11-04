@@ -5,6 +5,8 @@
  *   /play/<assignment id>              plays that assignment; a reload resumes the tab's attempt
  *   /play/<assignment id>?learner=<id> plays it as that child of the pod (dl-1u6fn.5)
  *   /play/<assignment id>/review/<seq> once it is finished, that question again, from the end list
+ *   /play/<assignment id>?q=<n>        a fresh preview attempt opened at planned question n, the
+ *                                      ones before it skipped: to look at one question (dl-uukj.60)
  *
  * Moving around uses the app's pushState helpers (src/nav/location.ts), so both share one
  * live URL.
@@ -45,4 +47,10 @@ export const reviewPath = (assignmentId: AssignmentId, seq: number): string =>
 export function playLearner(query: URLSearchParams): LearnerId | null {
   const parsed = LearnerId.safeParse(query.get("learner"));
   return parsed.success ? parsed.data : null;
+}
+
+/** The question a `?q=` link opens a preview at: a whole number above 0, else null. */
+export function playQuestion(query: URLSearchParams): number | null {
+  const raw = query.get("q");
+  return raw !== null && /^[1-9]\d*$/.test(raw) ? Number(raw) : null;
 }

@@ -332,6 +332,22 @@ html:has([data-step-shell][data-framed] [data-tools-dock]:not([hidden])) {
     );
 }
 
+/* The columns follow the options, so no empty track narrows a tile under its word and its badge
+ * (dl-uukj.59): 1 or 2 options are 2 columns, and 5 or more are 2 columns at any width, so a 5th
+ * never hangs alone. */
+.kid-choice-grid:not(:has(> :nth-child(3))),
+.kid-choice-grid:has(> :nth-child(5)) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* 3 options stand in one row of 3 from 40.25rem of the grid's own width, one under another below. */
+.kid-choice-grid:has(> :nth-child(3):last-child) {
+  grid-template-columns: repeat(
+      auto-fill,
+      minmax(clamp(calc(33.333% - var(--kid-choice-gap)), calc((40.25rem - 100%) * 999), 100%), 1fr)
+    );
+}
+
 /* In a centred tile (grid, binary) the badge leaves the flow, so the answer stays centred (Choose
  * addendum 1.6). A tile wide enough (about 152px, so the answer keeps 40px clear between the
  * badges' room) takes it at its side: absolute at left 20, centred on the tile's height, the content
