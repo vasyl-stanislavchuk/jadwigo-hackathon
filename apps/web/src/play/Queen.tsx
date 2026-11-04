@@ -44,11 +44,18 @@ function Clip({
 }): ReactElement | null {
   const video = useRef<HTMLVideoElement>(null);
   const still = prefersReducedMotion();
-  // Above the footer, however tall its band is now; at the bottom when the page has none.
+  // Above the footer, however tall its band is now; at the bottom when the page has none. The band
+  // rises in (stage-band-rise) as the clip comes, so its box is still below the window then: a
+  // footer fixed to the window's bottom is measured by its height, which no transform moves.
   const [bottom, setBottom] = useState(0);
   useLayoutEffect(() => {
-    const bar = document.querySelector("[data-bar]");
-    if (bar !== null) setBottom(Math.max(0, window.innerHeight - bar.getBoundingClientRect().top));
+    const bar = document.querySelector<HTMLElement>("[data-bar]");
+    if (bar === null) return;
+    const top =
+      getComputedStyle(bar).position === "fixed"
+        ? window.innerHeight - bar.offsetHeight
+        : bar.getBoundingClientRect().top;
+    setBottom(Math.max(0, window.innerHeight - top));
   }, []);
 
   useEffect(() => {

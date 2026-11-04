@@ -100,7 +100,8 @@ for (const [cast, draw] of [
           overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         };
       });
-      if (cast === "iwona") expect(box.src).toContain("iwona-pl.webm");
+      // The build hashes the name: iwona-pl-<hash>.webm.
+      if (cast === "iwona") expect(box.src).toMatch(/\/iwona-pl[-.][^/]*webm$/);
       expect(Math.abs(box.shown - box.natural)).toBeLessThan(0.02);
       expect(box.left).toBeGreaterThanOrEqual(0);
       expect(box.right).toBeLessThanOrEqual(viewport.width + 0.5);
