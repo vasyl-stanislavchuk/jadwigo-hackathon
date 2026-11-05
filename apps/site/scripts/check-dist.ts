@@ -51,7 +51,7 @@ const landing: readonly DistCheck[] = [
   // O nas shows the family's photos, served from the bucket's about-photos/ (dl-w0b4.42).
   ["o-nas/index.html", "/about-photos/photo-1-640.webp"],
   // And the film, with the link to the docs.
-  ["o-nas/index.html", "/about-photos/film.mp4"],
+  ["o-nas/index.html", "/about-photos/hackathon-demo.mp4"],
   ["o-nas/index.html", 'href="https://docs.jadwigo.pl/"'],
   // /jak-to-dziala's first step plays its clip, served the same way.
   ["jak-to-dziala/index.html", "/about-photos/how-request.mp4"],

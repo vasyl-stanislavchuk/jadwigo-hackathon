@@ -49,6 +49,7 @@ const story = (entry.rendered?.html ?? "").replace(
               <p class="links-title">{video.links}</p>
               <ul class="links">
                 <li><FilmModal words={video} /></li>
+                <li><a href={`/about-photos/${video.file}`} download>{video.download}</a></li>
                 <li><a href={`https://${docsHost}/`}>{video.docs}</a></li>
                 {link && <li><a href={`${link.href}/`}>{link.label}</a></li>}
               </ul>

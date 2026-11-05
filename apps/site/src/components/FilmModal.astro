@@ -8,13 +8,14 @@ interface Props {
 
 const { words } = Astro.props;
 const src = `/about-photos/${words.file}`;
+const poster = src.replace(/\.mp4$/, "-poster.webp");
 ---
 
 <a href={src} data-film-open>{words.cta}</a>
 
 <dialog class="film" aria-label={words.heading} data-film>
   <button type="button" class="close" data-film-close aria-label={words.close}>×</button>
-  <video controls preload="none" playsinline src={src} poster="/about-photos/film-poster.webp" aria-label={words.heading}></video>
+  <video controls preload="none" playsinline src={src} poster={poster} aria-label={words.heading}></video>
 </dialog>
 
 <script>

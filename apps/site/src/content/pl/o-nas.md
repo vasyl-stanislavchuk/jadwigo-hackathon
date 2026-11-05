@@ -10,7 +10,7 @@ photos:
   - { file: photo-3, width: 1280, height: 1678, alt: "David i jego młodszy brat jadą na hulajnogach po chodniku." }
   - { file: photo-1, width: 1280, height: 1090, alt: "Nasza czwórka przy stoliku przed kawiarnią: mama i tata stoją, chłopcy siedzą na krzesłach, tata pokazuje kciuk w górę." }
 photosLabel: Zdjęcia naszej rodziny
-video: { links: "Przydatne linki:", heading: Demo z hackathonu, cta: Demo z hackathonu, close: Zamknij, docs: Dokumentacja, file: film.mp4 }
+video: { links: "Przydatne linki:", heading: Demo z hackathonu, cta: Demo z hackathonu, close: Zamknij, docs: Dokumentacja, download: Pobierz film, file: hackathon-demo.mp4 }
 link: { href: /lekcje, label: Zagraj lekcję }
 ---
 
