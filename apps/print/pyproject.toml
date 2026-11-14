@@ -7,9 +7,9 @@ requires-python = ">=3.12"
 dependencies = [
   "weasyprint==70.0", # lays out the paper HTML and CSS into the PDF (src/printer/render.py)
   "jinja2==3.1.6", # the sheet template and one macro per question type (src/printer/templates/)
-  "pydantic==2.14.1", # the PrintSheet models, extra="forbid" like the contract (src/printer/sheet.py)
-  "boto3==1.43.120", # the S3 get and puts in the uploads bucket (src/printer/handler.py)
-  "posthog==7.75.11", # reports an unexpected failure, its type and stack only (src/printer/report.py)
+  "pydantic==2.14.3", # the PrintSheet models, extra="forbid" like the contract (src/printer/sheet.py)
+  "boto3==1.43.126", # the S3 get and puts in the uploads bucket (src/printer/handler.py)
+  "posthog==7.86.0", # reports an unexpected failure, its type and stack only (src/printer/report.py)
 ]
 
 [dependency-groups]
@@ -21,5 +21,5 @@ dev = [
 ]
 
 [build-system]
-requires = ["uv_build==0.13.6"]
+requires = ["uv_build==0.13.7"]
 build-backend = "uv_build"
