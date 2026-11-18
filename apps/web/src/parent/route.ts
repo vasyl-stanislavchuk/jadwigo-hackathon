@@ -7,6 +7,8 @@
  *                              one lesson's workspace: its chat, the lesson, its details (dl-uukj.47.5)
  *   /parent/history            every attempt, newest first, a table (dl-z5ja.106.1)
  *   /parent/children/<learner> one child's page (dl-uukj.47.3)
+ *   /parent/settings/<section> one settings page: account, language or ai (the AI consent);
+ *                              /parent/settings alone is the account's
  *   /parent?claim=<assignment> the same, then keep the attempt this tab played of that assignment
  *   /parent?for=<learner>      the first screen with "Dla" set to that child (dl-uukj.47.2)
  *   /parent/attempts/<attempt>?learner=<learner>
@@ -29,6 +31,11 @@ const ASSIGNMENTS_PATH = `${PARENT_PATH}/assignments`;
 const LESSONS_PATH = `${PARENT_PATH}/lessons`;
 const HISTORY_PATH = `${PARENT_PATH}/history`;
 const CHILDREN_PATH = `${PARENT_PATH}/children`;
+const SETTINGS_PATH = `${PARENT_PATH}/settings`;
+
+/** The settings pages, in the sidebar's order: each a row under Ustawienia and a whole page. */
+export const SETTINGS_SECTIONS = ["account", "language", "ai"] as const;
+export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 /** A path with the page's language, when there is one. */
 const withLang = (path: string, lang: string | null | undefined): string =>
@@ -59,6 +66,15 @@ export const childPath = ({
   learner: LearnerId;
   lang?: string | null;
 }): string => withLang(`${CHILDREN_PATH}/${learner}`, lang);
+
+/** /parent/settings/<section>, one settings page. */
+export const settingsPath = ({
+  section,
+  lang,
+}: {
+  section: SettingsSection;
+  lang?: string | null;
+}): string => withLang(`${SETTINGS_PATH}/${section}`, lang);
 
 /** /parent, with the assignment whose attempt to keep, the child a new lesson is for, and the page's
  * language. */
@@ -106,14 +122,15 @@ export function assignmentPath({
   return withLang(`${ASSIGNMENTS_PATH}/${assignment}`, lang);
 }
 
-/** Which parent page a path is: the home (the first screen), the lessons, the history, a child, an
- * attempt or an assignment's overview (null for an id that does not parse), or none. */
+/** Which parent page a path is: the home (the first screen), the lessons, the history, a child, a
+ * settings page (null for a section there is none of), an attempt or an assignment's overview (null for an id that does not parse), or none. */
 export type ParentRoute =
   | { kind: "home" }
   | { kind: "lessons" }
   | { kind: "lesson"; conversation: ConversationId | null }
   | { kind: "history" }
   | { kind: "child"; learner: LearnerId | null }
+  | { kind: "settings"; section: SettingsSection | null }
   | { kind: "attempt"; attempt: AttemptId | null }
   | { kind: "assignment"; assignment: AssignmentId | null };
 
@@ -126,6 +143,7 @@ export function parentRoute(path: string): ParentRoute | null {
   if (bare === PARENT_PATH) return { kind: "home" };
   if (bare === LESSONS_PATH) return { kind: "lessons" };
   if (bare === HISTORY_PATH) return { kind: "history" };
+  if (bare === SETTINGS_PATH) return { kind: "settings", section: "account" };
   const lesson = idUnder(path, LESSONS_PATH);
   if (lesson !== undefined) {
     const parsed = ConversationId.safeParse(lesson);
@@ -136,6 +154,9 @@ export function parentRoute(path: string): ParentRoute | null {
     const parsed = LearnerId.safeParse(child);
     return { kind: "child", learner: parsed.success ? parsed.data : null };
   }
+  const section = idUnder(path, SETTINGS_PATH);
+  if (section !== undefined)
+    return { kind: "settings", section: SETTINGS_SECTIONS.find((s) => s === section) ?? null };
   const attempt = idUnder(path, ATTEMPTS_PATH);
   if (attempt !== undefined) {
     const parsed = AttemptId.safeParse(attempt);

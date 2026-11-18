@@ -3,17 +3,20 @@
  * column-lesson-workspac, dl-xo0q; handoff §2.1, docs/worklog/dl-uukj.47):
  *
  *   ┌──────────────┬───────────────────────────────────┐
- *   │ logo         │ breadcrumb                account │ ← one 56 px line across
+ *   │ logo         │ breadcrumb                        │ ← one 56 px line across
  *   ├──────────────┼───────────────────────────────────┤
  *   │ sidebar      │ the page                          │
+ *   │ (●) Konto    │                                   │
  *   │ [▯] Zwiń menu│                                   │
  *   └──────────────┴───────────────────────────────────┘
  *     232, folds to 60
  *
  * On the adult kit (dl-uukj.47.67 §8, §9): the sidebar on the stone fill, the top bar holding the
- * breadcrumb and, in its right corner, the account menu (the page's language and signing out,
- * S10). The sidebar's foot holds the fold button only. On a phone the sidebar is a drawer from the
- * left, opened by the bar's burger, with the account at its foot. N, pressed outside a field, opens
+ * breadcrumb. The account, the one profile button, stands bottom left in every face: at the open
+ * sidebar's foot above the fold button, at the rail's foot above the unfold button, and at the
+ * phone drawer's foot; its menu opens the settings pages and signs out (handoff dl-uukj.47 §6:
+ * settings live at the sidebar's foot). On a phone the sidebar is a drawer from the left, opened by
+ * the bar's burger. N, pressed outside a field, opens
  * a new lesson (D8). The sidebar's fold is remembered per device (fold.ts). Everything inside
  * draws in the parent's density, the toasts included (bottom right, @jadwigo/ui's Toaster).
  */
@@ -78,7 +81,7 @@ export function ParentShell({
   onSignOut: () => void;
   /** What leads the top bar before the breadcrumb, such as the lesson chat's fold button. */
   barLead?: ReactNode;
-  /** What stands at the bar's right, before the account, such as "Pokaż lekcję". */
+  /** What stands at the bar's right, such as "Pokaż lekcję". */
   barEnd?: ReactNode;
   children: ReactNode;
 }): ReactElement {
@@ -124,16 +127,20 @@ export function ParentShell({
           <SidebarBody
             {...sidebar}
             foot={
-              <FoldButton
-                label={t("parent_menu_fold")}
-                controls={SIDEBAR_ID}
-                onFold={() => setOpen(false)}
-              />
+              <>
+                <Account language={language} onSignOut={onSignOut} />
+                <FoldButton
+                  label={t("parent_menu_fold")}
+                  controls={SIDEBAR_ID}
+                  onFold={() => setOpen(false)}
+                />
+              </>
             }
           />
         ) : (
           <SidebarRail
             {...sidebar}
+            account={<Account language={language} onSignOut={onSignOut} folded />}
             unfold={
               <PanelToggle
                 side="left"
@@ -183,12 +190,7 @@ export function ParentShell({
             trail={trail}
             onNavigate={(href) => navigate(href)}
           />
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            {barEnd}
-            <div className="hidden lg:flex">
-              <Account language={language} onSignOut={onSignOut} />
-            </div>
-          </div>
+          <div className="ml-auto flex shrink-0 items-center gap-2">{barEnd}</div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto" data-shell-page>
           {children}

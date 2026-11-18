@@ -107,9 +107,11 @@ import {
   parentPath,
   parentRoute,
   providerOf,
+  settingsPath,
 } from "./route.ts";
+import { SettingsPage } from "./settings/SettingsPage.tsx";
 import { ParentShell } from "./shell/ParentShell.tsx";
-import type { Place } from "./shell/Sidebar.tsx";
+import { type Place, SETTINGS_PAGE } from "./shell/Sidebar.tsx";
 import { learnerTone } from "./tone.ts";
 import { browserEngine, firstMessage, type LessonEngine } from "./workspace/engine.ts";
 import { type LessonRename, LessonWorkspace } from "./workspace/LessonWorkspace.tsx";
@@ -759,7 +761,14 @@ function SignedIn({
   // The pod's consent to the AI, once, right after the first sign-in: inside the shell at the
   // parent's density, as it is when a send asks for it (dl-uukj.47.25).
   const pod = view.me.pod;
-  if (pods !== null && pod !== null && (pod.ai_consent_at ?? null) === null && !later)
+  // The settings pages stay reachable: the AI consent page is where it is withdrawn.
+  if (
+    pods !== null &&
+    pod !== null &&
+    (pod.ai_consent_at ?? null) === null &&
+    !later &&
+    route.kind !== "settings"
+  )
     return shell(
       { kind: "lessons" },
       newLesson,
@@ -917,6 +926,39 @@ function SignedIn({
           language={language}
           notice={notice === null ? null : t(notice)}
           tone={learnerTone(learners, child.id)}
+        />,
+      );
+    }
+    case "settings": {
+      const settings: Crumb = {
+        label: t("parent_nav_settings"),
+        href: settingsPath({ section: "account", lang }),
+      };
+      if (route.section === null)
+        return shell(
+          { kind: "elsewhere" },
+          [settings],
+          <ParentPage>
+            <Failed language={language} />
+          </ParentPage>,
+        );
+      const section = route.section;
+      return shell(
+        { kind: "settings", section },
+        [settings, { label: t(SETTINGS_PAGE[section].name) }],
+        <SettingsPage
+          section={section}
+          language={language}
+          me={view.me}
+          onSignOut={onSignOut}
+          onConsent={
+            pods === null || pod === null
+              ? null
+              : async (consented) => {
+                  await pods.patchPod(pod.id, { ai_consented: consented });
+                  setView({ kind: "ready", me: await meOf(api, languageNow.current) });
+                }
+          }
         />,
       );
     }

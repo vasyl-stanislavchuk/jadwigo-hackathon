@@ -2,8 +2,9 @@
 /**
  * The parent app's frame (dl-uukj.47.4, decision dl-xo0q; the adult kit, dl-uukj.47.67.6): the
  * sidebar folds to its rail and back and remembers it per device, Lekcje's "+" and the N key open a
- * new lesson, the top bar holds the breadcrumb, the phone's menu and the account menu with the
- * page's language, and the children are rows in their tones with a "+" beside their heading.
+ * new lesson, the top bar holds the breadcrumb and the phone's menu, the account stands bottom left
+ * in every face with the settings pages in its menu, the children are rows in their tones with a
+ * "+" beside their heading, and each settings page is a row under Ustawienia.
  * happy-dom does no layout, so the
  * widths and the 56 px line are apps/web/e2e/parent-shell.spec.ts's.
  */
@@ -11,15 +12,9 @@
 import { type Learner, LearnerId } from "@jadwigo/contracts";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { pickLanguage } from "../../nav/language.ts";
 import { folds, OPEN_AT_FIRST } from "./fold.ts";
 import { ParentShell } from "./ParentShell.tsx";
 import type { Place } from "./Sidebar.tsx";
-
-vi.mock("../../nav/language.ts", async (original) => ({
-  ...(await original<typeof import("../../nav/language.ts")>()),
-  pickLanguage: vi.fn(),
-}));
 
 const OLA = LearnerId.parse("lrn_2h4m8gyw0fb1cvz2nkqw0px8fq");
 const KUBA = LearnerId.parse("lrn_3h4m8gyw0fb1cvz2nkqw0px8fq");
@@ -109,34 +104,61 @@ describe("the sidebar's fold", () => {
 });
 
 describe("the top bar", () => {
-  it("holds the breadcrumb, with the current page marked, the phone's menu and the account", () => {
+  it("holds the breadcrumb, with the current page marked, and the phone's menu, never the account", () => {
     shell();
     const bar = document.querySelector("[data-top-bar]") as HTMLElement;
     const crumbs = within(bar).getByRole("navigation", { name: "Gdzie jesteś" });
     expect(within(crumbs).getByText("Nowa lekcja").getAttribute("aria-current")).toBe("page");
     expect(within(crumbs).getByRole("link", { name: "Lekcje" })).toBeDefined();
-    // No call to action: the phone's drawer, then the account in the right corner.
+    // No call to action and no account: the phone's drawer is its one button.
     expect(
       within(bar)
         .getAllByRole("button")
         .map((b) => b.textContent || b.getAttribute("aria-label")),
-    ).toEqual(["Otwórz menu", "Konto i ustawienia"]);
+    ).toEqual(["Otwórz menu"]);
+  });
+});
+
+describe("the account, bottom left", () => {
+  it("stands at the open sidebar's foot, above Zwiń menu", () => {
+    shell();
+    const aside = document.getElementById("parent-sidebar") as HTMLElement;
+    const account = within(aside).getByRole("button", { name: "Konto i ustawienia" });
+    const fold = within(aside).getByRole("button", { name: "Zwiń menu" });
+    expect(account.parentElement).toBe(fold.parentElement);
+    expect(account.compareDocumentPosition(fold) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("opens the account menu by keyboard, and its Język strony radio switches the language", async () => {
+  it("stands at the rail's foot, above Rozwiń menu, when the sidebar is folded", async () => {
     shell();
-    const account = screen.getByRole("button", { name: "Konto i ustawienia" });
-    fireEvent.keyDown(account, { key: "Enter" });
-    const language = await screen.findByRole("menuitem", { name: "Język strony" });
-    expect(screen.getByRole("menuitem", { name: "Wyloguj się" })).toBeDefined();
-    // Polski and English only (D14).
-    language.focus();
-    fireEvent.keyDown(language, { key: "ArrowRight" });
-    const radios = await screen.findAllByRole("menuitemradio");
-    expect(radios.map((r) => r.textContent)).toEqual(["Polski", "English"]);
-    expect(radios[0]?.getAttribute("aria-checked")).toBe("true");
-    fireEvent.click(screen.getByRole("menuitemradio", { name: "English" }));
-    expect(pickLanguage).toHaveBeenCalledWith("en");
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zwiń menu" })));
+    const aside = document.getElementById("parent-sidebar") as HTMLElement;
+    const account = within(aside).getByRole("button", { name: "Konto i ustawienia" });
+    const unfold = within(aside).getByRole("button", { name: "Rozwiń menu" });
+    expect(account.parentElement).toBe(unfold.parentElement);
+  });
+
+  it("stands at the phone drawer's foot", async () => {
+    shell();
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Otwórz menu" })));
+    const drawer = document.querySelector("[data-drawer]") as HTMLElement;
+    expect(within(drawer).getByRole("button", { name: "Konto i ustawienia" })).toBeDefined();
+  });
+
+  it("opens by keyboard and lists each settings page, then signing out", async () => {
+    shell();
+    fireEvent.keyDown(screen.getByRole("button", { name: "Konto i ustawienia" }), {
+      key: "Enter",
+    });
+    await screen.findByRole("menu");
+    expect(screen.getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
+      "Konto",
+      "Język",
+      "Zgoda na AI",
+      "Wyloguj się",
+    ]);
+    fireEvent.click(screen.getByRole("menuitem", { name: "Język" }));
+    expect(window.location.pathname).toBe("/parent/settings/language");
   });
 
   it("signs out from the account menu", async () => {
@@ -156,6 +178,30 @@ describe("the top bar", () => {
     fireEvent.keyDown(screen.getByRole("button", { name: "Konto i ustawienia" }), { key: "Enter" });
     fireEvent.click(await screen.findByRole("menuitem", { name: "Wyloguj się" }));
     expect(out).toHaveBeenCalledOnce();
+  });
+});
+
+describe("the settings group", () => {
+  it("lists Konto, Język and Zgoda na AI as rows under Ustawienia, each a whole page", () => {
+    shell({ kind: "settings", section: "ai" });
+    const group = screen.getByRole("region", { name: "Ustawienia" });
+    const rows = within(group).getAllByRole("link");
+    expect(rows.map((r) => [r.textContent, r.getAttribute("href")])).toEqual([
+      ["Konto", "/parent/settings/account"],
+      ["Język", "/parent/settings/language"],
+      ["Zgoda na AI", "/parent/settings/ai"],
+    ]);
+    expect(rows.map((r) => r.getAttribute("aria-current"))).toEqual([null, null, "page"]);
+  });
+
+  it("keeps each settings page as a named icon on the rail", async () => {
+    shell({ kind: "settings", section: "language" });
+    await act(async () => fireEvent.click(screen.getByRole("button", { name: "Zwiń menu" })));
+    const rail = screen.getByRole("navigation", { name: "Menu" });
+    expect(within(rail).getByRole("link", { name: "Język" }).getAttribute("aria-current")).toBe(
+      "page",
+    );
+    expect(within(rail).getByRole("link", { name: "Zgoda na AI" })).toBeDefined();
   });
 });
 

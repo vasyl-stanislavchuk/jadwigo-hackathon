@@ -53,9 +53,9 @@ const box = async (page: Page, selector: string) => {
 
 test.beforeEach(({ page }) => agreeToAi(page));
 
-// The top bar holds the breadcrumb and, in its right corner, the account (decision dl-hz9ks,
-// 2026-11-02, amending dl-xo0q): on the first screen the account is its one button.
-test("one 56 px line runs across the logo row and the top bar: the breadcrumb, then the account", async ({
+// The top bar holds the breadcrumb only; the account is the one profile button, bottom left, at the
+// sidebar's foot above Zwiń menu (handoff dl-uukj.47 §6: settings live at the sidebar's foot).
+test("one 56 px line runs across the logo row and the top bar, and the account stands bottom left", async ({
   page,
 }) => {
   await signIn(page);
@@ -64,13 +64,30 @@ test("one 56 px line runs across the logo row and the top bar: the breadcrumb, t
   expect(Math.round(bar.height)).toBe(56);
   expect(Math.round(logoRow.height)).toBe(56);
   expect(Math.round(logoRow.y + logoRow.height)).toBe(Math.round(bar.y + bar.height));
-  const buttons = page.locator("[data-top-bar]").getByRole("button");
-  // A role query skips the phone's menu, hidden at this width: the account menu is the one button.
-  await expect(buttons).toHaveCount(1);
-  await expect(buttons.first()).toHaveAccessibleName("Konto i ustawienia");
+  // A role query skips the phone's menu, hidden at this width: the bar has no button.
+  await expect(page.locator("[data-top-bar]").getByRole("button")).toHaveCount(0);
   await expect(page.getByRole("navigation", { name: "Gdzie jesteś" })).toContainText(
     "Lekcje/Nowa lekcja",
   );
+  const sidebar = await box(page, "#parent-sidebar");
+  const account = await box(page, "#parent-sidebar [data-account]");
+  const fold = await box(page, "#parent-sidebar [data-fold-sidebar]");
+  expect(account.x - sidebar.x).toBeLessThan(16);
+  expect(account.y).toBeLessThan(fold.y);
+  expect(Math.round(sidebar.y + sidebar.height - (fold.y + fold.height))).toBeLessThan(16);
+});
+
+test("each settings row opens its whole page, and the account menu lists them", async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.locator("[data-settings-row=language]").click();
+  await expect(page).toHaveURL(/\/parent\/settings\/language/);
+  await expect(page.getByRole("heading", { name: "Język" })).toBeVisible();
+  await page.locator("#parent-sidebar [data-account]").click();
+  await page.getByRole("menuitem", { name: "Zgoda na AI" }).click();
+  await expect(page).toHaveURL(/\/parent\/settings\/ai/);
+  await expect(page.getByRole("switch", { name: "Zgoda na Jadwigo AI" })).toBeVisible();
 });
 
 test("the sidebar is 232 px, folds to a 60 px rail, and stays folded after a reload", async ({

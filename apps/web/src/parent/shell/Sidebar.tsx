@@ -8,11 +8,15 @@
  *   empty line    what will appear here, until there is a first lesson
  *   Dzieci        a 12/500 muted label with a ghost "+" beside it, never a row; a row per child:
  *                 the disc in the child's tone (D7) and the name
- *   foot          the fold button, named "Zwiń menu", and nothing else
+ *   Ustawienia    the same muted label, and a row per settings page (Konto, Język, Zgoda na AI),
+ *                 each opening its whole page at /parent/settings/<section>, as a child's row does
+ *   foot          the account (the parent's disc, "Konto i ustawienia"), then "Zwiń menu"
  *
- * The account (the page's language and signing out) is a menu in the top bar's right corner, and
- * at the phone drawer's foot. Folded, the sidebar is a 60 px rail: the crown, the menu as icons, a
- * disc per child and the unfold button at its foot. Each icon-only control is named from copy.
+ * The account is the one profile button, bottom left everywhere: the open sidebar's foot, the
+ * rail's foot and the phone drawer's foot. Its menu lists the settings pages and signing out; the
+ * top bar holds no account. Folded, the sidebar is a 60 px rail: the crown, the menu as icons, a
+ * disc per child, an icon per settings page, and the account and the unfold button at its foot.
+ * Each icon-only control is named from copy.
  */
 
 import type { Learner, LearnerId } from "@jadwigo/contracts";
@@ -23,12 +27,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   Logo,
   Tooltip,
@@ -37,20 +36,28 @@ import {
 } from "@jadwigo/ui";
 import {
   BookOpenIcon,
-  ChevronDownIcon,
+  ChevronsUpDownIcon,
   GlobeIcon,
   HistoryIcon,
   LogOutIcon,
   PanelLeftIcon,
   PlusIcon,
+  ShieldCheckIcon,
+  UserIcon,
 } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
-import { pickLanguage } from "../../nav/language.ts";
-import { LANGUAGES } from "../../nav/location.ts";
+import { navigate } from "../../nav/location.ts";
 import { NavLink } from "../../nav/NavLink.tsx";
 import { CATEGORY, pageLang } from "../adult.ts";
-import { LANGUAGE_NAME } from "../LanguagePick.tsx";
-import { childPath, historyPath, lessonsPath, parentPath } from "../route.ts";
+import {
+  childPath,
+  historyPath,
+  lessonsPath,
+  parentPath,
+  SETTINGS_SECTIONS,
+  type SettingsSection,
+  settingsPath,
+} from "../route.ts";
 import { learnerTone } from "../tone.ts";
 
 /** Where in the app the page is, for the menu's and the children's current mark. */
@@ -58,7 +65,15 @@ export type Place =
   | { kind: "lessons" }
   | { kind: "history" }
   | { kind: "child"; learner: LearnerId }
+  | { kind: "settings"; section: SettingsSection }
   | { kind: "elsewhere" };
+
+/** Each settings page's name and icon, for its sidebar row, its rail icon and the account menu. */
+export const SETTINGS_PAGE: Record<SettingsSection, { name: CopyKey; icon: typeof UserIcon }> = {
+  account: { name: "parent_settings_account", icon: UserIcon },
+  language: { name: "parent_settings_language", icon: GlobeIcon },
+  ai: { name: "parent_settings_ai", icon: ShieldCheckIcon },
+};
 
 export interface SidebarProps {
   language: Language;
@@ -92,55 +107,70 @@ const say =
     copy(language, key, {}, CATEGORY);
 
 /**
- * The account in the top bar's right corner (§6.6): the parent's disc and a chevron, opening the
- * page's language (Polski, English; D14) and signing out.
+ * The account, the one profile button, bottom left: the parent's disc and "Konto i ustawienia" as a
+ * whole row at the open sidebar's and the drawer's foot, the disc alone on the rail. Its menu opens
+ * up (beside the rail), and lists each settings page, then signing out.
  */
 export function Account({
   language,
   onSignOut,
+  folded = false,
 }: {
   language: Language;
   onSignOut: () => void;
+  /** On the rail: the disc alone, named from copy, its menu opening to the right. */
+  folded?: boolean;
 }): ReactElement {
   const t = say(language);
+  const lang = pageLang();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={t("parent_account")}
-          className={cn(
-            "flex h-8 items-center gap-1 rounded-jw-small px-1 text-jw-ink-soft hover:bg-jw-act-quiet",
-            FOCUS,
-          )}
-          data-account
-        >
-          <Disc kind="parent" size={24} />
-          <ChevronDownIcon aria-hidden className="size-4" />
-        </button>
+        {folded ? (
+          <button
+            type="button"
+            aria-label={t("parent_account")}
+            title={t("parent_account")}
+            className={cn(
+              "grid min-h-jw-control min-w-jw-control place-items-center rounded-jw-small hover:bg-jw-side-active",
+              FOCUS,
+            )}
+            data-account
+          >
+            <Disc kind="parent" size={20} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            aria-label={t("parent_account")}
+            className={cn(ROW, "w-full text-left hover:bg-jw-side-active")}
+            data-account
+          >
+            <Disc kind="parent" size={20} />
+            <span className="min-w-0 flex-1 truncate">{t("parent_account")}</span>
+            <ChevronsUpDownIcon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" />
+          </button>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-jw-shell-side" data-account-menu>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <GlobeIcon aria-hidden />
-            {t("parent_page_language")}
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
-            <DropdownMenuRadioGroup
-              value={language}
-              onValueChange={(value) => {
-                const picked = LANGUAGES.find((l) => l === value);
-                if (picked !== undefined) pickLanguage(picked);
-              }}
+      <DropdownMenuContent
+        side={folded ? "right" : "top"}
+        align={folded ? "end" : "start"}
+        className="w-52"
+        data-account-menu
+      >
+        {SETTINGS_SECTIONS.map((section) => {
+          const { name, icon: Icon } = SETTINGS_PAGE[section];
+          return (
+            <DropdownMenuItem
+              key={section}
+              onSelect={() => navigate(settingsPath({ section, lang }))}
+              data-settings-item={section}
             >
-              {LANGUAGES.map((l) => (
-                <DropdownMenuRadioItem key={l} value={l} lang={l}>
-                  {t(LANGUAGE_NAME[l])}
-                </DropdownMenuRadioItem>
-              ))}
-            </DropdownMenuRadioGroup>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+              <Icon aria-hidden />
+              {t(name)}
+            </DropdownMenuItem>
+          );
+        })}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={onSignOut} data-sign-out>
           <LogOutIcon aria-hidden />
@@ -279,8 +309,37 @@ export function SidebarBody({
             </ul>
           )}
         </section>
+        <section aria-labelledby="parent-settings" className="flex flex-col gap-0.5">
+          <h2
+            id="parent-settings"
+            className="pr-1.5 pl-2 text-jw-page-small font-medium text-jw-ink-soft"
+          >
+            {t("parent_nav_settings")}
+          </h2>
+          <ul className="flex flex-col gap-0.5" data-settings>
+            {SETTINGS_SECTIONS.map((section) => {
+              const { name, icon: Icon } = SETTINGS_PAGE[section];
+              const current = place.kind === "settings" && place.section === section;
+              return (
+                <li key={section}>
+                  <NavLink
+                    href={settingsPath({ section, lang })}
+                    aria-current={current ? "page" : undefined}
+                    className={cn(ROW, fill(current))}
+                    data-settings-row={section}
+                  >
+                    <Icon aria-hidden className="size-4 shrink-0 text-jw-ink-soft" />
+                    <span className="min-w-0 flex-1 truncate">{t(name)}</span>
+                  </NavLink>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       </div>
-      {foot !== undefined && <div className="border-t-jw border-jw-line px-3 py-2">{foot}</div>}
+      {foot !== undefined && (
+        <div className="flex flex-col gap-0.5 border-t-jw border-jw-line px-3 py-2">{foot}</div>
+      )}
     </div>
   );
 }
@@ -320,8 +379,9 @@ export function SidebarRail({
   learners,
   place,
   onAddChild,
+  account,
   unfold,
-}: SidebarProps & { unfold: ReactNode }): ReactElement {
+}: SidebarProps & { account: ReactNode; unfold: ReactNode }): ReactElement {
   const t = say(language);
   const lang = pageLang();
   return (
@@ -356,8 +416,23 @@ export function SidebarRail({
           </RailLink>
         ))}
         <AddChild label={t("parent_add_child")} onAdd={onAddChild} />
+        <div className="my-2 w-6 border-t-jw border-jw-line" />
+        {SETTINGS_SECTIONS.map((section) => {
+          const { name, icon: Icon } = SETTINGS_PAGE[section];
+          return (
+            <RailLink
+              key={section}
+              href={settingsPath({ section, lang })}
+              label={t(name)}
+              current={place.kind === "settings" && place.section === section}
+            >
+              <Icon aria-hidden className="size-4" />
+            </RailLink>
+          );
+        })}
       </nav>
-      <div className="flex w-full justify-center border-t-jw border-jw-line px-2 py-2">
+      <div className="flex w-full flex-col items-center gap-1.5 border-t-jw border-jw-line px-2 py-2">
+        {account}
         {unfold}
       </div>
     </div>

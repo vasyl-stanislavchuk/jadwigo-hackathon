@@ -272,14 +272,9 @@ describe("ParentScreen", () => {
     const api = client({ getMe: async () => english });
     render(<Wired auth={auth} client={api} />);
     await screen.findByRole("button", { name: "Add a child" });
-    // The language lives in the account menu, under Page language (S10).
-    fireEvent.keyDown(document.querySelector("[data-account]") as Element, { key: "Enter" });
-    fireEvent.keyDown(await screen.findByRole("menuitem", { name: "Page language" }), {
-      key: "ArrowRight",
-    });
-    await act(async () =>
-      fireEvent.click(await screen.findByRole("menuitemradio", { name: "Polski" })),
-    );
+    // The language is a settings page, a row under Settings in the sidebar.
+    await act(async () => fireEvent.click(screen.getByRole("link", { name: "Language" })));
+    await act(async () => fireEvent.click(await screen.findByRole("radio", { name: "Polski" })));
     await screen.findByRole("button", { name: "Dodaj dziecko" });
   });
 
@@ -698,6 +693,46 @@ describe("ParentScreen", () => {
     expect(patchPod).toHaveBeenCalledWith(POD, { ai_consented: true });
     await screen.findByRole("textbox", { name: "Opisz zadanie domowe" });
     expect(document.querySelector("[data-consent]")).toBeNull();
+  });
+
+  it("opens a settings page from its sidebar row, and withdrawing the consent there keeps the page", async () => {
+    window.history.replaceState(null, "", "/parent/settings/ai");
+    const auth = signedOutAuth();
+    auth.signedIn = true;
+    let consented = true;
+    const patchPod = vi.fn(async (_pod: unknown, { ai_consented }: { ai_consented: boolean }) => {
+      consented = ai_consented;
+      return {};
+    });
+    render(
+      <ParentScreen
+        language="pl"
+        query={new URLSearchParams()}
+        auth={auth}
+        client={client({
+          getMe: async () =>
+            ({
+              ...me([]),
+              pod: { ...pod, ai_consent_at: consented ? AT : null },
+            }) as unknown as Me,
+        })}
+        pods={{ patchPod } as never}
+      />,
+    );
+    const toggle = await screen.findByRole("switch", { name: "Zgoda na Jadwigo AI" });
+    expect(screen.getByRole("navigation", { name: "Gdzie jesteś" }).textContent).toBe(
+      "Ustawienia/Zgoda na AI",
+    );
+    await act(async () => fireEvent.click(toggle));
+    expect(patchPod).toHaveBeenCalledWith(POD, { ai_consented: false });
+    // The page stays, the switch off: the first visit's consent screen does not take it over.
+    await screen.findByText(/Bez zgody Jadwigo AI nie przygotuje nowej lekcji/);
+    expect(document.querySelector("[data-consent]")).toBeNull();
+
+    await act(async () => fireEvent.click(screen.getByRole("link", { name: "Konto" })));
+    expect(window.location.pathname).toBe("/parent/settings/account");
+    await screen.findByRole("heading", { name: "Konto" });
+    window.history.replaceState(null, "", "/parent");
   });
 
   // The first screen's send (dl-z5ja.108).

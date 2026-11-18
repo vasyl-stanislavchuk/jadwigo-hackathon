@@ -15,6 +15,7 @@ import {
   parentPath,
   parentRoute,
   providerOf,
+  settingsPath,
 } from "./route.ts";
 
 const ASSIGNMENT = AssignmentId.parse("asg_0ectzj2evqb95a3v1v6wewjzy3");
@@ -121,6 +122,25 @@ describe("the shell's pages", () => {
     const child = childPath({ learner: LEARNER, lang: "en" });
     expect(child).toBe(`/parent/children/${LEARNER}?lang=en`);
     expect(parentRoute(child.split("?")[0] ?? "")).toEqual({ kind: "child", learner: LEARNER });
+  });
+});
+
+describe("the settings pages", () => {
+  it("reads each section, /parent/settings as the account's, and an unknown one as null", () => {
+    expect(parentRoute("/parent/settings")).toEqual({ kind: "settings", section: "account" });
+    expect(parentRoute("/parent/settings/")).toEqual({ kind: "settings", section: "account" });
+    expect(parentRoute("/parent/settings/language")).toEqual({
+      kind: "settings",
+      section: "language",
+    });
+    expect(parentRoute("/parent/settings/ai/")).toEqual({ kind: "settings", section: "ai" });
+    expect(parentRoute("/parent/settings/billing")).toEqual({ kind: "settings", section: null });
+  });
+
+  it("round-trips each section's path with the page's language", () => {
+    const path = settingsPath({ section: "ai", lang: "en" });
+    expect(path).toBe("/parent/settings/ai?lang=en");
+    expect(parentRoute(path.split("?")[0] ?? "")).toEqual({ kind: "settings", section: "ai" });
   });
 });
 
